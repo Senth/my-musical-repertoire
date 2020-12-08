@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:my_musical_repertoire/AppLocalizations.dart';
 
-class Pieces extends StatefulWidget {
-  Pieces();
+class PieceList extends StatefulWidget {
+  PieceList();
 
-  _PiecesState createState() => _PiecesState();
+  _PieceListState createState() => _PieceListState();
 }
 
-class _PiecesState extends State<Pieces> {
+class _PieceListState extends State<PieceList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(translate(context, 'piecesTitle'))),
-      body: Row(),
+      body: Column(),
       floatingActionButton: FloatingActionButton(
           onPressed: () => print('Pressed'),
           tooltip: translate(context, 'addPieceTooltip'),
