@@ -3,8 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:faker/faker.dart';
 import 'package:mockito/mockito.dart';
 import 'package:my_musical_repertoire/features/piece/domain/repositories/piece_repository.dart';
-import 'package:my_musical_repertoire/features/piece/domain/usecases/piece_add.dart';
-
+import 'package:my_musical_repertoire/features/piece/domain/usecases/piece_edit.dart';
 import '../entities/piece_test.dart';
 
 const faker = Faker();
@@ -12,24 +11,24 @@ const faker = Faker();
 class _MockPieceRepository extends Mock implements PieceRepository {}
 
 void main() {
-  group("PieceAdd #usecase #cold", () {
-    PieceAdd usecase;
+  group("PieceEdit #usecase #cold", () {
+    PieceEdit usecase;
     _MockPieceRepository mockPieceRepository;
 
     setUp(() {
       mockPieceRepository = _MockPieceRepository();
-      usecase = PieceAdd(mockPieceRepository);
+      usecase = PieceEdit(mockPieceRepository);
     });
 
-    test('Should add a piece', () async {
+    test('Should edit a piece', () async {
       final piece = fakerPiece();
-      when(mockPieceRepository.addPiece(any))
+      when(mockPieceRepository.updatePiece(piece))
           .thenAnswer((_) async => Right(piece));
 
       final result = await usecase(piece);
 
       expect(result, Right(piece));
-      verify(mockPieceRepository.addPiece(piece));
+      verify(mockPieceRepository.updatePiece(piece));
       verifyNoMoreInteractions(mockPieceRepository);
     });
   });
