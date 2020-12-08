@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:my_musical_repertoire/Pieces/Pieces.dart';
+import 'package:my_musical_repertoire/Pieces/piece_list.dart';
 
 import 'AppLocalizations.dart';
 
@@ -28,7 +28,7 @@ class App extends StatelessWidget {
         }
         return supportedLocales.first;
       },
-      home: Pieces(),
+      home: PieceList(),
     );
   }
 }
