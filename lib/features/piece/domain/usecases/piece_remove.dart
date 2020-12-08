@@ -1,7 +1,7 @@
-import 'package:my_musical_repertoire/core/errors/error.dart';
+import '../../../../core/errors/error.dart';
 import 'package:dartz/dartz.dart';
-import 'package:my_musical_repertoire/core/use_case.dart';
-import 'package:my_musical_repertoire/features/piece/domain/repositories/piece_repository.dart';
+import '../../../../core/use_case.dart';
+import '../repositories/piece_repository.dart';
 
 class PieceRemove extends UseCase<String, String> {
   final PieceRepository repository;

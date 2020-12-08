@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:my_musical_repertoire/core/consts.dart';
+import 'consts.dart';
 
 import 'errors/validation_error.dart';
 

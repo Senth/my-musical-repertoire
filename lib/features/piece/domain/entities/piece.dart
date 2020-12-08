@@ -1,6 +1,7 @@
 import 'package:meta/meta.dart';
-import 'package:my_musical_repertoire/core/entity.dart';
-import 'package:my_musical_repertoire/core/errors/validation_error.dart';
+
+import '../../../../core/entity.dart';
+import '../../../../core/errors/validation_error.dart';
 
 class Piece extends Entity {
   final String name;

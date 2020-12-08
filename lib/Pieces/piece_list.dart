@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:my_musical_repertoire/AppLocalizations.dart';
+
+import '../AppLocalizations.dart';
 
 class PieceList extends StatefulWidget {
   PieceList();

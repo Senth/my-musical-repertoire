@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
-import 'package:my_musical_repertoire/core/errors/error.dart';
-import 'package:my_musical_repertoire/core/use_case.dart';
-import 'package:my_musical_repertoire/features/piece/domain/entities/piece.dart';
-import 'package:my_musical_repertoire/features/piece/domain/repositories/piece_repository.dart';
+import '../../../../core/errors/error.dart';
+import '../../../../core/use_case.dart';
+import '../entities/piece.dart';
+import '../repositories/piece_repository.dart';
 
 class PieceAdd extends UseCase<Piece, Piece> {
   final PieceRepository repository;

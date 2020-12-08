@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:my_musical_repertoire/Pieces/piece_list.dart';
+import 'Pieces/piece_list.dart';
 
 import 'AppLocalizations.dart';
 

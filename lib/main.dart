@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:my_musical_repertoire/app.dart';
+
+import 'app.dart';
 
 void main() {
   runApp(App());
