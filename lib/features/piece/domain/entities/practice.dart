@@ -44,6 +44,24 @@ class Practice extends Entity {
 
     return errors;
   }
+
+  Practice copy({
+    String id,
+    String pieceId,
+    DateTime date,
+    PracticeMistakes technicalMistakes,
+    PracticeMistakes memoryFlubs,
+  }) {
+    return new Practice(
+      id: id != null ? id : this.id,
+      pieceId: pieceId != null ? pieceId : this.pieceId,
+      date: date != null ? date : this.date,
+      technicalMistakes: technicalMistakes != null
+          ? technicalMistakes
+          : this.technicalMistakes,
+      memoryFlubs: memoryFlubs != null ? memoryFlubs : this.memoryFlubs,
+    );
+  }
 }
 
 enum PracticeMistakes { none, few, some, many, everywhere }

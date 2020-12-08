@@ -20,6 +20,18 @@ Piece fakerPiece({String name, DateTime date}) {
   );
 }
 
+Piece copyFrom(
+  Piece original, {
+  String name,
+  DateTime date,
+}) {
+  return new Piece(
+    id: original.id,
+    name: name != null ? name : original.name,
+    lastPracticed: date != null ? date : original.lastPracticed,
+  );
+}
+
 void main() {
   group("Piece #entity #cold", () {
     Piece piece;
@@ -50,6 +62,38 @@ void main() {
           equals(
             [new ValidationInfo(type: ValidationTypes.dateIsInTheFuture)],
           ));
+    });
+
+    test('Equality', () {
+      final Piece original = fakerPiece();
+      Piece copy = copyFrom(original);
+      expect(copy, original);
+
+      // Name
+      copy = copyFrom(original, name: 'different');
+      expect(copy, isNot(original));
+
+      // Date
+      copy = copyFrom(original, date: new DateTime(2017));
+      expect(copy, isNot(original));
+    });
+
+    test('copy()', () {
+      final Piece original = fakerPiece();
+      Piece copy = original.copy();
+      expect(copy, original);
+
+      // Id
+      copy = original.copy(id: 'different');
+      expect(copy, isNot(original));
+
+      // Name
+      copy = original.copy(name: 'different');
+      expect(copy, isNot(original));
+
+      // Date
+      copy = original.copy(lastPracticed: new DateTime(2017));
+      expect(copy, isNot(original));
     });
   });
 }

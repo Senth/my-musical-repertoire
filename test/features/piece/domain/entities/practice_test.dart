@@ -93,5 +93,31 @@ void main() {
       copy = copyFrom(original, memoryFlubs: PracticeMistakes.everywhere);
       expect(copy, isNot(original));
     });
+
+    test("copy()", () {
+      final Practice original = fakerPractice();
+      Practice copy = original.copy();
+      expect(copy, original);
+
+      // Id
+      copy = original.copy(id: 'different');
+      expect(copy, isNot(original));
+
+      // Piece id
+      copy = original.copy(pieceId: 'different');
+      expect(copy, isNot(original));
+
+      // Date
+      copy = original.copy(date: new DateTime(2019));
+      expect(copy, isNot(original));
+
+      // Technical mistakes
+      copy = original.copy(technicalMistakes: PracticeMistakes.everywhere);
+      expect(copy, isNot(original));
+
+      // Memory flubs
+      copy = original.copy(memoryFlubs: PracticeMistakes.everywhere);
+      expect(copy, isNot(original));
+    });
   });
 }

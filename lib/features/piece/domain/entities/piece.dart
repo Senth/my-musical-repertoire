@@ -38,4 +38,18 @@ class Piece extends Entity {
 
     return errors;
   }
+
+  /// Create a copy of the piece, overriding some elements
+  /// @return copy of this piece
+  Piece copy({
+    id,
+    name,
+    lastPracticed,
+  }) {
+    return new Piece(
+      id: id != null ? id : this.id,
+      name: name != null ? name : this.name,
+      lastPracticed: lastPracticed != null ? lastPracticed : this.lastPracticed,
+    );
+  }
 }
