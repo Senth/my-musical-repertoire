@@ -26,7 +26,7 @@ void main() {
       when(mockPieceRepository.addPiece(any))
           .thenAnswer((_) async => Right(piece));
 
-      final result = await usecase.execute(piece);
+      final result = await usecase(piece);
 
       expect(result, Right(piece));
       verify(mockPieceRepository.addPiece(piece));
