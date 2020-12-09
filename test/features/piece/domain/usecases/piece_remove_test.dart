@@ -5,7 +5,7 @@ import 'package:mockito/mockito.dart';
 import 'package:my_musical_repertoire/features/piece/domain/repositories/piece_repository.dart';
 import 'package:my_musical_repertoire/features/piece/domain/usecases/piece_remove.dart';
 
-const faker = Faker();
+const _faker = Faker();
 
 class _MockPieceRepository extends Mock implements PieceRepository {}
 
@@ -20,7 +20,7 @@ void main() {
     });
 
     test('Call the repository to remove the piece with the specified id', () async {
-      final String id = faker.guid.guid();
+      final String id = _faker.guid.guid();
       when(mockPieceRepository.removePiece(any)).thenAnswer((_) async => Right(id));
 
       final result = await usecase(id);

@@ -4,17 +4,17 @@ import 'package:my_musical_repertoire/core/consts.dart';
 import 'package:my_musical_repertoire/core/errors/validation_error.dart';
 import 'package:my_musical_repertoire/features/piece/domain/entities/piece.dart';
 
-const faker = Faker();
+const _faker = Faker();
 
 Piece fakerPiece({String name, DateTime date}) {
   if (name == null) {
-    name = faker.person.firstName();
+    name = _faker.person.firstName();
   }
   if (date == null) {
-    date = faker.date.dateTime(minYear: 2018, maxYear: 2019);
+    date = _faker.date.dateTime(minYear: 2018, maxYear: 2019);
   }
   return new Piece(
-    id: faker.guid.guid(),
+    id: _faker.guid.guid(),
     name: name,
     lastPracticed: date,
   );
