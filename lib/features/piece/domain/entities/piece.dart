@@ -8,9 +8,9 @@ class Piece extends Entity {
   final DateTime lastPracticed;
 
   Piece({
-    @required id,
+    @required String id,
     @required this.name,
-    @required this.lastPracticed,
+    this.lastPracticed,
   }) : super(id);
 
   @override
