@@ -10,7 +10,7 @@ const faker = Faker();
 class _MockPieceRepository extends Mock implements PieceRepository {}
 
 void main() {
-  group("PieceRemove #usecase #cold", () {
+  group("Remove Piece should (#usecase #cold) ->", () {
     PieceRemove usecase;
     _MockPieceRepository mockPieceRepository;
 
@@ -19,10 +19,9 @@ void main() {
       usecase = PieceRemove(mockPieceRepository);
     });
 
-    test('Should remove a piece', () async {
+    test('Call the repository to remove the piece with the specified id', () async {
       final String id = faker.guid.guid();
-      when(mockPieceRepository.removePiece(any))
-          .thenAnswer((_) async => Right(id));
+      when(mockPieceRepository.removePiece(any)).thenAnswer((_) async => Right(id));
 
       final result = await usecase(id);
 

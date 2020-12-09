@@ -33,15 +33,21 @@ Piece copyFrom(
 }
 
 void main() {
-  group("Piece #entity #cold", () {
+  group("Piece Entity should (#entity #cold) ->", () {
     Piece piece;
+    Piece original;
+    Piece copy;
 
-    test('Valid entity', () {
+    setUp(() {
+      original = fakerPiece();
+    });
+
+    test('Be a valid', () {
       piece = fakerPiece();
       expect(piece.validate(), isEmpty);
     });
 
-    test('Name too short', () {
+    test('Validate name too short', () {
       piece = fakerPiece(name: '12');
       expect(
           piece.validate(),
@@ -55,7 +61,7 @@ void main() {
           ));
     });
 
-    test('Date is in the future', () {
+    test('Validate date is in the future', () {
       piece = fakerPiece(date: DateTime.now().add(new Duration(minutes: 1)));
       expect(
           piece.validate(),
@@ -64,11 +70,12 @@ void main() {
           ));
     });
 
-    test('Equality', () {
-      final Piece original = fakerPiece();
-      Piece copy = copyFrom(original);
+    test('Be equal to itself', () {
+      copy = copyFrom(original);
       expect(copy, original);
+    });
 
+    test("Not be equal to itself when changing any property", () {
       // Name
       copy = copyFrom(original, name: 'different');
       expect(copy, isNot(original));
@@ -78,11 +85,12 @@ void main() {
       expect(copy, isNot(original));
     });
 
-    test('copy()', () {
-      final Piece original = fakerPiece();
-      Piece copy = original.copy();
+    test('copy() should be equal to the original', () {
+      copy = original.copy();
       expect(copy, original);
+    });
 
+    test("copy(param) with a parameter should not be equal to the original", () {
       // Id
       copy = original.copy(id: 'different');
       expect(copy, isNot(original));

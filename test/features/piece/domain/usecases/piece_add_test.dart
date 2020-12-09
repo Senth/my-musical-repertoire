@@ -12,7 +12,7 @@ const faker = Faker();
 class _MockPieceRepository extends Mock implements PieceRepository {}
 
 void main() {
-  group("PieceAdd #usecase #cold", () {
+  group("Add Piece should (#usecase #cold) ->", () {
     PieceAdd usecase;
     _MockPieceRepository mockPieceRepository;
 
@@ -21,10 +21,9 @@ void main() {
       usecase = PieceAdd(mockPieceRepository);
     });
 
-    test('Should add a piece', () async {
+    test('Call the repository with the piece and get the piece back', () async {
       final piece = fakerPiece();
-      when(mockPieceRepository.addPiece(any))
-          .thenAnswer((_) async => Right(piece));
+      when(mockPieceRepository.addPiece(any)).thenAnswer((_) async => Right(piece));
 
       final result = await usecase(piece);
 

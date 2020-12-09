@@ -35,36 +35,38 @@ Practice copyFrom(
     id: original.id,
     pieceId: pieceId != null ? pieceId : original.pieceId,
     date: date != null ? date : original.date,
-    technicalMistakes: technicalMistakes != null
-        ? technicalMistakes
-        : original.technicalMistakes,
+    technicalMistakes: technicalMistakes != null ? technicalMistakes : original.technicalMistakes,
     memoryFlubs: memoryFlubs != null ? memoryFlubs : original.memoryFlubs,
   );
 }
 
 void main() {
-  group("Practice #entity #cold", () {
+  group("Practice Entity should (#entity #cold) ->", () {
     Practice practice;
-    test("Valid entity", () {
+    Practice original;
+    Practice copy;
+
+    setUp(() {
+      original = fakerPractice();
+    });
+
+    test("Have be a valid entity", () {
       practice = fakerPractice(id: null);
       expect(practice.validate(), isEmpty);
     });
 
-    test("Id is null", () {
+    test("Validate that id is not defined", () {
       practice = fakerPractice(id: 'null');
-      expect(practice.validate(),
-          equals([new ValidationInfo(type: ValidationTypes.idNotDefined)]));
+      expect(practice.validate(), equals([new ValidationInfo(type: ValidationTypes.idNotDefined)]));
     });
 
-    test("Id is empty", () {
+    test("Validate that id is empty", () {
       practice = fakerPractice(id: "");
-      expect(practice.validate(),
-          equals([new ValidationInfo(type: ValidationTypes.idIsEmpty)]));
+      expect(practice.validate(), equals([new ValidationInfo(type: ValidationTypes.idIsEmpty)]));
     });
 
-    test("Date is in the future", () {
-      practice =
-          fakerPractice(date: DateTime.now().add(new Duration(minutes: 1)));
+    test("Validate that date is in the future", () {
+      practice = fakerPractice(date: DateTime.now().add(new Duration(minutes: 1)));
       expect(
           practice.validate(),
           equals(
@@ -72,11 +74,12 @@ void main() {
           ));
     });
 
-    test("Equality", () {
-      final Practice original = fakerPractice();
-      Practice copy = copyFrom(original);
+    test("Be equal to itself", () {
+      copy = copyFrom(original);
       expect(copy, original);
+    });
 
+    test("Not be equal to itself when changing any property", () {
       // Piece id
       copy = copyFrom(original, pieceId: 'different');
       expect(copy, isNot(original));
@@ -94,11 +97,12 @@ void main() {
       expect(copy, isNot(original));
     });
 
-    test("copy()", () {
-      final Practice original = fakerPractice();
-      Practice copy = original.copy();
+    test("copy() should be equal to the original", () {
+      copy = original.copy();
       expect(copy, original);
+    });
 
+    test("copy(param) with a parameter should not be equal to the original", () {
       // Id
       copy = original.copy(id: 'different');
       expect(copy, isNot(original));
