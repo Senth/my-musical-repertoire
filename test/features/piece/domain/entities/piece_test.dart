@@ -2,30 +2,30 @@ import 'package:faker/faker.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_musical_repertoire/core/consts.dart';
 import 'package:my_musical_repertoire/core/errors/validation_error.dart';
-import 'package:my_musical_repertoire/features/piece/domain/entities/piece.dart';
+import 'package:my_musical_repertoire/features/piece/domain/entities/piece_entity.dart';
 
 const _faker = Faker();
 
-Piece fakerPiece({String name, DateTime date}) {
+PieceEntity fakerPiece({String name, DateTime date}) {
   if (name == null) {
     name = _faker.person.firstName();
   }
   if (date == null) {
     date = _faker.date.dateTime(minYear: 2018, maxYear: 2019);
   }
-  return new Piece(
+  return new PieceEntity(
     id: _faker.guid.guid(),
     name: name,
     lastPracticed: date,
   );
 }
 
-Piece copyFrom(
-  Piece original, {
+PieceEntity copyFrom(
+  PieceEntity original, {
   String name,
   DateTime date,
 }) {
-  return new Piece(
+  return new PieceEntity(
     id: original.id,
     name: name != null ? name : original.name,
     lastPracticed: date != null ? date : original.lastPracticed,
@@ -34,9 +34,9 @@ Piece copyFrom(
 
 void main() {
   group("Piece Entity should (#entity #cold) ->", () {
-    Piece piece;
-    Piece original;
-    Piece copy;
+    PieceEntity piece;
+    PieceEntity original;
+    PieceEntity copy;
 
     setUp(() {
       original = fakerPiece();

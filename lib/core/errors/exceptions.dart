@@ -1,0 +1,1 @@
+class LocalDataSourceException implements Exception {}

@@ -3,11 +3,11 @@ import 'package:meta/meta.dart';
 import '../../../../core/entity.dart';
 import '../../../../core/errors/validation_error.dart';
 
-class Piece extends Entity {
+class PieceEntity extends Entity {
   final String name;
   final DateTime lastPracticed;
 
-  Piece({
+  PieceEntity({
     @required String id,
     @required this.name,
     this.lastPracticed,
@@ -42,12 +42,12 @@ class Piece extends Entity {
 
   /// Create a copy of the piece, overriding some elements
   /// @return copy of this piece
-  Piece copy({
+  PieceEntity copy({
     id,
     name,
     lastPracticed,
   }) {
-    return new Piece(
+    return new PieceEntity(
       id: id != null ? id : this.id,
       name: name != null ? name : this.name,
       lastPracticed: lastPracticed != null ? lastPracticed : this.lastPracticed,
