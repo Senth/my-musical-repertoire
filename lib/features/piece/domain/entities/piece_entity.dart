@@ -17,7 +17,7 @@ class PieceEntity extends Entity {
   List<Object> get props {
     final List<Object> props = super.props;
 
-    props.add([
+    props.addAll([
       this.name,
       this.lastPracticed,
     ]);
