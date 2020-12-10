@@ -4,7 +4,7 @@ import '../../domain/entities/piece_entity.dart';
 
 class PieceModel extends PieceEntity {
   PieceModel({
-    @required String id,
+    String id,
     @required String name,
     DateTime lastPracticed,
   }) : super(

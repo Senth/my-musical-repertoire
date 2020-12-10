@@ -10,7 +10,7 @@ class Practice extends Entity {
   final PracticeMistakes memoryFlubs;
 
   Practice({
-    @required String id,
+    String id,
     @required this.pieceId,
     @required this.date,
     @required this.technicalMistakes,
@@ -57,9 +57,7 @@ class Practice extends Entity {
       id: id != null ? id : this.id,
       pieceId: pieceId != null ? pieceId : this.pieceId,
       date: date != null ? date : this.date,
-      technicalMistakes: technicalMistakes != null
-          ? technicalMistakes
-          : this.technicalMistakes,
+      technicalMistakes: technicalMistakes != null ? technicalMistakes : this.technicalMistakes,
       memoryFlubs: memoryFlubs != null ? memoryFlubs : this.memoryFlubs,
     );
   }

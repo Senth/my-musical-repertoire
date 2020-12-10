@@ -8,7 +8,7 @@ class PieceEntity extends Entity {
   final DateTime lastPracticed;
 
   PieceEntity({
-    @required String id,
+    String id,
     @required this.name,
     this.lastPracticed,
   }) : super(id);
