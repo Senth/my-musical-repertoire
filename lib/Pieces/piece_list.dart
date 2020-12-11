@@ -12,7 +12,7 @@ class _PieceListState extends State<PieceList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(translate(context, 'piecesTitle'))),
+      appBar: AppBar(title: Text(translate(context, 'piecesTitle')!)),
       body: Column(),
       floatingActionButton: FloatingActionButton(
           onPressed: () => print('Pressed'),

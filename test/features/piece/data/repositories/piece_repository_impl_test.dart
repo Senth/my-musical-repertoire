@@ -11,8 +11,8 @@ class MockLocalDataSource extends Mock implements PieceLocalDataSource {}
 
 void main() {
   group("PieceRepositoryImpl (#repository #cold) ->", () {
-    PieceRepositoryImpl repository;
-    MockLocalDataSource mockLocalDataSource;
+    late PieceRepositoryImpl repository;
+    late MockLocalDataSource mockLocalDataSource;
     final piece = PieceEntity(id: "1", name: "Test name");
     final pieceModel = PieceModel(id: piece.id, name: piece.name);
 
@@ -23,7 +23,7 @@ void main() {
 
     group("addPiece()", () {
       test("should return the local and updated piece when adding a piece", () async {
-        when(mockLocalDataSource.addPiece(any)).thenAnswer((_) async => pieceModel);
+        when(mockLocalDataSource.addPiece(pieceModel)).thenAnswer((_) async => pieceModel);
         final result = await repository.addPiece(piece);
         verify(mockLocalDataSource.addPiece(pieceModel));
         verifyNoMoreInteractions(mockLocalDataSource);
@@ -32,7 +32,8 @@ void main() {
       });
 
       test("should return a LocalServerError when the repository throws a LocalServerException", () async {
-        when(mockLocalDataSource.addPiece(any)).thenAnswer((_) async => throw LocalServerError());
+        when(mockLocalDataSource.addPiece(pieceModel))
+            .thenAnswer(((_) async => throw LocalServerError()) as Future<PieceEntity> Function(Invocation));
         final result = await repository.addPiece(piece);
         verify(mockLocalDataSource.addPiece(pieceModel));
         verifyNoMoreInteractions(mockLocalDataSource);
@@ -42,16 +43,17 @@ void main() {
 
     group("removePiece()", () {
       test("should return the id of the removed piece when removing a piece", () async {
-        when(mockLocalDataSource.removePiece(any)).thenAnswer((_) async => piece.id);
-        final result = await repository.removePiece(piece.id);
+        when(mockLocalDataSource.removePiece(pieceModel.id!))
+            .thenAnswer(((_) async => piece.id) as Future<String> Function(Invocation));
+        final result = await repository.removePiece(piece.id!);
         verify(mockLocalDataSource.removePiece(piece.id));
         verifyNoMoreInteractions(mockLocalDataSource);
         expect(result, equals(Right(piece.id)));
       });
 
       test("should return a LocalServerError when the repository throws a LocalServerException", () async {
-        when(mockLocalDataSource.removePiece(any)).thenAnswer((_) async => throw LocalServerError());
-        final result = await repository.removePiece(piece.id);
+        when(mockLocalDataSource.removePiece(pieceModel.id!)).thenAnswer(((_) async => throw LocalServerError()));
+        final result = await repository.removePiece(piece.id!);
         verify(mockLocalDataSource.removePiece(piece.id));
         verifyNoMoreInteractions(mockLocalDataSource);
         expect(result, equals(Left(LocalServerError())));
@@ -60,7 +62,7 @@ void main() {
 
     group("updatePiece()", () {
       test("should return the local and updated piece when updating a piece", () async {
-        when(mockLocalDataSource.updatePiece(any)).thenAnswer((_) async => pieceModel);
+        when(mockLocalDataSource.updatePiece(pieceModel)).thenAnswer((_) async => pieceModel);
         final result = await repository.updatePiece(piece);
         verify(mockLocalDataSource.updatePiece(pieceModel));
         verifyNoMoreInteractions(mockLocalDataSource);
@@ -69,7 +71,7 @@ void main() {
       });
 
       test("should return a LocalServerError when the repository throws a LocalServerException", () async {
-        when(mockLocalDataSource.updatePiece(any)).thenAnswer((_) async => throw LocalServerError());
+        when(mockLocalDataSource.updatePiece(pieceModel)).thenAnswer(((_) async => throw LocalServerError()));
         final result = await repository.updatePiece(piece);
         verify(mockLocalDataSource.updatePiece(pieceModel));
         verifyNoMoreInteractions(mockLocalDataSource);

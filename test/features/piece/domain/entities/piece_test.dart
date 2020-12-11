@@ -6,7 +6,7 @@ import 'package:my_musical_repertoire/features/piece/domain/entities/piece_entit
 
 const _faker = Faker();
 
-PieceEntity fakerPiece({String name, DateTime date}) {
+PieceEntity fakerPiece({String? name, DateTime? date}) {
   if (name == null) {
     name = _faker.person.firstName();
   }
@@ -22,8 +22,8 @@ PieceEntity fakerPiece({String name, DateTime date}) {
 
 PieceEntity copyFrom(
   PieceEntity original, {
-  String name,
-  DateTime date,
+  String? name,
+  DateTime? date,
 }) {
   return new PieceEntity(
     id: original.id,
@@ -35,7 +35,7 @@ PieceEntity copyFrom(
 void main() {
   group("Piece Entity should (#entity #cold) ->", () {
     PieceEntity piece;
-    PieceEntity original;
+    late PieceEntity original;
     PieceEntity copy;
 
     setUp(() {
