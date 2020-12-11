@@ -21,7 +21,7 @@ class PieceModel extends PieceEntity {
     );
   }
 
-  factory PieceModel.fromJson(Map<String, dynamic> json) {
+  factory PieceModel.fromMap(Map<String, dynamic> json) {
     return PieceModel(
       id: json["id"],
       name: json["name"],
@@ -29,7 +29,7 @@ class PieceModel extends PieceEntity {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     final Map<String, dynamic> map = {
       "id": id,
       "name": name,

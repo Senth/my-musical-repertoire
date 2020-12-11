@@ -19,38 +19,38 @@ void main() {
       expect(result, pieceFull);
     });
 
-    group("fromJson()", () {
-      test("should return a valid model when JSON has all fields", () async {
+    group("fromMap()", () {
+      test("should return a valid model when the map has all fields", () async {
         final Map<String, dynamic> jsonMap = Json.decode(fixture('piece.json'));
-        final result = PieceModel.fromJson(jsonMap);
+        final result = PieceModel.fromMap(jsonMap);
         expect(result, pieceFull);
       });
 
-      test("should return a valid model when JSON is missing the lastPracticed field", () async {
+      test("should return a valid model when the map is missing the lastPracticed field", () async {
         final Map<String, dynamic> jsonMap = Json.decode(fixture('piece_without_lastPractice.json'));
-        final result = PieceModel.fromJson(jsonMap);
+        final result = PieceModel.fromMap(jsonMap);
         expect(result, pieceMissingLastPractice);
       });
     });
 
-    group("toJson()", () {
-      test("should return a JSON map with all the fields", () {
+    group("toMap()", () {
+      test("should return a map with all the fields", () {
         final expectedMap = {
           "id": pieceFull.id,
           "name": pieceFull.name,
           "lastPracticed": pieceFull.lastPracticed,
         };
-        final result = pieceFull.toJson();
+        final result = pieceFull.toMap();
         expect(result, expectedMap);
       });
 
-      test("should return a JSON map with all fields excluding last practiced", () {
+      test("should return a map with all fields excluding last practiced", () {
         final expectedMap = {
           "id": pieceMissingLastPractice.id,
           "name": pieceMissingLastPractice.name,
           "lastPracticed": pieceMissingLastPractice.lastPracticed,
         };
-        final result = pieceMissingLastPractice.toJson();
+        final result = pieceMissingLastPractice.toMap();
         expect(result, expectedMap);
       });
     });
