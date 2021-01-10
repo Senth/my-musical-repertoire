@@ -3,7 +3,7 @@ import 'package:my_musical_repertoire/core/entity.dart';
 import 'package:my_musical_repertoire/core/errors/validation_error.dart';
 
 class BaseEntity extends Entity {
-  BaseEntity(String id) : super(id);
+  BaseEntity(String? id) : super(id);
 }
 
 void main() {
