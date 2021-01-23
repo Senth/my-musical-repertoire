@@ -1,13 +1,10 @@
-import 'package:faker/faker.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_musical_repertoire/core/errors/validation_error.dart';
 import 'package:my_musical_repertoire/features/piece/domain/entities/practice.dart';
 
-const _faker = Faker();
-
 Practice fakerPractice({String id, DateTime date}) {
   if (id == null) {
-    id = _faker.guid.guid();
+    id = "8a079f87-be77-439c-99c1-1675b59d7bd5";
   }
   if (id == 'null') {
     id = null;
@@ -16,7 +13,7 @@ Practice fakerPractice({String id, DateTime date}) {
     date = DateTime.now();
   }
   return new Practice(
-    id: _faker.guid.guid(),
+    id: "a669fd47-933c-4df7-89b9-7b085d1767fb",
     pieceId: id,
     date: date,
     technicalMistakes: PracticeMistakes.none,

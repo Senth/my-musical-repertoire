@@ -1,20 +1,17 @@
-import 'package:faker/faker.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_musical_repertoire/core/consts.dart';
 import 'package:my_musical_repertoire/core/errors/validation_error.dart';
 import 'package:my_musical_repertoire/features/piece/domain/entities/piece_entity.dart';
 
-const _faker = Faker();
-
 PieceEntity fakerPiece({String name, DateTime date}) {
   if (name == null) {
-    name = _faker.person.firstName();
+    name = "Moonlight Sonata";
   }
   if (date == null) {
-    date = _faker.date.dateTime(minYear: 2018, maxYear: 2019);
+    date = new DateTime(2019, 03, 14, 23, 59);
   }
   return new PieceEntity(
-    id: _faker.guid.guid(),
+    id: "e085aac6-096c-41e8-9214-242b656691db",
     name: name,
     lastPracticed: date,
   );
