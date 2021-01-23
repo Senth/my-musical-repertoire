@@ -41,6 +41,8 @@ class PieceEntity extends Entity {
   }
 
   /// Create a copy of the piece, overriding some elements
+  /// It's not possible to unset elements, you have to do that after the .copy()
+  /// method is called. When passing in null, it will use this value instead.
   /// @return copy of this piece
   PieceEntity copy({
     id,

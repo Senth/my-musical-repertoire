@@ -1,8 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_musical_repertoire/core/errors/validation_error.dart';
-import 'package:my_musical_repertoire/features/piece/domain/entities/practice.dart';
+import 'package:my_musical_repertoire/features/piece/domain/entities/piece_entity.dart';
+import 'package:my_musical_repertoire/features/piece/domain/entities/practice_entity.dart';
 
-Practice fakerPractice({String id, DateTime date}) {
+PracticeEntity fakerPractice({String id, DateTime date}) {
   if (id == null) {
     id = "8a079f87-be77-439c-99c1-1675b59d7bd5";
   }
@@ -12,8 +13,8 @@ Practice fakerPractice({String id, DateTime date}) {
   if (date == null) {
     date = DateTime.now();
   }
-  return new Practice(
-    id: "a669fd47-933c-4df7-89b9-7b085d1767fb",
+  return new PracticeEntity(
+    id: null,
     pieceId: id,
     date: date,
     technicalMistakes: PracticeMistakes.none,
@@ -21,14 +22,14 @@ Practice fakerPractice({String id, DateTime date}) {
   );
 }
 
-Practice copyFrom(
-  Practice original, {
+PracticeEntity copyFrom(
+  PracticeEntity original, {
   String pieceId,
   DateTime date,
   PracticeMistakes technicalMistakes,
   PracticeMistakes memoryFlubs,
 }) {
-  return new Practice(
+  return new PracticeEntity(
     id: original.id,
     pieceId: pieceId != null ? pieceId : original.pieceId,
     date: date != null ? date : original.date,
@@ -39,9 +40,9 @@ Practice copyFrom(
 
 void main() {
   group("Practice Entity should (#entity #cold) ->", () {
-    Practice practice;
-    Practice original;
-    Practice copy;
+    PracticeEntity practice;
+    PracticeEntity original;
+    PracticeEntity copy;
 
     setUp(() {
       original = fakerPractice();
@@ -53,13 +54,14 @@ void main() {
     });
 
     test("Validate that id is not defined", () {
-      practice = fakerPractice(id: 'null');
-      expect(practice.validate(), equals([new ValidationInfo(type: ValidationTypes.idNotDefined)]));
-    });
+      List<PracticeEntity> testData = [
+        fakerPractice(id: 'null'),
+        fakerPractice(id: ''),
+      ];
 
-    test("Validate that id is empty", () {
-      practice = fakerPractice(id: "");
-      expect(practice.validate(), equals([new ValidationInfo(type: ValidationTypes.idIsEmpty)]));
+      for (practice in testData) {
+        expect(practice.validate(), equals([new ValidationInfo(type: ValidationTypes.idNotDefined)]));
+      }
     });
 
     test("Validate that date is in the future", () {
@@ -77,48 +79,76 @@ void main() {
     });
 
     test("Not be equal to itself when changing any property", () {
-      // Piece id
-      copy = copyFrom(original, pieceId: 'different');
-      expect(copy, isNot(original));
+      List<PracticeEntity> testData = [
+        new PracticeEntity(
+          id: 'different',
+          pieceId: original.pieceId,
+          date: original.date,
+          technicalMistakes: original.technicalMistakes,
+          memoryFlubs: original.memoryFlubs,
+        ),
+        new PracticeEntity(
+          id: original.id,
+          pieceId: 'different',
+          date: original.date,
+          technicalMistakes: original.technicalMistakes,
+          memoryFlubs: original.memoryFlubs,
+        ),
+        new PracticeEntity(
+          id: original.id,
+          pieceId: original.pieceId,
+          date: new DateTime(2019),
+          technicalMistakes: original.technicalMistakes,
+          memoryFlubs: original.memoryFlubs,
+        ),
+        new PracticeEntity(
+          id: original.id,
+          pieceId: original.pieceId,
+          date: original.date,
+          technicalMistakes: PracticeMistakes.everywhere,
+          memoryFlubs: original.memoryFlubs,
+        ),
+        new PracticeEntity(
+          id: original.id,
+          pieceId: original.pieceId,
+          date: original.date,
+          technicalMistakes: original.technicalMistakes,
+          memoryFlubs: PracticeMistakes.everywhere,
+        ),
+      ];
 
-      // Date
-      copy = copyFrom(original, date: new DateTime(2019));
-      expect(copy, isNot(original));
-
-      // Technical mistakes
-      copy = copyFrom(original, technicalMistakes: PracticeMistakes.everywhere);
-      expect(copy, isNot(original));
-
-      // Memory flubs
-      copy = copyFrom(original, memoryFlubs: PracticeMistakes.everywhere);
-      expect(copy, isNot(original));
+      for (copy in testData) {
+        expect(copy, isNot(original));
+      }
     });
 
     test("copy() should be equal to the original", () {
-      copy = original.copy();
-      expect(copy, original);
+      List<PracticeEntity> testData = [
+        original.copy(),
+        original.copy(id: null),
+        original.copy(pieceId: null),
+        original.copy(date: null),
+        original.copy(technicalMistakes: null),
+        original.copy(memoryFlubs: null),
+      ];
+
+      for (copy in testData) {
+        expect(copy, original);
+      }
     });
 
     test("copy(param) with a parameter should not be equal to the original", () {
-      // Id
-      copy = original.copy(id: 'different');
-      expect(copy, isNot(original));
+      List<PracticeEntity> testData = [
+        original.copy(id: 'different'),
+        original.copy(pieceId: 'different'),
+        original.copy(date: new DateTime(2019)),
+        original.copy(technicalMistakes: PracticeMistakes.everywhere),
+        original.copy(memoryFlubs: PracticeMistakes.everywhere),
+      ];
 
-      // Piece id
-      copy = original.copy(pieceId: 'different');
-      expect(copy, isNot(original));
-
-      // Date
-      copy = original.copy(date: new DateTime(2019));
-      expect(copy, isNot(original));
-
-      // Technical mistakes
-      copy = original.copy(technicalMistakes: PracticeMistakes.everywhere);
-      expect(copy, isNot(original));
-
-      // Memory flubs
-      copy = original.copy(memoryFlubs: PracticeMistakes.everywhere);
-      expect(copy, isNot(original));
+      for (copy in testData) {
+        expect(copy, isNot(original));
+      }
     });
   });
 }

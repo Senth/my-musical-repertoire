@@ -1,4 +1,4 @@
-import 'package:equatable/equatable.dart';
+import 'package:equatable/equatable.dart'; 
 import 'consts.dart';
 
 import 'errors/validation_error.dart';
@@ -16,16 +16,12 @@ abstract class Entity extends Equatable {
   List<ValidationInfo> validate() {
     final List<ValidationInfo> errors = [];
 
-    validateId(this.id, errors);
-
     return errors;
   }
 
   static validateId(final String id, final List<ValidationInfo> errors) {
-    if (id == null) {
+    if (id == null || id == '') {
       errors.add(new ValidationInfo(type: ValidationTypes.idNotDefined));
-    } else if (id == '') {
-      errors.add(new ValidationInfo(type: ValidationTypes.idIsEmpty));
     }
   }
 
