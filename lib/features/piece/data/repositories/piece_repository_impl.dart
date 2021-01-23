@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:meta/meta.dart';
 
 import '../../../../core/errors/error.dart';
+import '../../../../core/errors/server_error.dart';
 import '../../domain/entities/piece_entity.dart';
 import '../../domain/repositories/piece_repository.dart';
 import '../datasources/piece_local_data_source.dart';
@@ -14,11 +15,15 @@ class PieceRepositoryImpl implements PieceRepository {
 
   @override
   Future<Either<Error, PieceEntity>> addPiece(PieceEntity piece) async {
+    if (piece.id != null) {
+      return Left(ServerError(type: ServerErrorTypes.idNotNullWhenAddNew));
+    }
+
     try {
       final result = await localDataSource.addPiece(PieceModel.fromEntity(piece));
       return Right(result);
     } catch (LocalServerException) {
-      return Left(LocalServerError());
+      return Left(ServerError());
     }
   }
 
@@ -28,7 +33,7 @@ class PieceRepositoryImpl implements PieceRepository {
       final result = await localDataSource.removePiece(id);
       return Right(result);
     } catch (LocalServerException) {
-      return Left(LocalServerError());
+      return Left(ServerError());
     }
   }
 
@@ -38,7 +43,7 @@ class PieceRepositoryImpl implements PieceRepository {
       final result = await localDataSource.updatePiece(PieceModel.fromEntity(piece));
       return Right(result);
     } catch (LocalServerException) {
-      return Left(LocalServerError());
+      return Left(ServerError());
     }
   }
 }

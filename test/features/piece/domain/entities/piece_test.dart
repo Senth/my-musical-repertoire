@@ -8,9 +8,9 @@ PieceEntity fakerPiece({String name, DateTime date}) {
     name = "Moonlight Sonata";
   }
   if (date == null) {
-    date = new DateTime(2019, 03, 14, 23, 59);
+    date = DateTime(2019, 03, 14, 23, 59);
   }
-  return new PieceEntity(
+  return PieceEntity(
     id: "e085aac6-096c-41e8-9214-242b656691db",
     name: name,
     lastPracticed: date,
@@ -22,7 +22,7 @@ PieceEntity copyFrom(
   String name,
   DateTime lastPracticed,
 }) {
-  return new PieceEntity(
+  return PieceEntity(
     id: original.id,
     name: name != null ? name : original.name,
     lastPracticed: lastPracticed != null ? lastPracticed : original.lastPracticed,
@@ -50,7 +50,7 @@ void main() {
           piece.validate(),
           equals(
             [
-              new ValidationInfo(
+              ValidationInfo(
                 type: ValidationTypes.nameTooShort,
                 data: ValidationConsts.nameLengthMin.toString(),
               )
@@ -59,11 +59,11 @@ void main() {
     });
 
     test('Validate date is in the future', () {
-      piece = fakerPiece(date: DateTime.now().add(new Duration(minutes: 1)));
+      piece = fakerPiece(date: DateTime.now().add(Duration(minutes: 1)));
       expect(
           piece.validate(),
           equals(
-            [new ValidationInfo(type: ValidationTypes.dateIsInTheFuture)],
+            [ValidationInfo(type: ValidationTypes.dateIsInTheFuture)],
           ));
     });
 
@@ -73,13 +73,13 @@ void main() {
     });
 
     test("Not be equal to itself when changing any property", () {
-      List<PieceEntity> testData = [
+      final testData = [
         // Name
-        new PieceEntity(id: original.id, name: 'different', lastPracticed: original.lastPracticed),
-        new PieceEntity(id: original.id, name: null, lastPracticed: original.lastPracticed),
+        PieceEntity(id: original.id, name: 'different', lastPracticed: original.lastPracticed),
+        PieceEntity(id: original.id, name: null, lastPracticed: original.lastPracticed),
         // Date
-        new PieceEntity(id: original.id, name: original.name, lastPracticed: new DateTime(2017)),
-        new PieceEntity(id: original.id, name: original.name, lastPracticed: null),
+        PieceEntity(id: original.id, name: original.name, lastPracticed: DateTime(2017)),
+        PieceEntity(id: original.id, name: original.name, lastPracticed: null),
       ];
 
       for (copy in testData) {
@@ -88,7 +88,7 @@ void main() {
     });
 
     test('copy() should be equal to the original', () {
-      List<PieceEntity> testData = [
+      final testData = [
         original.copy(),
         original.copy(id: null),
         original.copy(name: null),
@@ -101,10 +101,10 @@ void main() {
     });
 
     test("copy(param) with a parameter should not be equal to the original", () {
-      List<PieceEntity> testData = [
+      final testData = [
         original.copy(id: 'different'),
         original.copy(name: 'different'),
-        original.copy(lastPracticed: new DateTime(2017)),
+        original.copy(lastPracticed: DateTime(2017)),
       ];
 
       for (copy in testData) {

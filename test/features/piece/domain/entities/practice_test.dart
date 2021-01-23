@@ -12,7 +12,7 @@ PracticeEntity fakerPractice({String id, DateTime date}) {
   if (date == null) {
     date = DateTime.now();
   }
-  return new PracticeEntity(
+  return PracticeEntity(
     id: null,
     pieceId: id,
     date: date,
@@ -28,7 +28,7 @@ PracticeEntity copyFrom(
   PracticeMistakes technicalMistakes,
   PracticeMistakes memoryFlubs,
 }) {
-  return new PracticeEntity(
+  return PracticeEntity(
     id: original.id,
     pieceId: pieceId != null ? pieceId : original.pieceId,
     date: date != null ? date : original.date,
@@ -59,16 +59,16 @@ void main() {
       ];
 
       for (practice in testData) {
-        expect(practice.validate(), equals([new ValidationInfo(type: ValidationTypes.idNotDefined)]));
+        expect(practice.validate(), equals([ValidationInfo(type: ValidationTypes.idNotDefined)]));
       }
     });
 
     test("Validate that date is in the future", () {
-      practice = fakerPractice(date: DateTime.now().add(new Duration(minutes: 1)));
+      practice = fakerPractice(date: DateTime.now().add(Duration(minutes: 1)));
       expect(
           practice.validate(),
           equals(
-            [new ValidationInfo(type: ValidationTypes.dateIsInTheFuture)],
+            [ValidationInfo(type: ValidationTypes.dateIsInTheFuture)],
           ));
     });
 
@@ -78,36 +78,36 @@ void main() {
     });
 
     test("Not be equal to itself when changing any property", () {
-      List<PracticeEntity> testData = [
-        new PracticeEntity(
+      final testData = [
+        PracticeEntity(
           id: 'different',
           pieceId: original.pieceId,
           date: original.date,
           technicalMistakes: original.technicalMistakes,
           memoryFlubs: original.memoryFlubs,
         ),
-        new PracticeEntity(
+        PracticeEntity(
           id: original.id,
           pieceId: 'different',
           date: original.date,
           technicalMistakes: original.technicalMistakes,
           memoryFlubs: original.memoryFlubs,
         ),
-        new PracticeEntity(
+        PracticeEntity(
           id: original.id,
           pieceId: original.pieceId,
-          date: new DateTime(2019),
+          date: DateTime(2019),
           technicalMistakes: original.technicalMistakes,
           memoryFlubs: original.memoryFlubs,
         ),
-        new PracticeEntity(
+        PracticeEntity(
           id: original.id,
           pieceId: original.pieceId,
           date: original.date,
           technicalMistakes: PracticeMistakes.everywhere,
           memoryFlubs: original.memoryFlubs,
         ),
-        new PracticeEntity(
+        PracticeEntity(
           id: original.id,
           pieceId: original.pieceId,
           date: original.date,
@@ -122,7 +122,7 @@ void main() {
     });
 
     test("copy() should be equal to the original", () {
-      List<PracticeEntity> testData = [
+      final testData = [
         original.copy(),
         original.copy(id: null),
         original.copy(pieceId: null),
@@ -140,7 +140,7 @@ void main() {
       List<PracticeEntity> testData = [
         original.copy(id: 'different'),
         original.copy(pieceId: 'different'),
-        original.copy(date: new DateTime(2019)),
+        original.copy(date: DateTime(2019)),
         original.copy(technicalMistakes: PracticeMistakes.everywhere),
         original.copy(memoryFlubs: PracticeMistakes.everywhere),
       ];
