@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_musical_repertoire/core/errors/validation_error.dart';
-import 'package:my_musical_repertoire/features/piece/domain/entities/piece_entity.dart';
 import 'package:my_musical_repertoire/features/piece/domain/entities/practice_entity.dart';
 
 PracticeEntity fakerPractice({String id, DateTime date}) {

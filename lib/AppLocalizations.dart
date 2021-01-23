@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// Helper function for translating
@@ -11,8 +11,7 @@ String translate(BuildContext context, String key) {
 }
 
 class AppLocalizations {
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
   final Locale locale;
   Map<String, String> _localizedStrings;
 
@@ -25,8 +24,7 @@ class AppLocalizations {
   String translate(String key) => _localizedStrings[key];
 
   Future<void> load() async {
-    String jsonString = await rootBundle
-        .loadString('lang/${locale.languageCode}_${locale.countryCode}.json');
+    String jsonString = await rootBundle.loadString('lang/${locale.languageCode}_${locale.countryCode}.json');
     Map<String, dynamic> jsonMap = json.decode(jsonString);
 
     _localizedStrings = jsonMap.map((key, value) {
@@ -35,14 +33,12 @@ class AppLocalizations {
   }
 }
 
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
   bool isSupported(Locale locale) {
-    return ['en_US', 'sv_SE']
-        .contains('${locale.languageCode}_${locale.countryCode}');
+    return ['en_US', 'sv_SE'].contains('${locale.languageCode}_${locale.countryCode}');
   }
 
   @override
@@ -53,6 +49,5 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) =>
-      false;
+  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) => false;
 }
