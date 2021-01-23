@@ -3,11 +3,7 @@ import 'package:my_musical_repertoire/core/errors/validation_error.dart';
 import 'package:my_musical_repertoire/features/piece/domain/entities/piece_entity.dart';
 import 'package:my_musical_repertoire/features/piece/domain/entities/practice_entity.dart';
 
-<<<<<<< HEAD
-Practice fakerPractice({String id, DateTime date}) {
-=======
 PracticeEntity fakerPractice({String id, DateTime date}) {
->>>>>>> 21fb5f55668c7ea35e73f6e4dcfe46d150203995
   if (id == null) {
     id = "8a079f87-be77-439c-99c1-1675b59d7bd5";
   }
@@ -17,13 +13,8 @@ PracticeEntity fakerPractice({String id, DateTime date}) {
   if (date == null) {
     date = DateTime.now();
   }
-<<<<<<< HEAD
-  return new Practice(
-    id: "a669fd47-933c-4df7-89b9-7b085d1767fb",
-=======
   return new PracticeEntity(
     id: null,
->>>>>>> 21fb5f55668c7ea35e73f6e4dcfe46d150203995
     pieceId: id,
     date: date,
     technicalMistakes: PracticeMistakes.none,
