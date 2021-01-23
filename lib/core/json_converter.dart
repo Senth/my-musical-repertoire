@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 class Json {
-  static Map<String, dynamic>? decode(String jsonString) {
+  static Map<String, dynamic> decode(String jsonString) {
     return json.decode(jsonString, reviver: (key, value) {
       if (value is String) {
         // DateTime

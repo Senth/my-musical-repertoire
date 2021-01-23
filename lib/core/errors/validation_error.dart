@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:meta/meta.dart';
 import 'error.dart';
 
 class ValidationError extends Error {
@@ -12,12 +13,12 @@ class ValidationError extends Error {
 
 class ValidationInfo extends Equatable {
   final ValidationTypes type;
-  final String? data;
+  final String data;
 
-  ValidationInfo({required this.type, this.data});
+  ValidationInfo({@required this.type, this.data});
 
   @override
-  List<Object?> get props => [this.type, this.data];
+  List<Object> get props => [this.type, this.data];
 
   @override
   bool get stringify => true;

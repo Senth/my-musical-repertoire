@@ -1,19 +1,21 @@
+import 'package:meta/meta.dart';
+
 import '../../../../core/entity.dart';
 import '../../../../core/errors/validation_error.dart';
 
 class PieceEntity extends Entity {
   final String name;
-  final DateTime? lastPracticed;
+  final DateTime lastPracticed;
 
   PieceEntity({
-    String? id,
-    required this.name,
+    String id,
+    @required this.name,
     this.lastPracticed,
   }) : super(id);
 
   @override
-  List<Object?> get props {
-    final List<Object?> props = super.props;
+  List<Object> get props {
+    final List<Object> props = super.props;
 
     props.addAll([
       this.name,
@@ -31,7 +33,7 @@ class PieceEntity extends Entity {
     Entity.validateName(this.name, errors);
 
     // Date should not be in the future
-    if (this.lastPracticed!.isAfter(new DateTime.now())) {
+    if (this.lastPracticed.isAfter(new DateTime.now())) {
       errors.add(new ValidationInfo(type: ValidationTypes.dateIsInTheFuture));
     }
 

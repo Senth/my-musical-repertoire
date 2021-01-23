@@ -1,10 +1,12 @@
+import 'package:meta/meta.dart';
+
 import '../../domain/entities/piece_entity.dart';
 
 class PieceModel extends PieceEntity {
   PieceModel({
-    String? id,
-    required String name,
-    DateTime? lastPracticed,
+    String id,
+    @required String name,
+    DateTime lastPracticed,
   }) : super(
           id: id,
           name: name,

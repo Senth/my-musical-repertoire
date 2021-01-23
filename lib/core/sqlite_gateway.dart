@@ -4,7 +4,7 @@ import 'package:sqflite/sqflite.dart';
 
 abstract class SqliteGateway {
   @protected
-  static late final Future<Database> db;
+  static Future<Database> db;
 
   static Future<void> initDb({bool testing = false}) async {
     String dbName = 'my_musical_repertoire';

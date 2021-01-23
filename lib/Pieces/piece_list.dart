@@ -15,7 +15,9 @@ class _PieceListState extends State<PieceList> {
       appBar: AppBar(title: Text(translate(context, 'piecesTitle'))),
       body: Column(),
       floatingActionButton: FloatingActionButton(
-          onPressed: () => print('Pressed'), tooltip: translate(context, 'addPieceTooltip'), child: Icon(Icons.add)),
+          onPressed: () => print('Pressed'),
+          tooltip: translate(context, 'addPieceTooltip'),
+          child: Icon(Icons.add)),
     );
   }
 }
