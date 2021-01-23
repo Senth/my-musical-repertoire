@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class PieceEdit extends StatefulWidget {
-  PieceEdit({Key? key}) : super(key: key);
+  PieceEdit({Key key}) : super(key: key);
 
   @override
   _PieceEditState createState() => _PieceEditState();

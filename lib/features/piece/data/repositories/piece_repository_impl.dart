@@ -1,4 +1,6 @@
 import 'package:dartz/dartz.dart';
+import 'package:meta/meta.dart';
+
 import '../../../../core/errors/error.dart';
 import '../../domain/entities/piece_entity.dart';
 import '../../domain/repositories/piece_repository.dart';
@@ -8,7 +10,7 @@ import '../models/piece_model.dart';
 class PieceRepositoryImpl implements PieceRepository {
   final PieceLocalDataSource localDataSource;
 
-  PieceRepositoryImpl({required this.localDataSource});
+  PieceRepositoryImpl({@required this.localDataSource});
 
   @override
   Future<Either<Error, PieceEntity>> addPiece(PieceEntity piece) async {

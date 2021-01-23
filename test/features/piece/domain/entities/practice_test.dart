@@ -5,7 +5,7 @@ import 'package:my_musical_repertoire/features/piece/domain/entities/practice.da
 
 const _faker = Faker();
 
-Practice fakerPractice({String? id, DateTime? date}) {
+Practice fakerPractice({String id, DateTime date}) {
   if (id == null) {
     id = _faker.guid.guid();
   }
@@ -17,7 +17,7 @@ Practice fakerPractice({String? id, DateTime? date}) {
   }
   return new Practice(
     id: _faker.guid.guid(),
-    pieceId: id!,
+    pieceId: id,
     date: date,
     technicalMistakes: PracticeMistakes.none,
     memoryFlubs: PracticeMistakes.none,
@@ -26,10 +26,10 @@ Practice fakerPractice({String? id, DateTime? date}) {
 
 Practice copyFrom(
   Practice original, {
-  String? pieceId,
-  DateTime? date,
-  PracticeMistakes? technicalMistakes,
-  PracticeMistakes? memoryFlubs,
+  String pieceId,
+  DateTime date,
+  PracticeMistakes technicalMistakes,
+  PracticeMistakes memoryFlubs,
 }) {
   return new Practice(
     id: original.id,
@@ -43,7 +43,7 @@ Practice copyFrom(
 void main() {
   group("Practice Entity should (#entity #cold) ->", () {
     Practice practice;
-    late Practice original;
+    Practice original;
     Practice copy;
 
     setUp(() {

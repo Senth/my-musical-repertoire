@@ -11,27 +11,22 @@ String translate(BuildContext context, String key) {
 }
 
 class AppLocalizations {
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
   final Locale locale;
-  late Map<String, String> _localizedStrings;
+  Map<String, String> _localizedStrings;
 
   AppLocalizations(this.locale);
 
   static AppLocalizations of(BuildContext context) {
-    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+    return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  String translate(String key) {
-    String? found = _localizedStrings[key];
-    if (found != null) {
-      return found;
-    } else {
-      return "INVALID KEY";
-    }
-  }
+  String translate(String key) => _localizedStrings[key];
 
   Future<void> load() async {
-    String jsonString = await rootBundle.loadString('lang/${locale.languageCode}_${locale.countryCode}.json');
+    String jsonString = await rootBundle
+        .loadString('lang/${locale.languageCode}_${locale.countryCode}.json');
     Map<String, dynamic> jsonMap = json.decode(jsonString);
 
     _localizedStrings = jsonMap.map((key, value) {
@@ -40,12 +35,14 @@ class AppLocalizations {
   }
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
   bool isSupported(Locale locale) {
-    return ['en_US', 'sv_SE'].contains('${locale.languageCode}_${locale.countryCode}');
+    return ['en_US', 'sv_SE']
+        .contains('${locale.languageCode}_${locale.countryCode}');
   }
 
   @override
@@ -56,5 +53,6 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) => false;
+  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) =>
+      false;
 }

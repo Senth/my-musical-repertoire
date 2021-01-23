@@ -10,7 +10,7 @@ class PieceLocalDataSourceSqlite implements PieceLocalDataSource {
   }
 
   @override
-  Future<String> removePiece(String? id) {
+  Future<String> removePiece(String id) {
     // TODO: implement removePiece
     throw UnimplementedError();
   }

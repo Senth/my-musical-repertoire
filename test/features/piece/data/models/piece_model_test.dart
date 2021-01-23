@@ -6,8 +6,8 @@ import '../../../../fixtures/fixture_reader.dart';
 
 void main() {
   group("PieceModel (#model #cold) ->", () {
-    late PieceModel pieceFull;
-    late PieceModel pieceMissingLastPractice;
+    PieceModel pieceFull;
+    PieceModel pieceMissingLastPractice;
 
     setUp(() {
       pieceFull = PieceModel(id: "1", name: "Test Piece", lastPracticed: DateTime.parse("2020-01-01T16:17:15.133"));
@@ -21,13 +21,13 @@ void main() {
 
     group("fromMap()", () {
       test("should return a valid model when the map has all fields", () async {
-        final Map<String, dynamic> jsonMap = Json.decode(fixture('piece.json'))!;
+        final Map<String, dynamic> jsonMap = Json.decode(fixture('piece.json'));
         final result = PieceModel.fromMap(jsonMap);
         expect(result, pieceFull);
       });
 
       test("should return a valid model when the map is missing the lastPracticed field", () async {
-        final Map<String, dynamic> jsonMap = Json.decode(fixture('piece_without_lastPractice.json'))!;
+        final Map<String, dynamic> jsonMap = Json.decode(fixture('piece_without_lastPractice.json'));
         final result = PieceModel.fromMap(jsonMap);
         expect(result, pieceMissingLastPractice);
       });
