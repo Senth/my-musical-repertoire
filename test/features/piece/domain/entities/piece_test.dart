@@ -20,12 +20,12 @@ PieceEntity fakerPiece({String name, DateTime date}) {
 PieceEntity copyFrom(
   PieceEntity original, {
   String name,
-  DateTime date,
+  DateTime lastPracticed,
 }) {
   return new PieceEntity(
     id: original.id,
     name: name != null ? name : original.name,
-    lastPracticed: date != null ? date : original.lastPracticed,
+    lastPracticed: lastPracticed != null ? lastPracticed : original.lastPracticed,
   );
 }
 
@@ -73,32 +73,43 @@ void main() {
     });
 
     test("Not be equal to itself when changing any property", () {
-      // Name
-      copy = copyFrom(original, name: 'different');
-      expect(copy, isNot(original));
+      List<PieceEntity> testData = [
+        // Name
+        new PieceEntity(id: original.id, name: 'different', lastPracticed: original.lastPracticed),
+        new PieceEntity(id: original.id, name: null, lastPracticed: original.lastPracticed),
+        // Date
+        new PieceEntity(id: original.id, name: original.name, lastPracticed: new DateTime(2017)),
+        new PieceEntity(id: original.id, name: original.name, lastPracticed: null),
+      ];
 
-      // Date
-      copy = copyFrom(original, date: new DateTime(2017));
-      expect(copy, isNot(original));
+      for (copy in testData) {
+        expect(copy, isNot(original));
+      }
     });
 
     test('copy() should be equal to the original', () {
-      copy = original.copy();
-      expect(copy, original);
+      List<PieceEntity> testData = [
+        original.copy(),
+        original.copy(id: null),
+        original.copy(name: null),
+        original.copy(lastPracticed: null),
+      ];
+
+      for (copy in testData) {
+        expect(copy, original);
+      }
     });
 
     test("copy(param) with a parameter should not be equal to the original", () {
-      // Id
-      copy = original.copy(id: 'different');
-      expect(copy, isNot(original));
+      List<PieceEntity> testData = [
+        original.copy(id: 'different'),
+        original.copy(name: 'different'),
+        original.copy(lastPracticed: new DateTime(2017)),
+      ];
 
-      // Name
-      copy = original.copy(name: 'different');
-      expect(copy, isNot(original));
-
-      // Date
-      copy = original.copy(lastPracticed: new DateTime(2017));
-      expect(copy, isNot(original));
+      for (copy in testData) {
+        expect(copy, isNot(original));
+      }
     });
   });
 }

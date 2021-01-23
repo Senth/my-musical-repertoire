@@ -44,11 +44,11 @@ void main() {
         expect(result, expectedMap);
       });
 
-      test("should return a map with all fields excluding last practiced", () {
+      test("should return a map with all fields, lastpractice set to null", () {
         final expectedMap = {
           "id": pieceMissingLastPractice.id,
           "name": pieceMissingLastPractice.name,
-          "lastPracticed": pieceMissingLastPractice.lastPracticed,
+          "lastPracticed": null,
         };
         final result = pieceMissingLastPractice.toMap();
         expect(result, expectedMap);

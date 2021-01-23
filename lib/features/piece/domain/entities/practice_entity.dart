@@ -3,13 +3,13 @@ import 'package:meta/meta.dart';
 import '../../../../core/entity.dart';
 import '../../../../core/errors/validation_error.dart';
 
-class Practice extends Entity {
+class PracticeEntity extends Entity {
   final String pieceId;
   final DateTime date;
   final PracticeMistakes technicalMistakes;
   final PracticeMistakes memoryFlubs;
 
-  Practice({
+  PracticeEntity({
     String id,
     @required this.pieceId,
     @required this.date,
@@ -46,14 +46,14 @@ class Practice extends Entity {
     return errors;
   }
 
-  Practice copy({
+  PracticeEntity copy({
     String id,
     String pieceId,
     DateTime date,
     PracticeMistakes technicalMistakes,
     PracticeMistakes memoryFlubs,
   }) {
-    return new Practice(
+    return new PracticeEntity(
       id: id != null ? id : this.id,
       pieceId: pieceId != null ? pieceId : this.pieceId,
       date: date != null ? date : this.date,

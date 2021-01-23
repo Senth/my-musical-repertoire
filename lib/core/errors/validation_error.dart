@@ -28,6 +28,5 @@ enum ValidationTypes {
   undefined,
   dateIsInTheFuture,
   idNotDefined,
-  idIsEmpty,
   nameTooShort,
 }
