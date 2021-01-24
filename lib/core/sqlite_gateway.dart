@@ -1,10 +1,13 @@
 import 'package:meta/meta.dart';
-import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 abstract class SqliteGateway {
   @protected
   static Future<Database> db;
+
+  SqliteGateway() {
+    initDb();
+  }
 
   static Future<void> initDb({bool testing = false}) async {
     String dbName = 'my_musical_repertoire';
@@ -13,10 +16,20 @@ abstract class SqliteGateway {
     }
     dbName += '.db';
     db = openDatabase(
-      join(await getDatabasesPath(), dbName),
+      dbName,
       version: 1,
+      onConfigure: onConfigure,
       onCreate: onCreate,
+      onUpgrade: onUpgrade,
+      onDowngrade: onDowngrade,
+      onOpen: onOpen,
     );
+    return db.then((db) {});
+  }
+
+  static Future<void> onConfigure(Database db) {
+    // TODO
+    return Future(() => Null);
   }
 
   static Future<void> onCreate(Database db, int version) {
@@ -34,5 +47,20 @@ abstract class SqliteGateway {
     results.add(result);
 
     return Future.wait(results);
+  }
+
+  static Future<void> onUpgrade(Database db, int fromVersion, int toVersion) {
+    // TODO
+    return Future(() => Null);
+  }
+
+  static Future<void> onDowngrade(Database db, int fromVersion, int toVersion) {
+    // TODO
+    return Future(() => Null);
+  }
+
+  static Future<void> onOpen(Database db) {
+    // TODO
+    return Future(() => Null);
   }
 }
