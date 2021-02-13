@@ -27,6 +27,6 @@ class ValidationInfo extends Equatable {
 enum ValidationTypes {
   undefined,
   dateIsInTheFuture,
-  idNotDefined,
-  nameTooShort,
+  titleRequired,
+  composerRequired,
 }

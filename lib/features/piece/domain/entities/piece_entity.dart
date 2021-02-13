@@ -4,12 +4,14 @@ import '../../../../core/entity.dart';
 import '../../../../core/errors/validation_error.dart';
 
 class PieceEntity extends Entity {
-  final String name;
+  final String title;
+  final String composer;
   final DateTime lastPracticed;
 
   PieceEntity({
     String id,
-    @required this.name,
+    @required this.title,
+    @required this.composer,
     this.lastPracticed,
   }) : super(id);
 
@@ -18,7 +20,8 @@ class PieceEntity extends Entity {
     final List<Object> props = super.props;
 
     props.addAll([
-      this.name,
+      this.title,
+      this.composer,
       this.lastPracticed,
     ]);
 
@@ -30,7 +33,10 @@ class PieceEntity extends Entity {
     final errors = super.validate();
 
     // Name is too short
-    Entity.validateName(this.name, errors);
+    Entity.validateRequired(this.title, ValidationTypes.titleRequired, errors);
+
+    // Title too short
+    Entity.validateRequired(this.composer, ValidationTypes.composerRequired, errors);
 
     // Date should not be in the future
     if (this.lastPracticed.isAfter(new DateTime.now())) {
@@ -46,12 +52,14 @@ class PieceEntity extends Entity {
   /// @return copy of this piece
   PieceEntity copy({
     id,
-    name,
+    title,
+    composer,
     lastPracticed,
   }) {
     return new PieceEntity(
       id: id != null ? id : this.id,
-      name: name != null ? name : this.name,
+      title: title != null ? title : this.title,
+      composer: composer != null ? composer : this.composer,
       lastPracticed: lastPracticed != null ? lastPracticed : this.lastPracticed,
     );
   }

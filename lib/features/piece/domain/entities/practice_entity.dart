@@ -35,9 +35,6 @@ class PracticeEntity extends Entity {
   List<ValidationInfo> validate() {
     final errors = super.validate();
 
-    // pieceId
-    Entity.validateId(this.pieceId, errors);
-
     // Date should not be in the future
     if (this.date.isAfter(new DateTime.now())) {
       errors.add(new ValidationInfo(type: ValidationTypes.dateIsInTheFuture));

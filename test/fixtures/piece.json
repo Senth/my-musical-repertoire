@@ -1,5 +1,6 @@
 {
   "id": "1",
-  "name": "Test Piece",
+  "title": "Test Piece",
+  "composer": "Test Composer",
   "lastPracticed": "2020-01-01T16:17:15.133"
 }

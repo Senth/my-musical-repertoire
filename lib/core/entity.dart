@@ -1,5 +1,4 @@
-import 'package:equatable/equatable.dart'; 
-import 'consts.dart';
+import 'package:equatable/equatable.dart';
 
 import 'errors/validation_error.dart';
 
@@ -19,18 +18,9 @@ abstract class Entity extends Equatable {
     return errors;
   }
 
-  static validateId(final String id, final List<ValidationInfo> errors) {
-    if (id == null || id == '') {
-      errors.add(new ValidationInfo(type: ValidationTypes.idNotDefined));
-    }
-  }
-
-  static validateName(final String name, final List<ValidationInfo> errors) {
-    if (name == null || name.length < ValidationConsts.nameLengthMin) {
-      errors.add(new ValidationInfo(
-        type: ValidationTypes.nameTooShort,
-        data: ValidationConsts.nameLengthMin.toString(),
-      ));
+  static validateRequired(final String field, final ValidationTypes type, final List<ValidationInfo> errors) {
+    if (field == null || field.isEmpty) {
+      errors.add(new ValidationInfo(type: type));
     }
   }
 

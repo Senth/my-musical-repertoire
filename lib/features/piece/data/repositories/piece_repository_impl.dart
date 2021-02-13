@@ -21,7 +21,7 @@ class PieceRepositoryImpl implements PieceRepository {
 
     try {
       final result = await localDataSource.addPiece(PieceModel.fromEntity(piece));
-      return Right(result);
+      return Right(result.toEntity());
     } catch (LocalServerException) {
       return Left(ServerError());
     }
@@ -41,7 +41,7 @@ class PieceRepositoryImpl implements PieceRepository {
   Future<Either<Error, PieceEntity>> updatePiece(PieceEntity piece) async {
     try {
       final result = await localDataSource.updatePiece(PieceModel.fromEntity(piece));
-      return Right(result);
+      return Right(result.toEntity());
     } catch (LocalServerException) {
       return Left(ServerError());
     }
