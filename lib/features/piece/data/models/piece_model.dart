@@ -1,22 +1,33 @@
 import 'package:meta/meta.dart';
+import '../../../../core/model.dart';
 
 import '../../domain/entities/piece_entity.dart';
 
-class PieceModel extends PieceEntity {
+class PieceModel extends Model {
+  final String title;
+  final String composer;
+  final DateTime lastPracticed;
+
+  @override
+  List<Object> get props => [
+        ...super.props,
+        this.title,
+        this.composer,
+        this.lastPracticed,
+      ];
+
   PieceModel({
     String id,
-    @required String name,
-    DateTime lastPracticed,
-  }) : super(
-          id: id,
-          name: name,
-          lastPracticed: lastPracticed,
-        );
+    @required this.title,
+    @required this.composer,
+    this.lastPracticed,
+  }) : super(id);
 
   factory PieceModel.fromEntity(PieceEntity entity) {
     return PieceModel(
       id: entity.id,
-      name: entity.name,
+      title: entity.title,
+      composer: entity.composer,
       lastPracticed: entity.lastPracticed,
     );
   }
@@ -24,7 +35,8 @@ class PieceModel extends PieceEntity {
   factory PieceModel.fromMap(Map<String, dynamic> json) {
     return PieceModel(
       id: json["id"],
-      name: json["name"],
+      title: json["title"],
+      composer: json["composer"],
       lastPracticed: json["lastPracticed"],
     );
   }
@@ -32,9 +44,19 @@ class PieceModel extends PieceEntity {
   Map<String, dynamic> toMap() {
     final Map<String, dynamic> map = {
       "id": id,
-      "name": name,
+      "title": title,
+      "composer": composer,
       "lastPracticed": lastPracticed,
     };
     return map;
+  }
+
+  PieceEntity toEntity() {
+    return PieceEntity(
+      id: this.id,
+      title: this.title,
+      composer: this.composer,
+      lastPracticed: this.lastPracticed,
+    );
   }
 }

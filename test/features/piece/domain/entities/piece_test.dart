@@ -3,28 +3,34 @@ import 'package:my_musical_repertoire/core/consts.dart';
 import 'package:my_musical_repertoire/core/errors/validation_error.dart';
 import 'package:my_musical_repertoire/features/piece/domain/entities/piece_entity.dart';
 
-PieceEntity fakerPiece({String name, DateTime date}) {
-  if (name == null) {
-    name = "Moonlight Sonata";
+PieceEntity fakerPiece({String title, String composer, DateTime date}) {
+  if (title == null) {
+    title = "Moonlight Sonata";
   }
   if (date == null) {
     date = DateTime(2019, 03, 14, 23, 59);
   }
+  if (composer == null) {
+    composer = "Beethoven";
+  }
   return PieceEntity(
     id: "e085aac6-096c-41e8-9214-242b656691db",
-    name: name,
+    title: title,
+    composer: composer,
     lastPracticed: date,
   );
 }
 
 PieceEntity copyFrom(
   PieceEntity original, {
-  String name,
+  String title,
+  String composer,
   DateTime lastPracticed,
 }) {
   return PieceEntity(
     id: original.id,
-    name: name != null ? name : original.name,
+    title: title != null ? title : original.title,
+    composer: composer != null ? composer : original.composer,
     lastPracticed: lastPracticed != null ? lastPracticed : original.lastPracticed,
   );
 }
@@ -39,23 +45,41 @@ void main() {
       original = fakerPiece();
     });
 
-    test('Be a valid', () {
+    test('Be a valid when all fields are used and valid', () {
       piece = fakerPiece();
       expect(piece.validate(), isEmpty);
     });
 
-    test('Validate name too short', () {
-      piece = fakerPiece(name: '12');
-      expect(
+    test('Validate title required', () {
+      final testData = [
+        fakerPiece(title: ''),
+        PieceEntity(id: original.id, title: null, composer: original.composer, lastPracticed: original.lastPracticed),
+      ];
+
+      for (piece in testData) {
+        expect(
           piece.validate(),
-          equals(
-            [
-              ValidationInfo(
-                type: ValidationTypes.nameTooShort,
-                data: ValidationConsts.nameLengthMin.toString(),
-              )
-            ],
-          ));
+          equals([ValidationInfo(type: ValidationTypes.titleRequired)]),
+        );
+      }
+
+      piece = fakerPiece(title: '');
+    });
+
+    test('Validate composer required', () {
+      final testData = [
+        fakerPiece(composer: ''),
+        PieceEntity(id: original.id, title: original.title, composer: null, lastPracticed: original.lastPracticed),
+      ];
+
+      for (piece in testData) {
+        expect(
+          piece.validate(),
+          equals([ValidationInfo(type: ValidationTypes.composerRequired)]),
+        );
+      }
+
+      piece = fakerPiece(title: '');
     });
 
     test('Validate date is in the future', () {
@@ -67,7 +91,7 @@ void main() {
           ));
     });
 
-    test('Be equal to itself', () {
+    test('Be equal to itself when two contain the same values', () {
       copy = copyFrom(original);
       expect(copy, original);
     });
@@ -75,11 +99,14 @@ void main() {
     test("Not be equal to itself when changing any property", () {
       final testData = [
         // Name
-        PieceEntity(id: original.id, name: 'different', lastPracticed: original.lastPracticed),
-        PieceEntity(id: original.id, name: null, lastPracticed: original.lastPracticed),
+        PieceEntity(id: original.id, title: 'different', composer: original.composer, lastPracticed: original.lastPracticed),
+        PieceEntity(id: original.id, title: null, composer: original.composer, lastPracticed: original.lastPracticed),
+        // Composer
+        PieceEntity(id: original.id, title: original.title, composer: 'different', lastPracticed: original.lastPracticed),
+        PieceEntity(id: original.id, title: original.title, composer: null, lastPracticed: original.lastPracticed),
         // Date
-        PieceEntity(id: original.id, name: original.name, lastPracticed: DateTime(2017)),
-        PieceEntity(id: original.id, name: original.name, lastPracticed: null),
+        PieceEntity(id: original.id, title: original.title, composer: original.composer, lastPracticed: DateTime(2017)),
+        PieceEntity(id: original.id, title: original.title, composer: original.composer, lastPracticed: null),
       ];
 
       for (copy in testData) {
@@ -87,11 +114,12 @@ void main() {
       }
     });
 
-    test('copy() should be equal to the original', () {
+    test('copy() should be equal to the original when nothing is changed', () {
       final testData = [
         original.copy(),
         original.copy(id: null),
-        original.copy(name: null),
+        original.copy(title: null),
+        original.copy(composer: null),
         original.copy(lastPracticed: null),
       ];
 
@@ -100,10 +128,11 @@ void main() {
       }
     });
 
-    test("copy(param) with a parameter should not be equal to the original", () {
+    test("copy() with a parameter should not be equal to the original when changing", () {
       final testData = [
         original.copy(id: 'different'),
-        original.copy(name: 'different'),
+        original.copy(title: 'different'),
+        original.copy(composer: 'different'),
         original.copy(lastPracticed: DateTime(2017)),
       ];
 

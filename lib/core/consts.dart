@@ -1,3 +1,3 @@
 class ValidationConsts {
-  static const nameLengthMin = 3;
+  static const nameLengthMin = 2;
 }

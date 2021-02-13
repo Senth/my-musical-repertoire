@@ -52,17 +52,6 @@ void main() {
       expect(practice.validate(), isEmpty);
     });
 
-    test("Validate that id is not defined", () {
-      List<PracticeEntity> testData = [
-        fakerPractice(id: 'null'),
-        fakerPractice(id: ''),
-      ];
-
-      for (practice in testData) {
-        expect(practice.validate(), equals([ValidationInfo(type: ValidationTypes.idNotDefined)]));
-      }
-    });
-
     test("Validate that date is in the future", () {
       practice = fakerPractice(date: DateTime.now().add(Duration(minutes: 1)));
       expect(
