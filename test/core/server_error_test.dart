@@ -1,25 +1,25 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_musical_repertoire/core/errors/server_error.dart';
+import 'package:my_musical_repertoire/core/failures/server_failure.dart';
 
 void main() {
   group("ServerError (#cold) ->", () {
     test("two ServerErrors should be equal when all properties are equal", () {
       final testData = [
         [
-          ServerError(type: ServerErrorTypes.idNotNullWhenAddNew),
-          ServerError(type: ServerErrorTypes.idNotNullWhenAddNew),
+          ServerFailure(type: ServerFailureTypes.idNotNullWhenAddNew),
+          ServerFailure(type: ServerFailureTypes.idNotNullWhenAddNew),
         ],
         [
-          ServerError(type: null),
-          ServerError(type: null),
+          ServerFailure(type: null),
+          ServerFailure(type: null),
         ],
         [
-          ServerError(),
-          ServerError(type: ServerErrorTypes.unknown),
+          ServerFailure(),
+          ServerFailure(type: ServerFailureTypes.unknown),
         ]
       ];
 
-      for (List<ServerError> test in testData) {
+      for (List<ServerFailure> test in testData) {
         expect(test[0], test[1]);
       }
     });
@@ -27,20 +27,20 @@ void main() {
     test("two ServerErrors should not be equal when one property differ", () {
       final testData = [
         [
-          ServerError(type: ServerErrorTypes.idNotNullWhenAddNew),
-          ServerError(type: ServerErrorTypes.unknown),
+          ServerFailure(type: ServerFailureTypes.idNotNullWhenAddNew),
+          ServerFailure(type: ServerFailureTypes.unknown),
         ],
         [
-          ServerError(type: null),
-          ServerError(type: ServerErrorTypes.unknown),
+          ServerFailure(type: null),
+          ServerFailure(type: ServerFailureTypes.unknown),
         ],
         [
-          ServerError(),
-          ServerError(type: null),
+          ServerFailure(),
+          ServerFailure(type: null),
         ],
       ];
 
-      for (List<ServerError> test in testData) {
+      for (List<ServerFailure> test in testData) {
         expect(test[0], isNot(test[1]));
       }
     });

@@ -1,7 +1,7 @@
 import 'package:meta/meta.dart';
 
 import '../../../../core/entity.dart';
-import '../../../../core/errors/validation_error.dart';
+import '../../../../core/failures/validation_failure.dart';
 
 class PracticeEntity extends Entity {
   final String pieceId;

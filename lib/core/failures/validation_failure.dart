@@ -1,11 +1,11 @@
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
-import 'error.dart';
+import 'failure.dart';
 
-class ValidationError extends Error {
+class ValidationFailure extends Failure {
   final List<ValidationInfo> errors;
 
-  ValidationError(this.errors);
+  ValidationFailure(this.errors);
 
   @override
   List<Object> get props => [this.errors];

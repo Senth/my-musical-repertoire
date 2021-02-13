@@ -1,8 +1,7 @@
-import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:my_musical_repertoire/core/errors/exceptions.dart';
-import 'package:my_musical_repertoire/core/errors/server_error.dart';
+import 'package:my_musical_repertoire/core/failures/exceptions.dart';
+import 'package:my_musical_repertoire/core/failures/server_failure.dart';
 import 'package:my_musical_repertoire/features/piece/data/datasources/piece_local_data_source.dart';
 import 'package:my_musical_repertoire/features/piece/data/models/piece_model.dart';
 import 'package:my_musical_repertoire/features/piece/data/repositories/piece_repository_impl.dart';
@@ -31,23 +30,21 @@ void main() {
 
         verify(mockLocalDataSource.addPiece(pieceModel));
         verifyNoMoreInteractions(mockLocalDataSource);
-        expect(result.getOrElse(null), isA<PieceEntity>());
-        expect(result, equals(Right(PieceEntity(id: piece.id, title: piece.title, composer: piece.composer))));
+        expect(result, isA<PieceEntity>());
+        expect(result, equals(PieceEntity(id: piece.id, title: piece.title, composer: piece.composer)));
       });
 
-      test("should return a ServerError when the repository throws a LocalServerException", () async {
+      test("should throw a ServerFailure when the repository throws a LocalServerException", () {
         when(mockLocalDataSource.addPiece(any)).thenAnswer((_) async => throw LocalServerException());
-        final result = await repository.addPiece(piece);
+        expect(() => repository.addPiece(piece), throwsA(isA<ServerFailure>()));
         verify(mockLocalDataSource.addPiece(pieceModel));
         verifyNoMoreInteractions(mockLocalDataSource);
-        expect(result, equals(Left(ServerError())));
       });
 
-      test("should return a ServerError with type idNotNull when adding a piece with id != null", () async {
+      test("should throw a ServerError with type idNotNull when adding a piece with id != null", () {
         final piece = PieceEntity(id: "", title: "Something", composer: "Something");
-        final result = await repository.addPiece(piece);
         verifyZeroInteractions(mockLocalDataSource);
-        expect(result, equals(Left(ServerError(type: ServerErrorTypes.idNotNullWhenAddNew))));
+        expect(() => repository.addPiece(piece), throwsA(ServerFailure(type: ServerFailureTypes.idNotNullWhenAddNew)));
       });
     });
 
@@ -57,15 +54,14 @@ void main() {
         final result = await repository.removePiece(piece.id);
         verify(mockLocalDataSource.removePiece(piece.id));
         verifyNoMoreInteractions(mockLocalDataSource);
-        expect(result, equals(Right(piece.id)));
+        expect(result, equals(piece.id));
       });
 
-      test("should return a LocalServerError when the repository throws a LocalServerException", () async {
+      test("should throw a ServerFailure when the repository throws a LocalServerException", () {
         when(mockLocalDataSource.removePiece(any)).thenAnswer((_) async => throw LocalServerException());
-        final result = await repository.removePiece(piece.id);
+        expect(() => repository.removePiece(piece.id), throwsA(isA<ServerFailure>()));
         verify(mockLocalDataSource.removePiece(piece.id));
         verifyNoMoreInteractions(mockLocalDataSource);
-        expect(result, equals(Left(ServerError())));
       });
     });
 
@@ -75,16 +71,15 @@ void main() {
         final result = await repository.updatePiece(piece);
         verify(mockLocalDataSource.updatePiece(pieceModel));
         verifyNoMoreInteractions(mockLocalDataSource);
-        expect(result.getOrElse(null), isA<PieceEntity>());
-        expect(result, equals(Right(piece)));
+        expect(result, isA<PieceEntity>());
+        expect(result, equals(piece));
       });
 
-      test("should return a LocalServerError when the repository throws a LocalServerException", () async {
+      test("should throw a ServerFailure when the repository throws a LocalServerException", () {
         when(mockLocalDataSource.updatePiece(any)).thenAnswer((_) async => throw LocalServerException());
-        final result = await repository.updatePiece(piece);
+        expect(() => repository.updatePiece(piece), throwsA(isA<ServerFailure>()));
         verify(mockLocalDataSource.updatePiece(pieceModel));
         verifyNoMoreInteractions(mockLocalDataSource);
-        expect(result, equals(Left(ServerError())));
       });
     });
   });

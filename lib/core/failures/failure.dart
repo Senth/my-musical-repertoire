@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-abstract class Error extends Equatable {
+abstract class Failure extends Equatable {
   @override
   bool get stringify => true;
 
