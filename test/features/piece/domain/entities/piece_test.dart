@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_musical_repertoire/core/consts.dart';
-import 'package:my_musical_repertoire/core/errors/validation_error.dart';
+import 'package:my_musical_repertoire/core/failures/validation_failure.dart';
 import 'package:my_musical_repertoire/features/piece/domain/entities/piece_entity.dart';
 
 PieceEntity fakerPiece({String title, String composer, DateTime date}) {

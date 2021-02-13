@@ -1,8 +1,7 @@
-import 'package:dartz/dartz.dart';
 import 'package:meta/meta.dart';
+import 'package:my_musical_repertoire/core/failures/exceptions.dart';
 
-import '../../../../core/errors/error.dart';
-import '../../../../core/errors/server_error.dart';
+import '../../../../core/failures/server_failure.dart';
 import '../../domain/entities/piece_entity.dart';
 import '../../domain/repositories/piece_repository.dart';
 import '../datasources/piece_local_data_source.dart';
@@ -14,36 +13,35 @@ class PieceRepositoryImpl implements PieceRepository {
   PieceRepositoryImpl({@required this.localDataSource});
 
   @override
-  Future<Either<Error, PieceEntity>> addPiece(PieceEntity piece) async {
+  Future<PieceEntity> addPiece(PieceEntity piece) async {
     if (piece.id != null) {
-      return Left(ServerError(type: ServerErrorTypes.idNotNullWhenAddNew));
+      throw ServerFailure(type: ServerFailureTypes.idNotNullWhenAddNew);
     }
 
     try {
-      final result = await localDataSource.addPiece(PieceModel.fromEntity(piece));
-      return Right(result.toEntity());
-    } catch (LocalServerException) {
-      return Left(ServerError());
-    }
-  }
-
-  @override
-  Future<Either<Error, String>> removePiece(String id) async {
-    try {
-      final result = await localDataSource.removePiece(id);
-      return Right(result);
-    } catch (LocalServerException) {
-      return Left(ServerError());
+      final model = await localDataSource.addPiece(PieceModel.fromEntity(piece));
+      return model.toEntity();
+    } on LocalServerException {
+      throw ServerFailure();
     }
   }
 
   @override
-  Future<Either<Error, PieceEntity>> updatePiece(PieceEntity piece) async {
+  Future<String> removePiece(String id) async {
     try {
-      final result = await localDataSource.updatePiece(PieceModel.fromEntity(piece));
-      return Right(result.toEntity());
+      return await localDataSource.removePiece(id);
+    } on LocalServerException {
+      throw ServerFailure();
+    }
+  }
+
+  @override
+  Future<PieceEntity> updatePiece(PieceEntity piece) async {
+    try {
+      final model = await localDataSource.updatePiece(PieceModel.fromEntity(piece));
+      return model.toEntity();
     } catch (LocalServerException) {
-      return Left(ServerError());
+      throw ServerFailure();
     }
   }
 }

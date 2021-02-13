@@ -19,7 +19,7 @@ void main() {
 
     test('Call the repository with the piece and get the piece back', () async {
       final piece = fakerPiece();
-      when(mockPieceRepository.updatePiece(any)).thenAnswer((_) async => Right(piece));
+      when(mockPieceRepository.updatePiece(any)).thenAnswer((_) async => piece);
 
       final result = await usecase(piece);
 

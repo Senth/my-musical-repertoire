@@ -18,7 +18,7 @@ void main() {
 
     test('Call the repository to remove the piece with the specified id', () async {
       final String id = "9af5b94b-509d-47f2-a774-634c6e6d7902";
-      when(mockPieceRepository.removePiece(any)).thenAnswer((_) async => Right(id));
+      when(mockPieceRepository.removePiece(any)).thenAnswer((_) async => id);
 
       final result = await usecase(id);
 

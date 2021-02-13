@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'errors/validation_error.dart';
+import 'failures/validation_failure.dart';
 
 abstract class Entity extends Equatable {
   final String id;
