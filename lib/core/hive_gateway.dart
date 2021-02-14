@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:hive/hive.dart';
 import 'package:path/path.dart' as path;
+import 'package:uuid/uuid.dart';
 
 class HiveGateway {
+  static final Uuid _uuid = Uuid();
   static Future<Box> _piecesBox;
   static bool _testing;
 
@@ -23,6 +25,10 @@ class HiveGateway {
 
     _piecesBox = Hive.openBox('pieces');
   }
+
+  static String generateId() => _uuid.v4();
+
+  static Future<Box> get piecesBox => _piecesBox;
 
   static close() async {
     // Remove test databases
