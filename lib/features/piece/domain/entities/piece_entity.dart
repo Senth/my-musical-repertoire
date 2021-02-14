@@ -51,10 +51,10 @@ class PieceEntity extends Entity {
   /// method is called. When passing in null, it will use this value instead.
   /// @return copy of this piece
   PieceEntity copy({
-    id,
-    title,
-    composer,
-    lastPracticed,
+    String id,
+    String title,
+    String composer,
+    DateTime lastPracticed,
   }) {
     return new PieceEntity(
       id: id != null ? id : this.id,

@@ -1,6 +1,5 @@
 import 'package:meta/meta.dart';
 import '../../../../core/model.dart';
-
 import '../../domain/entities/piece_entity.dart';
 
 class PieceModel extends Model {
