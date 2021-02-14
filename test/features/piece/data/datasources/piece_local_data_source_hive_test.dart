@@ -12,8 +12,7 @@ void main() {
     setUpAll(() => repo = PieceLocalDataSourceHive());
 
     group("addPiece()", () {
-      test("should add the specified piece to the DB and return with the new pieceModel when that piece doesn't exist",
-          () async {
+      test("should add the piece to the DB and return with inserted (with ID) when that piece does not exist", () async {
         final testData = [
           PieceModel(title: "Moonlight Sonata", composer: "Beethoven"),
           PieceModel(title: "Ronda alla Turca", composer: "Mozart", lastPracticed: DateTime.now())
