@@ -3,7 +3,6 @@ import 'package:mockito/mockito.dart';
 import 'package:my_musical_repertoire/core/failures/exceptions.dart';
 import 'package:my_musical_repertoire/core/failures/server_failure.dart';
 import 'package:my_musical_repertoire/features/piece/data/datasources/piece_local_data_source.dart';
-import 'package:my_musical_repertoire/features/piece/data/models/piece_model.dart';
 import 'package:my_musical_repertoire/features/piece/data/repositories/piece_repository_impl.dart';
 import 'package:my_musical_repertoire/features/piece/domain/entities/piece_entity.dart';
 
@@ -14,7 +13,6 @@ void main() {
     PieceRepositoryImpl repository;
     MockLocalDataSource mockLocalDataSource;
     final piece = PieceEntity(id: null, title: "Test name", composer: "Composer");
-    final pieceModel = PieceModel(id: piece.id, title: piece.title, composer: piece.composer);
 
     setUp(() {
       mockLocalDataSource = MockLocalDataSource();
@@ -24,11 +22,11 @@ void main() {
     group("addPiece()", () {
       test("should return the local and updated piece when adding a piece", () async {
         final piece = PieceEntity(id: null, title: "Test name", composer: "Composer");
-        when(mockLocalDataSource.addPiece(any)).thenAnswer((_) async => pieceModel);
+        when(mockLocalDataSource.addPiece(any)).thenAnswer((_) async => piece);
 
         final result = await repository.addPiece(piece);
 
-        verify(mockLocalDataSource.addPiece(pieceModel));
+        verify(mockLocalDataSource.addPiece(piece));
         verifyNoMoreInteractions(mockLocalDataSource);
         expect(result, isA<PieceEntity>());
         expect(result, equals(PieceEntity(id: piece.id, title: piece.title, composer: piece.composer)));
@@ -37,7 +35,7 @@ void main() {
       test("should throw a ServerFailure when the repository throws a LocalServerException", () {
         when(mockLocalDataSource.addPiece(any)).thenAnswer((_) async => throw LocalServerException());
         expect(() => repository.addPiece(piece), throwsA(isA<ServerFailure>()));
-        verify(mockLocalDataSource.addPiece(pieceModel));
+        verify(mockLocalDataSource.addPiece(piece));
         verifyNoMoreInteractions(mockLocalDataSource);
       });
 
@@ -67,9 +65,9 @@ void main() {
 
     group("updatePiece()", () {
       test("should return the local and updated piece when updating a piece", () async {
-        when(mockLocalDataSource.updatePiece(any)).thenAnswer((_) async => pieceModel);
+        when(mockLocalDataSource.updatePiece(any)).thenAnswer((_) async => piece);
         final result = await repository.updatePiece(piece);
-        verify(mockLocalDataSource.updatePiece(pieceModel));
+        verify(mockLocalDataSource.updatePiece(piece));
         verifyNoMoreInteractions(mockLocalDataSource);
         expect(result, isA<PieceEntity>());
         expect(result, equals(piece));
@@ -78,7 +76,7 @@ void main() {
       test("should throw a ServerFailure when the repository throws a LocalServerException", () {
         when(mockLocalDataSource.updatePiece(any)).thenAnswer((_) async => throw LocalServerException());
         expect(() => repository.updatePiece(piece), throwsA(isA<ServerFailure>()));
-        verify(mockLocalDataSource.updatePiece(pieceModel));
+        verify(mockLocalDataSource.updatePiece(piece));
         verifyNoMoreInteractions(mockLocalDataSource);
       });
     });

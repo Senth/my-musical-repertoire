@@ -113,6 +113,42 @@ void main() {
       }
     });
 
+    test("fromJson() should return a valid entity when all the fields are valid", () {
+      final testData = [
+        {
+          "input": {"id": "1", "title": "Moonlight", "composer": "Beethoven"},
+          "expected": PieceEntity(id: '1', title: 'Moonlight', composer: 'Beethoven'),
+        },
+        {
+          "input": {"id": "1", "title": "Moonlight", "composer": "Beethoven", "lastPracticed": "2020-02-13T00:00:00.000"},
+          "expected": PieceEntity(id: '1', title: 'Moonlight', composer: 'Beethoven', lastPracticed: DateTime(2020, 02, 13)),
+        },
+      ];
+
+      for (final test in testData) {
+        final result = PieceEntity.fromJson(test["input"]);
+        expect(result, test["expected"]);
+      }
+    });
+
+    test("toJson() should return a valid map when the JSON model is valid", () {
+      final testData = [
+        {
+          "input": PieceEntity(id: '1', title: 'Moonlight', composer: 'Beethoven'),
+          "expected": {"id": "1", "title": "Moonlight", "composer": "Beethoven", "lastPracticed": null},
+        },
+        {
+          "input": PieceEntity(id: '1', title: 'Moonlight', composer: 'Beethoven', lastPracticed: DateTime(2020, 02, 13)),
+          "expected": {"id": "1", "title": "Moonlight", "composer": "Beethoven", "lastPracticed": "2020-02-13T00:00:00.000"},
+        },
+      ];
+
+      for (final test in testData) {
+        final result = (test["input"] as PieceEntity).toJson();
+        expect(result, test["expected"]);
+      }
+    });
+
     test('copy() should be equal to the original when nothing is changed', () {
       final testData = [
         original.copy(),

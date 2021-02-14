@@ -1,8 +1,12 @@
 import 'package:meta/meta.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 import '../../../../core/entity.dart';
 import '../../../../core/failures/validation_failure.dart';
 
+part 'piece_entity.g.dart';
+
+@JsonSerializable()
 class PieceEntity extends Entity {
   final String title;
   final String composer;
@@ -15,17 +19,17 @@ class PieceEntity extends Entity {
     this.lastPracticed,
   }) : super(id);
 
+  factory PieceEntity.fromJson(Map<String, dynamic> json) => _$PieceEntityFromJson(json);
+  Map<String, dynamic> toJson() => _$PieceEntityToJson(this);
+
   @override
   List<Object> get props {
-    final List<Object> props = super.props;
-
-    props.addAll([
+    return [
+      ...super.props,
       this.title,
       this.composer,
       this.lastPracticed,
-    ]);
-
-    return props;
+    ];
   }
 
   @override

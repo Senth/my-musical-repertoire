@@ -5,7 +5,6 @@ import '../../../../core/failures/server_failure.dart';
 import '../../domain/entities/piece_entity.dart';
 import '../../domain/repositories/piece_repository.dart';
 import '../datasources/piece_local_data_source.dart';
-import '../models/piece_model.dart';
 
 class PieceRepositoryImpl implements PieceRepository {
   final PieceLocalDataSource localDataSource;
@@ -19,8 +18,7 @@ class PieceRepositoryImpl implements PieceRepository {
     }
 
     try {
-      final model = await localDataSource.addPiece(PieceModel.fromEntity(piece));
-      return model.toEntity();
+      return await localDataSource.addPiece(piece);
     } on LocalServerException {
       throw ServerFailure();
     }
@@ -38,8 +36,7 @@ class PieceRepositoryImpl implements PieceRepository {
   @override
   Future<PieceEntity> updatePiece(PieceEntity piece) async {
     try {
-      final model = await localDataSource.updatePiece(PieceModel.fromEntity(piece));
-      return model.toEntity();
+      return await localDataSource.updatePiece(piece);
     } catch (LocalServerException) {
       throw ServerFailure();
     }
