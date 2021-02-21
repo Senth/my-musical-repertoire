@@ -27,6 +27,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
+  bloc: ^6.1.1
   flutter_bloc: ^6.1.1
   # Value equality
   equatable: ^1.2.6
