@@ -15,4 +15,8 @@ abstract class PieceRepository {
   /// Returns the [id] if the piece was successfully removed.
   /// Throws a [Failure] if something went wrong
   Future<String> removePiece(String id);
+
+  /// Get all pieces
+  /// Throws a [Failure] if something went wrong
+  Future<List<PieceEntity>> getPieces();
 }

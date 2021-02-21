@@ -11,8 +11,7 @@ void main() {
     tearDown(() => HiveGateway.close());
     setUpAll(() => repo = PieceLocalDataSourceHive());
 
-    test("addPiece() should add the piece to the DB and return with inserted (with ID) when that piece does not exist",
-        () async {
+    test("add() should add the piece to the DB and return with inserted (with ID) when that piece does not exist", () async {
       final testData = [
         PieceEntity(title: "Moonlight Sonata", composer: "Beethoven"),
         PieceEntity(title: "Ronda alla Turca", composer: "Mozart", lastPracticed: DateTime.now())
@@ -20,13 +19,13 @@ void main() {
       final box = await HiveGateway.piecesBox;
 
       for (final test in testData) {
-        final result = await repo.addPiece(test);
+        final result = await repo.add(test);
         expect(result, test.copy(id: result.id));
         expect(box.get(result.id), result.toJson());
       }
     });
 
-    test("removePiece() should remove the piece from the DB when the piece exists in the DB", () async {
+    test("remove() should remove the piece from the DB when the piece exists in the DB", () async {
       final box = await HiveGateway.piecesBox;
       final testData = [
         PieceEntity(id: "1", title: "Moonlight", composer: "Beethoven"),
@@ -35,12 +34,12 @@ void main() {
 
       for (final test in testData) {
         await box.put(test.id, test.toJson());
-        final result = await repo.removePiece(test.id);
+        final result = await repo.remove(test.id);
         expect(result, test.id);
       }
     });
 
-    test("updatePiece() should update the saved piece when updating with new values", () async {
+    test("update() should update the saved piece when updating with new values", () async {
       final box = await HiveGateway.piecesBox;
       final testData = [
         PieceEntity(id: "1", title: "Moonlight", composer: "Beethoven"),
@@ -49,10 +48,24 @@ void main() {
       ];
 
       for (final test in testData) {
-        final result = await repo.updatePiece(test);
+        final result = await repo.update(test);
         expect(result, test);
         expect(result, PieceEntity.fromJson(await box.get(test.id)));
       }
+    });
+
+    test("getAll() should return all saved entities when everything is working", () async {
+      final box = await HiveGateway.piecesBox;
+      final testData = [
+        PieceEntity(id: "1", title: "Moonlight", composer: "Beethoven"),
+        PieceEntity(id: "2", title: "Turca", composer: "Mozart"),
+        PieceEntity(id: "3", title: "Military March", composer: "Schubert"),
+      ];
+      final testDataMap = {for (final entity in testData) entity.id: entity.toJson()};
+      box.putAll(testDataMap);
+
+      final result = await repo.getAll();
+      expect(result, testData);
     });
   });
 }

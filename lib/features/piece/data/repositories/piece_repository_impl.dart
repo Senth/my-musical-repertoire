@@ -18,7 +18,7 @@ class PieceRepositoryImpl implements PieceRepository {
     }
 
     try {
-      return await localDataSource.addPiece(piece);
+      return await localDataSource.add(piece);
     } on LocalServerException {
       throw ServerFailure();
     }
@@ -27,7 +27,7 @@ class PieceRepositoryImpl implements PieceRepository {
   @override
   Future<String> removePiece(String id) async {
     try {
-      return await localDataSource.removePiece(id);
+      return await localDataSource.remove(id);
     } on LocalServerException {
       throw ServerFailure();
     }
@@ -36,8 +36,17 @@ class PieceRepositoryImpl implements PieceRepository {
   @override
   Future<PieceEntity> updatePiece(PieceEntity piece) async {
     try {
-      return await localDataSource.updatePiece(piece);
-    } catch (LocalServerException) {
+      return await localDataSource.update(piece);
+    } on LocalServerException {
+      throw ServerFailure();
+    }
+  }
+
+  @override
+  Future<List<PieceEntity>> getPieces() async {
+    try {
+      return await localDataSource.getAll();
+    } on LocalServerException {
       throw ServerFailure();
     }
   }
