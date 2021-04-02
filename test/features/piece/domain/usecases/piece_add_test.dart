@@ -10,8 +10,8 @@ class _MockPieceRepository extends Mock implements PieceRepository {}
 
 void main() {
   group("Add Piece should (#usecase #cold) ->", () {
-    PieceAdd usecase;
-    _MockPieceRepository mockPieceRepository;
+    late PieceAdd usecase;
+    _MockPieceRepository? mockPieceRepository;
 
     setUp(() {
       mockPieceRepository = _MockPieceRepository();
@@ -20,12 +20,12 @@ void main() {
 
     test('Call the repository with the piece and get the piece back', () async {
       final piece = fakerPiece();
-      when(mockPieceRepository.addPiece(any)).thenAnswer((_) async => piece);
+      when(mockPieceRepository!.addPiece(any!)).thenAnswer((_) async => piece);
 
-      final result = await usecase(piece);
+      final Either<Failure, PieceEntity>? result = await usecase(piece);
 
       expect(result, Right(piece));
-      verify(mockPieceRepository.addPiece(piece));
+      verify(mockPieceRepository!.addPiece(piece));
       verifyNoMoreInteractions(mockPieceRepository);
     });
   });

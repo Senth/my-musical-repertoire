@@ -10,16 +10,16 @@ class PracticeEntity extends Entity {
   final PracticeMistakes memoryFlubs;
 
   PracticeEntity({
-    String id,
-    @required this.pieceId,
-    @required this.date,
-    @required this.technicalMistakes,
-    @required this.memoryFlubs,
+    String? id,
+    required this.pieceId,
+    required this.date,
+    required this.technicalMistakes,
+    required this.memoryFlubs,
   }) : super(id);
 
   @override
-  List<Object> get props {
-    final List<Object> props = super.props;
+  List<Object?> get props {
+    final List<Object?> props = super.props;
 
     props.add([
       this.pieceId,
@@ -44,11 +44,11 @@ class PracticeEntity extends Entity {
   }
 
   PracticeEntity copy({
-    String id,
-    String pieceId,
-    DateTime date,
-    PracticeMistakes technicalMistakes,
-    PracticeMistakes memoryFlubs,
+    String? id,
+    String? pieceId,
+    DateTime? date,
+    PracticeMistakes? technicalMistakes,
+    PracticeMistakes? memoryFlubs,
   }) {
     return new PracticeEntity(
       id: id != null ? id : this.id,

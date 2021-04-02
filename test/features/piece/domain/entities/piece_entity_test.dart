@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:my_musical_repertoire/core/failures/validation_failure.dart';
 import 'package:my_musical_repertoire/features/piece/domain/entities/piece_entity.dart';
 
-PieceEntity fakerPiece({String title, String composer, DateTime date}) {
+PieceEntity fakerPiece({String? title, String? composer, DateTime? date}) {
   if (title == null) {
     title = "Moonlight Sonata";
   }
@@ -22,9 +22,9 @@ PieceEntity fakerPiece({String title, String composer, DateTime date}) {
 
 PieceEntity copyFrom(
   PieceEntity original, {
-  String title,
-  String composer,
-  DateTime lastPracticed,
+  String? title,
+  String? composer,
+  DateTime? lastPracticed,
 }) {
   return PieceEntity(
     id: original.id,
@@ -37,7 +37,7 @@ PieceEntity copyFrom(
 void main() {
   group("Piece Entity should (#entity #cold) ->", () {
     PieceEntity piece;
-    PieceEntity original;
+    PieceEntity? original;
     PieceEntity copy;
 
     setUp(() {
@@ -52,7 +52,7 @@ void main() {
     test('Validate title required', () {
       final testData = [
         fakerPiece(title: ''),
-        PieceEntity(id: original.id, title: null, composer: original.composer, lastPracticed: original.lastPracticed),
+        PieceEntity(id: original!.id, title: null, composer: original!.composer, lastPracticed: original!.lastPracticed),
       ];
 
       for (piece in testData) {
@@ -68,7 +68,7 @@ void main() {
     test('Validate composer required', () {
       final testData = [
         fakerPiece(composer: ''),
-        PieceEntity(id: original.id, title: original.title, composer: null, lastPracticed: original.lastPracticed),
+        PieceEntity(id: original!.id, title: original!.title, composer: null, lastPracticed: original!.lastPracticed),
       ];
 
       for (piece in testData) {
@@ -91,21 +91,21 @@ void main() {
     });
 
     test('Be equal to itself when two contain the same values', () {
-      copy = copyFrom(original);
+      copy = copyFrom(original!);
       expect(copy, original);
     });
 
     test("Not be equal to itself when changing any property", () {
       final testData = [
         // Name
-        PieceEntity(id: original.id, title: 'different', composer: original.composer, lastPracticed: original.lastPracticed),
-        PieceEntity(id: original.id, title: null, composer: original.composer, lastPracticed: original.lastPracticed),
+        PieceEntity(id: original!.id, title: 'different', composer: original!.composer, lastPracticed: original!.lastPracticed),
+        PieceEntity(id: original!.id, title: null, composer: original!.composer, lastPracticed: original!.lastPracticed),
         // Composer
-        PieceEntity(id: original.id, title: original.title, composer: 'different', lastPracticed: original.lastPracticed),
-        PieceEntity(id: original.id, title: original.title, composer: null, lastPracticed: original.lastPracticed),
+        PieceEntity(id: original!.id, title: original!.title, composer: 'different', lastPracticed: original!.lastPracticed),
+        PieceEntity(id: original!.id, title: original!.title, composer: null, lastPracticed: original!.lastPracticed),
         // Date
-        PieceEntity(id: original.id, title: original.title, composer: original.composer, lastPracticed: DateTime(2017)),
-        PieceEntity(id: original.id, title: original.title, composer: original.composer, lastPracticed: null),
+        PieceEntity(id: original!.id, title: original!.title, composer: original!.composer, lastPracticed: DateTime(2017)),
+        PieceEntity(id: original!.id, title: original!.title, composer: original!.composer, lastPracticed: null),
       ];
 
       for (copy in testData) {
@@ -126,7 +126,7 @@ void main() {
       ];
 
       for (final test in testData) {
-        final result = PieceEntity.fromJson(test["input"]);
+        final result = PieceEntity.fromJson(test["input"] as Map<String, dynamic>);
         expect(result, test["expected"]);
       }
     });
@@ -151,11 +151,11 @@ void main() {
 
     test('copy() should be equal to the original when nothing is changed', () {
       final testData = [
-        original.copy(),
-        original.copy(id: null),
-        original.copy(title: null),
-        original.copy(composer: null),
-        original.copy(lastPracticed: null),
+        original!.copy(),
+        original!.copy(id: null),
+        original!.copy(title: null),
+        original!.copy(composer: null),
+        original!.copy(lastPracticed: null),
       ];
 
       for (copy in testData) {
@@ -165,10 +165,10 @@ void main() {
 
     test("copy() with a parameter should not be equal to the original when changing", () {
       final testData = [
-        original.copy(id: 'different'),
-        original.copy(title: 'different'),
-        original.copy(composer: 'different'),
-        original.copy(lastPracticed: DateTime(2017)),
+        original!.copy(id: 'different'),
+        original!.copy(title: 'different'),
+        original!.copy(composer: 'different'),
+        original!.copy(lastPracticed: DateTime(2017)),
       ];
 
       for (copy in testData) {

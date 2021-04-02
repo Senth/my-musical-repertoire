@@ -13,12 +13,12 @@ class ValidationFailure extends Failure {
 
 class ValidationInfo extends Equatable {
   final ValidationTypes type;
-  final String data;
+  final String? data;
 
-  ValidationInfo({@required this.type, this.data});
+  ValidationInfo({required this.type, this.data});
 
   @override
-  List<Object> get props => [this.type, this.data];
+  List<Object?> get props => [this.type, this.data];
 
   @override
   bool get stringify => true;

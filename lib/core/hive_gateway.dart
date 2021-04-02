@@ -6,8 +6,8 @@ import 'package:uuid/uuid.dart';
 
 class HiveGateway {
   static final Uuid _uuid = Uuid();
-  static Future<Box> _piecesBox;
-  static bool _testing;
+  static late Future<Box> _piecesBox;
+  static late bool _testing;
 
   static init({bool testing = false}) {
     String directory;
@@ -37,6 +37,5 @@ class HiveGateway {
     }
 
     await Hive.close();
-    _piecesBox = null;
   }
 }

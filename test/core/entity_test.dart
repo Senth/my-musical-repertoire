@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:my_musical_repertoire/core/entity.dart';
 
 class BaseEntity extends Entity {
-  BaseEntity(String id) : super(id);
+  BaseEntity(String? id) : super(id);
 }
 
 void main() {

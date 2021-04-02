@@ -8,14 +8,14 @@ part 'piece_entity.g.dart';
 
 @JsonSerializable()
 class PieceEntity extends Entity {
-  final String title;
-  final String composer;
-  final DateTime lastPracticed;
+  final String? title;
+  final String? composer;
+  final DateTime? lastPracticed;
 
   PieceEntity({
-    String id,
-    @required this.title,
-    @required this.composer,
+    String? id,
+    required this.title,
+    required this.composer,
     this.lastPracticed,
   }) : super(id);
 
@@ -23,7 +23,7 @@ class PieceEntity extends Entity {
   Map<String, dynamic> toJson() => _$PieceEntityToJson(this);
 
   @override
-  List<Object> get props {
+  List<Object?> get props {
     return [
       ...super.props,
       this.title,
@@ -43,7 +43,7 @@ class PieceEntity extends Entity {
     Entity.validateRequired(this.composer, ValidationTypes.composerRequired, errors);
 
     // Date should not be in the future
-    if (this.lastPracticed.isAfter(new DateTime.now())) {
+    if (this.lastPracticed!.isAfter(new DateTime.now())) {
       errors.add(new ValidationInfo(type: ValidationTypes.dateIsInTheFuture));
     }
 
@@ -55,10 +55,10 @@ class PieceEntity extends Entity {
   /// method is called. When passing in null, it will use this value instead.
   /// @return copy of this piece
   PieceEntity copy({
-    String id,
-    String title,
-    String composer,
-    DateTime lastPracticed,
+    String? id,
+    String? title,
+    String? composer,
+    DateTime? lastPracticed,
   }) {
     return new PieceEntity(
       id: id != null ? id : this.id,

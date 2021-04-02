@@ -7,14 +7,14 @@ import '../../../../core/use_case.dart';
 import '../repositories/piece_repository.dart';
 
 class PieceEdit extends UseCase<PieceEntity, PieceEntity> {
-  final PieceRepository repository;
+  final PieceRepository? repository;
 
   PieceEdit(this.repository);
 
   @override
   Future<Either<Failure, PieceEntity>> call(PieceEntity piece) async {
     try {
-      return Right(await repository.updatePiece(piece));
+      return Right(await repository!.updatePiece(piece));
     } on ServerFailure catch (e) {
       return Left(e);
     }

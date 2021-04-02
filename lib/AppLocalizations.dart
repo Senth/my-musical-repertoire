@@ -6,22 +6,22 @@ import 'package:flutter/services.dart';
 /// Helper function for translating
 /// @param context the context
 /// @param key the key of the translation
-String translate(BuildContext context, String key) {
-  return AppLocalizations.of(context).translate(key);
+String? translate(BuildContext context, String key) {
+  return AppLocalizations.of(context)!.translate(key);
 }
 
 class AppLocalizations {
   static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
   final Locale locale;
-  Map<String, String> _localizedStrings;
+  late Map<String, String> _localizedStrings;
 
   AppLocalizations(this.locale);
 
-  static AppLocalizations of(BuildContext context) {
+  static AppLocalizations? of(BuildContext context) {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  String translate(String key) => _localizedStrings[key];
+  String? translate(String key) => _localizedStrings[key];
 
   Future<void> load() async {
     String jsonString = await rootBundle.loadString('lang/${locale.languageCode}_${locale.countryCode}.json');

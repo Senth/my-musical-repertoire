@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:my_musical_repertoire/core/failures/validation_failure.dart';
 import 'package:my_musical_repertoire/features/piece/domain/entities/practice_entity.dart';
 
-PracticeEntity fakerPractice({String id, DateTime date}) {
+PracticeEntity fakerPractice({String? id, DateTime? date}) {
   if (id == null) {
     id = "8a079f87-be77-439c-99c1-1675b59d7bd5";
   }
@@ -14,7 +14,7 @@ PracticeEntity fakerPractice({String id, DateTime date}) {
   }
   return PracticeEntity(
     id: null,
-    pieceId: id,
+    pieceId: id!,
     date: date,
     technicalMistakes: PracticeMistakes.none,
     memoryFlubs: PracticeMistakes.none,
@@ -23,10 +23,10 @@ PracticeEntity fakerPractice({String id, DateTime date}) {
 
 PracticeEntity copyFrom(
   PracticeEntity original, {
-  String pieceId,
-  DateTime date,
-  PracticeMistakes technicalMistakes,
-  PracticeMistakes memoryFlubs,
+  String? pieceId,
+  DateTime? date,
+  PracticeMistakes? technicalMistakes,
+  PracticeMistakes? memoryFlubs,
 }) {
   return PracticeEntity(
     id: original.id,
@@ -40,7 +40,7 @@ PracticeEntity copyFrom(
 void main() {
   group("Practice Entity should (#entity #cold) ->", () {
     PracticeEntity practice;
-    PracticeEntity original;
+    PracticeEntity? original;
     PracticeEntity copy;
 
     setUp(() {
@@ -62,7 +62,7 @@ void main() {
     });
 
     test("Be equal to itself", () {
-      copy = copyFrom(original);
+      copy = copyFrom(original!);
       expect(copy, original);
     });
 
@@ -70,37 +70,37 @@ void main() {
       final testData = [
         PracticeEntity(
           id: 'different',
-          pieceId: original.pieceId,
-          date: original.date,
-          technicalMistakes: original.technicalMistakes,
-          memoryFlubs: original.memoryFlubs,
+          pieceId: original!.pieceId,
+          date: original!.date,
+          technicalMistakes: original!.technicalMistakes,
+          memoryFlubs: original!.memoryFlubs,
         ),
         PracticeEntity(
-          id: original.id,
+          id: original!.id,
           pieceId: 'different',
-          date: original.date,
-          technicalMistakes: original.technicalMistakes,
-          memoryFlubs: original.memoryFlubs,
+          date: original!.date,
+          technicalMistakes: original!.technicalMistakes,
+          memoryFlubs: original!.memoryFlubs,
         ),
         PracticeEntity(
-          id: original.id,
-          pieceId: original.pieceId,
+          id: original!.id,
+          pieceId: original!.pieceId,
           date: DateTime(2019),
-          technicalMistakes: original.technicalMistakes,
-          memoryFlubs: original.memoryFlubs,
+          technicalMistakes: original!.technicalMistakes,
+          memoryFlubs: original!.memoryFlubs,
         ),
         PracticeEntity(
-          id: original.id,
-          pieceId: original.pieceId,
-          date: original.date,
+          id: original!.id,
+          pieceId: original!.pieceId,
+          date: original!.date,
           technicalMistakes: PracticeMistakes.everywhere,
-          memoryFlubs: original.memoryFlubs,
+          memoryFlubs: original!.memoryFlubs,
         ),
         PracticeEntity(
-          id: original.id,
-          pieceId: original.pieceId,
-          date: original.date,
-          technicalMistakes: original.technicalMistakes,
+          id: original!.id,
+          pieceId: original!.pieceId,
+          date: original!.date,
+          technicalMistakes: original!.technicalMistakes,
           memoryFlubs: PracticeMistakes.everywhere,
         ),
       ];
@@ -112,12 +112,12 @@ void main() {
 
     test("copy() should be equal to the original", () {
       final testData = [
-        original.copy(),
-        original.copy(id: null),
-        original.copy(pieceId: null),
-        original.copy(date: null),
-        original.copy(technicalMistakes: null),
-        original.copy(memoryFlubs: null),
+        original!.copy(),
+        original!.copy(id: null),
+        original!.copy(pieceId: null),
+        original!.copy(date: null),
+        original!.copy(technicalMistakes: null),
+        original!.copy(memoryFlubs: null),
       ];
 
       for (copy in testData) {
@@ -127,11 +127,11 @@ void main() {
 
     test("copy(param) with a parameter should not be equal to the original", () {
       List<PracticeEntity> testData = [
-        original.copy(id: 'different'),
-        original.copy(pieceId: 'different'),
-        original.copy(date: DateTime(2019)),
-        original.copy(technicalMistakes: PracticeMistakes.everywhere),
-        original.copy(memoryFlubs: PracticeMistakes.everywhere),
+        original!.copy(id: 'different'),
+        original!.copy(pieceId: 'different'),
+        original!.copy(date: DateTime(2019)),
+        original!.copy(technicalMistakes: PracticeMistakes.everywhere),
+        original!.copy(memoryFlubs: PracticeMistakes.everywhere),
       ];
 
       for (copy in testData) {

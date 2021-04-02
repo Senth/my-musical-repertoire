@@ -8,8 +8,8 @@ class _MockPieceRepository extends Mock implements PieceRepository {}
 
 void main() {
   group("Remove Piece should (#usecase #cold) ->", () {
-    PieceRemove usecase;
-    _MockPieceRepository mockPieceRepository;
+    late PieceRemove usecase;
+    _MockPieceRepository? mockPieceRepository;
 
     setUp(() {
       mockPieceRepository = _MockPieceRepository();
@@ -18,12 +18,12 @@ void main() {
 
     test('Call the repository to remove the piece with the specified id', () async {
       final String id = "9af5b94b-509d-47f2-a774-634c6e6d7902";
-      when(mockPieceRepository.removePiece(any)).thenAnswer((_) async => id);
+      when(mockPieceRepository!.removePiece(any!)).thenAnswer((_) async => id);
 
-      final result = await usecase(id);
+      final result = await (usecase(id) as FutureOr<Either<Failure, String>?>);
 
       expect(result, Right(id));
-      verify(mockPieceRepository.removePiece(id));
+      verify(mockPieceRepository!.removePiece(id));
       verifyNoMoreInteractions(mockPieceRepository);
     });
   });
