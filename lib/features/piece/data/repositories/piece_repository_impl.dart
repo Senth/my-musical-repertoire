@@ -1,4 +1,3 @@
-import 'package:meta/meta.dart';
 import 'package:my_musical_repertoire/core/failures/exceptions.dart';
 
 import '../../../../core/failures/server_failure.dart';
@@ -7,7 +6,7 @@ import '../../domain/repositories/piece_repository.dart';
 import '../datasources/piece_local_data_source.dart';
 
 class PieceRepositoryImpl implements PieceRepository {
-  final PieceLocalDataSource? localDataSource;
+  final PieceLocalDataSource localDataSource;
 
   PieceRepositoryImpl({required this.localDataSource});
 
@@ -18,16 +17,16 @@ class PieceRepositoryImpl implements PieceRepository {
     }
 
     try {
-      return await localDataSource!.add(piece);
+      return await localDataSource.add(piece);
     } on LocalServerException {
       throw ServerFailure();
     }
   }
 
   @override
-  Future<String?> removePiece(String? id) async {
+  Future<String> removePiece(String id) async {
     try {
-      return await localDataSource!.remove(id);
+      return await localDataSource.remove(id);
     } on LocalServerException {
       throw ServerFailure();
     }
@@ -36,7 +35,7 @@ class PieceRepositoryImpl implements PieceRepository {
   @override
   Future<PieceEntity> updatePiece(PieceEntity piece) async {
     try {
-      return await localDataSource!.update(piece);
+      return await localDataSource.update(piece);
     } on LocalServerException {
       throw ServerFailure();
     }
@@ -45,7 +44,7 @@ class PieceRepositoryImpl implements PieceRepository {
   @override
   Future<List<PieceEntity>> getPieces() async {
     try {
-      return await localDataSource!.getAll();
+      return await localDataSource.getAll();
     } on LocalServerException {
       throw ServerFailure();
     }

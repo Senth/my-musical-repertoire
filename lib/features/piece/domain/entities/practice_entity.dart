@@ -1,5 +1,3 @@
-import 'package:meta/meta.dart';
-
 import '../../../../core/entity.dart';
 import '../../../../core/failures/validation_failure.dart';
 
@@ -19,16 +17,13 @@ class PracticeEntity extends Entity {
 
   @override
   List<Object?> get props {
-    final List<Object?> props = super.props;
-
-    props.add([
+    return [
+      ...super.props,
       this.pieceId,
       this.date,
       this.technicalMistakes,
       this.memoryFlubs,
-    ]);
-
-    return props;
+    ];
   }
 
   @override

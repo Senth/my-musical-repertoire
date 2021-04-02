@@ -10,10 +10,6 @@ void main() {
           ServerFailure(type: ServerFailureTypes.idNotNullWhenAddNew),
         ],
         [
-          ServerFailure(type: null),
-          ServerFailure(type: null),
-        ],
-        [
           ServerFailure(),
           ServerFailure(type: ServerFailureTypes.unknown),
         ]
@@ -29,14 +25,6 @@ void main() {
         [
           ServerFailure(type: ServerFailureTypes.idNotNullWhenAddNew),
           ServerFailure(type: ServerFailureTypes.unknown),
-        ],
-        [
-          ServerFailure(type: null),
-          ServerFailure(type: ServerFailureTypes.unknown),
-        ],
-        [
-          ServerFailure(),
-          ServerFailure(type: null),
         ],
       ];
 

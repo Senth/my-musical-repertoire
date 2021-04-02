@@ -1,7 +1,7 @@
 import 'failure.dart';
 
 class ServerFailure extends Failure {
-  final ServerFailureTypes? type;
+  final ServerFailureTypes type;
 
   ServerFailure({this.type = ServerFailureTypes.unknown});
 

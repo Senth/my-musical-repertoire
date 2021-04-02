@@ -1,4 +1,3 @@
-import 'package:meta/meta.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import '../../../../core/entity.dart';
@@ -8,8 +7,8 @@ part 'piece_entity.g.dart';
 
 @JsonSerializable()
 class PieceEntity extends Entity {
-  final String? title;
-  final String? composer;
+  final String title;
+  final String composer;
   final DateTime? lastPracticed;
 
   PieceEntity({

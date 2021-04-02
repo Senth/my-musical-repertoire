@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'failure.dart';
 
 class ValidationFailure extends Failure {

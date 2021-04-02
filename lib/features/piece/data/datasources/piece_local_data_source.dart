@@ -11,7 +11,7 @@ abstract class PieceLocalDataSource {
 
   /// Remove a piece with [id] from the local storage.
   /// Returns the [id] if the piece was successfully removed
-  Future<String?> remove(String? id);
+  Future<String> remove(String id);
 
   /// Returns all pieces from the local storage
   Future<List<PieceEntity>> getAll();

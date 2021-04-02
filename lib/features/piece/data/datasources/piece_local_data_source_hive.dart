@@ -9,28 +9,28 @@ class PieceLocalDataSourceHive extends HiveGateway implements PieceLocalDataSour
     final id = HiveGateway.generateId();
     piece = piece.copy(id: id);
 
-    final box = await HiveGateway.piecesBox!;
+    final box = await HiveGateway.piecesBox;
     await box.put(id, piece.toJson());
     return piece;
   }
 
   @override
-  Future<String?> remove(String? id) async {
-    final box = await HiveGateway.piecesBox!;
+  Future<String> remove(String id) async {
+    final box = await HiveGateway.piecesBox;
     await box.delete(id);
     return id;
   }
 
   @override
   Future<PieceEntity> update(PieceEntity piece) async {
-    final box = await HiveGateway.piecesBox!;
+    final box = await HiveGateway.piecesBox;
     await box.put(piece.id, piece.toJson());
     return piece;
   }
 
   @override
   Future<List<PieceEntity>> getAll() async {
-    final box = await HiveGateway.piecesBox!;
+    final box = await HiveGateway.piecesBox;
     final List<PieceEntity> pieces = [];
     final jsonPieces = box.toMap().values;
     for (final json in jsonPieces) {

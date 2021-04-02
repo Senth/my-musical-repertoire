@@ -16,7 +16,7 @@ void main() {
         PieceEntity(title: "Moonlight Sonata", composer: "Beethoven"),
         PieceEntity(title: "Ronda alla Turca", composer: "Mozart", lastPracticed: DateTime.now())
       ];
-      final box = await HiveGateway.piecesBox!;
+      final box = await HiveGateway.piecesBox;
 
       for (final test in testData) {
         final result = await repo.add(test);
@@ -26,7 +26,7 @@ void main() {
     });
 
     test("remove() should remove the piece from the DB when the piece exists in the DB", () async {
-      final box = await HiveGateway.piecesBox!;
+      final box = await HiveGateway.piecesBox;
       final testData = [
         PieceEntity(id: "1", title: "Moonlight", composer: "Beethoven"),
         PieceEntity(id: "2", title: "Turca", composer: "Mozart"),
@@ -34,13 +34,13 @@ void main() {
 
       for (final test in testData) {
         await box.put(test.id, test.toJson());
-        final result = await repo.remove(test.id);
+        final result = await repo.remove(test.id!);
         expect(result, test.id);
       }
     });
 
     test("update() should update the saved piece when updating with new values", () async {
-      final box = await HiveGateway.piecesBox!;
+      final box = await HiveGateway.piecesBox;
       final testData = [
         PieceEntity(id: "1", title: "Moonlight", composer: "Beethoven"),
         PieceEntity(id: "1", title: "Turca", composer: "Mozart"),
@@ -55,7 +55,7 @@ void main() {
     });
 
     test("getAll() should return all saved entities when everything is working", () async {
-      final box = await HiveGateway.piecesBox!;
+      final box = await HiveGateway.piecesBox;
       final testData = [
         PieceEntity(id: "1", title: "Moonlight", composer: "Beethoven"),
         PieceEntity(id: "2", title: "Turca", composer: "Mozart"),

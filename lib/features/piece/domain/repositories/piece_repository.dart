@@ -14,7 +14,7 @@ abstract class PieceRepository {
   /// Remove a piece with [id]
   /// Returns the [id] if the piece was successfully removed.
   /// Throws a [Failure] if something went wrong
-  Future<String?> removePiece(String id);
+  Future<String> removePiece(String id);
 
   /// Get all pieces
   /// Throws a [Failure] if something went wrong
