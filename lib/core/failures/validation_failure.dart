@@ -1,26 +1,19 @@
-import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'failure.dart';
 
-class ValidationFailure extends Failure {
-  final List<ValidationInfo> errors;
+part 'validation_failure.freezed.dart';
 
-  ValidationFailure(this.errors);
-
-  @override
-  List<Object> get props => [this.errors];
+@freezed
+class ValidationFailure with _$ValidationFailure implements Failure {
+  const factory ValidationFailure(List<ValidationInfo> errors) = _ValidationFailure;
 }
 
-class ValidationInfo extends Equatable {
-  final ValidationTypes type;
-  final String? data;
-
-  ValidationInfo({required this.type, this.data});
-
-  @override
-  List<Object?> get props => [this.type, this.data];
-
-  @override
-  bool get stringify => true;
+@freezed
+class ValidationInfo with _$ValidationInfo {
+  const factory ValidationInfo({
+    required ValidationTypes type,
+    String? data,
+  }) = _ValidationInfo;
 }
 
 enum ValidationTypes {

@@ -6,8 +6,8 @@ part of 'piece_entity.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-PieceEntity _$PieceEntityFromJson(Map<String, dynamic> json) {
-  return PieceEntity(
+_$_PieceEntity _$_$_PieceEntityFromJson(Map<String, dynamic> json) {
+  return _$_PieceEntity(
     id: json['id'] as String?,
     title: json['title'] as String,
     composer: json['composer'] as String,
@@ -17,7 +17,7 @@ PieceEntity _$PieceEntityFromJson(Map<String, dynamic> json) {
   );
 }
 
-Map<String, dynamic> _$PieceEntityToJson(PieceEntity instance) =>
+Map<String, dynamic> _$_$_PieceEntityToJson(_$_PieceEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
       'title': instance.title,

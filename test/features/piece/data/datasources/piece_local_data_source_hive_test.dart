@@ -20,7 +20,7 @@ void main() {
 
       for (final test in testData) {
         final result = await repo.add(test);
-        expect(result, test.copy(id: result.id));
+        expect(result, test.copyWith(id: result.id));
         expect(box.get(result.id), result.toJson());
       }
     });

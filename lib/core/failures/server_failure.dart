@@ -1,11 +1,12 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
 import 'failure.dart';
 
-class ServerFailure extends Failure {
-  final ServerFailureTypes type;
+part 'server_failure.freezed.dart';
 
-  ServerFailure({this.type = ServerFailureTypes.unknown});
-
-  List<Object?> get props => [...super.props, type];
+@freezed
+class ServerFailure with _$ServerFailure implements Failure {
+  const factory ServerFailure({@Default(ServerFailureTypes.unknown) ServerFailureTypes type}) = _ServerFailure;
 }
 
 enum ServerFailureTypes {

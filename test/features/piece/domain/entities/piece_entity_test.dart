@@ -52,7 +52,7 @@ void main() {
     test('Validate title required', () {
       final testData = [
         fakerPiece(title: ''),
-        PieceEntity(id: original.id, title: "", composer: original.composer, lastPracticed: original.lastPracticed),
+        PieceEntity(id: original.id, title: '', composer: original.composer, lastPracticed: original.lastPracticed),
       ];
 
       for (piece in testData) {
@@ -95,22 +95,6 @@ void main() {
       expect(copy, original);
     });
 
-    test("Not be equal to itself when changing any property", () {
-      final testData = [
-        // Name
-        PieceEntity(id: original.id, title: 'different', composer: original.composer, lastPracticed: original.lastPracticed),
-        // Composer
-        PieceEntity(id: original.id, title: original.title, composer: 'different', lastPracticed: original.lastPracticed),
-        // Date
-        PieceEntity(id: original.id, title: original.title, composer: original.composer, lastPracticed: DateTime(2017)),
-        PieceEntity(id: original.id, title: original.title, composer: original.composer, lastPracticed: null),
-      ];
-
-      for (copy in testData) {
-        expect(copy, isNot(original));
-      }
-    });
-
     test("fromJson() should return a valid entity when all the fields are valid", () {
       final testData = [
         {
@@ -144,33 +128,6 @@ void main() {
       for (final test in testData) {
         final result = (test["input"] as PieceEntity).toJson();
         expect(result, test["expected"]);
-      }
-    });
-
-    test('copy() should be equal to the original when nothing is changed', () {
-      final testData = [
-        original.copy(),
-        original.copy(id: null),
-        original.copy(title: null),
-        original.copy(composer: null),
-        original.copy(lastPracticed: null),
-      ];
-
-      for (copy in testData) {
-        expect(copy, original);
-      }
-    });
-
-    test("copy() with a parameter should not be equal to the original when changing", () {
-      final testData = [
-        original.copy(id: 'different'),
-        original.copy(title: 'different'),
-        original.copy(composer: 'different'),
-        original.copy(lastPracticed: DateTime(2017)),
-      ];
-
-      for (copy in testData) {
-        expect(copy, isNot(original));
       }
     });
   });

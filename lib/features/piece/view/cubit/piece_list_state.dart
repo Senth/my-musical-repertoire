@@ -1,10 +1,7 @@
 part of 'piece_list_cubit.dart';
 
-abstract class PieceListState extends Equatable {
+abstract class PieceListState {
   const PieceListState();
-
-  @override
-  List<Object> get props => [];
 }
 
 class PieceListInitial extends PieceListState {}

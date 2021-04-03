@@ -109,34 +109,5 @@ void main() {
         expect(copy, isNot(original));
       }
     });
-
-    test("copy() should be equal to the original", () {
-      final testData = [
-        original!.copy(),
-        original!.copy(id: null),
-        original!.copy(pieceId: null),
-        original!.copy(date: null),
-        original!.copy(technicalMistakes: null),
-        original!.copy(memoryFlubs: null),
-      ];
-
-      for (copy in testData) {
-        expect(copy, original);
-      }
-    });
-
-    test("copy(param) with a parameter should not be equal to the original", () {
-      List<PracticeEntity> testData = [
-        original!.copy(id: 'different'),
-        original!.copy(pieceId: 'different'),
-        original!.copy(date: DateTime(2019)),
-        original!.copy(technicalMistakes: PracticeMistakes.everywhere),
-        original!.copy(memoryFlubs: PracticeMistakes.everywhere),
-      ];
-
-      for (copy in testData) {
-        expect(copy, isNot(original));
-      }
-    });
   });
 }
