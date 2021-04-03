@@ -1,4 +1,4 @@
-import 'package:my_musical_repertoire/core/failures/exceptions.dart';
+import '../../../../core/failures/exceptions.dart';
 
 import '../../../../core/failures/server_failure.dart';
 import '../../domain/entities/piece_entity.dart';

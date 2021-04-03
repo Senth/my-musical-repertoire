@@ -1,4 +1,4 @@
-import 'package:my_musical_repertoire/core/failures/server_failure.dart';
+import '../../../../core/failures/server_failure.dart';
 
 import '../../../../core/failures/failure.dart';
 import 'package:dartz/dartz.dart';

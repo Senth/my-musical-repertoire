@@ -1,5 +1,5 @@
-import 'package:my_musical_repertoire/core/hive_gateway.dart';
-import 'package:my_musical_repertoire/features/piece/domain/entities/piece_entity.dart';
+import '../../../../core/hive_gateway.dart';
+import '../../domain/entities/piece_entity.dart';
 
 import 'piece_local_data_source.dart';
 

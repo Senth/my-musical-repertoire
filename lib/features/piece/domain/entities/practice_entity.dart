@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:my_musical_repertoire/core/validator.dart';
+import '../../../../core/validator.dart';
 
 import '../../../../core/failures/validation_failure.dart';
 
