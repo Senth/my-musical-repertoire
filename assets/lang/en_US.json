@@ -1,0 +1,7 @@
+{
+  "app.name": "My Musical Repertoire",
+  "app.error.firebase": "Connection to Firebase failed",
+  "screen.login.google": "Sign in with Google",
+  "screen.login.title": "Login",
+  "screen.pieceList.title": "My repertoire"
+}
