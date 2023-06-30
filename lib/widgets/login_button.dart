@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:my_musical_repertoire/app_localitazations.dart';
+import 'package:my_musical_repertoire/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:my_musical_repertoire/services/authentication_service.dart';
 import 'package:my_musical_repertoire/screens/piece_list_page.dart';

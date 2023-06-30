@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_musical_repertoire/app_localitazations.dart';
+import 'package:my_musical_repertoire/app_localizations.dart';
 
 class PieceListPage extends StatelessWidget {
   @override

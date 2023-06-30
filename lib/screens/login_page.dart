@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_musical_repertoire/app_localitazations.dart';
+import 'package:my_musical_repertoire/app_localizations.dart';
 import 'package:my_musical_repertoire/services/authentication_service.dart';
 import 'package:my_musical_repertoire/widgets/login_button.dart';
 import 'package:provider/provider.dart';

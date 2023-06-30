@@ -1,10 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:my_musical_repertoire/app_localitazations.dart';
+import 'package:my_musical_repertoire/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:my_musical_repertoire/firebase_options.dart';
 import 'package:my_musical_repertoire/screens/login_page.dart';
+import 'package:provider/provider.dart';
+
+import 'services/authentication_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -42,8 +45,10 @@ class MyApp extends StatelessWidget {
   }
 }
 
-MaterialApp mainApp(BuildContext context, Widget home) {
-  return MaterialApp(
+Widget mainApp(BuildContext context, Widget home) {
+  return ChangeNotifierProvider(
+    create: (context) => AuthenticationService(),
+    child:  MaterialApp(
       title: translate(context, 'app.name'),
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
@@ -67,5 +72,6 @@ MaterialApp mainApp(BuildContext context, Widget home) {
         }
         return supportedLocales.first;
       }
+  ),
   );
 }
