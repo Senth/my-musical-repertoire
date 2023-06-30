@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  	allow read,write: if false;
+    
+    function isSignedIn() {
+    	return request.auth != null && request.auth.uid != null;
+    }
+    
+    function isUserResource() {
+    	return isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+    
+    match /item/{item} {
+        allow read, update, delete: if isUserResource();
+        allow create: if isSignedIn();
+    }
+
+    match /category/{category} {
+        allow read, update, delete: if isUserResource();
+        allow create: if isSignedIn();
+    }
+  }
+}
