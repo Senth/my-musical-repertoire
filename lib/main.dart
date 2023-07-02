@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:my_musical_repertoire/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:my_musical_repertoire/firebase_options.dart';
 import 'package:my_musical_repertoire/screens/login_page.dart';
+import 'package:my_musical_repertoire/utils/environment.dart';
 import 'package:provider/provider.dart';
 
 import 'services/authentication_service.dart';
@@ -22,6 +24,10 @@ class MyApp extends StatelessWidget {
     return FutureBuilder(
         future: Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
         builder: (context, snapshot) {
+          if (isDebug) {
+            initEmulators();
+          }
+
           // Errors
           if (snapshot.hasError) {
             debugPrint(snapshot.error.toString());
@@ -43,6 +49,12 @@ class MyApp extends StatelessWidget {
         }
     );
   }
+}
+
+// If the app is running in debug mode, then use the emulator
+void initEmulators() {
+  FirebaseAuth.instance.useAuthEmulator('localhost', 8051);
+  FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8052);
 }
 
 Widget mainApp(BuildContext context, Widget home) {

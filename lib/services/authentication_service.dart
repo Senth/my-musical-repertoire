@@ -34,6 +34,17 @@ class AuthenticationService extends ChangeNotifier {
     }
   }
 
+  Future<User?> signInWithEmail(String email, String password) async {
+     try {
+       final UserCredential authResult = await _auth.signInWithEmailAndPassword(
+           email: email, password: password);
+       _user = authResult.user;
+     } catch (e) {
+       debugPrint(e.toString());
+       return null;
+     }
+  }
+
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     await _auth.signOut();
