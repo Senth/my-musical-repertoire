@@ -9,5 +9,10 @@
   "screen.login.password.title": "Password",
   "screen.login.title": "Login",
   "screen.login.or": "or",
-  "screen.pieceList.title": "My repertoire"
+  "screen.login.loading": "Logging in...",
+  "screen.login.error.email": "Please enter a valid email address.",
+  "screen.login.error.userNotFound": "No user found with this email and password combination.",
+  "screen.login.error.server": "An error occurred while logging in. Try another login method or try again later.",
+  "screen.login.error.userDisabled": "This account has been disabled.",
+  "screen.pieceList.title": "My Repertoire"
 }

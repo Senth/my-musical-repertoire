@@ -6,6 +6,8 @@ import 'package:my_musical_repertoire/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:my_musical_repertoire/firebase_options.dart';
 import 'package:my_musical_repertoire/screens/login_page.dart';
+import 'package:my_musical_repertoire/screens/piece_list_page.dart';
+import 'package:my_musical_repertoire/screens/routes.dart';
 import 'package:my_musical_repertoire/utils/environment.dart';
 import 'package:provider/provider.dart';
 
@@ -38,7 +40,7 @@ class MyApp extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.done) {
             // Check if user already is logged in using Firebase Auth
             if (FirebaseAuth.instance.currentUser != null) {
-              return mainApp(context, const Scaffold(body: Center(child: Text("User is logged in"))));
+              return mainApp(context, const PieceListPage());
             } else {
               return mainApp(context, const LoginPage());
             }
@@ -67,6 +69,10 @@ Widget mainApp(BuildContext context, Widget home) {
         useMaterial3: true,
       ),
       home: home,
+      routes: {
+        Routes.pieceList.path: (context) => const PieceListPage(),
+        Routes.login.path: (context) => const LoginPage(),
+      },
       supportedLocales: const [
         Locale('en', 'US'),
       ],
