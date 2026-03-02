@@ -2,13 +2,14 @@ import { Button } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
+import * as Crypto from "expo-crypto";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
+import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import { auth } from "@/config/firebase";
 
 WebBrowser.maybeCompleteAuthSession();
 
-// Configure these in your .env file:
-// EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-google-web-client-id
 const discovery = {
   authorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
   tokenEndpoint: "https://oauth2.googleapis.com/token",
@@ -16,18 +17,17 @@ const discovery = {
 
 export function GoogleSignInButton() {
   const { t } = useTranslation();
-  const { signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const clientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const redirectUri = AuthSession.makeRedirectUri();
 
   const [request, , promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: clientId ?? "",
-      redirectUri: AuthSession.makeRedirectUri(),
+      redirectUri,
       scopes: ["openid", "profile", "email"],
-      responseType: AuthSession.ResponseType.IdToken,
-      usePKCE: false,
+      responseType: AuthSession.ResponseType.Code,
     },
     discovery
   );
@@ -41,8 +41,24 @@ export function GoogleSignInButton() {
     setLoading(true);
     try {
       const result = await promptAsync();
-      if (result.type === "success" && result.params.id_token) {
-        await signInWithGoogle(result.params.id_token);
+      if (result.type === "success" && result.params.code) {
+        // Exchange authorization code for tokens
+        const tokenResult = await AuthSession.exchangeCodeAsync(
+          {
+            clientId,
+            code: result.params.code,
+            redirectUri,
+            extraParams: {
+              code_verifier: request?.codeVerifier ?? "",
+            },
+          },
+          discovery
+        );
+
+        if (tokenResult.idToken) {
+          const credential = GoogleAuthProvider.credential(tokenResult.idToken);
+          await signInWithCredential(auth, credential);
+        }
       }
     } catch (e) {
       console.error("Google sign-in error:", e);
