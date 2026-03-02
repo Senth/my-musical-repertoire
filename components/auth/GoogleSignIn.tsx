@@ -27,6 +27,7 @@ export function GoogleSignInButton() {
       redirectUri: AuthSession.makeRedirectUri(),
       scopes: ["openid", "profile", "email"],
       responseType: AuthSession.ResponseType.IdToken,
+      usePKCE: false,
     },
     discovery
   );
