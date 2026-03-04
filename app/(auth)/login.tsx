@@ -1,23 +1,26 @@
 import { useState } from "react";
-import { View, KeyboardAvoidingView, Platform } from "react-native";
+import { View, KeyboardAvoidingView, Platform, useWindowDimensions } from "react-native";
 import {
-  Text,
   TextInput,
   Button,
-  Divider,
   Appbar,
   Snackbar,
   useTheme,
+  Card,
 } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignIn";
 import { FirebaseError } from "firebase/app";
 
+const MD3_MEDIUM_BREAKPOINT = 600;
+
 export default function LoginScreen() {
   const { t } = useTranslation();
   const { signInWithEmail } = useAuth();
   const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,6 +60,41 @@ export default function LoginScreen() {
     }
   };
 
+  const formContent = (
+    <View className="gap-4">
+      <TextInput
+        label={t("screen.login.emailLabel")}
+        value={email}
+        onChangeText={setEmail}
+        mode="outlined"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+      />
+
+      <TextInput
+        label={t("screen.login.passwordLabel")}
+        value={password}
+        onChangeText={setPassword}
+        mode="outlined"
+        secureTextEntry
+        autoComplete="password"
+      />
+
+      <Button
+        mode="contained"
+        onPress={handleEmailSignIn}
+        loading={loading}
+        disabled={loading}
+        icon="email"
+      >
+        {t("screen.login.email")}
+      </Button>
+
+      <GoogleSignInButton />
+    </View>
+  );
+
   return (
     <View className="flex-1" style={{ backgroundColor: theme.colors.background }}>
       <Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
@@ -68,45 +106,17 @@ export default function LoginScreen() {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1 justify-center items-center px-6"
+        className="flex-1 justify-center items-center"
+        style={{ paddingHorizontal: 16 }}
       >
-        <View className="w-full max-w-sm gap-4">
-          <TextInput
-            label={t("screen.login.emailLabel")}
-            value={email}
-            onChangeText={setEmail}
-            mode="outlined"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-          />
-
-          <TextInput
-            label={t("screen.login.passwordLabel")}
-            value={password}
-            onChangeText={setPassword}
-            mode="outlined"
-            secureTextEntry
-            autoComplete="password"
-          />
-
-          <Button
-            mode="contained"
-            onPress={handleEmailSignIn}
-            loading={loading}
-            disabled={loading}
-            icon="email"
-          >
-            {t("screen.login.email")}
-          </Button>
-
-          <View className="flex-row items-center gap-4 my-2">
-            <Divider className="flex-1" />
-            <Text variant="bodyMedium">{t("screen.login.or")}</Text>
-            <Divider className="flex-1" />
-          </View>
-
-          <GoogleSignInButton />
+        <View className="w-full max-w-md self-center">
+          {isCompact ? (
+            formContent
+          ) : (
+            <Card mode="elevated">
+              <Card.Content>{formContent}</Card.Content>
+            </Card>
+          )}
         </View>
       </KeyboardAvoidingView>
 
