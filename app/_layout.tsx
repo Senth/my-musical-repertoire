@@ -41,7 +41,7 @@ function AuthGate() {
 		if (!user && !inAuthGroup) {
 			router.replace("/(auth)/login");
 		} else if (user && inAuthGroup) {
-			router.replace("/(app)/(tabs)/repertoire");
+			router.replace("/(app)/(tabs)/overview");
 		}
 	}, [user, loading, segments]);
 

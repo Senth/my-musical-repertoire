@@ -21,6 +21,37 @@
 				"userDisabled": "This account has been disabled."
 			}
 		},
+		"overview": {
+			"title": "Overview",
+			"practiceToday": "Practice Today",
+			"noPieces": "No pieces yet. Tap + to add your first piece!",
+			"neverPracticed": "Never practiced",
+			"lastPracticed": "Last practiced: {{date}}"
+		},
+		"addPiece": {
+			"title": "Add Piece",
+			"titleLabel": "Title",
+			"composerLabel": "Composer",
+			"save": "Save",
+			"error": {
+				"titleRequired": "Title is required.",
+				"composerRequired": "Composer is required."
+			}
+		},
+		"practice": {
+			"title": "Practice",
+			"dateLabel": "Date",
+			"technicalMistakes": "Technical Mistakes",
+			"memoryMistakes": "Memory Mistakes",
+			"save": "Save",
+			"mistakeLevel": {
+				"none": "None",
+				"few": "Few",
+				"some": "Some",
+				"many": "Many",
+				"everywhere": "Everywhere"
+			}
+		},
 		"pieceList": {
 			"title": "My Repertoire"
 		}

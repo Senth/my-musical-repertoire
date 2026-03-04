@@ -14,9 +14,9 @@ export default function AppTabsLayout() {
 			}}
 		>
 			<Tabs.Screen
-				name="repertoire"
+				name="overview"
 				options={{
-					title: "My Repertoire",
+					title: "Overview",
 					tabBarIcon: ({ color }) => (
 						<IconSymbol size={28} name="music.note.list" color={color} />
 					),
