@@ -1,12 +1,16 @@
 @import "tailwindcss";
 @import "nativewind/theme";
 
-html, body, #root {
-  background-color: #fffbfe;
+html,
+body,
+#root {
+	background-color: #fffbfe;
 }
 
 @media (prefers-color-scheme: dark) {
-  html, body, #root {
-    background-color: #1c1b1f;
-  }
+	html,
+	body,
+	#root {
+		background-color: #1c1b1f;
+	}
 }

@@ -5,16 +5,16 @@ import * as Localization from "expo-localization";
 import enUS from "./locales/en-US.json";
 
 const resources = {
-  "en-US": { translation: enUS },
+	"en-US": { translation: enUS },
 };
 
 i18n.use(initReactI18next).init({
-  resources,
-  lng: Localization.getLocales()[0]?.languageTag ?? "en-US",
-  fallbackLng: "en-US",
-  interpolation: {
-    escapeValue: false,
-  },
+	resources,
+	lng: Localization.getLocales()[0]?.languageTag ?? "en-US",
+	fallbackLng: "en-US",
+	interpolation: {
+		escapeValue: false,
+	},
 });
 
 export default i18n;
