@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, connectAuthEmulator, initializeAuth } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getAuth, initializeAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 import { Platform } from "react-native";
 
 // Replace these values with your Firebase project config.
@@ -23,14 +23,5 @@ const app = initializeApp(firebaseConfig);
 
 const auth = Platform.OS === "web" ? getAuth(app) : initializeAuth(app);
 const db = getFirestore(app);
-
-// Connect to emulators in development
-if (__DEV__) {
-	const EMULATOR_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
-	connectAuthEmulator(auth, `http://${EMULATOR_HOST}:8051`, {
-		disableWarnings: true,
-	});
-	connectFirestoreEmulator(db, EMULATOR_HOST, 8052);
-}
 
 export { app, auth, db };

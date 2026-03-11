@@ -1,11 +1,14 @@
 import { Button } from "react-native-paper";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
+import { Platform } from "react-native";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
-import * as Crypto from "expo-crypto";
-import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
-import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import {
+	GoogleAuthProvider,
+	signInWithCredential,
+	signInWithPopup,
+} from "firebase/auth";
 import { auth } from "@/config/firebase";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -20,6 +23,74 @@ export function GoogleSignInButton() {
 	const [loading, setLoading] = useState(false);
 
 	const clientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+
+	if (Platform.OS === "web") {
+		return (
+			<GoogleSignInWeb
+				t={t}
+				loading={loading}
+				setLoading={setLoading}
+			/>
+		);
+	}
+
+	return (
+		<GoogleSignInNative
+			t={t}
+			loading={loading}
+			setLoading={setLoading}
+			clientId={clientId}
+		/>
+	);
+}
+
+function GoogleSignInWeb({
+	t,
+	loading,
+	setLoading,
+}: {
+	t: (key: string) => string;
+	loading: boolean;
+	setLoading: (v: boolean) => void;
+}) {
+	const handleGoogleSignIn = async () => {
+		setLoading(true);
+		try {
+			const provider = new GoogleAuthProvider();
+			provider.addScope("profile");
+			provider.addScope("email");
+			await signInWithPopup(auth, provider);
+		} catch (e) {
+			console.error("Google sign-in error:", e);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	return (
+		<Button
+			mode="outlined"
+			onPress={handleGoogleSignIn}
+			loading={loading}
+			disabled={loading}
+			icon="google"
+		>
+			{t("screen.login.google")}
+		</Button>
+	);
+}
+
+function GoogleSignInNative({
+	t,
+	loading,
+	setLoading,
+	clientId,
+}: {
+	t: (key: string) => string;
+	loading: boolean;
+	setLoading: (v: boolean) => void;
+	clientId: string | undefined;
+}) {
 	const redirectUri = AuthSession.makeRedirectUri();
 
 	const [request, , promptAsync] = AuthSession.useAuthRequest(
@@ -44,7 +115,6 @@ export function GoogleSignInButton() {
 		try {
 			const result = await promptAsync();
 			if (result.type === "success" && result.params.code) {
-				// Exchange authorization code for tokens
 				const tokenResult = await AuthSession.exchangeCodeAsync(
 					{
 						clientId,
@@ -58,7 +128,9 @@ export function GoogleSignInButton() {
 				);
 
 				if (tokenResult.idToken) {
-					const credential = GoogleAuthProvider.credential(tokenResult.idToken);
+					const credential = GoogleAuthProvider.credential(
+						tokenResult.idToken,
+					);
 					await signInWithCredential(auth, credential);
 				}
 			}

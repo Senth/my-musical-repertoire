@@ -1,15 +1,31 @@
 import { useState } from "react";
-import { View } from "react-native";
-import { TextInput, Button, Appbar, Snackbar, useTheme } from "react-native-paper";
+import {
+	View,
+	KeyboardAvoidingView,
+	Platform,
+	useWindowDimensions,
+} from "react-native";
+import {
+	TextInput,
+	Button,
+	Appbar,
+	Snackbar,
+	useTheme,
+	Card,
+} from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { useAddPiece } from "@/hooks/use-pieces";
+
+const MD3_MEDIUM_BREAKPOINT = 600;
 
 export default function AddPieceScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
 	const { addPiece } = useAddPiece();
+	const { width } = useWindowDimensions();
+	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const [title, setTitle] = useState("");
 	const [composer, setComposer] = useState("");
@@ -39,6 +55,34 @@ export default function AddPieceScreen() {
 		}
 	};
 
+	const formContent = (
+		<View className="gap-4">
+			<TextInput
+				label={t("screen.addPiece.titleLabel")}
+				value={title}
+				onChangeText={setTitle}
+				mode="outlined"
+				autoFocus
+			/>
+
+			<TextInput
+				label={t("screen.addPiece.composerLabel")}
+				value={composer}
+				onChangeText={setComposer}
+				mode="outlined"
+			/>
+
+			<Button
+				mode="contained"
+				onPress={handleSave}
+				loading={loading}
+				disabled={loading}
+			>
+				{t("screen.addPiece.save")}
+			</Button>
+		</View>
+	);
+
 	return (
 		<View
 			className="flex-1"
@@ -55,31 +99,21 @@ export default function AddPieceScreen() {
 				/>
 			</Appbar.Header>
 
-			<View className="p-4 gap-4">
-				<TextInput
-					label={t("screen.addPiece.titleLabel")}
-					value={title}
-					onChangeText={setTitle}
-					mode="outlined"
-					autoFocus
-				/>
-
-				<TextInput
-					label={t("screen.addPiece.composerLabel")}
-					value={composer}
-					onChangeText={setComposer}
-					mode="outlined"
-				/>
-
-				<Button
-					mode="contained"
-					onPress={handleSave}
-					loading={loading}
-					disabled={loading}
-				>
-					{t("screen.addPiece.save")}
-				</Button>
-			</View>
+			<KeyboardAvoidingView
+				behavior={Platform.OS === "ios" ? "padding" : "height"}
+				className="flex-1"
+				style={{ paddingHorizontal: isCompact ? 16 : 24, paddingTop: 24 }}
+			>
+				<View className="w-full max-w-xl self-center">
+					{isCompact ? (
+						formContent
+					) : (
+						<Card mode="elevated">
+							<Card.Content>{formContent}</Card.Content>
+						</Card>
+					)}
+				</View>
+			</KeyboardAvoidingView>
 
 			<Snackbar
 				visible={!!error}
