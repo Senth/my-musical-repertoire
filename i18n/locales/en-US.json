@@ -2,6 +2,14 @@
 	"app": {
 		"name": "My Musical Repertoire"
 	},
+	"common": {
+		"today": "Today",
+		"yesterday": "Yesterday",
+		"daysAgo_one": "{{count}} day ago",
+		"daysAgo_other": "{{count}} days ago",
+		"neverPracticed": "Never practiced",
+		"score": "{{score}}/10"
+	},
 	"error": {
 		"firebase": "Connection to Firebase failed"
 	},
@@ -26,7 +34,9 @@
 			"practiceToday": "Practice Today",
 			"noPieces": "No pieces yet. Tap + to add your first piece!",
 			"neverPracticed": "Never practiced",
-			"lastPracticed": "Last practiced: {{date}}"
+			"lastPracticed": "Last practiced: {{date}}",
+			"seeAllPieces": "See all pieces",
+			"allCaughtUp": "You're all caught up! Great job."
 		},
 		"addPiece": {
 			"title": "Add Piece",
@@ -41,6 +51,7 @@
 		"practice": {
 			"title": "Practice",
 			"dateLabel": "Date",
+			"lastPracticed": "Last practiced: {{when}}",
 			"technicalMistakes": "Technical Mistakes",
 			"memoryMistakes": "Memory Mistakes",
 			"save": "Save",
@@ -50,7 +61,22 @@
 				"some": "Some",
 				"many": "Many",
 				"everywhere": "Everywhere"
+			},
+			"comparison": {
+				"title": "Practice Results",
+				"previous": "Previous",
+				"current": "Current",
+				"improved": "Improved!",
+				"regressed": "Needs work",
+				"same": "Same as before",
+				"firstPractice": "First practice! 🎵",
+				"backToOverview": "Back to Overview"
 			}
+		},
+		"pieces": {
+			"title": "My Repertoire",
+			"searchPlaceholder": "Search pieces...",
+			"noResults": "No pieces match your search"
 		},
 		"pieceList": {
 			"title": "My Repertoire"

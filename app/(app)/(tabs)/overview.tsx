@@ -1,8 +1,10 @@
 import { View } from "react-native";
-import { Text, FAB, Card, useTheme, ActivityIndicator } from "react-native-paper";
+import { Text, FAB, Card, Button, useTheme, ActivityIndicator } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { usePieces } from "@/hooks/use-pieces";
+import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
+import { formatDaysAgo } from "@/utils/date";
 import type { Piece } from "@/models/piece";
 import { PracticeMistakes } from "@/models/practice";
 
@@ -58,30 +60,50 @@ export default function OverviewScreen() {
 				) : (
 					<>
 						<Text variant="titleMedium">{t("screen.overview.practiceToday")}</Text>
-						{suggested.map((piece) => (
-							<Card
-								key={piece.id}
-								mode="elevated"
-								onPress={() => router.push(`/practice/${piece.id}`)}
+
+						{suggested.length === 0 ? (
+							<Text
+								variant="bodyLarge"
+								style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}
 							>
-								<Card.Title
-									title={piece.title}
-									subtitle={piece.composer}
-								/>
-								<Card.Content>
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{piece.lastPracticed
-											? t("screen.overview.lastPracticed", {
-													date: piece.lastPracticed.toLocaleDateString(),
-												})
-											: t("screen.overview.neverPracticed")}
-									</Text>
-								</Card.Content>
-							</Card>
-						))}
+								{t("screen.overview.allCaughtUp")}
+							</Text>
+						) : (
+							suggested.map((piece) => (
+								<Card
+									key={piece.id}
+									mode="elevated"
+									onPress={() => router.push(`/practice/${piece.id}`)}
+								>
+									<Card.Title
+										title={piece.title}
+										subtitle={piece.composer}
+									/>
+									<Card.Content>
+										<View className="gap-2">
+											<PieceProgressBar
+												technicalMistakes={piece.lastTechnicalMistakes}
+												memoryMistakes={piece.lastMemoryMistakes}
+											/>
+											<Text
+												variant="bodySmall"
+												style={{ color: theme.colors.onSurfaceVariant }}
+											>
+												{formatDaysAgo(piece.lastPracticed, t)}
+											</Text>
+										</View>
+									</Card.Content>
+								</Card>
+							))
+						)}
+
+						<Button
+							mode="text"
+							onPress={() => router.push("/pieces")}
+							icon="format-list-bulleted"
+						>
+							{t("screen.overview.seeAllPieces")}
+						</Button>
 					</>
 				)}
 			</View>

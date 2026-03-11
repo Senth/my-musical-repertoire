@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { View, Platform } from "react-native";
+import { useRef, useState } from "react";
+import { View, Platform, ScrollView } from "react-native";
 import { Text, Button, Appbar, Snackbar, useTheme } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { usePieces } from "@/hooks/use-pieces";
 import { useSavePractice } from "@/hooks/use-practices";
 import { PracticeMistakes } from "@/models/practice";
-import { MistakeRating } from "@/components/practice/MistakeRating";
+import { MistakeRadioGroup } from "@/components/practice/MistakeRadioGroup";
+import { PracticeComparison } from "@/components/practice/PracticeComparison";
+import { formatDaysAgo } from "@/utils/date";
 
 function formatDateForInput(date: Date): string {
 	const year = date.getFullYear();
@@ -25,6 +27,12 @@ export default function PracticeScreen() {
 
 	const piece = pieces.find((p) => p.id === id);
 
+	// Capture previous practice data before save overwrites it
+	const previousDataRef = useRef({
+		technicalMistakes: piece?.lastTechnicalMistakes,
+		memoryMistakes: piece?.lastMemoryMistakes,
+	});
+
 	const [date, setDate] = useState(formatDateForInput(new Date()));
 	const [technicalMistakes, setTechnicalMistakes] = useState<PracticeMistakes>(
 		PracticeMistakes.none,
@@ -34,6 +42,7 @@ export default function PracticeScreen() {
 	);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [saved, setSaved] = useState(false);
 
 	const handleSave = async () => {
 		if (!id) return;
@@ -44,7 +53,7 @@ export default function PracticeScreen() {
 		try {
 			const practiceDate = new Date(`${date}T12:00:00`);
 			await savePractice(id, practiceDate, technicalMistakes, memoryMistakes);
-			router.back();
+			setSaved(true);
 		} catch {
 			setError(t("error.firebase"));
 		} finally {
@@ -74,65 +83,91 @@ export default function PracticeScreen() {
 					color={theme.colors.onPrimary}
 				/>
 				<Appbar.Content
-					title={piece.title}
+					title={t("screen.practice.title")}
 					titleStyle={{ color: theme.colors.onPrimary }}
 				/>
 			</Appbar.Header>
 
-			<View className="p-4 gap-6">
-				<Text variant="headlineSmall">
-					{piece.composer} — {piece.title}
-				</Text>
+			{saved ? (
+				<PracticeComparison
+					pieceName={`${piece.composer} — ${piece.title}`}
+					currentTechnical={technicalMistakes}
+					currentMemory={memoryMistakes}
+					previousTechnical={previousDataRef.current.technicalMistakes}
+					previousMemory={previousDataRef.current.memoryMistakes}
+				/>
+			) : (
+				<ScrollView>
+					<View className="p-4 gap-6">
+						<View className="gap-1">
+							<Text variant="headlineSmall">{piece.title}</Text>
+							<Text
+								variant="bodyLarge"
+								style={{ color: theme.colors.onSurfaceVariant }}
+							>
+								{piece.composer}
+							</Text>
+						</View>
 
-				<View className="gap-2">
-					<Text variant="titleSmall">{t("screen.practice.dateLabel")}</Text>
-					{Platform.OS === "web" ? (
-						<input
-							type="date"
-							value={date}
-							onChange={(e) => setDate(e.target.value)}
-							style={{
-								padding: 12,
-								borderRadius: 4,
-								border: `1px solid ${theme.colors.outline}`,
-								backgroundColor: theme.colors.surface,
-								color: theme.colors.onSurface,
-								fontSize: 16,
-							}}
+						<View className="gap-2">
+							<Text variant="titleSmall">{t("screen.practice.dateLabel")}</Text>
+							{Platform.OS === "web" ? (
+								<input
+									type="date"
+									value={date}
+									onChange={(e) => setDate(e.target.value)}
+									style={{
+										padding: 12,
+										borderRadius: 4,
+										border: `1px solid ${theme.colors.outline}`,
+										backgroundColor: theme.colors.surface,
+										color: theme.colors.onSurface,
+										fontSize: 16,
+									}}
+								/>
+							) : (
+								<Button
+									mode="outlined"
+									onPress={() => {
+										/* TODO: Native date picker */
+									}}
+								>
+									{new Date(`${date}T12:00:00`).toLocaleDateString()}
+								</Button>
+							)}
+							<Text
+								variant="bodySmall"
+								style={{ color: theme.colors.onSurfaceVariant }}
+							>
+								{t("screen.practice.lastPracticed", {
+									when: formatDaysAgo(piece.lastPracticed, t),
+								})}
+							</Text>
+						</View>
+
+						<MistakeRadioGroup
+							label={t("screen.practice.technicalMistakes")}
+							value={technicalMistakes}
+							onChange={setTechnicalMistakes}
 						/>
-					) : (
+
+						<MistakeRadioGroup
+							label={t("screen.practice.memoryMistakes")}
+							value={memoryMistakes}
+							onChange={setMemoryMistakes}
+						/>
+
 						<Button
-							mode="outlined"
-							onPress={() => {
-								/* TODO: Native date picker */
-							}}
+							mode="contained"
+							onPress={handleSave}
+							loading={loading}
+							disabled={loading}
 						>
-							{new Date(`${date}T12:00:00`).toLocaleDateString()}
+							{t("screen.practice.save")}
 						</Button>
-					)}
-				</View>
-
-				<MistakeRating
-					label={t("screen.practice.technicalMistakes")}
-					value={technicalMistakes}
-					onChange={setTechnicalMistakes}
-				/>
-
-				<MistakeRating
-					label={t("screen.practice.memoryMistakes")}
-					value={memoryMistakes}
-					onChange={setMemoryMistakes}
-				/>
-
-				<Button
-					mode="contained"
-					onPress={handleSave}
-					loading={loading}
-					disabled={loading}
-				>
-					{t("screen.practice.save")}
-				</Button>
-			</View>
+					</View>
+				</ScrollView>
+			)}
 
 			<Snackbar
 				visible={!!error}
