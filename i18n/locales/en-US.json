@@ -50,6 +50,7 @@
 		},
 		"practice": {
 			"title": "Practice",
+			"pieceNotFound": "Piece not found",
 			"dateLabel": "Date",
 			"lastPracticed": "Last practiced: {{when}}",
 			"technicalMistakes": "Technical Mistakes",

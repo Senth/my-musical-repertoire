@@ -61,15 +61,9 @@ export default function PiecesScreen() {
 			className="flex-1"
 			style={{ backgroundColor: theme.colors.background }}
 		>
-			<Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
-				<Appbar.BackAction
-					onPress={() => router.back()}
-					color={theme.colors.onPrimary}
-				/>
-				<Appbar.Content
-					title={t("screen.pieces.title")}
-					titleStyle={{ color: theme.colors.onPrimary }}
-				/>
+			<Appbar.Header>
+				<Appbar.BackAction onPress={() => router.back()} />
+				<Appbar.Content title={t("screen.pieces.title")} />
 			</Appbar.Header>
 
 			<View className="p-4">

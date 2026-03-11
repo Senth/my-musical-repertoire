@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform, ScrollView, View } from "react-native";
+import { Platform, ScrollView, useWindowDimensions, View } from "react-native";
 import { Appbar, Button, Snackbar, Text, useTheme } from "react-native-paper";
 import { MistakeRadioGroup } from "@/components/practice/MistakeRadioGroup";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
@@ -17,6 +17,8 @@ function formatDateForInput(date: Date): string {
 	return `${year}-${month}-${day}`;
 }
 
+const MD3_MEDIUM_BREAKPOINT = 600;
+
 export default function PracticeScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -24,6 +26,8 @@ export default function PracticeScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const { pieces } = usePieces();
 	const { savePractice } = useSavePractice();
+	const { width } = useWindowDimensions();
+	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const piece = pieces.find((p) => p.id === id);
 
@@ -67,7 +71,7 @@ export default function PracticeScreen() {
 				className="flex-1 items-center justify-center"
 				style={{ backgroundColor: theme.colors.background }}
 			>
-				<Text variant="bodyLarge">Piece not found</Text>
+				<Text variant="bodyLarge">{t("screen.practice.pieceNotFound")}</Text>
 			</View>
 		);
 	}
@@ -77,15 +81,9 @@ export default function PracticeScreen() {
 			className="flex-1"
 			style={{ backgroundColor: theme.colors.background }}
 		>
-			<Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
-				<Appbar.BackAction
-					onPress={() => router.back()}
-					color={theme.colors.onPrimary}
-				/>
-				<Appbar.Content
-					title={t("screen.practice.title")}
-					titleStyle={{ color: theme.colors.onPrimary }}
-				/>
+			<Appbar.Header>
+				<Appbar.BackAction onPress={() => router.back()} />
+				<Appbar.Content title={t("screen.practice.title")} />
 			</Appbar.Header>
 
 			{saved ? (
@@ -95,76 +93,87 @@ export default function PracticeScreen() {
 					currentMemory={memoryMistakes}
 					previousTechnical={previousDataRef.current.technicalMistakes}
 					previousMemory={previousDataRef.current.memoryMistakes}
+					isCompact={isCompact}
 				/>
 			) : (
 				<ScrollView>
-					<View className="p-4 gap-6">
-						<View className="gap-1">
-							<Text variant="headlineSmall">{piece.title}</Text>
-							<Text
-								variant="bodyLarge"
-								style={{ color: theme.colors.onSurfaceVariant }}
-							>
-								{piece.composer}
-							</Text>
-						</View>
-
-						<View className="gap-2">
-							<Text variant="titleSmall">{t("screen.practice.dateLabel")}</Text>
-							{Platform.OS === "web" ? (
-								<input
-									type="date"
-									value={date}
-									onChange={(e) => setDate(e.target.value)}
-									style={{
-										padding: 12,
-										borderRadius: 4,
-										border: `1px solid ${theme.colors.outline}`,
-										backgroundColor: theme.colors.surface,
-										color: theme.colors.onSurface,
-										fontSize: 16,
-									}}
-								/>
-							) : (
-								<Button
-									mode="outlined"
-									onPress={() => {
-										/* TODO: Native date picker */
-									}}
+					<View
+						className="gap-6"
+						style={{
+							paddingHorizontal: isCompact ? 16 : 24,
+							paddingTop: 24,
+						}}
+					>
+						<View className="w-full max-w-xl self-center gap-6">
+							<View className="gap-1">
+								<Text variant="headlineSmall">{piece.title}</Text>
+								<Text
+									variant="bodyLarge"
+									style={{ color: theme.colors.onSurfaceVariant }}
 								>
-									{new Date(`${date}T12:00:00`).toLocaleDateString()}
-								</Button>
-							)}
-							<Text
-								variant="bodySmall"
-								style={{ color: theme.colors.onSurfaceVariant }}
+									{piece.composer}
+								</Text>
+							</View>
+
+							<View className="gap-2">
+								<Text variant="titleSmall">
+									{t("screen.practice.dateLabel")}
+								</Text>
+								{Platform.OS === "web" ? (
+									<input
+										type="date"
+										value={date}
+										onChange={(e) => setDate(e.target.value)}
+										style={{
+											padding: 12,
+											borderRadius: 4,
+											border: `1px solid ${theme.colors.outline}`,
+											backgroundColor: theme.colors.surface,
+											color: theme.colors.onSurface,
+											fontSize: 16,
+										}}
+									/>
+								) : (
+									<Button
+										mode="outlined"
+										onPress={() => {
+											/* TODO: Native date picker */
+										}}
+									>
+										{new Date(`${date}T12:00:00`).toLocaleDateString()}
+									</Button>
+								)}
+								<Text
+									variant="bodySmall"
+									style={{ color: theme.colors.onSurfaceVariant }}
+								>
+									{t("screen.practice.lastPracticed", {
+										when: formatDaysAgo(piece.lastPracticed, t),
+									})}
+								</Text>
+							</View>
+
+							<MistakeRadioGroup
+								label={t("screen.practice.technicalMistakes")}
+								value={technicalMistakes}
+								onChange={setTechnicalMistakes}
+							/>
+
+							<MistakeRadioGroup
+								label={t("screen.practice.memoryMistakes")}
+								value={memoryMistakes}
+								onChange={setMemoryMistakes}
+							/>
+
+							<Button
+								mode="contained"
+								onPress={handleSave}
+								loading={loading}
+								disabled={loading}
 							>
-								{t("screen.practice.lastPracticed", {
-									when: formatDaysAgo(piece.lastPracticed, t),
-								})}
-							</Text>
+								{t("screen.practice.save")}
+							</Button>
 						</View>
-
-						<MistakeRadioGroup
-							label={t("screen.practice.technicalMistakes")}
-							value={technicalMistakes}
-							onChange={setTechnicalMistakes}
-						/>
-
-						<MistakeRadioGroup
-							label={t("screen.practice.memoryMistakes")}
-							value={memoryMistakes}
-							onChange={setMemoryMistakes}
-						/>
-
-						<Button
-							mode="contained"
-							onPress={handleSave}
-							loading={loading}
-							disabled={loading}
-						>
-							{t("screen.practice.save")}
-						</Button>
 					</View>
 				</ScrollView>
 			)}

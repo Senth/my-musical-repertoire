@@ -23,6 +23,7 @@ interface PracticeComparisonProps {
 	currentMemory: PracticeMistakes;
 	previousTechnical?: PracticeMistakes;
 	previousMemory?: PracticeMistakes;
+	isCompact: boolean;
 }
 
 function ComparisonRow({
@@ -45,9 +46,9 @@ function ComparisonRow({
 
 	const iconName = improved ? "arrow-up" : regressed ? "arrow-down" : "minus";
 	const iconColor = improved
-		? "#4CAF50"
+		? theme.colors.tertiary
 		: regressed
-			? "#F44336"
+			? theme.colors.error
 			: theme.colors.onSurfaceVariant;
 
 	return (
@@ -84,6 +85,7 @@ export function PracticeComparison({
 	currentMemory,
 	previousTechnical,
 	previousMemory,
+	isCompact,
 }: PracticeComparisonProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -114,67 +116,72 @@ export function PracticeComparison({
 	}
 
 	return (
-		<View className="p-4 gap-6">
-			<View className="gap-1">
-				<Text variant="headlineSmall">
-					{t("screen.practice.comparison.title")}
-				</Text>
-				<Text
-					variant="bodyLarge"
-					style={{ color: theme.colors.onSurfaceVariant }}
-				>
-					{pieceName}
-				</Text>
-			</View>
+		<View
+			className="gap-6"
+			style={{ paddingHorizontal: isCompact ? 16 : 24, paddingTop: 24 }}
+		>
+			<View className="w-full max-w-xl self-center gap-6">
+				<View className="gap-1">
+					<Text variant="headlineSmall">
+						{t("screen.practice.comparison.title")}
+					</Text>
+					<Text
+						variant="bodyLarge"
+						style={{ color: theme.colors.onSurfaceVariant }}
+					>
+						{pieceName}
+					</Text>
+				</View>
 
-			<Text
-				variant="titleMedium"
-				style={{
-					color:
-						scoreDiff !== null && scoreDiff > 0
-							? "#4CAF50"
-							: scoreDiff !== null && scoreDiff < 0
-								? "#F44336"
-								: theme.colors.onSurface,
-				}}
-			>
-				{t(summaryKey)}
-			</Text>
-
-			<View className="gap-2">
 				<Text
-					variant="labelMedium"
-					style={{ color: theme.colors.onSurfaceVariant }}
+					variant="titleMedium"
+					style={{
+						color:
+							scoreDiff !== null && scoreDiff > 0
+								? theme.colors.tertiary
+								: scoreDiff !== null && scoreDiff < 0
+									? theme.colors.error
+									: theme.colors.onSurface,
+					}}
 				>
-					{t("common.score", { score: Math.round(currentScore ?? 0) })}
-					{previousScore !== null &&
-						` (${t("screen.practice.comparison.previous")}: ${t("common.score", { score: Math.round(previousScore) })})`}
+					{t(summaryKey)}
 				</Text>
-				<PieceProgressBar
-					technicalMistakes={currentTechnical}
-					memoryMistakes={currentMemory}
-					showLabel={false}
+
+				<View className="gap-2">
+					<Text
+						variant="labelMedium"
+						style={{ color: theme.colors.onSurfaceVariant }}
+					>
+						{t("common.score", { score: Math.round(currentScore ?? 0) })}
+						{previousScore !== null &&
+							` (${t("screen.practice.comparison.previous")}: ${t("common.score", { score: Math.round(previousScore) })})`}
+					</Text>
+					<PieceProgressBar
+						technicalMistakes={currentTechnical}
+						memoryMistakes={currentMemory}
+						showLabel={false}
+					/>
+				</View>
+
+				<Divider />
+
+				<ComparisonRow
+					label={t("screen.practice.technicalMistakes")}
+					current={currentTechnical}
+					previous={previousTechnical}
 				/>
-			</View>
 
-			<Divider />
+				<ComparisonRow
+					label={t("screen.practice.memoryMistakes")}
+					current={currentMemory}
+					previous={previousMemory}
+				/>
 
-			<ComparisonRow
-				label={t("screen.practice.technicalMistakes")}
-				current={currentTechnical}
-				previous={previousTechnical}
-			/>
-
-			<ComparisonRow
-				label={t("screen.practice.memoryMistakes")}
-				current={currentMemory}
-				previous={previousMemory}
-			/>
-
-			<View className="mt-4">
-				<Button mode="contained" onPress={() => router.back()}>
-					{t("screen.practice.comparison.backToOverview")}
-				</Button>
+				<View className="mt-4">
+					<Button mode="contained" onPress={() => router.back()}>
+						{t("screen.practice.comparison.backToOverview")}
+					</Button>
+				</View>
 			</View>
 		</View>
 	);
