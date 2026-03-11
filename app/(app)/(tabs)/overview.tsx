@@ -47,7 +47,7 @@ export default function OverviewScreen() {
 
 	return (
 		<View className="flex-1" style={{ backgroundColor: theme.colors.background }}>
-			<View className="flex-1 px-4 pt-6 gap-4">
+			<View className="flex-1 p-6 gap-4">
 				{pieces.length === 0 ? (
 					<View className="flex-1 items-center justify-center">
 						<Text
