@@ -85,6 +85,7 @@ export default function PiecesScreen() {
 					data={filteredPieces}
 					keyExtractor={(item) => item.id ?? ""}
 					renderItem={renderItem}
+					contentContainerStyle={{ paddingHorizontal: 16 }}
 				/>
 			)}
 		</View>
