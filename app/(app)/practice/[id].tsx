@@ -1,13 +1,13 @@
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef, useState } from "react";
-import { View, Platform, ScrollView } from "react-native";
-import { Text, Button, Appbar, Snackbar, useTheme } from "react-native-paper";
 import { useTranslation } from "react-i18next";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { Platform, ScrollView, View } from "react-native";
+import { Appbar, Button, Snackbar, Text, useTheme } from "react-native-paper";
+import { MistakeRadioGroup } from "@/components/practice/MistakeRadioGroup";
+import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { usePieces } from "@/hooks/use-pieces";
 import { useSavePractice } from "@/hooks/use-practices";
 import { PracticeMistakes } from "@/models/practice";
-import { MistakeRadioGroup } from "@/components/practice/MistakeRadioGroup";
-import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { formatDaysAgo } from "@/utils/date";
 
 function formatDateForInput(date: Date): string {

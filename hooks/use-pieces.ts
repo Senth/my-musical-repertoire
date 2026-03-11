@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
 import {
-	collection,
-	query,
-	onSnapshot,
 	addDoc,
+	collection,
 	doc,
-	updateDoc,
+	onSnapshot,
+	query,
 	type Timestamp,
+	updateDoc,
 } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Piece } from "@/models/piece";
@@ -21,7 +21,11 @@ interface FirestorePiece {
 	lastMemoryMistakes?: PracticeMistakes;
 }
 
-function fromFirestore(id: string, data: FirestorePiece, userId: string): Piece {
+function fromFirestore(
+	id: string,
+	data: FirestorePiece,
+	userId: string,
+): Piece {
 	return {
 		id,
 		userId,
@@ -84,7 +88,12 @@ export function useUpdatePiece() {
 
 	const updatePiece = async (
 		pieceId: string,
-		updates: Partial<Pick<Piece, "lastPracticed" | "lastTechnicalMistakes" | "lastMemoryMistakes">>,
+		updates: Partial<
+			Pick<
+				Piece,
+				"lastPracticed" | "lastTechnicalMistakes" | "lastMemoryMistakes"
+			>
+		>,
 	) => {
 		if (!user) throw new Error("Not authenticated");
 

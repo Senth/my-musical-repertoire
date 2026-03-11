@@ -1,12 +1,12 @@
-import { useState, useMemo } from "react";
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FlatList, View } from "react-native";
 import { Appbar, List, Searchbar, Text, useTheme } from "react-native-paper";
-import { useTranslation } from "react-i18next";
-import { useRouter } from "expo-router";
-import { usePieces } from "@/hooks/use-pieces";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
-import { formatDaysAgo } from "@/utils/date";
+import { usePieces } from "@/hooks/use-pieces";
 import type { Piece } from "@/models/piece";
+import { formatDaysAgo } from "@/utils/date";
 
 export default function PiecesScreen() {
 	const { t } = useTranslation();
@@ -30,10 +30,16 @@ export default function PiecesScreen() {
 			title={item.title}
 			description={() => (
 				<View className="gap-1 mt-1">
-					<Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+					<Text
+						variant="bodyMedium"
+						style={{ color: theme.colors.onSurfaceVariant }}
+					>
 						{item.composer}
 					</Text>
-					<Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+					<Text
+						variant="bodySmall"
+						style={{ color: theme.colors.onSurfaceVariant }}
+					>
 						{formatDaysAgo(item.lastPracticed, t)}
 					</Text>
 				</View>
@@ -51,7 +57,10 @@ export default function PiecesScreen() {
 	);
 
 	return (
-		<View className="flex-1" style={{ backgroundColor: theme.colors.background }}>
+		<View
+			className="flex-1"
+			style={{ backgroundColor: theme.colors.background }}
+		>
 			<Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
 				<Appbar.BackAction
 					onPress={() => router.back()}
@@ -75,7 +84,10 @@ export default function PiecesScreen() {
 				<View className="flex-1 items-center justify-center p-4">
 					<Text
 						variant="bodyLarge"
-						style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}
+						style={{
+							color: theme.colors.onSurfaceVariant,
+							textAlign: "center",
+						}}
 					>
 						{t("screen.pieces.noResults")}
 					</Text>

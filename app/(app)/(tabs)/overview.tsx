@@ -1,12 +1,19 @@
-import { View } from "react-native";
-import { Text, FAB, Card, Button, useTheme, ActivityIndicator } from "react-native-paper";
-import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
-import { usePieces } from "@/hooks/use-pieces";
+import { useTranslation } from "react-i18next";
+import { View } from "react-native";
+import {
+	ActivityIndicator,
+	Button,
+	Card,
+	FAB,
+	Text,
+	useTheme,
+} from "react-native-paper";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
-import { formatDaysAgo } from "@/utils/date";
+import { usePieces } from "@/hooks/use-pieces";
 import type { Piece } from "@/models/piece";
 import { PracticeMistakes } from "@/models/practice";
+import { formatDaysAgo } from "@/utils/date";
 
 function getSuggestedPieces(pieces: Piece[], count = 3): Piece[] {
 	const unpracticed = pieces.filter((p) => !p.lastPracticed);
@@ -46,25 +53,36 @@ export default function OverviewScreen() {
 	}
 
 	return (
-		<View className="flex-1" style={{ backgroundColor: theme.colors.background }}>
+		<View
+			className="flex-1"
+			style={{ backgroundColor: theme.colors.background }}
+		>
 			<View className="flex-1 p-6 gap-4">
 				{pieces.length === 0 ? (
 					<View className="flex-1 items-center justify-center">
 						<Text
 							variant="bodyLarge"
-							style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}
+							style={{
+								color: theme.colors.onSurfaceVariant,
+								textAlign: "center",
+							}}
 						>
 							{t("screen.overview.noPieces")}
 						</Text>
 					</View>
 				) : (
 					<>
-						<Text variant="titleMedium">{t("screen.overview.practiceToday")}</Text>
+						<Text variant="titleMedium">
+							{t("screen.overview.practiceToday")}
+						</Text>
 
 						{suggested.length === 0 ? (
 							<Text
 								variant="bodyLarge"
-								style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}
+								style={{
+									color: theme.colors.onSurfaceVariant,
+									textAlign: "center",
+								}}
 							>
 								{t("screen.overview.allCaughtUp")}
 							</Text>
@@ -75,10 +93,7 @@ export default function OverviewScreen() {
 									mode="elevated"
 									onPress={() => router.push(`/practice/${piece.id}`)}
 								>
-									<Card.Title
-										title={piece.title}
-										subtitle={piece.composer}
-									/>
+									<Card.Title title={piece.title} subtitle={piece.composer} />
 									<Card.Content>
 										<View className="gap-2">
 											<PieceProgressBar

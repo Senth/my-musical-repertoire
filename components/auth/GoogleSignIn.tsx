@@ -1,7 +1,3 @@
-import { Button } from "react-native-paper";
-import { useTranslation } from "react-i18next";
-import { useState } from "react";
-import { Platform } from "react-native";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import {
@@ -9,6 +5,10 @@ import {
 	signInWithCredential,
 	signInWithPopup,
 } from "firebase/auth";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Platform } from "react-native";
+import { Button } from "react-native-paper";
 import { auth } from "@/config/firebase";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -25,13 +25,7 @@ export function GoogleSignInButton() {
 	const clientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
 	if (Platform.OS === "web") {
-		return (
-			<GoogleSignInWeb
-				t={t}
-				loading={loading}
-				setLoading={setLoading}
-			/>
-		);
+		return <GoogleSignInWeb t={t} loading={loading} setLoading={setLoading} />;
 	}
 
 	return (
@@ -128,9 +122,7 @@ function GoogleSignInNative({
 				);
 
 				if (tokenResult.idToken) {
-					const credential = GoogleAuthProvider.credential(
-						tokenResult.idToken,
-					);
+					const credential = GoogleAuthProvider.credential(tokenResult.idToken);
 					await signInWithCredential(auth, credential);
 				}
 			}

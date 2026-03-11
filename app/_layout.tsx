@@ -1,12 +1,12 @@
 import "../global.css";
 import "@/i18n";
 
-import { useEffect } from "react";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { PaperProvider, MD3DarkTheme, MD3LightTheme } from "react-native-paper";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useEffect } from "react";
+import { MD3DarkTheme, MD3LightTheme, PaperProvider } from "react-native-paper";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 const lightTheme = {
 	...MD3LightTheme,
@@ -43,7 +43,7 @@ function AuthGate() {
 		} else if (user && inAuthGroup) {
 			router.replace("/(app)/(tabs)/overview");
 		}
-	}, [user, loading, segments]);
+	}, [user, loading, segments, router.replace]);
 
 	return <Slot />;
 }

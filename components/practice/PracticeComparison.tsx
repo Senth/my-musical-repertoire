@@ -1,10 +1,13 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, Divider, Text, useTheme } from "react-native-paper";
-import { useTranslation } from "react-i18next";
-import { useRouter } from "expo-router";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+	calculateScore,
+	PieceProgressBar,
+} from "@/components/ui/PieceProgressBar";
 import { PracticeMistakes } from "@/models/practice";
-import { PieceProgressBar, calculateScore } from "@/components/ui/PieceProgressBar";
 
 const MISTAKE_LABELS: Record<PracticeMistakes, string> = {
 	[PracticeMistakes.none]: "screen.practice.mistakeLevel.none",
@@ -54,7 +57,11 @@ function ComparisonRow({
 				<View className="flex-row items-center gap-2">
 					<Text variant="bodyLarge">{t(MISTAKE_LABELS[current])}</Text>
 					{hasComparison && (
-						<MaterialCommunityIcons name={iconName} size={20} color={iconColor} />
+						<MaterialCommunityIcons
+							name={iconName}
+							size={20}
+							color={iconColor}
+						/>
 					)}
 				</View>
 				{hasComparison && (
@@ -62,7 +69,8 @@ function ComparisonRow({
 						variant="bodySmall"
 						style={{ color: theme.colors.onSurfaceVariant }}
 					>
-						{t("screen.practice.comparison.previous")}: {t(MISTAKE_LABELS[previous])}
+						{t("screen.practice.comparison.previous")}:{" "}
+						{t(MISTAKE_LABELS[previous])}
 					</Text>
 				)}
 			</View>
@@ -81,7 +89,8 @@ export function PracticeComparison({
 	const theme = useTheme();
 	const router = useRouter();
 
-	const hasPrevious = previousTechnical !== undefined || previousMemory !== undefined;
+	const hasPrevious =
+		previousTechnical !== undefined || previousMemory !== undefined;
 
 	const currentScore = calculateScore(currentTechnical, currentMemory);
 	const previousScore = hasPrevious
@@ -107,8 +116,13 @@ export function PracticeComparison({
 	return (
 		<View className="p-4 gap-6">
 			<View className="gap-1">
-				<Text variant="headlineSmall">{t("screen.practice.comparison.title")}</Text>
-				<Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
+				<Text variant="headlineSmall">
+					{t("screen.practice.comparison.title")}
+				</Text>
+				<Text
+					variant="bodyLarge"
+					style={{ color: theme.colors.onSurfaceVariant }}
+				>
 					{pieceName}
 				</Text>
 			</View>
@@ -116,18 +130,22 @@ export function PracticeComparison({
 			<Text
 				variant="titleMedium"
 				style={{
-					color: scoreDiff !== null && scoreDiff > 0
-						? "#4CAF50"
-						: scoreDiff !== null && scoreDiff < 0
-							? "#F44336"
-							: theme.colors.onSurface,
+					color:
+						scoreDiff !== null && scoreDiff > 0
+							? "#4CAF50"
+							: scoreDiff !== null && scoreDiff < 0
+								? "#F44336"
+								: theme.colors.onSurface,
 				}}
 			>
 				{t(summaryKey)}
 			</Text>
 
 			<View className="gap-2">
-				<Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+				<Text
+					variant="labelMedium"
+					style={{ color: theme.colors.onSurfaceVariant }}
+				>
 					{t("common.score", { score: Math.round(currentScore ?? 0) })}
 					{previousScore !== null &&
 						` (${t("screen.practice.comparison.previous")}: ${t("common.score", { score: Math.round(previousScore) })})`}

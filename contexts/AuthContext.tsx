@@ -1,18 +1,18 @@
-import React, {
+import {
+	signOut as firebaseSignOut,
+	GoogleAuthProvider,
+	onAuthStateChanged,
+	signInWithCredential,
+	signInWithEmailAndPassword,
+	type User,
+} from "firebase/auth";
+import {
 	createContext,
+	type ReactNode,
 	useContext,
 	useEffect,
 	useState,
-	type ReactNode,
 } from "react";
-import {
-	onAuthStateChanged,
-	signInWithEmailAndPassword,
-	signOut as firebaseSignOut,
-	signInWithCredential,
-	GoogleAuthProvider,
-	type User,
-} from "firebase/auth";
 import { auth } from "@/config/firebase";
 
 interface AuthContextType {

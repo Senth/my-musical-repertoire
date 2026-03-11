@@ -1,22 +1,22 @@
+import { FirebaseError } from "firebase/app";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-	View,
 	KeyboardAvoidingView,
 	Platform,
 	useWindowDimensions,
+	View,
 } from "react-native";
 import {
-	TextInput,
-	Button,
 	Appbar,
-	Snackbar,
-	useTheme,
+	Button,
 	Card,
+	Snackbar,
+	TextInput,
+	useTheme,
 } from "react-native-paper";
-import { useTranslation } from "react-i18next";
-import { useAuth } from "@/contexts/AuthContext";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignIn";
-import { FirebaseError } from "firebase/app";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 

@@ -1,6 +1,6 @@
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { ProgressBar, Text, useTheme } from "react-native-paper";
-import { useTranslation } from "react-i18next";
 import { PracticeMistakes } from "@/models/practice";
 
 interface PieceProgressBarProps {
@@ -18,7 +18,7 @@ export function calculateScore(
 	}
 	const tech = technicalMistakes ?? PracticeMistakes.none;
 	const mem = memoryMistakes ?? PracticeMistakes.none;
-	return ((4 - tech) + (4 - mem)) * 1.25;
+	return (4 - tech + (4 - mem)) * 1.25;
 }
 
 export function PieceProgressBar({
