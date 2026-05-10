@@ -71,55 +71,70 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 
 ### Phase 1: Project Setup & Auth
 
-- Scaffold Expo project with Expo Router + TypeScript
-- Configure NativeWind (Tailwind CSS)
-- Set up Firebase project (auth, Firestore, storage)
-- Implement login/signup (email + social via Firebase Auth)
-- Basic layout shell (tabs, header) — test on web only
+- [x] Scaffold Expo project with Expo Router + TypeScript
+- [x] Configure NativeWind (Tailwind CSS)
+- [x] Set up Firebase project (auth, Firestore, storage)
+- [x] Implement login/signup (email + social via Firebase Auth)
+- [x] Basic layout shell (tabs, header) — test on web only
 
 ### Phase 2: Core Data Model & Practice Pieces
 
-- Design Firestore data model (collections: pieces, categories)
-- Set up Firestore security rules
-- Build CRUD UI for managing practice pieces
-- PDF upload and viewing for sheet music (Firebase Cloud Storage)
-- Enable Firestore offline persistence for offline support
+- [x] Design Firestore data model (collections: pieces)
+- [x] Set up Firestore security rules
+- [ ] Build CRUD UI for managing practice pieces
+  - [x] Create piece (add-piece screen)
+  - [x] Read / list pieces (pieces screen + overview)
+  - [ ] Edit piece (title, composer)
+  - [ ] Delete piece
+- [ ] PDF upload and viewing for sheet music (Firebase Cloud Storage)
+  - [ ] Upload PDF to Cloud Storage
+  - [ ] View PDF in-app
+- [ ] Enable Firestore offline persistence
 
 ### Phase 3: Practice Session Tracking
 
-- Practice timer with start/stop/pause
-- Session logging (piece, duration, notes, quality rating)
-- Practice history and statistics
-- Basic "what to practice" recommendation logic
+- [ ] Countdown practice timer (set duration, counts down, then opens log form)
+- [ ] Session logging
+  - [x] Log practice date
+  - [x] Technical mistake rating
+  - [x] Memory mistake rating
+  - [ ] Notes field (free text)
+- [ ] Before/after comparison after saving
+  - [x] Comparison screen component
+- [ ] Practice history screen (list of past sessions per piece)
+- [ ] Basic "what to practice" recommendation logic
+  - [x] Surface unpracticed pieces first
+  - [x] Sort by highest mistake score
 
 ### Phase 4: Smart Practice Suggestions
 
-- Algorithm to suggest what to practice based on:
-  - Time since last practice
-  - Difficulty level and mastery progress
-  - User-defined goals and priorities
-- Dashboard with practice overview and suggestions
+- [ ] Algorithm to suggest what to practice based on:
+  - [ ] Time since last practice
+  - [ ] Difficulty level and mastery progress
+  - [ ] User-defined goals and priorities
+- [ ] Dashboard with practice overview and suggestions
 
 ### Phase 5: Offline Polish
 
-- Verify Firestore offline persistence works across all features
-- Cache PDFs locally for offline sheet music viewing
-- Handle edge cases (conflict resolution, stale data indicators)
-- Offline-first UX patterns (optimistic updates, sync indicators)
+- [ ] Verify Firestore offline persistence works across all features
+- [ ] Cache PDFs locally for offline sheet music viewing
+- [ ] Handle edge cases (conflict resolution, stale data indicators)
+- [ ] Offline-first UX patterns (optimistic updates, sync indicators)
 
 ### Phase 6: Mobile Polish
 
-- Test on Android device/emulator
-- Platform-specific UI tweaks (`.native.tsx` overrides where needed)
-- EAS Build for Android APK/AAB
-- Optional Google Play Store publish
+- [ ] Test on Android device/emulator
+- [ ] Platform-specific UI tweaks (`.native.tsx` overrides where needed)
+- [ ] EAS Build for Android APK/AAB
+- [ ] Optional Google Play Store publish
 
 ### Phase 7: Advanced Features (Future)
 
-- PDF annotation support
-- Practice reminders/scheduling
-- Progress tracking with charts
-- iOS support via EAS Build
+- [ ] PDF annotation support
+- [ ] Practice reminders/scheduling
+- [ ] Progress tracking with charts
+- [ ] iOS support via EAS Build
+- [ ] Countdown timer with suggested duration based on time since last practiced
 
 ## Architecture Notes
 
