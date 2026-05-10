@@ -11,7 +11,8 @@
 		"score": "{{score}}/10"
 	},
 	"error": {
-		"firebase": "Connection to Firebase failed"
+		"firebase": "Connection to Firebase failed",
+		"deletePiece": "Failed to delete piece. Please try again."
 	},
 	"screen": {
 		"login": {
@@ -91,6 +92,12 @@
 			"menu": {
 				"edit": "Edit",
 				"delete": "Delete"
+			},
+			"deleteDialog": {
+				"title": "Delete Piece",
+				"message": "\"{{name}}\" and all its practice history will be permanently deleted.",
+				"confirm": "Delete",
+				"cancel": "Cancel"
 			}
 		},
 		"pieceList": {

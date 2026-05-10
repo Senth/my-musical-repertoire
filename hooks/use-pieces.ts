@@ -1,7 +1,9 @@
 import {
 	addDoc,
 	collection,
+	deleteDoc,
 	doc,
+	getDocs,
 	onSnapshot,
 	query,
 	type Timestamp,
@@ -106,4 +108,28 @@ export function useUpdatePiece() {
 	};
 
 	return { updatePiece };
+}
+
+export function useDeletePiece() {
+	const { user } = useAuth();
+
+	const deletePiece = async (pieceId: string) => {
+		if (!user) throw new Error("Not authenticated");
+
+		const practicesRef = collection(
+			db,
+			"users",
+			user.uid,
+			"pieces",
+			pieceId,
+			"practices",
+		);
+		const practicesSnapshot = await getDocs(practicesRef);
+		await Promise.all(practicesSnapshot.docs.map((d) => deleteDoc(d.ref)));
+
+		const pieceRef = doc(db, "users", user.uid, "pieces", pieceId);
+		await deleteDoc(pieceRef);
+	};
+
+	return { deletePiece };
 }

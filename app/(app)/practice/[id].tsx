@@ -12,7 +12,8 @@ import {
 } from "react-native-paper";
 import { MistakeRadioGroup } from "@/components/practice/MistakeRadioGroup";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
-import { usePieces } from "@/hooks/use-pieces";
+import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
+import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { useSavePractice } from "@/hooks/use-practices";
 import { PracticeMistakes } from "@/models/practice";
 import { formatDaysAgo } from "@/utils/date";
@@ -33,6 +34,7 @@ export default function PracticeScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const { pieces } = usePieces();
 	const { savePractice } = useSavePractice();
+	const { deletePiece } = useDeletePiece();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
@@ -55,6 +57,8 @@ export default function PracticeScreen() {
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
 	const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
+	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+	const [deleteLoading, setDeleteLoading] = useState(false);
 
 	const handleSave = async () => {
 		if (!id) return;
@@ -70,6 +74,20 @@ export default function PracticeScreen() {
 			setError(t("error.firebase"));
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const handleDelete = async () => {
+		if (!id) return;
+		setDeleteLoading(true);
+		try {
+			await deletePiece(id);
+			router.replace("/pieces");
+		} catch {
+			setDeleteDialogVisible(false);
+			setError(t("error.deletePiece"));
+		} finally {
+			setDeleteLoading(false);
 		}
 	};
 
@@ -114,7 +132,7 @@ export default function PracticeScreen() {
 						leadingIcon="delete"
 						onPress={() => {
 							setHeaderMenuVisible(false);
-							// TODO: Delete piece
+							setDeleteDialogVisible(true);
 						}}
 						title={t("screen.pieces.menu.delete")}
 					/>
@@ -221,6 +239,14 @@ export default function PracticeScreen() {
 			>
 				{error ?? ""}
 			</Snackbar>
+
+			<DeletePieceDialog
+				visible={deleteDialogVisible}
+				pieceName={piece?.title ?? ""}
+				loading={deleteLoading}
+				onConfirm={handleDelete}
+				onDismiss={() => setDeleteDialogVisible(false)}
+			/>
 		</View>
 	);
 }

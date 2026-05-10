@@ -10,11 +10,13 @@ import {
 	List,
 	Menu,
 	Searchbar,
+	Snackbar,
 	Text,
 	useTheme,
 } from "react-native-paper";
+import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
-import { usePieces } from "@/hooks/use-pieces";
+import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import type { Piece } from "@/models/piece";
 import { formatDaysAgo } from "@/utils/date";
 
@@ -27,9 +29,13 @@ export default function PiecesScreen() {
 	const theme = useTheme();
 	const router = useRouter();
 	const { pieces } = usePieces();
+	const { deletePiece } = useDeletePiece();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [menuVisible, setMenuVisible] = useState<string | null>(null);
 	const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
+	const [deletingPiece, setDeletingPiece] = useState<Piece | null>(null);
+	const [deleteLoading, setDeleteLoading] = useState(false);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
@@ -42,6 +48,20 @@ export default function PiecesScreen() {
 				p.composer.toLowerCase().includes(query),
 		);
 	}, [pieces, searchQuery]);
+
+	const handleDelete = async () => {
+		if (!deletingPiece?.id) return;
+		setDeleteLoading(true);
+		try {
+			await deletePiece(deletingPiece.id);
+			setDeletingPiece(null);
+		} catch {
+			setDeletingPiece(null);
+			setDeleteError(t("error.deletePiece"));
+		} finally {
+			setDeleteLoading(false);
+		}
+	};
 
 	const renderCardMenu = (item: Piece) => (
 		<Menu
@@ -67,7 +87,7 @@ export default function PiecesScreen() {
 				leadingIcon="delete"
 				onPress={() => {
 					setMenuVisible(null);
-					// TODO: Delete piece
+					setDeletingPiece(item);
 				}}
 				title={t("screen.pieces.menu.delete")}
 			/>
@@ -205,12 +225,30 @@ export default function PiecesScreen() {
 				<Menu.Item
 					leadingIcon="delete"
 					onPress={() => {
+						const piece = pieces.find((p) => p.id === contextMenu?.pieceId);
 						setContextMenu(null);
-						// TODO: Delete piece
+						if (piece) setDeletingPiece(piece);
 					}}
 					title={t("screen.pieces.menu.delete")}
 				/>
 			</Menu>
+
+			<DeletePieceDialog
+				visible={deletingPiece !== null}
+				pieceName={deletingPiece?.title ?? ""}
+				loading={deleteLoading}
+				onConfirm={handleDelete}
+				onDismiss={() => setDeletingPiece(null)}
+			/>
+
+			<Snackbar
+				visible={!!deleteError}
+				onDismiss={() => setDeleteError(null)}
+				duration={4000}
+				action={{ label: "OK", onPress: () => setDeleteError(null) }}
+			>
+				{deleteError ?? ""}
+			</Snackbar>
 		</View>
 	);
 }

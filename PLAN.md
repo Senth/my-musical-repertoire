@@ -85,7 +85,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Create piece (add-piece screen)
   - [x] Read / list pieces (pieces screen + overview)
   - [x] Edit piece (title, composer)
-  - [ ] Delete piece
+  - [x] Delete piece
 - [ ] PDF upload and viewing for sheet music (Firebase Cloud Storage)
   - [ ] Upload PDF to Cloud Storage
   - [ ] View PDF in-app
