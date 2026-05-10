@@ -74,10 +74,24 @@
 				"backToOverview": "Back to Overview"
 			}
 		},
+		"editPiece": {
+			"title": "Edit Piece",
+			"titleLabel": "Title",
+			"composerLabel": "Composer",
+			"save": "Save",
+			"error": {
+				"titleRequired": "Title is required.",
+				"composerRequired": "Composer is required."
+			}
+		},
 		"pieces": {
 			"title": "My Repertoire",
 			"searchPlaceholder": "Search pieces...",
-			"noResults": "No pieces match your search"
+			"noResults": "No pieces match your search",
+			"menu": {
+				"edit": "Edit",
+				"delete": "Delete"
+			}
 		},
 		"pieceList": {
 			"title": "My Repertoire"

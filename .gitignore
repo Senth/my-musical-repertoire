@@ -48,3 +48,4 @@ emulator-data
 
 expo-env.d.ts
 # @end expo-cli
+/.repowise

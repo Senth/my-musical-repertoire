@@ -91,7 +91,11 @@ export function useUpdatePiece() {
 		updates: Partial<
 			Pick<
 				Piece,
-				"lastPracticed" | "lastTechnicalMistakes" | "lastMemoryMistakes"
+				| "title"
+				| "composer"
+				| "lastPracticed"
+				| "lastTechnicalMistakes"
+				| "lastMemoryMistakes"
 			>
 		>,
 	) => {

@@ -2,7 +2,14 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, ScrollView, useWindowDimensions, View } from "react-native";
-import { Appbar, Button, Snackbar, Text, useTheme } from "react-native-paper";
+import {
+	Appbar,
+	Button,
+	Menu,
+	Snackbar,
+	Text,
+	useTheme,
+} from "react-native-paper";
 import { MistakeRadioGroup } from "@/components/practice/MistakeRadioGroup";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { usePieces } from "@/hooks/use-pieces";
@@ -47,6 +54,7 @@ export default function PracticeScreen() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
+	const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
 
 	const handleSave = async () => {
 		if (!id) return;
@@ -84,6 +92,33 @@ export default function PracticeScreen() {
 			<Appbar.Header>
 				<Appbar.BackAction onPress={() => router.back()} />
 				<Appbar.Content title={t("screen.practice.title")} />
+				<Menu
+					visible={headerMenuVisible}
+					onDismiss={() => setHeaderMenuVisible(false)}
+					anchor={
+						<Appbar.Action
+							icon="dots-vertical"
+							onPress={() => setHeaderMenuVisible(true)}
+						/>
+					}
+				>
+					<Menu.Item
+						leadingIcon="pencil"
+						onPress={() => {
+							setHeaderMenuVisible(false);
+							router.push(`/edit-piece/${id}`);
+						}}
+						title={t("screen.pieces.menu.edit")}
+					/>
+					<Menu.Item
+						leadingIcon="delete"
+						onPress={() => {
+							setHeaderMenuVisible(false);
+							// TODO: Delete piece
+						}}
+						title={t("screen.pieces.menu.delete")}
+					/>
+				</Menu>
 			</Appbar.Header>
 
 			{saved ? (

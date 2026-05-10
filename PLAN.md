@@ -26,19 +26,19 @@ This is a **piano/instrument practice app** that helps musicians decide what to 
 
 ## Tech Stack
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| **Framework** | React Native (via Expo SDK 55+) | Universal: web + iOS + Android |
-| **Routing** | Expo Router v4+ | File-based, works on web and mobile |
-| **Styling** | NativeWind (Tailwind CSS) | Same Tailwind utility classes |
-| **UI Components** | React Native Paper or Tamagui | Cross-platform native-feeling UI |
-| **State management** | TanStack Query + Zustand | Server state + client state |
-| **Auth** | Firebase Authentication | Email + social login, familiar API |
-| **Database** | Cloud Firestore | NoSQL with built-in offline persistence & real-time sync |
-| **File storage** | Firebase Cloud Storage | PDF/sheet music uploads |
-| **Build/deploy** | EAS Build + EAS Submit | Cloud builds for iOS/Android |
-| **Testing** | Jest + React Native Testing Library | Expo's default test setup |
-| **Language** | TypeScript | Type safety, better AI completions |
+| Layer                | Technology                          | Why                                                      |
+| -------------------- | ----------------------------------- | -------------------------------------------------------- |
+| **Framework**        | React Native (via Expo SDK 55+)     | Universal: web + iOS + Android                           |
+| **Routing**          | Expo Router v4+                     | File-based, works on web and mobile                      |
+| **Styling**          | NativeWind (Tailwind CSS)           | Same Tailwind utility classes                            |
+| **UI Components**    | React Native Paper or Tamagui       | Cross-platform native-feeling UI                         |
+| **State management** | TanStack Query + Zustand            | Server state + client state                              |
+| **Auth**             | Firebase Authentication             | Email + social login, familiar API                       |
+| **Database**         | Cloud Firestore                     | NoSQL with built-in offline persistence & real-time sync |
+| **File storage**     | Firebase Cloud Storage              | PDF/sheet music uploads                                  |
+| **Build/deploy**     | EAS Build + EAS Submit              | Cloud builds for iOS/Android                             |
+| **Testing**          | Jest + React Native Testing Library | Expo's default test setup                                |
+| **Language**         | TypeScript                          | Type safety, better AI completions                       |
 
 ## Web-First Development Workflow
 
@@ -55,15 +55,15 @@ Expo fully supports developing and testing entirely in the browser:
 
 ### React Native Cheat Sheet (for web React devs)
 
-| Web (HTML) | React Native | Notes |
-|------------|-------------|-------|
-| `<div>` | `<View>` | Generic container |
-| `<p>`, `<span>` | `<Text>` | All text must be in `<Text>` |
-| `<button>` | `<Pressable>` | Touchable element |
-| `<input>` | `<TextInput>` | Text input field |
-| `<img>` | `<Image>` | Image component |
-| scrollable `<div>` | `<ScrollView>` | Scrollable container |
-| virtualized list | `<FlatList>` | For long lists (performant) |
+| Web (HTML)         | React Native   | Notes                        |
+| ------------------ | -------------- | ---------------------------- |
+| `<div>`            | `<View>`       | Generic container            |
+| `<p>`, `<span>`    | `<Text>`       | All text must be in `<Text>` |
+| `<button>`         | `<Pressable>`  | Touchable element            |
+| `<input>`          | `<TextInput>`  | Text input field             |
+| `<img>`            | `<Image>`      | Image component              |
+| scrollable `<div>` | `<ScrollView>` | Scrollable container         |
+| virtualized list   | `<FlatList>`   | For long lists (performant)  |
 
 Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-white">`.
 
@@ -84,7 +84,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - [ ] Build CRUD UI for managing practice pieces
   - [x] Create piece (add-piece screen)
   - [x] Read / list pieces (pieces screen + overview)
-  - [ ] Edit piece (title, composer)
+  - [x] Edit piece (title, composer)
   - [ ] Delete piece
 - [ ] PDF upload and viewing for sheet music (Firebase Cloud Storage)
   - [ ] Upload PDF to Cloud Storage
