@@ -2,6 +2,31 @@
 	"app": {
 		"name": "My Musical Repertoire"
 	},
+	"piece": {
+		"state": {
+			"learning": "Learning",
+			"stabilizing": "Stabilizing",
+			"maintenance": "Maintenance",
+			"performance": "Performance",
+			"on_hold": "On Hold",
+			"shelved": "Shelved"
+		},
+		"learningPhase": {
+			"notTracking": "Not tracking",
+			"hands_separate": "Hands Separate",
+			"hands_together_slow": "Hands Together (Slow)",
+			"hands_together_building": "Hands Together (Building)",
+			"continuity": "Continuity"
+		},
+		"difficulty": {
+			"notSet": "Not set",
+			"1": "1 – Easy",
+			"2": "2 – Easy-Medium",
+			"3": "3 – Medium",
+			"4": "4 – Medium-Hard",
+			"5": "5 – Hard"
+		}
+	},
 	"common": {
 		"today": "Today",
 		"yesterday": "Yesterday",
@@ -43,6 +68,8 @@
 			"title": "Add Piece",
 			"titleLabel": "Title",
 			"composerLabel": "Composer",
+			"stateLabel": "Lifecycle State",
+			"targetTempoBpmLabel": "Target Tempo (BPM)",
 			"save": "Save",
 			"error": {
 				"titleRequired": "Title is required.",
@@ -79,6 +106,10 @@
 			"title": "Edit Piece",
 			"titleLabel": "Title",
 			"composerLabel": "Composer",
+			"stateLabel": "Lifecycle State",
+			"learningPhaseLabel": "Learning Phase",
+			"targetTempoBpmLabel": "Target Tempo (BPM)",
+			"difficultyLabel": "Difficulty",
 			"save": "Save",
 			"error": {
 				"titleRequired": "Title is required.",
@@ -89,6 +120,7 @@
 			"title": "My Repertoire",
 			"searchPlaceholder": "Search pieces...",
 			"noResults": "No pieces match your search",
+			"filterAll": "All",
 			"menu": {
 				"edit": "Edit",
 				"delete": "Delete"

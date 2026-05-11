@@ -15,7 +15,9 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { DropdownField } from "@/components/ui/DropdownField";
 import { useAddPiece } from "@/hooks/use-pieces";
+import { PIECE_STATES, type PieceState } from "@/models/piece";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
@@ -29,8 +31,15 @@ export default function AddPieceScreen() {
 
 	const [title, setTitle] = useState("");
 	const [composer, setComposer] = useState("");
+	const [state, setState] = useState<PieceState>("learning");
+	const [targetTempoBpmText, setTargetTempoBpmText] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	const stateOptions = PIECE_STATES.map((s) => ({
+		value: s,
+		label: t(`piece.state.${s}`),
+	}));
 
 	const handleSave = async () => {
 		if (!title.trim()) {
@@ -42,11 +51,15 @@ export default function AddPieceScreen() {
 			return;
 		}
 
+		const targetTempoBpm = targetTempoBpmText.trim()
+			? Number.parseInt(targetTempoBpmText.trim(), 10) || null
+			: null;
+
 		setLoading(true);
 		setError(null);
 
 		try {
-			await addPiece(title.trim(), composer.trim());
+			await addPiece(title.trim(), composer.trim(), state, targetTempoBpm);
 			router.back();
 		} catch {
 			setError(t("error.firebase"));
@@ -70,6 +83,21 @@ export default function AddPieceScreen() {
 				value={composer}
 				onChangeText={setComposer}
 				mode="outlined"
+			/>
+
+			<DropdownField
+				label={t("screen.addPiece.stateLabel")}
+				value={state}
+				options={stateOptions}
+				onChange={(v) => setState((v as PieceState) ?? "learning")}
+			/>
+
+			<TextInput
+				label={t("screen.addPiece.targetTempoBpmLabel")}
+				value={targetTempoBpmText}
+				onChangeText={setTargetTempoBpmText}
+				mode="outlined"
+				keyboardType="numeric"
 			/>
 
 			<Button

@@ -12,12 +12,16 @@ import {
 import { useEffect, useState } from "react";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import type { Piece } from "@/models/piece";
+import type { LearningPhase, Piece, PieceState } from "@/models/piece";
 import type { PracticeMistakes } from "@/models/practice";
 
 interface FirestorePiece {
 	title: string;
 	composer: string;
+	state?: PieceState;
+	learningPhase?: LearningPhase | null;
+	targetTempoBpm?: number | null;
+	difficulty?: 1 | 2 | 3 | 4 | 5 | null;
 	lastPracticed?: Timestamp | null;
 	lastTechnicalMistakes?: PracticeMistakes;
 	lastMemoryMistakes?: PracticeMistakes;
@@ -33,6 +37,10 @@ function fromFirestore(
 		userId,
 		title: data.title,
 		composer: data.composer,
+		state: data.state ?? "maintenance",
+		learningPhase: data.learningPhase ?? null,
+		targetTempoBpm: data.targetTempoBpm ?? null,
+		difficulty: data.difficulty ?? null,
 		lastPracticed: data.lastPracticed?.toDate() ?? null,
 		lastTechnicalMistakes: data.lastTechnicalMistakes,
 		lastMemoryMistakes: data.lastMemoryMistakes,
@@ -71,13 +79,20 @@ export function usePieces() {
 export function useAddPiece() {
 	const { user } = useAuth();
 
-	const addPiece = async (title: string, composer: string) => {
+	const addPiece = async (
+		title: string,
+		composer: string,
+		state: PieceState = "learning",
+		targetTempoBpm: number | null = null,
+	) => {
 		if (!user) throw new Error("Not authenticated");
 
 		const piecesRef = collection(db, "users", user.uid, "pieces");
 		await addDoc(piecesRef, {
 			title,
 			composer,
+			state,
+			targetTempoBpm,
 			lastPracticed: null,
 		});
 	};
@@ -95,6 +110,10 @@ export function useUpdatePiece() {
 				Piece,
 				| "title"
 				| "composer"
+				| "state"
+				| "learningPhase"
+				| "targetTempoBpm"
+				| "difficulty"
 				| "lastPracticed"
 				| "lastTechnicalMistakes"
 				| "lastMemoryMistakes"

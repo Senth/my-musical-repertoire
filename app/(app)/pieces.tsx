@@ -5,6 +5,7 @@ import { FlatList, ScrollView, useWindowDimensions, View } from "react-native";
 import {
 	Appbar,
 	Card,
+	Chip,
 	Divider,
 	IconButton,
 	List,
@@ -14,14 +15,16 @@ import {
 	Text,
 	useTheme,
 } from "react-native-paper";
+import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
-import type { Piece } from "@/models/piece";
+import { PIECE_STATES, type Piece, type PieceState } from "@/models/piece";
 import { formatDaysAgo } from "@/utils/date";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
+type StateFilter = PieceState | "all";
 type ContextMenu = { pieceId: string; x: number; y: number };
 
 export default function PiecesScreen() {
@@ -31,6 +34,7 @@ export default function PiecesScreen() {
 	const { pieces } = usePieces();
 	const { deletePiece } = useDeletePiece();
 	const [searchQuery, setSearchQuery] = useState("");
+	const [stateFilter, setStateFilter] = useState<StateFilter>("all");
 	const [menuVisible, setMenuVisible] = useState<string | null>(null);
 	const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
 	const [deletingPiece, setDeletingPiece] = useState<Piece | null>(null);
@@ -40,14 +44,20 @@ export default function PiecesScreen() {
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const filteredPieces = useMemo(() => {
-		if (!searchQuery.trim()) return pieces;
-		const query = searchQuery.toLowerCase();
-		return pieces.filter(
-			(p) =>
-				p.title.toLowerCase().includes(query) ||
-				p.composer.toLowerCase().includes(query),
-		);
-	}, [pieces, searchQuery]);
+		let result = pieces;
+		if (searchQuery.trim()) {
+			const query = searchQuery.toLowerCase();
+			result = result.filter(
+				(p) =>
+					p.title.toLowerCase().includes(query) ||
+					p.composer.toLowerCase().includes(query),
+			);
+		}
+		if (stateFilter !== "all") {
+			result = result.filter((p) => p.state === stateFilter);
+		}
+		return result;
+	}, [pieces, searchQuery, stateFilter]);
 
 	const handleDelete = async () => {
 		if (!deletingPiece?.id) return;
@@ -105,12 +115,15 @@ export default function PiecesScreen() {
 					>
 						{item.composer}
 					</Text>
-					<Text
-						variant="bodySmall"
-						style={{ color: theme.colors.onSurfaceVariant }}
-					>
-						{formatDaysAgo(item.lastPracticed, t)}
-					</Text>
+					<View className="flex-row items-center gap-2 flex-wrap">
+						<PieceStateChip state={item.state} />
+						<Text
+							variant="bodySmall"
+							style={{ color: theme.colors.onSurfaceVariant }}
+						>
+							{formatDaysAgo(item.lastPracticed, t)}
+						</Text>
+					</View>
 				</View>
 			)}
 			right={() => (
@@ -130,6 +143,27 @@ export default function PiecesScreen() {
 				})
 			}
 		/>
+	);
+
+	const filterChips = (
+		<ScrollView
+			horizontal
+			showsHorizontalScrollIndicator={false}
+			className="py-2"
+		>
+			<View className="flex-row gap-2 px-4">
+				{(["all", ...PIECE_STATES] as StateFilter[]).map((s) => (
+					<Chip
+						key={s}
+						selected={stateFilter === s}
+						onPress={() => setStateFilter(s)}
+						compact
+					>
+						{s === "all" ? t("screen.pieces.filterAll") : t(`piece.state.${s}`)}
+					</Chip>
+				))}
+			</View>
+		</ScrollView>
 	);
 
 	const emptyState = (
@@ -153,13 +187,15 @@ export default function PiecesScreen() {
 				<Appbar.Content title={t("screen.pieces.title")} />
 			</Appbar.Header>
 
-			<View className="p-4">
+			<View className="px-4 pt-4">
 				<Searchbar
 					placeholder={t("screen.pieces.searchPlaceholder")}
 					value={searchQuery}
 					onChangeText={setSearchQuery}
 				/>
 			</View>
+
+			{filterChips}
 
 			{filteredPieces.length === 0 ? (
 				emptyState
@@ -189,6 +225,7 @@ export default function PiecesScreen() {
 								/>
 								<Card.Content>
 									<View className="gap-2">
+										<PieceStateChip state={item.state} />
 										<PieceProgressBar
 											technicalMistakes={item.lastTechnicalMistakes}
 											memoryMistakes={item.lastMemoryMistakes}

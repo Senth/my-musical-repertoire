@@ -9,6 +9,7 @@ import {
 	Text,
 	useTheme,
 } from "react-native-paper";
+import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
 import { usePieces } from "@/hooks/use-pieces";
 import type { Piece } from "@/models/piece";
@@ -18,11 +19,18 @@ import { formatDaysAgo } from "@/utils/date";
 const MD3_MEDIUM_BREAKPOINT = 600;
 
 function getSuggestedPieces(pieces: Piece[], count = 3): Piece[] {
-	const unpracticed = pieces.filter((p) => !p.lastPracticed);
-	const practiced = pieces.filter((p) => p.lastPracticed);
+	const active = pieces.filter(
+		(p) => p.state !== "on_hold" && p.state !== "shelved",
+	);
 
-	// Sort practiced pieces by worst score (highest mistakes first)
+	const unpracticed = active.filter((p) => !p.lastPracticed);
+	const practiced = active.filter((p) => p.lastPracticed);
+
 	const sorted = [...practiced].sort((a, b) => {
+		// Performance pieces get highest priority
+		if (a.state === "performance" && b.state !== "performance") return -1;
+		if (b.state === "performance" && a.state !== "performance") return 1;
+
 		const scoreA =
 			(a.lastTechnicalMistakes ?? PracticeMistakes.none) +
 			(a.lastMemoryMistakes ?? PracticeMistakes.none);
@@ -104,6 +112,7 @@ export default function OverviewScreen() {
 										<Card.Title title={piece.title} subtitle={piece.composer} />
 										<Card.Content>
 											<View className="gap-2">
+												<PieceStateChip state={piece.state} />
 												<PieceProgressBar
 													technicalMistakes={piece.lastTechnicalMistakes}
 													memoryMistakes={piece.lastMemoryMistakes}

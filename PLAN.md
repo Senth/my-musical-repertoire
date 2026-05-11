@@ -97,7 +97,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Read / list pieces (pieces screen + overview)
   - [x] Edit piece (title, composer)
   - [x] Delete piece
-- [ ] Add piece lifecycle state (`learning`, `stabilizing`, `maintenance`)
+- [x] Add piece lifecycle state (`learning`, `stabilizing`, `maintenance`)
 - [ ] Add named technique item model
   - [ ] Technique item title (for example `Hanon No. 1`, `D major scale`, `A minor arpeggio`)
   - [ ] Technique lifecycle / state (`not started`, `active`, `maintenance`)
