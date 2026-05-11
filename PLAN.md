@@ -16,11 +16,16 @@ This is a **piano/instrument practice app** that helps musicians decide what to 
 
 - **Audience**: Existing pianists from roughly RCM Level 2 through professional level
 - **Users**: Multi-user with accounts and authentication
-- **Data**: Practice pieces, exercise blocks, practice sessions, section targets, practice plans, and later PDF sheet music
+- **Data**: Practice pieces, named technique items, sight-reading entries, exercise blocks, practice sessions, section targets, practice plans, and later PDF sheet music
 - **Piece lifecycle**: Pieces move through **learning → stabilizing → maintenance**
+- **Session domains**: Sessions should be able to include **technique**, **sight-reading**, and **repertoire** rather than only piece practice
 - **Recommendation shape**: The app should generate a short, time-bounded **session plan** made of concrete exercise blocks, not only a ranked piece list
+- **Session setup**: The student should choose available minutes and a session emphasis/template; the app should then fit the plan to the relevant duration band
+- **Early recommendation scope**: Repertoire should be the first domain the app recommends intelligently; technique and sight-reading can stay template-driven and student-chosen at first
 - **Per-block logging**: After each exercise block, the student should log **accuracy**, **tempo achieved** (when relevant), **effort/difficulty**, and **scope**; notes remain optional
 - **Section granularity**: Practice can target the whole piece or an optional manual section label with optional bar ranges
+- **Technique progression**: New technique items should be introduced manually by the student or teacher, while the app helps rotate and prioritize active items
+- **Sight-reading UX**: Sight-reading should use lightweight logging so it stays fresh and non-perfectionist
 - **Recommendation trust**: Each suggested block should briefly explain why it was chosen
 - **Offline**: Must work offline (practicing without wifi) — Firestore's built-in offline persistence handles this
 - **File uploads**: PDF/sheet music uploads to Firebase Cloud Storage
@@ -83,7 +88,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - [x] Implement login/signup (email + social via Firebase Auth)
 - [x] Basic layout shell (tabs, header) — test on web only
 
-### Phase 2: Core Repertoire Model
+### Phase 2: Core Practice Catalog
 
 - [x] Design Firestore data model (collections: pieces)
 - [x] Set up Firestore security rules
@@ -93,37 +98,52 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Edit piece (title, composer)
   - [x] Delete piece
 - [ ] Add piece lifecycle state (`learning`, `stabilizing`, `maintenance`)
+- [ ] Add named technique item model
+  - [ ] Technique item title (for example `Hanon No. 1`, `D major scale`, `A minor arpeggio`)
+  - [ ] Technique lifecycle / state (`not started`, `active`, `maintenance`)
+  - [ ] Student or teacher manually introduces new technique items
 - [ ] Add optional priorities / goals that can influence recommendations
 - [ ] Enable Firestore offline persistence
 
 ### Phase 3: Practice Task Model & Logging
 
 - [ ] Define reusable exercise block model
-  - [ ] Focus category (`accuracy`, `rhythm`, `fingering`, `memory`, `tempo`, `tone`, `continuity`)
-  - [ ] Scope (`whole piece` or `section`)
+  - [ ] Session domain (`technique`, `sight-reading`, `repertoire`)
+  - [ ] Repertoire focus category (`accuracy`, `rhythm`, `fingering`, `memory`, `tempo`, `tone`, `continuity`)
+  - [ ] Scope (`whole piece` or `section`) for repertoire blocks
   - [ ] Optional section label + optional bar range
-  - [ ] Optional target BPM
+  - [ ] Optional target BPM for tempo-relevant blocks
   - [ ] Suggested duration
 - [ ] Per-block logging
   - [x] Log practice date
-  - [ ] Accuracy result
-  - [ ] Tempo achieved
-  - [ ] Effort / perceived difficulty
-  - [ ] Scope completed
-  - [ ] Notes field (free text)
+  - [ ] Repertoire: accuracy result
+  - [ ] Repertoire: tempo achieved
+  - [ ] Repertoire: effort / perceived difficulty
+  - [ ] Repertoire: scope completed
+  - [ ] Technique: completion + confidence/difficulty trend
+  - [ ] Technique: optional tempo/BPM when relevant
+  - [ ] Sight-reading: material label + completion + perceived difficulty/confidence
+  - [ ] Notes field (free text, optional)
 - [ ] Before/after comparison after saving
   - [x] Comparison screen component
 - [ ] Practice history screen
   - [ ] Whole-piece history
   - [ ] Section history for targeted work
+  - [ ] Technique-item history
+  - [ ] Sight-reading history
 
 ### Phase 4: Session Plan Generator
 
 - [ ] Ask the student how much time is available before building the plan
+- [ ] Let the student choose a session emphasis/template
+  - [ ] Short-session templates: `technique-first`, `reading-first`, `repertoire-only maintenance`
+  - [ ] Medium and long-session templates with editable minutes per block
+- [ ] Use duration bands so block structure changes for short, medium, and long sessions
 - [ ] Generate a short session plan of concrete exercise blocks
-  - [ ] At least one `learning` block when applicable
-  - [ ] At least one weak-spot repair block when applicable
-  - [ ] At least one `maintenance` or continuity block when applicable
+  - [ ] Short sessions: one supporting block (`technique` or `sight-reading`) plus the main repertoire block
+  - [ ] Repertoire blocks: at least one `learning`, weak-spot repair, or `maintenance` / continuity block when applicable
+  - [ ] Longer sessions should add depth before adding too much variety
+  - [ ] Repertoire is app-assigned first; technique and sight-reading remain template-driven initially
 - [ ] Explain why each suggested block was chosen
 - [ ] Replace the current simple overview sort with plan-based suggestions
 
@@ -136,6 +156,11 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Missed tempo targets
   - [ ] User priorities and goals
 - [ ] Tune block sequencing so sessions are balanced instead of reactive
+- [ ] Add technique-item prioritization
+  - [ ] Time since last technique practice
+  - [ ] Confidence / difficulty trend
+  - [ ] `active` vs `maintenance` state
+- [ ] Keep technique curriculum advancement manual at first; later the app may suggest when a new item is due
 - [ ] Dashboard with practice overview, suggested blocks, and rationale
 - [ ] Optional timer that executes a planned block rather than driving the data model
 
@@ -170,6 +195,11 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - **Firestore offline persistence**: Firestore has built-in offline support — data is cached locally and synced automatically when connectivity returns. This is a major advantage over manual sync solutions.
 - **Pedagogy first**: Recommendation quality depends more on good task modeling, lifecycle states, and logging than on PDFs or timers. Build the teaching model before the document model.
 - **Session plans, not just lists**: The app should behave more like a practice coach, giving a short sequence of blocks that fits the student's available time.
+- **Two planning layers**: The app should first shape the session template (`technique`, `sight-reading`, `repertoire`, and minutes per block), then decide the exact assignment inside repertoire blocks.
+- **Duration bands with ceilings on variety**: Longer sessions should usually deepen work rather than create endless switching. Short sessions should use one supporting slot plus the main repertoire block.
+- **Staged intelligence**: Repertoire should be the first domain the app recommends intelligently. Technique and sight-reading can stay student-chosen within templates until the product is mature enough for broader recommendation logic.
+- **Technique is a small curriculum**: New scales, arpeggios, or Hanon items should be introduced manually by the student or teacher at first. The app's early job is rotation and prioritization among active items, not autonomous curriculum design.
+- **Sight-reading should stay light**: Logging should be intentionally minimal so sight-reading remains fresh, low-pressure, and distinct from repertoire polishing.
 - **Section model before score model**: Manual section labels and optional bar ranges should exist before any PDF parsing or annotation work. Targeted practice cannot depend on sheet-music features shipping first.
 - **Incremental complexity**: Start with simple lists and cards. Add timers, PDF features, and advanced visual polish only after the recommendation engine has enough high-quality inputs.
 - **Platform splits**: When mobile needs differ from web, use `Component.web.tsx` / `Component.native.tsx` — Expo auto-picks the right one.
