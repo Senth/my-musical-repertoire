@@ -103,7 +103,6 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Technique lifecycle / state (`active`, `maintenance`, `retired`)
   - [x] Student or teacher manually introduces new technique items
   - [x] Add suggested techniques in the overview page (displayed similarly to suggested practices)
-- [ ] Enable Firestore offline persistence
 - [ ] Create GH Action and deploy to Google Storage for hosting the web version
 - [ ] Touch up UI/UX and fix any discrepancies
   - [ ] Add tab for Pieces
@@ -137,6 +136,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Section history for targeted work
   - [ ] Technique-item history
   - [ ] Sight-reading history
+- [ ] Enable Firestore offline persistence
 - [ ] Touch up UI/UX and fix any discrepancies
 
 ### Phase 4: Session Plan Generator
