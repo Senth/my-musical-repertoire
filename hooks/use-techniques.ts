@@ -169,3 +169,28 @@ export function useDeleteTechnique() {
 
 	return { deleteTechnique };
 }
+
+export function useSaveTechniqueLog() {
+	const { user } = useAuth();
+
+	const saveTechniqueLog = async (
+		techniqueId: string,
+		data: {
+			quality: 1 | 2 | 3 | 4 | 5;
+			effort: 1 | 2 | 3 | 4 | 5;
+			achievedTempoBpm?: number | null;
+		},
+	) => {
+		if (!user) throw new Error("Not authenticated");
+
+		const ref = doc(db, "users", user.uid, "techniques", techniqueId);
+		await updateDoc(ref, {
+			lastPracticedAt: new Date(),
+			lastQuality: data.quality,
+			lastEffort: data.effort,
+			lastAchievedTempoBpm: data.achievedTempoBpm ?? null,
+		});
+	};
+
+	return { saveTechniqueLog };
+}

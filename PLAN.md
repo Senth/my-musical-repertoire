@@ -102,10 +102,15 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Technique item title (for example `Hanon No. 1`, `D major scale`, `A minor arpeggio`)
   - [x] Technique lifecycle / state (`active`, `maintenance`, `retired`)
   - [x] Student or teacher manually introduces new technique items
-  - [ ] Add suggested techniques in the overview page (displayed similarly to suggested practices)
+  - [x] Add suggested techniques in the overview page (displayed similarly to suggested practices)
 - [ ] Add optional priorities / goals that can influence recommendations
 - [ ] Enable Firestore offline persistence
+- [ ] Create GH Action and deploy to Google Storage for hosting the web version
 - [ ] Touch up UI/UX and fix any discrepancies
+  - [ ] Add tab for Pieces
+  - [ ] Create a "pill filter" component for filtering pieces by lifecycle state
+  - [ ] Change routes for practices. It should be /techniques/{id}/practice and /pieces/{id}/practice. However, in Firestore, they should still be in the same collection as it's currently. So no DB changes.
+  - [ ] Convert the practice radio buttons to be similar as technique practice page.
 
 ### Phase 3: Practice Task Model & Logging
 

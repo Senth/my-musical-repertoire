@@ -93,7 +93,14 @@
 			"neverPracticed": "Never practiced",
 			"lastPracticed": "Last practiced: {{date}}",
 			"seeAllPieces": "See all pieces",
-			"allCaughtUp": "You're all caught up! Great job."
+			"allCaughtUp": "You're all caught up! Great job.",
+			"techniqueToday": "Suggested Techniques",
+			"seeAllTechniques": "See all techniques",
+			"techniqueReason": {
+				"activeLastPracticed": "Active · {{when}}",
+				"maintenanceDue": "Maintenance · due for review",
+				"neverPracticed": "New — not yet practiced"
+			}
 		},
 		"addPiece": {
 			"title": "Add Piece",
@@ -208,6 +215,27 @@
 			"save": "Save",
 			"error": {
 				"titleRequired": "Title is required."
+			}
+		},
+		"practiceTechnique": {
+			"title": "Log Technique",
+			"notFound": "Technique item not found",
+			"qualityLabel": "Quality",
+			"effortLabel": "Effort",
+			"tempoAchievedLabel": "Tempo Achieved (BPM)",
+			"targetBpm": "Target: {{bpm}} BPM",
+			"save": "Save",
+			"comparison": {
+				"title": "Practice Results",
+				"qualityLabel": "Quality",
+				"effortLabel": "Effort",
+				"tempoAchievedLabel": "Tempo Achieved",
+				"tempoTarget": "Target: {{bpm}} BPM",
+				"improved": "Improved!",
+				"regressed": "Needs work",
+				"same": "Same as before",
+				"firstPractice": "First practice! 🎵",
+				"back": "Back"
 			}
 		}
 	}

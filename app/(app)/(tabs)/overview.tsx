@@ -5,15 +5,19 @@ import {
 	ActivityIndicator,
 	Button,
 	Card,
+	Chip,
 	FAB,
 	Text,
 	useTheme,
 } from "react-native-paper";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
+import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
 import { usePieces } from "@/hooks/use-pieces";
+import { useTechniques } from "@/hooks/use-techniques";
 import type { Piece } from "@/models/piece";
 import { PracticeMistakes } from "@/models/practice";
+import type { TechniqueItem } from "@/models/technique";
 import { formatDaysAgo } from "@/utils/date";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
@@ -43,17 +47,49 @@ function getSuggestedPieces(pieces: Piece[], count = 3): Piece[] {
 	return [...unpracticed, ...sorted].slice(0, count);
 }
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+function getSuggestedTechniques(items: TechniqueItem[]): TechniqueItem[] {
+	const now = new Date();
+
+	const byRecency = (a: TechniqueItem, b: TechniqueItem) => {
+		if (!a.lastPracticedAt && !b.lastPracticedAt) return 0;
+		if (!a.lastPracticedAt) return -1;
+		if (!b.lastPracticedAt) return 1;
+		return a.lastPracticedAt.getTime() - b.lastPracticedAt.getTime();
+	};
+
+	const active = items
+		.filter((i) => i.state === "active")
+		.sort(byRecency)
+		.slice(0, 2);
+
+	const maintenance = items
+		.filter(
+			(i) =>
+				i.state === "maintenance" &&
+				(!i.lastPracticedAt ||
+					now.getTime() - i.lastPracticedAt.getTime() >= SEVEN_DAYS_MS),
+		)
+		.sort(byRecency)
+		.slice(0, 1);
+
+	return [...active, ...maintenance];
+}
+
 export default function OverviewScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
-	const { pieces, loading } = usePieces();
+	const { pieces, loading: piecesLoading } = usePieces();
+	const { techniques, loading: techniquesLoading } = useTechniques();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const suggested = getSuggestedPieces(pieces);
+	const suggestedTechniques = getSuggestedTechniques(techniques);
 
-	if (loading) {
+	if (piecesLoading || techniquesLoading) {
 		return (
 			<View
 				className="flex-1 items-center justify-center"
@@ -64,16 +100,28 @@ export default function OverviewScreen() {
 		);
 	}
 
+	const getTechniqueReason = (item: TechniqueItem): string => {
+		if (!item.lastPracticedAt) {
+			return t("screen.overview.techniqueReason.neverPracticed");
+		}
+		if (item.state === "maintenance") {
+			return t("screen.overview.techniqueReason.maintenanceDue");
+		}
+		return t("screen.overview.techniqueReason.activeLastPracticed", {
+			when: formatDaysAgo(item.lastPracticedAt, t),
+		});
+	};
+
 	return (
 		<View
 			className="flex-1"
 			style={{ backgroundColor: theme.colors.background }}
 		>
 			<View
-				className="flex-1 gap-4"
+				className="flex-1"
 				style={{ paddingHorizontal: isCompact ? 16 : 24, paddingTop: 24 }}
 			>
-				<View className="w-full max-w-xl self-center gap-4">
+				<View className="w-full max-w-xl self-center flex-1">
 					{pieces.length === 0 ? (
 						<View className="flex-1 items-center justify-center">
 							<Text
@@ -87,7 +135,7 @@ export default function OverviewScreen() {
 							</Text>
 						</View>
 					) : (
-						<>
+						<View className="gap-4 pb-24">
 							<Text variant="titleMedium">
 								{t("screen.overview.practiceToday")}
 							</Text>
@@ -136,7 +184,57 @@ export default function OverviewScreen() {
 							>
 								{t("screen.overview.seeAllPieces")}
 							</Button>
-						</>
+
+							{suggestedTechniques.length > 0 && (
+								<>
+									<Text variant="titleMedium">
+										{t("screen.overview.techniqueToday")}
+									</Text>
+
+									{suggestedTechniques.map((item) => (
+										<Card
+											key={item.id}
+											mode="elevated"
+											onPress={() =>
+												router.push(`/practice-technique/${item.id}`)
+											}
+										>
+											<Card.Title title={item.title} />
+											<Card.Content>
+												<View className="gap-2">
+													<View className="flex-row items-center gap-2 flex-wrap">
+														<TechniqueStateChip state={item.state} />
+														{item.type && (
+															<Chip compact textStyle={{ fontSize: 11 }}>
+																{t(
+																	`technique.type.${item.type}` as Parameters<
+																		typeof t
+																	>[0],
+																)}
+															</Chip>
+														)}
+													</View>
+													<Text
+														variant="bodySmall"
+														style={{ color: theme.colors.onSurfaceVariant }}
+													>
+														{getTechniqueReason(item)}
+													</Text>
+												</View>
+											</Card.Content>
+										</Card>
+									))}
+
+									<Button
+										mode="text"
+										onPress={() => router.push("/techniques")}
+										icon="format-list-bulleted"
+									>
+										{t("screen.overview.seeAllTechniques")}
+									</Button>
+								</>
+							)}
+						</View>
 					)}
 				</View>
 			</View>
