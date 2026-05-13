@@ -104,6 +104,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Student or teacher manually introduces new technique items
 - [ ] Add optional priorities / goals that can influence recommendations
 - [ ] Enable Firestore offline persistence
+- [ ] Touch up UI/UX and fix any discrepancies
 
 ### Phase 3: Practice Task Model & Logging
 
@@ -131,6 +132,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Section history for targeted work
   - [ ] Technique-item history
   - [ ] Sight-reading history
+- [ ] Touch up UI/UX and fix any discrepancies
 
 ### Phase 4: Session Plan Generator
 
@@ -146,6 +148,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Repertoire is app-assigned first; technique and sight-reading remain template-driven initially
 - [ ] Explain why each suggested block was chosen
 - [ ] Replace the current simple overview sort with plan-based suggestions
+- [ ] Touch up UI/UX and fix any discrepancies
 
 ### Phase 5: Recommendation Engine Refinement
 
@@ -163,6 +166,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - [ ] Keep technique curriculum advancement manual at first; later the app may suggest when a new item is due
 - [ ] Dashboard with practice overview, suggested blocks, and rationale
 - [ ] Optional timer that executes a planned block rather than driving the data model
+- [ ] Touch up UI/UX and fix any discrepancies
 
 ### Phase 6: Sheet Music & Offline Polish
 
@@ -174,6 +178,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - [ ] Cache PDFs locally for offline sheet music viewing
 - [ ] Handle edge cases (conflict resolution, stale data indicators)
 - [ ] Offline-first UX patterns (optimistic updates, sync indicators)
+- [ ] Touch up UI/UX and fix any discrepancies
 
 ### Phase 7: Mobile Polish
 
@@ -181,6 +186,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - [ ] Platform-specific UI tweaks (`.native.tsx` overrides where needed)
 - [ ] EAS Build for Android APK/AAB
 - [ ] Optional Google Play Store publish
+- [ ] Touch up UI/UX and fix any discrepancies
 
 ### Phase 8: Advanced Features (Future)
 
@@ -189,6 +195,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - [ ] Progress tracking with charts
 - [ ] iOS support via EAS Build
 - [ ] Teacher-authored priorities or assignments layered on top of the student-first model
+- [ ] Touch up UI/UX and fix any discrepancies
 
 ## Architecture Notes
 
