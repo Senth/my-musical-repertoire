@@ -35,9 +35,40 @@
 		"neverPracticed": "Never practiced",
 		"score": "{{score}}/10"
 	},
+	"technique": {
+		"state": {
+			"active": "Active",
+			"maintenance": "Maintenance",
+			"retired": "Retired"
+		},
+		"type": {
+			"scale": "Scale",
+			"arpeggio": "Arpeggio",
+			"exercise": "Exercise",
+			"chord": "Chord",
+			"octave": "Octave",
+			"trill": "Trill",
+			"other": "Other"
+		},
+		"quality": {
+			"1": "1 – Fell apart",
+			"2": "2 – Many errors",
+			"3": "3 – Shaky but OK",
+			"4": "4 – Minor slips",
+			"5": "5 – Clean"
+		},
+		"effort": {
+			"1": "1 – Very easy",
+			"2": "2 – Easy",
+			"3": "3 – Moderate",
+			"4": "4 – Hard",
+			"5": "5 – Very hard"
+		}
+	},
 	"error": {
 		"firebase": "Connection to Firebase failed",
-		"deletePiece": "Failed to delete piece. Please try again."
+		"deletePiece": "Failed to delete piece. Please try again.",
+		"deleteTechnique": "Failed to delete technique item. Please try again."
 	},
 	"screen": {
 		"login": {
@@ -134,6 +165,50 @@
 		},
 		"pieceList": {
 			"title": "My Repertoire"
+		},
+		"techniques": {
+			"title": "Techniques",
+			"searchPlaceholder": "Search techniques...",
+			"noResults": "No technique items yet. Tap + to add your first item!",
+			"showRetired": "Show retired",
+			"hideRetired": "Hide retired",
+			"neverPracticed": "Never practiced",
+			"menu": {
+				"edit": "Edit",
+				"delete": "Delete"
+			},
+			"deleteDialog": {
+				"title": "Delete Technique Item",
+				"message": "\"{{name}}\" and all its practice history will be permanently deleted.",
+				"confirm": "Delete",
+				"cancel": "Cancel"
+			}
+		},
+		"addTechnique": {
+			"title": "Add Technique",
+			"titleLabel": "Title",
+			"typeLabel": "Type (optional)",
+			"typeNone": "None",
+			"stateLabel": "Lifecycle State",
+			"targetTempoBpmLabel": "Target Tempo BPM (optional)",
+			"notesLabel": "Notes (optional)",
+			"save": "Save",
+			"error": {
+				"titleRequired": "Title is required."
+			}
+		},
+		"editTechnique": {
+			"title": "Edit Technique",
+			"titleLabel": "Title",
+			"typeLabel": "Type (optional)",
+			"typeNone": "None",
+			"stateLabel": "Lifecycle State",
+			"targetTempoBpmLabel": "Target Tempo BPM (optional)",
+			"notesLabel": "Notes (optional)",
+			"save": "Save",
+			"error": {
+				"titleRequired": "Title is required."
+			}
 		}
 	}
 }

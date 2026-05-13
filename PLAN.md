@@ -98,10 +98,11 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Edit piece (title, composer)
   - [x] Delete piece
 - [x] Add piece lifecycle state (`learning`, `stabilizing`, `maintenance`)
-- [ ] Add named technique item model
-  - [ ] Technique item title (for example `Hanon No. 1`, `D major scale`, `A minor arpeggio`)
-  - [ ] Technique lifecycle / state (`not started`, `active`, `maintenance`)
-  - [ ] Student or teacher manually introduces new technique items
+- [x] Add named technique item model
+  - [x] Technique item title (for example `Hanon No. 1`, `D major scale`, `A minor arpeggio`)
+  - [x] Technique lifecycle / state (`active`, `maintenance`, `retired`)
+  - [x] Student or teacher manually introduces new technique items
+  - [ ] Add suggested techniques in the overview page (displayed similarly to suggested practices)
 - [ ] Add optional priorities / goals that can influence recommendations
 - [ ] Enable Firestore offline persistence
 - [ ] Touch up UI/UX and fix any discrepancies
