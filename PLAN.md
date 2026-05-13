@@ -103,7 +103,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Technique lifecycle / state (`active`, `maintenance`, `retired`)
   - [x] Student or teacher manually introduces new technique items
   - [x] Add suggested techniques in the overview page (displayed similarly to suggested practices)
-- [ ] Create GH Action and deploy to Google Storage for hosting the web version
+- [x] Create GH Action and deploy to Google Storage for hosting the web version
 - [ ] Touch up UI/UX and fix any discrepancies
   - [ ] Add tab for Pieces
   - [ ] Create a "pill filter" component for filtering pieces by lifecycle state
