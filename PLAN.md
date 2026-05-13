@@ -103,7 +103,6 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Technique lifecycle / state (`active`, `maintenance`, `retired`)
   - [x] Student or teacher manually introduces new technique items
   - [x] Add suggested techniques in the overview page (displayed similarly to suggested practices)
-- [ ] Add optional priorities / goals that can influence recommendations
 - [ ] Enable Firestore offline persistence
 - [ ] Create GH Action and deploy to Google Storage for hosting the web version
 - [ ] Touch up UI/UX and fix any discrepancies
@@ -164,6 +163,8 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Accuracy instability
   - [ ] Missed tempo targets
   - [ ] User priorities and goals
+    - [ ] ? Add `priority` flag (`normal` | `high`) to pieces
+    - [ ] ? Add optional `deadlineDate` to pieces
 - [ ] Tune block sequencing so sessions are balanced instead of reactive
 - [ ] Add technique-item prioritization
   - [ ] Time since last technique practice
