@@ -49,6 +49,7 @@ jobs:
         with:
           project_id: my-musical-repertoire
           workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/my-musical-repertoire
+          service_account: github-actions-deploy@my-musical-repertoire.iam.gserviceaccount.com
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools@13
