@@ -98,6 +98,11 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Edit piece (title, composer)
   - [x] Delete piece
 - [x] Add piece lifecycle state (`learning`, `stabilizing`, `maintenance`)
+- [ ] Add section model to pieces (piece-level, reused across all practice sessions)
+  - [ ] Section label (required) + optional bar range (start bar, end bar)
+  - [ ] Section lifecycle/phase (`learning`, `stabilizing`, `maintenance`) — independent of piece phase
+  - [ ] Current BPM per section (goal/target BPM inherited from the piece)
+  - [ ] CRUD UI for sections within a piece (add, reorder, edit, delete)
 - [x] Add named technique item model
   - [x] Technique item title (for example `Hanon No. 1`, `D major scale`, `A minor arpeggio`)
   - [x] Technique lifecycle / state (`active`, `maintenance`, `retired`)
@@ -116,13 +121,13 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Session domain (`technique`, `sight-reading`, `repertoire`)
   - [ ] Repertoire focus category (`accuracy`, `rhythm`, `fingering`, `memory`, `tempo`, `tone`, `continuity`)
   - [ ] Scope (`whole piece` or `section`) for repertoire blocks
-  - [ ] Optional section label + optional bar range
-  - [ ] Optional target BPM for tempo-relevant blocks
+  - [ ] Reference to piece-level section when scope is `section` (not ad-hoc — use the piece's defined sections)
+  - [ ] Optional target BPM for tempo-relevant blocks (defaults to section's current BPM)
   - [ ] Suggested duration
 - [ ] Per-block logging
   - [x] Log practice date
   - [ ] Repertoire: accuracy result
-  - [ ] Repertoire: tempo achieved
+  - [ ] Repertoire: tempo achieved (BPM practiced at, updates section's current BPM)
   - [ ] Repertoire: effort / perceived difficulty
   - [ ] Repertoire: scope completed
   - [ ] Technique: completion + confidence/difficulty trend
@@ -141,6 +146,12 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 
 ### Phase 4: Session Plan Generator
 
+- [ ] Session plan is section-aware
+  - [ ] Prioritize weak/unstable sections first (need-based ordering, not bar order)
+  - [ ] Limit new-section (`learning` phase) blocks to 1 per session
+  - [ ] When two adjacent sections are individually stable, suggest a **seam exercise** (last 2 bars of A + first 2 bars of B)
+  - [ ] After seam is practiced, suggest a **join block** (A+B combined)
+  - [ ] Nudge the student when sections look stable enough to add the next section (student still decides)
 - [ ] Ask the student how much time is available before building the plan
 - [ ] Let the student choose a session emphasis/template
   - [ ] Short-session templates: `technique-first`, `reading-first`, `repertoire-only maintenance`
@@ -170,6 +181,12 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Time since last technique practice
   - [ ] Confidence / difficulty trend
   - [ ] `active` vs `maintenance` state
+- [ ] Section BPM progression
+  - [ ] Suggest a BPM bump (~+4 BPM) when accuracy is high, effort is manageable, and the same BPM was successful on 2+ separate days
+  - [ ] User confirms or dismisses each suggestion; no automatic increment
+- [ ] Section progression nudges
+  - [ ] Suggest phase transitions: `learning` → `stabilizing` → `maintenance` based on practice history
+  - [ ] Suggest "you look ready to add the next section" when active sections are stable
 - [ ] Keep technique curriculum advancement manual at first; later the app may suggest when a new item is due
 - [ ] Dashboard with practice overview, suggested blocks, and rationale
 - [ ] Optional timer that executes a planned block rather than driving the data model
@@ -215,6 +232,8 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - **Technique is a small curriculum**: New scales, arpeggios, or Hanon items should be introduced manually by the student or teacher at first. The app's early job is rotation and prioritization among active items, not autonomous curriculum design.
 - **Sight-reading should stay light**: Logging should be intentionally minimal so sight-reading remains fresh, low-pressure, and distinct from repertoire polishing.
 - **Section model before score model**: Manual section labels and optional bar ranges should exist before any PDF parsing or annotation work. Targeted practice cannot depend on sheet-music features shipping first.
+- **Sections are piece-level, not block-level**: Sections (label + optional bar range + phase + current BPM) live on the piece and are referenced by practice blocks. This lets the app track per-section history, suggest BPM bumps, and recommend chaining. Blocks never define ad-hoc sections — they reference the piece's defined sections.
+- **Section progression is student-gated**: The student decides when to add the next section. The app nudges but never gates or auto-unlocks. BPM increments are suggested (not automatic) based on accuracy + effort + cross-day consistency. Section chaining (A → B → A+B with seam exercise) is the engine's most important structural suggestion.
 - **Incremental complexity**: Start with simple lists and cards. Add timers, PDF features, and advanced visual polish only after the recommendation engine has enough high-quality inputs.
 - **Platform splits**: When mobile needs differ from web, use `Component.web.tsx` / `Component.native.tsx` — Expo auto-picks the right one.
 - **Existing Flutter code**: This repo contains a previous Flutter implementation. The Expo rewrite will replace it entirely. Reference the existing code for feature/data model inspiration.
