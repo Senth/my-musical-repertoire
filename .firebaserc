@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "my-musical-repertoire-dev"
+    "default": "my-musical-repertoire-dev",
+    "production": "my-musical-repertoire"
   }
 }
