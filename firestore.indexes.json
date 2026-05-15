@@ -2,7 +2,7 @@
 	"indexes": [
 		{
 			"collectionGroup": "sections",
-			"queryScope": "COLLECTION",
+			"queryScope": "COLLECTION_GROUP",
 			"fields": [
 				{ "fieldPath": "archived", "order": "ASCENDING" },
 				{ "fieldPath": "order", "order": "ASCENDING" }

@@ -18,15 +18,12 @@ import {
 	Text,
 	useTheme,
 } from "react-native-paper";
-import { SectionFormModal } from "@/components/section/SectionFormModal";
 import { SectionListItem } from "@/components/section/SectionListItem";
 import { usePieces } from "@/hooks/use-pieces";
 import {
-	useAddSection,
 	useArchiveSection,
 	useReorderSections,
 	useSections,
-	useUpdateSection,
 } from "@/hooks/use-sections";
 import type { Section } from "@/models/section";
 
@@ -40,13 +37,9 @@ export default function PieceSectionsScreen() {
 	const piece = pieces.find((p) => p.id === pieceId);
 
 	const { sections, loading } = useSections(pieceId ?? "");
-	const { addSection } = useAddSection();
-	const { updateSection } = useUpdateSection();
 	const { archiveSection } = useArchiveSection();
 	const { reorderSections } = useReorderSections();
 
-	const [formVisible, setFormVisible] = useState(false);
-	const [editingSection, setEditingSection] = useState<Section | null>(null);
 	const [archivingSection, setArchivingSection] = useState<Section | null>(
 		null,
 	);
@@ -54,29 +47,17 @@ export default function PieceSectionsScreen() {
 	const [error, setError] = useState<string | null>(null);
 
 	const handleAddPress = () => {
-		setEditingSection(null);
-		setFormVisible(true);
-	};
-
-	const handleEdit = useCallback((section: Section) => {
-		setEditingSection(section);
-		setFormVisible(true);
-	}, []);
-
-	const handleFormSave = async (
-		data: Omit<
-			Section,
-			"id" | "pieceId" | "userId" | "archived" | "createdAt" | "order"
-		>,
-	) => {
 		if (!pieceId) return;
-
-		if (editingSection?.id) {
-			await updateSection(pieceId, editingSection.id, data);
-		} else {
-			await addSection(pieceId, data);
-		}
+		router.push(`/piece-sections/${pieceId}/section/new`);
 	};
+
+	const handleEdit = useCallback(
+		(section: Section) => {
+			if (!pieceId || !section.id) return;
+			router.push(`/piece-sections/${pieceId}/section/${section.id}`);
+		},
+		[pieceId, router],
+	);
 
 	const handleArchiveConfirm = async () => {
 		if (!archivingSection?.id || !pieceId) return;
@@ -171,14 +152,6 @@ export default function PieceSectionsScreen() {
 						bottom: 16,
 					}}
 					onPress={handleAddPress}
-				/>
-
-				<SectionFormModal
-					visible={formVisible}
-					onDismiss={() => setFormVisible(false)}
-					onSave={handleFormSave}
-					initialValues={editingSection}
-					pieceTargetBpm={piece?.targetTempoBpm}
 				/>
 
 				<Portal>

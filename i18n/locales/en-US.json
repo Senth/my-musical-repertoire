@@ -280,15 +280,13 @@
 			"barRange": "Bars {{start}}–{{end}}",
 			"barFrom": "From bar {{start}}",
 			"bpm": "{{bpm}} BPM",
-			"targetBpmPlaceholder": "Inherit from piece ({{bpm}} BPM)",
-			"targetBpmPlaceholderNone": "Inherit from piece",
 			"form": {
 				"labelLabel": "Label (e.g. Opening, Bridge, Coda)",
 				"phaseLabel": "Phase",
-				"startBarLabel": "Start Bar",
-				"endBarLabel": "End Bar",
+				"barsLabel": "Bars (optional)",
+				"startBarLabel": "Start",
+				"endBarLabel": "End",
 				"currentBpmLabel": "Working BPM",
-				"targetBpmOverrideLabel": "Target BPM (optional override)",
 				"notesLabel": "Notes / Problem (optional)",
 				"save": "Save",
 				"error": {

@@ -113,11 +113,11 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Add suggested techniques in the overview page (displayed similarly to suggested practices)
 - [x] Create GH Action and deploy to Google Storage for hosting the web version
 - [ ] Touch up UI/UX and fix any discrepancies
-  - [ ] **Section Form & Edit Page**
-    - [ ] Add section/edit section should be a new page for mobile instead of a modal/dialog — routed as `/pieces/{id}/section/{id}/edit`. This also resolves ISSUE-008 and ISSUE-011. ([ISSUE-008](/.tmp/ui-ux-issues.md), [ISSUE-011](/.tmp/ui-ux-issues.md))
-    - [ ] Remove target BPM override from the section edit screen. It should be using the piece-level target BPM for all sections.
-    - [ ] The bars sections should be Bars [start] - [end] instead of Start bar [input]. If end bar is set, start bar also needs to be set. Otherwise both are optional.
-    - [ ] Fix stale form values: reset `SectionFormModal` state when `visible` becomes `true` or `initialValues` changes ([ISSUE-010](/.tmp/ui-ux-issues.md))
+  - [x] **Section Form & Edit Page**
+    - [x] Add section/edit section should be a new page for mobile instead of a modal/dialog — routed as `/pieces/{id}/section/{id}/edit`. This also resolves ISSUE-008 and ISSUE-011. ([ISSUE-008](/.tmp/ui-ux-issues.md), [ISSUE-011](/.tmp/ui-ux-issues.md))
+    - [x] Remove target BPM override from the section edit screen. It should be using the piece-level target BPM for all sections.
+    - [x] The bars sections should be Bars [start] - [end] instead of Start bar [input]. If end bar is set, start bar also needs to be set. Otherwise both are optional.
+    - [x] Fix stale form values: reset `SectionFormModal` state when `visible` becomes `true` or `initialValues` changes ([ISSUE-010](/.tmp/ui-ux-issues.md))
   - [ ] **Navigation & Routing**
     - [ ] Change routes for practices. It should be /techniques/{id}/practice and /pieces/{id}/practice. However, in Firestore, they should still be in the same collection as it's currently. So no DB changes.
     - [ ] Fix post-practice navigation: "Back to Overview" must navigate explicitly to `/(app)/(tabs)/overview` ([ISSUE-012](/.tmp/ui-ux-issues.md))

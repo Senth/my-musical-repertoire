@@ -16,15 +16,9 @@ import {
 } from "react-native-paper";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { SectionDetailRow } from "@/components/section/SectionDetailRow";
-import { SectionFormModal } from "@/components/section/SectionFormModal";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
-import {
-	useAddSection,
-	useSections,
-	useUpdateSection,
-} from "@/hooks/use-sections";
-import type { Section } from "@/models/section";
+import { useSections } from "@/hooks/use-sections";
 import { formatDaysAgo } from "@/utils/date";
 
 export default function PieceDetailScreen() {
@@ -35,8 +29,6 @@ export default function PieceDetailScreen() {
 
 	const { pieces } = usePieces();
 	const { sections, loading: sectionsLoading } = useSections(id ?? "");
-	const { addSection } = useAddSection();
-	const { updateSection } = useUpdateSection();
 	const { deletePiece } = useDeletePiece();
 	const { updatePiece } = useUpdatePiece();
 
@@ -44,8 +36,6 @@ export default function PieceDetailScreen() {
 
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
-	const [formVisible, setFormVisible] = useState(false);
-	const [editingSection, setEditingSection] = useState<Section | null>(null);
 	const [notesEditing, setNotesEditing] = useState(false);
 	const [notesText, setNotesText] = useState("");
 	const [notesSaving, setNotesSaving] = useState(false);
@@ -69,20 +59,6 @@ export default function PieceDetailScreen() {
 			setError(t("error.deletePiece"));
 		} finally {
 			setDeleteLoading(false);
-		}
-	};
-
-	const handleFormSave = async (
-		data: Omit<
-			Section,
-			"id" | "pieceId" | "userId" | "archived" | "createdAt" | "order"
-		>,
-	) => {
-		if (!id) return;
-		if (editingSection?.id) {
-			await updateSection(id, editingSection.id, data);
-		} else {
-			await addSection(id, data);
 		}
 	};
 
@@ -263,7 +239,9 @@ export default function PieceDetailScreen() {
 									key={s.id}
 									section={s}
 									pieceTargetBpm={piece.targetTempoBpm}
-									onPress={() => router.push(`/piece-sections/${id}`)}
+									onPress={() =>
+										router.push(`/piece-sections/${id}/section/${s.id}`)
+									}
 								/>
 							))}
 						</View>
@@ -282,18 +260,7 @@ export default function PieceDetailScreen() {
 			<FAB
 				icon="plus"
 				style={{ position: "absolute", right: 16, bottom: 16 }}
-				onPress={() => {
-					setEditingSection(null);
-					setFormVisible(true);
-				}}
-			/>
-
-			<SectionFormModal
-				visible={formVisible}
-				onDismiss={() => setFormVisible(false)}
-				onSave={handleFormSave}
-				initialValues={editingSection}
-				pieceTargetBpm={piece.targetTempoBpm}
+				onPress={() => router.push(`/piece-sections/${id}/section/new`)}
 			/>
 
 			<DeletePieceDialog
