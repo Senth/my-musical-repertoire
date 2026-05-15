@@ -138,6 +138,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
     - [ ] Convert the practice radio buttons to be similar as technique practice page.
     - [ ] Replace section admin link during practice with a lightweight read-only section picker sheet ([ISSUE-009](/.tmp/ui-ux-issues.md))
     - [ ] Technique comparison: use composite verdict (quality + effort + tempo) instead of quality-only ([ISSUE-014](/.tmp/ui-ux-issues.md))
+    - [ ] For the BPM input on the practice screen, prefill it from the previous session, for any practice session.
   - [ ] **Form Validation**
     - [ ] Inline field validation across all forms: mark invalid `TextInput`s with `error` prop + helper text ([ISSUE-016](/.tmp/ui-ux-issues.md))
     - [ ] Numeric BPM inputs: validate explicitly and show inline error on bad input ([ISSUE-017](/.tmp/ui-ux-issues.md))
