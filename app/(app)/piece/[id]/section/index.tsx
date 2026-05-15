@@ -48,13 +48,13 @@ export default function PieceSectionsScreen() {
 
 	const handleAddPress = () => {
 		if (!pieceId) return;
-		router.push(`/piece-sections/${pieceId}/section/new`);
+		router.push(`/piece/${pieceId}/section/new`);
 	};
 
 	const handleEdit = useCallback(
 		(section: Section) => {
 			if (!pieceId || !section.id) return;
-			router.push(`/piece-sections/${pieceId}/section/${section.id}`);
+			router.push(`/piece/${pieceId}/section/${section.id}`);
 		},
 		[pieceId, router],
 	);

@@ -178,7 +178,10 @@ export function PracticeComparison({
 				/>
 
 				<View className="mt-4">
-					<Button mode="contained" onPress={() => router.back()}>
+					<Button
+						mode="contained"
+						onPress={() => router.replace("/(app)/(tabs)/overview")}
+					>
 						{t("screen.practice.comparison.backToOverview")}
 					</Button>
 				</View>

@@ -78,7 +78,7 @@ export default function PracticeTechniqueScreen() {
 		setDeleteLoading(true);
 		try {
 			await deleteTechnique(id);
-			router.replace("/techniques");
+			router.replace("/(app)/(tabs)/technique");
 		} catch {
 			setDeleteDialogVisible(false);
 			setError(t("error.deleteTechnique"));
@@ -112,7 +112,9 @@ export default function PracticeTechniqueScreen() {
 		>
 			<Appbar.Header>
 				<Appbar.BackAction onPress={() => router.back()} />
-				<Appbar.Content title={t("screen.practiceTechnique.title")} />
+				<Appbar.Content
+					title={technique?.title ?? t("screen.practiceTechnique.title")}
+				/>
 				<Menu
 					visible={headerMenuVisible}
 					onDismiss={() => setHeaderMenuVisible(false)}
@@ -127,7 +129,7 @@ export default function PracticeTechniqueScreen() {
 						leadingIcon="pencil"
 						onPress={() => {
 							setHeaderMenuVisible(false);
-							router.push(`/edit-technique/${id}`);
+							router.push(`/technique/${id}/edit`);
 						}}
 						title={t("screen.techniques.menu.edit")}
 					/>

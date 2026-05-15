@@ -23,7 +23,16 @@ export default function AppTabsLayout() {
 				}}
 			/>
 			<Tabs.Screen
-				name="techniques"
+				name="piece"
+				options={{
+					title: t("screen.pieces.title"),
+					tabBarIcon: ({ color }) => (
+						<IconSymbol size={28} name="books.vertical" color={color} />
+					),
+				}}
+			/>
+			<Tabs.Screen
+				name="technique"
 				options={{
 					title: t("screen.techniques.title"),
 					tabBarIcon: ({ color }) => (

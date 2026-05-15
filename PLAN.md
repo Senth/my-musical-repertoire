@@ -118,13 +118,13 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
     - [x] Remove target BPM override from the section edit screen. It should be using the piece-level target BPM for all sections.
     - [x] The bars sections should be Bars [start] - [end] instead of Start bar [input]. If end bar is set, start bar also needs to be set. Otherwise both are optional.
     - [x] Fix stale form values: reset `SectionFormModal` state when `visible` becomes `true` or `initialValues` changes ([ISSUE-010](/.tmp/ui-ux-issues.md))
-  - [ ] **Navigation & Routing**
-    - [ ] Change routes for practices. It should be /techniques/{id}/practice and /pieces/{id}/practice. However, in Firestore, they should still be in the same collection as it's currently. So no DB changes.
-    - [ ] Fix post-practice navigation: "Back to Overview" must navigate explicitly to `/(app)/(tabs)/overview` ([ISSUE-012](/.tmp/ui-ux-issues.md))
-    - [ ] Fix post-technique-log navigation: navigate explicitly to `/(app)/(tabs)/techniques` instead of `router.back()` ([ISSUE-013](/.tmp/ui-ux-issues.md))
-    - [ ] Practice and technique-log app bars: show piece/technique name as the title ([ISSUE-015](/.tmp/ui-ux-issues.md))
+  - [x] **Navigation & Routing**
+    - [x] Change routes for practices. It should be /techniques/{id}/practice and /pieces/{id}/practice. However, in Firestore, they should still be in the same collection as it's currently. So no DB changes.
+    - [x] Fix post-practice navigation: "Back to Overview" must navigate explicitly to `/(app)/(tabs)/overview` ([ISSUE-012](/.tmp/ui-ux-issues.md))
+    - [x] Fix post-technique-log navigation: navigate explicitly to `/(app)/(tabs)/techniques` instead of `router.back()` ([ISSUE-013](/.tmp/ui-ux-issues.md))
+    - [x] Practice and technique-log app bars: show piece/technique name as the title ([ISSUE-015](/.tmp/ui-ux-issues.md))
   - [ ] **List Screen Enhancements**
-    - [ ] Add tab for Pieces — add FAB on Pieces screen to match Overview/Techniques ([ISSUE-007](/.tmp/ui-ux-issues.md))
+    - [x] Add tab for Pieces — add FAB on Pieces screen to match Overview/Techniques ([ISSUE-007](/.tmp/ui-ux-issues.md))
     - [ ] Create a "pill filter" component for filtering pieces by lifecycle state
     - [ ] Techniques screen: add `Searchbar` using the same pattern as Pieces (reuse existing `screen.techniques.searchPlaceholder` key) ([ISSUE-022](/.tmp/ui-ux-issues.md))
     - [ ] Standardize primary tap action: tap = detail everywhere; expose Practice as a clearly labeled secondary action across Overview cards, Pieces rows, and Techniques rows ([ISSUE-002](/.tmp/ui-ux-issues.md))

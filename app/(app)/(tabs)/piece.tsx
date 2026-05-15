@@ -3,10 +3,10 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, ScrollView, useWindowDimensions, View } from "react-native";
 import {
-	Appbar,
 	Card,
 	Chip,
 	Divider,
+	FAB,
 	IconButton,
 	List,
 	Menu,
@@ -89,7 +89,7 @@ export default function PiecesScreen() {
 				leadingIcon="pencil"
 				onPress={() => {
 					setMenuVisible(null);
-					router.push(`/edit-piece/${item.id}`);
+					router.push(`/piece/${item.id}/edit`);
 				}}
 				title={t("screen.pieces.menu.edit")}
 			/>
@@ -190,12 +190,11 @@ export default function PiecesScreen() {
 			className="flex-1"
 			style={{ backgroundColor: theme.colors.background }}
 		>
-			<Appbar.Header>
-				<Appbar.BackAction onPress={() => router.back()} />
-				<Appbar.Content title={t("screen.pieces.title")} />
-			</Appbar.Header>
+			<View className="px-4 pt-4 pb-2 flex-row items-center justify-between">
+				<Text variant="headlineSmall">{t("screen.pieces.title")}</Text>
+			</View>
 
-			<View className="px-4 pt-4">
+			<View className="px-4 pb-2">
 				<Searchbar
 					placeholder={t("screen.pieces.searchPlaceholder")}
 					value={searchQuery}
@@ -218,7 +217,7 @@ export default function PiecesScreen() {
 				<ScrollView>
 					<View
 						className="w-full max-w-xl self-center gap-3"
-						style={{ paddingHorizontal: 24, paddingBottom: 24 }}
+						style={{ paddingHorizontal: 24, paddingBottom: 100 }}
 					>
 						{filteredPieces.map((item) => (
 							<Card
@@ -275,7 +274,7 @@ export default function PiecesScreen() {
 					onPress={() => {
 						const pieceId = contextMenu?.pieceId;
 						setContextMenu(null);
-						if (pieceId) router.push(`/edit-piece/${pieceId}`);
+						if (pieceId) router.push(`/piece/${pieceId}/edit`);
 					}}
 					title={t("screen.pieces.menu.edit")}
 				/>
@@ -306,6 +305,12 @@ export default function PiecesScreen() {
 			>
 				{deleteError ?? ""}
 			</Snackbar>
+
+			<FAB
+				icon="plus"
+				style={{ position: "absolute", margin: 16, right: 0, bottom: 0 }}
+				onPress={() => router.push("/piece/add")}
+			/>
 		</View>
 	);
 }

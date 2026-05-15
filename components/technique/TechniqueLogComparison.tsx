@@ -257,7 +257,10 @@ export function TechniqueLogComparison({
 				)}
 
 				<View className="mt-4">
-					<Button mode="contained" onPress={() => router.back()}>
+					<Button
+						mode="contained"
+						onPress={() => router.replace("/(app)/(tabs)/technique")}
+					>
 						{t("screen.practiceTechnique.comparison.back")}
 					</Button>
 				</View>

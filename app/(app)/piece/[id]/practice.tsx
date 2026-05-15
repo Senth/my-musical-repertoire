@@ -84,7 +84,7 @@ export default function PracticeScreen() {
 		setDeleteLoading(true);
 		try {
 			await deletePiece(id);
-			router.replace("/pieces");
+			router.replace("/(app)/(tabs)/piece");
 		} catch {
 			setDeleteDialogVisible(false);
 			setError(t("error.deletePiece"));
@@ -111,7 +111,7 @@ export default function PracticeScreen() {
 		>
 			<Appbar.Header>
 				<Appbar.BackAction onPress={() => router.back()} />
-				<Appbar.Content title={t("screen.practice.title")} />
+				<Appbar.Content title={piece?.title ?? t("screen.practice.title")} />
 				<Menu
 					visible={headerMenuVisible}
 					onDismiss={() => setHeaderMenuVisible(false)}
@@ -126,7 +126,7 @@ export default function PracticeScreen() {
 						leadingIcon="pencil"
 						onPress={() => {
 							setHeaderMenuVisible(false);
-							router.push(`/edit-piece/${id}`);
+							router.push(`/piece/${id}/edit`);
 						}}
 						title={t("screen.pieces.menu.edit")}
 					/>
@@ -182,7 +182,7 @@ export default function PracticeScreen() {
 									<List.Icon {...props} icon="music-note-plus" />
 								)}
 								right={(props) => <List.Icon {...props} icon="chevron-right" />}
-								onPress={() => router.push(`/piece-sections/${id}`)}
+								onPress={() => router.push(`/piece/${id}/section`)}
 							/>
 							<Divider />
 

@@ -76,7 +76,7 @@ export default function TechniquesScreen() {
 				leadingIcon="pencil"
 				onPress={() => {
 					setMenuVisible(null);
-					router.push(`/edit-technique/${item.id}`);
+					router.push(`/technique/${item.id}/edit`);
 				}}
 				title={t("screen.techniques.menu.edit")}
 			/>
@@ -131,7 +131,7 @@ export default function TechniquesScreen() {
 								leadingIcon="pencil"
 								onPress={() => {
 									setMenuVisible(null);
-									router.push(`/edit-technique/${item.id}`);
+									router.push(`/technique/${item.id}/edit`);
 								}}
 								title={t("screen.techniques.menu.edit")}
 							/>
@@ -147,7 +147,7 @@ export default function TechniquesScreen() {
 					)}
 				</View>
 			)}
-			onPress={() => router.push(`/edit-technique/${item.id}`)}
+			onPress={() => router.push(`/technique/${item.id}/edit`)}
 			onLongPress={(e) =>
 				setContextMenu({
 					techniqueId: item.id ?? "",
@@ -206,7 +206,7 @@ export default function TechniquesScreen() {
 							<Card
 								key={item.id}
 								mode="elevated"
-								onPress={() => router.push(`/edit-technique/${item.id}`)}
+								onPress={() => router.push(`/technique/${item.id}/edit`)}
 							>
 								<Card.Title
 									title={item.title}
@@ -247,7 +247,7 @@ export default function TechniquesScreen() {
 					onPress={() => {
 						const id = contextMenu?.techniqueId;
 						setContextMenu(null);
-						if (id) router.push(`/edit-technique/${id}`);
+						if (id) router.push(`/technique/${id}/edit`);
 					}}
 					title={t("screen.techniques.menu.edit")}
 				/>
@@ -284,7 +284,7 @@ export default function TechniquesScreen() {
 			<FAB
 				icon="plus"
 				style={{ position: "absolute", margin: 16, right: 0, bottom: 0 }}
-				onPress={() => router.push("/add-technique")}
+				onPress={() => router.push("/technique/add")}
 			/>
 		</View>
 	);

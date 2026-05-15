@@ -53,7 +53,7 @@ export default function PieceDetailScreen() {
 		setDeleteLoading(true);
 		try {
 			await deletePiece(id);
-			router.replace("/pieces");
+			router.replace("/(app)/(tabs)/piece");
 		} catch {
 			setDeleteDialogVisible(false);
 			setError(t("error.deletePiece"));
@@ -96,7 +96,7 @@ export default function PieceDetailScreen() {
 				<Appbar.Content title={piece.title} />
 				<Appbar.Action
 					icon="pencil"
-					onPress={() => router.push(`/edit-piece/${id}`)}
+					onPress={() => router.push(`/piece/${id}/edit`)}
 				/>
 				<Appbar.Action
 					icon="delete"
@@ -140,7 +140,7 @@ export default function PieceDetailScreen() {
 				<View className="px-4 pt-4">
 					<Button
 						mode="contained"
-						onPress={() => router.push(`/practice/${id}`)}
+						onPress={() => router.push(`/piece/${id}/practice`)}
 						contentStyle={{ paddingVertical: 4 }}
 					>
 						{t("screen.pieceDetail.practice")}
@@ -239,9 +239,7 @@ export default function PieceDetailScreen() {
 									key={s.id}
 									section={s}
 									pieceTargetBpm={piece.targetTempoBpm}
-									onPress={() =>
-										router.push(`/piece-sections/${id}/section/${s.id}`)
-									}
+									onPress={() => router.push(`/piece/${id}/section/${s.id}`)}
 								/>
 							))}
 						</View>
@@ -252,7 +250,7 @@ export default function PieceDetailScreen() {
 						title={t("screen.pieceDetail.manageSections")}
 						left={(props) => <List.Icon {...props} icon="playlist-edit" />}
 						right={(props) => <List.Icon {...props} icon="chevron-right" />}
-						onPress={() => router.push(`/piece-sections/${id}`)}
+						onPress={() => router.push(`/piece/${id}/section`)}
 					/>
 				</View>
 			</ScrollView>
@@ -260,7 +258,7 @@ export default function PieceDetailScreen() {
 			<FAB
 				icon="plus"
 				style={{ position: "absolute", right: 16, bottom: 16 }}
-				onPress={() => router.push(`/piece-sections/${id}/section/new`)}
+				onPress={() => router.push(`/piece/${id}/section/new`)}
 			/>
 
 			<DeletePieceDialog

@@ -155,7 +155,7 @@ export default function OverviewScreen() {
 									<Card
 										key={piece.id}
 										mode="elevated"
-										onPress={() => router.push(`/practice/${piece.id}`)}
+										onPress={() => router.push(`/piece/${piece.id}/practice`)}
 									>
 										<Card.Title title={piece.title} subtitle={piece.composer} />
 										<Card.Content>
@@ -191,7 +191,7 @@ export default function OverviewScreen() {
 
 							<Button
 								mode="text"
-								onPress={() => router.push("/pieces")}
+								onPress={() => router.push("/(app)/(tabs)/piece")}
 								icon="format-list-bulleted"
 							>
 								{t("screen.overview.seeAllPieces")}
@@ -208,7 +208,7 @@ export default function OverviewScreen() {
 											key={item.id}
 											mode="elevated"
 											onPress={() =>
-												router.push(`/practice-technique/${item.id}`)
+												router.push(`/technique/${item.id}/practice`)
 											}
 										>
 											<Card.Title title={item.title} />
@@ -239,7 +239,7 @@ export default function OverviewScreen() {
 
 									<Button
 										mode="text"
-										onPress={() => router.push("/techniques")}
+										onPress={() => router.push("/(app)/(tabs)/technique")}
 										icon="format-list-bulleted"
 									>
 										{t("screen.overview.seeAllTechniques")}
@@ -259,7 +259,7 @@ export default function OverviewScreen() {
 					bottom: 16,
 					backgroundColor: theme.colors.primaryContainer,
 				}}
-				onPress={() => router.push("/add-piece")}
+				onPress={() => router.push("/piece/add")}
 			/>
 		</View>
 	);
