@@ -98,11 +98,14 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Edit piece (title, composer)
   - [x] Delete piece
 - [x] Add piece lifecycle state (`learning`, `stabilizing`, `maintenance`)
-- [ ] Add section model to pieces (piece-level, reused across all practice sessions)
-  - [ ] Section label (required) + optional bar range (start bar, end bar)
-  - [ ] Section lifecycle/phase (`learning`, `stabilizing`, `maintenance`) — independent of piece phase
-  - [ ] Current BPM per section (goal/target BPM inherited from the piece)
-  - [ ] CRUD UI for sections within a piece (add, reorder, edit, delete)
+- [x] Add section model to pieces (piece-level, reused across all practice sessions)
+  - [x] Section label (required) + optional bar range (start bar, end bar)
+  - [x] Section lifecycle/phase (`learning`, `stabilizing`, `maintenance`) — independent of piece phase
+  - [x] Current BPM per section (student-set highest reliable/comfortable working BPM; not auto-updated from logs)
+  - [x] Optional target BPM override per section (inherits piece's target BPM by default)
+  - [x] Optional notes/problem field per section (e.g. "LH leaps", "memory insecure")
+  - [x] Soft delete (archived flag) — preserves practice history references
+  - [x] CRUD UI for sections within a piece (add, reorder via drag-and-drop, edit, archive)
 - [x] Add named technique item model
   - [x] Technique item title (for example `Hanon No. 1`, `D major scale`, `A minor arpeggio`)
   - [x] Technique lifecycle / state (`active`, `maintenance`, `retired`)
@@ -114,6 +117,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Create a "pill filter" component for filtering pieces by lifecycle state
   - [ ] Change routes for practices. It should be /techniques/{id}/practice and /pieces/{id}/practice. However, in Firestore, they should still be in the same collection as it's currently. So no DB changes.
   - [ ] Convert the practice radio buttons to be similar as technique practice page.
+  - [ ] Can't scroll on any of the pages.
 
 ### Phase 3: Practice Task Model & Logging
 

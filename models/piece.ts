@@ -42,4 +42,5 @@ export interface Piece {
 	lastPracticed?: Date | null;
 	lastTechnicalMistakes?: PracticeMistakes;
 	lastMemoryMistakes?: PracticeMistakes;
+	sectionCount?: number;
 }

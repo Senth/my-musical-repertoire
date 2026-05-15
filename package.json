@@ -45,6 +45,7 @@
 		"react-native": "0.85.3",
 		"react-native-css": "3.0.7",
 		"react-native-css-interop": "0.2.3",
+		"react-native-draggable-flatlist": "^4.0.3",
 		"react-native-gesture-handler": "2.31.2",
 		"react-native-paper": "5.15.2",
 		"react-native-reanimated": "4.3.1",

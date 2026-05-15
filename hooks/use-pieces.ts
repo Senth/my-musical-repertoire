@@ -25,6 +25,7 @@ interface FirestorePiece {
 	lastPracticed?: Timestamp | null;
 	lastTechnicalMistakes?: PracticeMistakes;
 	lastMemoryMistakes?: PracticeMistakes;
+	sectionCount?: number;
 }
 
 function fromFirestore(
@@ -44,6 +45,7 @@ function fromFirestore(
 		lastPracticed: data.lastPracticed?.toDate() ?? null,
 		lastTechnicalMistakes: data.lastTechnicalMistakes,
 		lastMemoryMistakes: data.lastMemoryMistakes,
+		sectionCount: data.sectionCount ?? 0,
 	};
 }
 

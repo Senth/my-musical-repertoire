@@ -160,7 +160,19 @@ export default function OverviewScreen() {
 										<Card.Title title={piece.title} subtitle={piece.composer} />
 										<Card.Content>
 											<View className="gap-2">
-												<PieceStateChip state={piece.state} />
+												<View className="flex-row items-center gap-2 flex-wrap">
+													<PieceStateChip state={piece.state} />
+													{(piece.sectionCount ?? 0) > 0 && (
+														<Text
+															variant="bodySmall"
+															style={{ color: theme.colors.onSurfaceVariant }}
+														>
+															{t("piece.sectionCount", {
+																count: piece.sectionCount,
+															})}
+														</Text>
+													)}
+												</View>
 												<PieceProgressBar
 													technicalMistakes={piece.lastTechnicalMistakes}
 													memoryMistakes={piece.lastMemoryMistakes}

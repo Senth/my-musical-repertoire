@@ -117,6 +117,14 @@ export default function PiecesScreen() {
 					</Text>
 					<View className="flex-row items-center gap-2 flex-wrap">
 						<PieceStateChip state={item.state} />
+						{(item.sectionCount ?? 0) > 0 && (
+							<Text
+								variant="bodySmall"
+								style={{ color: theme.colors.onSurfaceVariant }}
+							>
+								{t("piece.sectionCount", { count: item.sectionCount })}
+							</Text>
+						)}
 						<Text
 							variant="bodySmall"
 							style={{ color: theme.colors.onSurfaceVariant }}
@@ -225,7 +233,19 @@ export default function PiecesScreen() {
 								/>
 								<Card.Content>
 									<View className="gap-2">
-										<PieceStateChip state={item.state} />
+										<View className="flex-row items-center gap-2 flex-wrap">
+											<PieceStateChip state={item.state} />
+											{(item.sectionCount ?? 0) > 0 && (
+												<Text
+													variant="bodySmall"
+													style={{ color: theme.colors.onSurfaceVariant }}
+												>
+													{t("piece.sectionCount", {
+														count: item.sectionCount,
+													})}
+												</Text>
+											)}
+										</View>
 										<PieceProgressBar
 											technicalMistakes={item.lastTechnicalMistakes}
 											memoryMistakes={item.lastMemoryMistakes}

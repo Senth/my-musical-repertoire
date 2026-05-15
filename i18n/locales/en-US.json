@@ -25,6 +25,16 @@
 			"3": "3 – Medium",
 			"4": "4 – Medium-Hard",
 			"5": "5 – Hard"
+		},
+		"sectionCount_one": "{{count}} section",
+		"sectionCount_other": "{{count}} sections",
+		"noSections": "No sections"
+	},
+	"section": {
+		"phase": {
+			"learning": "Learning",
+			"stabilizing": "Stabilizing",
+			"maintenance": "Maintenance"
 		}
 	},
 	"common": {
@@ -68,7 +78,9 @@
 	"error": {
 		"firebase": "Connection to Firebase failed",
 		"deletePiece": "Failed to delete piece. Please try again.",
-		"deleteTechnique": "Failed to delete technique item. Please try again."
+		"deleteTechnique": "Failed to delete technique item. Please try again.",
+		"deleteSection": "Failed to archive section. Please try again.",
+		"reorderSections": "Failed to reorder sections. Please try again."
 	},
 	"screen": {
 		"login": {
@@ -236,6 +248,41 @@
 				"same": "Same as before",
 				"firstPractice": "First practice! 🎵",
 				"back": "Back"
+			}
+		},
+		"pieceSections": {
+			"title": "Sections",
+			"empty": "No sections yet.\nTap + to add your first section.",
+			"menu": {
+				"edit": "Edit",
+				"archive": "Archive"
+			},
+			"archiveDialog": {
+				"title": "Archive Section",
+				"message": "\"{{name}}\" will be hidden from the list. Its practice history will be preserved.",
+				"confirm": "Archive",
+				"cancel": "Cancel"
+			},
+			"addSection": "Add Section",
+			"editSection": "Edit Section",
+			"barRange": "Bars {{start}}–{{end}}",
+			"barFrom": "From bar {{start}}",
+			"bpm": "{{bpm}} BPM",
+			"targetBpmPlaceholder": "Inherit from piece ({{bpm}} BPM)",
+			"targetBpmPlaceholderNone": "Inherit from piece",
+			"form": {
+				"labelLabel": "Label (e.g. Opening, Bridge, Coda)",
+				"phaseLabel": "Phase",
+				"startBarLabel": "Start Bar",
+				"endBarLabel": "End Bar",
+				"currentBpmLabel": "Working BPM",
+				"targetBpmOverrideLabel": "Target BPM (optional override)",
+				"notesLabel": "Notes / Problem (optional)",
+				"save": "Save",
+				"error": {
+					"labelRequired": "Label is required.",
+					"endBarRequiresStartBar": "End bar requires a start bar."
+				}
 			}
 		}
 	}

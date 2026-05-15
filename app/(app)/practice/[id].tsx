@@ -5,6 +5,8 @@ import { Platform, ScrollView, useWindowDimensions, View } from "react-native";
 import {
 	Appbar,
 	Button,
+	Divider,
+	List,
 	Menu,
 	Snackbar,
 	Text,
@@ -167,6 +169,22 @@ export default function PracticeScreen() {
 									{piece.composer}
 								</Text>
 							</View>
+
+							<Divider />
+							<List.Item
+								title={t("screen.pieceSections.title")}
+								description={
+									(piece.sectionCount ?? 0) > 0
+										? t("piece.sectionCount", { count: piece.sectionCount })
+										: t("piece.noSections")
+								}
+								left={(props) => (
+									<List.Icon {...props} icon="music-note-plus" />
+								)}
+								right={(props) => <List.Icon {...props} icon="chevron-right" />}
+								onPress={() => router.push(`/piece-sections/${id}`)}
+							/>
+							<Divider />
 
 							<View className="gap-2">
 								<Text variant="titleSmall">
