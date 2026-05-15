@@ -113,35 +113,40 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Add suggested techniques in the overview page (displayed similarly to suggested practices)
 - [x] Create GH Action and deploy to Google Storage for hosting the web version
 - [ ] Touch up UI/UX and fix any discrepancies
-  - [ ] Add tab for Pieces — add FAB on Pieces screen to match Overview/Techniques ([ISSUE-007](/.tmp/ui-ux-issues.md))
-  - [ ] Create a "pill filter" component for filtering pieces by lifecycle state
-  - [ ] Change routes for practices. It should be /techniques/{id}/practice and /pieces/{id}/practice. However, in Firestore, they should still be in the same collection as it's currently. So no DB changes.
-  - [ ] Convert the practice radio buttons to be similar as technique practice page.
-  - [ ] Can't scroll on any of the pages.
-  - [ ] Add/Edit section:
+  - [ ] **Section Form & Edit Page**
     - [ ] Add section/edit section should be a new page for mobile instead of a modal/dialog — routed as `/pieces/{id}/section/{id}/edit`. This also resolves ISSUE-008 and ISSUE-011. ([ISSUE-008](/.tmp/ui-ux-issues.md), [ISSUE-011](/.tmp/ui-ux-issues.md))
     - [ ] Remove target BPM override from the section edit screen. It should be using the piece-level target BPM for all sections.
     - [ ] The bars sections should be Bars [start] - [end] instead of Start bar [input]. If end bar is set, start bar also needs to be set. Otherwise both are optional.
     - [ ] Fix stale form values: reset `SectionFormModal` state when `visible` becomes `true` or `initialValues` changes ([ISSUE-010](/.tmp/ui-ux-issues.md))
-  - [ ] Fix empty states and loading guards
+  - [ ] **Navigation & Routing**
+    - [ ] Change routes for practices. It should be /techniques/{id}/practice and /pieces/{id}/practice. However, in Firestore, they should still be in the same collection as it's currently. So no DB changes.
+    - [ ] Fix post-practice navigation: "Back to Overview" must navigate explicitly to `/(app)/(tabs)/overview` ([ISSUE-012](/.tmp/ui-ux-issues.md))
+    - [ ] Fix post-technique-log navigation: navigate explicitly to `/(app)/(tabs)/techniques` instead of `router.back()` ([ISSUE-013](/.tmp/ui-ux-issues.md))
+    - [ ] Practice and technique-log app bars: show piece/technique name as the title ([ISSUE-015](/.tmp/ui-ux-issues.md))
+  - [ ] **List Screen Enhancements**
+    - [ ] Add tab for Pieces — add FAB on Pieces screen to match Overview/Techniques ([ISSUE-007](/.tmp/ui-ux-issues.md))
+    - [ ] Create a "pill filter" component for filtering pieces by lifecycle state
+    - [ ] Techniques screen: add `Searchbar` using the same pattern as Pieces (reuse existing `screen.techniques.searchPlaceholder` key) ([ISSUE-022](/.tmp/ui-ux-issues.md))
+    - [ ] Standardize primary tap action: tap = detail everywhere; expose Practice as a clearly labeled secondary action across Overview cards, Pieces rows, and Techniques rows ([ISSUE-002](/.tmp/ui-ux-issues.md))
+    - [ ] Fix techniques compact-row menu anchor so popup appears next to the pressed button ([ISSUE-003](/.tmp/ui-ux-issues.md))
+  - [ ] **Empty States & Loading Guards**
     - [ ] Overview: keep page scaffold visible when there are no pieces; show inline empty state only inside the Pieces section; always render the Techniques section ([ISSUE-001](/.tmp/ui-ux-issues.md))
     - [ ] Techniques: differentiate "no techniques exist" from "all are hidden by retired filter"; show contextual "Show retired" CTA ([ISSUE-006](/.tmp/ui-ux-issues.md))
     - [ ] Pieces and Techniques list screens: show loading indicator while Firestore resolves; gate empty states behind `!loading` ([ISSUE-004](/.tmp/ui-ux-issues.md))
     - [ ] Detail/edit/practice screens: add loading guards so "not found" only renders after loading completes ([ISSUE-005](/.tmp/ui-ux-issues.md))
-  - [ ] Standardize primary tap action: tap = detail everywhere; expose Practice as a clearly labeled secondary action across Overview cards, Pieces rows, and Techniques rows ([ISSUE-002](/.tmp/ui-ux-issues.md))
-  - [ ] Fix techniques compact-row menu anchor so popup appears next to the pressed button ([ISSUE-003](/.tmp/ui-ux-issues.md))
-  - [ ] Replace section admin link during practice with a lightweight read-only section picker sheet ([ISSUE-009](/.tmp/ui-ux-issues.md))
-  - [ ] Fix post-practice navigation: "Back to Overview" must navigate explicitly to `/(app)/(tabs)/overview` ([ISSUE-012](/.tmp/ui-ux-issues.md))
-  - [ ] Fix post-technique-log navigation: navigate explicitly to `/(app)/(tabs)/techniques` instead of `router.back()` ([ISSUE-013](/.tmp/ui-ux-issues.md))
-  - [ ] Technique comparison: use composite verdict (quality + effort + tempo) instead of quality-only ([ISSUE-014](/.tmp/ui-ux-issues.md))
-  - [ ] Practice and technique-log app bars: show piece/technique name as the title ([ISSUE-015](/.tmp/ui-ux-issues.md))
-  - [ ] Inline field validation across all forms: mark invalid `TextInput`s with `error` prop + helper text ([ISSUE-016](/.tmp/ui-ux-issues.md))
-  - [ ] Numeric BPM inputs: validate explicitly and show inline error on bad input ([ISSUE-017](/.tmp/ui-ux-issues.md))
-  - [ ] Accessibility: add localized `accessibilityLabel`/`accessibilityHint` to all icon-only actions (FABs, dots menus, drag handles, edit/delete buttons) ([ISSUE-018](/.tmp/ui-ux-issues.md))
-  - [ ] Surface Google sign-in errors to the user (snackbar/inline message, same pattern as email/password) ([ISSUE-019](/.tmp/ui-ux-issues.md))
-  - [ ] i18n: add `common.ok` translation key and replace all hardcoded `"OK"` snackbar labels ([ISSUE-020](/.tmp/ui-ux-issues.md))
-  - [ ] FAB positioning: apply safe-area insets and tab-bar-aware bottom spacing to all FABs ([ISSUE-021](/.tmp/ui-ux-issues.md))
-  - [ ] Techniques screen: add `Searchbar` using the same pattern as Pieces (reuse existing `screen.techniques.searchPlaceholder` key) ([ISSUE-022](/.tmp/ui-ux-issues.md))
+  - [ ] **Practice Screen**
+    - [ ] Convert the practice radio buttons to be similar as technique practice page.
+    - [ ] Replace section admin link during practice with a lightweight read-only section picker sheet ([ISSUE-009](/.tmp/ui-ux-issues.md))
+    - [ ] Technique comparison: use composite verdict (quality + effort + tempo) instead of quality-only ([ISSUE-014](/.tmp/ui-ux-issues.md))
+  - [ ] **Form Validation**
+    - [ ] Inline field validation across all forms: mark invalid `TextInput`s with `error` prop + helper text ([ISSUE-016](/.tmp/ui-ux-issues.md))
+    - [ ] Numeric BPM inputs: validate explicitly and show inline error on bad input ([ISSUE-017](/.tmp/ui-ux-issues.md))
+    - [ ] Surface Google sign-in errors to the user (snackbar/inline message, same pattern as email/password) ([ISSUE-019](/.tmp/ui-ux-issues.md))
+  - [ ] **Global Polish**
+    - [ ] Can't scroll on any of the pages.
+    - [ ] FAB positioning: apply safe-area insets and tab-bar-aware bottom spacing to all FABs ([ISSUE-021](/.tmp/ui-ux-issues.md))
+    - [ ] i18n: add `common.ok` translation key and replace all hardcoded `"OK"` snackbar labels ([ISSUE-020](/.tmp/ui-ux-issues.md))
+    - [ ] Accessibility: add localized `accessibilityLabel`/`accessibilityHint` to all icon-only actions (FABs, dots menus, drag handles, edit/delete buttons) ([ISSUE-018](/.tmp/ui-ux-issues.md))
 
 ### Phase 3: Practice Task Model & Logging
 
