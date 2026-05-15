@@ -93,16 +93,67 @@ export function useAddSection() {
 
 	const addSection = async (
 		pieceId: string,
-		data: Omit<Section, "id" | "pieceId" | "userId" | "archived" | "createdAt">,
+		data: Omit<
+			Section,
+			"id" | "pieceId" | "userId" | "archived" | "createdAt" | "order"
+		>,
 	) => {
 		if (!user) throw new Error("Not authenticated");
 
 		const batch = writeBatch(db);
-
 		const sRef = sectionsRef(user.uid, pieceId);
+
+		// Fetch existing non-archived sections to compute insertion order
+		const existingSnap = await getDocs(
+			query(sRef, where("archived", "==", false), orderBy("order", "asc")),
+		);
+		type StoredSection = FirestoreSection & { id: string };
+		const existing: StoredSection[] = existingSnap.docs.map((d) => ({
+			id: d.id,
+			...(d.data() as FirestoreSection),
+		}));
+
+		let newOrder: number;
+
+		if (data.startBar != null) {
+			// Split by whether they have a bar number
+			const withBar = existing
+				.filter((s) => s.startBar != null)
+				.sort((a, b) => (a.startBar ?? 0) - (b.startBar ?? 0));
+			const withoutBar = existing.filter((s) => s.startBar == null);
+
+			// Find insertion point among bar-numbered sections
+			const insertIdx = withBar.findIndex(
+				(s) => (s.startBar ?? 0) > (data.startBar ?? 0),
+			);
+			const insertAt = insertIdx === -1 ? withBar.length : insertIdx;
+			newOrder = insertAt;
+
+			// Rebuild order: [withBar[0..insertAt-1], NEW, withBar[insertAt..], withoutBar]
+			const reordered = [
+				...withBar.slice(0, insertAt),
+				null, // placeholder for new section
+				...withBar.slice(insertAt),
+				...withoutBar,
+			];
+
+			for (let i = 0; i < reordered.length; i++) {
+				const s = reordered[i];
+				if (s === null) continue; // new section handled below
+				if (s.order !== i) {
+					batch.update(doc(sRef, s.id), { order: i });
+				}
+			}
+		} else {
+			// Append after all bar-numbered sections (which come first), then no-bar sections
+			newOrder = existing.length;
+		}
+
+		// Create the new section
 		const newSectionRef = doc(sRef);
 		batch.set(newSectionRef, {
 			...data,
+			order: newOrder,
 			archived: false,
 			createdAt: serverTimestamp(),
 		});

@@ -74,7 +74,7 @@ export default function PieceSectionsScreen() {
 		if (editingSection?.id) {
 			await updateSection(pieceId, editingSection.id, data);
 		} else {
-			await addSection(pieceId, { ...data, order: sections.length });
+			await addSection(pieceId, data);
 		}
 	};
 

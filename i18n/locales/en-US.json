@@ -83,6 +83,17 @@
 		"reorderSections": "Failed to reorder sections. Please try again."
 	},
 	"screen": {
+		"pieceDetail": {
+			"practice": "Practice",
+			"notes": "Notes",
+			"noNotes": "No notes yet",
+			"editNotes": "Edit notes",
+			"sections": "Sections",
+			"manageSections": "Manage & reorder sections",
+			"pieceNotFound": "Piece not found",
+			"targetBpm": "Target: {{bpm}} BPM",
+			"lastPracticed": "Last practiced: {{when}}"
+		},
 		"login": {
 			"title": "Login",
 			"google": "Sign in with Google",
@@ -160,6 +171,7 @@
 			"learningPhaseLabel": "Learning Phase",
 			"targetTempoBpmLabel": "Target Tempo (BPM)",
 			"difficultyLabel": "Difficulty",
+			"notesLabel": "Notes (optional)",
 			"save": "Save",
 			"error": {
 				"titleRequired": "Title is required.",

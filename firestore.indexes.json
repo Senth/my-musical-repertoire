@@ -1,4 +1,13 @@
 {
-	"indexes": [],
+	"indexes": [
+		{
+			"collectionGroup": "sections",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{ "fieldPath": "archived", "order": "ASCENDING" },
+				{ "fieldPath": "order", "order": "ASCENDING" }
+			]
+		}
+	],
 	"fieldOverrides": []
 }

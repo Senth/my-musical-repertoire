@@ -142,7 +142,7 @@ export default function PiecesScreen() {
 					/>
 				</View>
 			)}
-			onPress={() => router.push(`/practice/${item.id}`)}
+			onPress={() => router.push(`/piece/${item.id}`)}
 			onLongPress={(e) =>
 				setContextMenu({
 					pieceId: item.id ?? "",
@@ -224,7 +224,7 @@ export default function PiecesScreen() {
 							<Card
 								key={item.id}
 								mode="elevated"
-								onPress={() => router.push(`/practice/${item.id}`)}
+								onPress={() => router.push(`/piece/${item.id}`)}
 							>
 								<Card.Title
 									title={item.title}

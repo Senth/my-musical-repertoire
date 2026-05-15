@@ -50,6 +50,7 @@ export default function EditPieceScreen() {
 	const [difficulty, setDifficulty] = useState<string | null>(
 		piece?.difficulty?.toString() ?? null,
 	);
+	const [notes, setNotes] = useState(piece?.notes ?? "");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const hasSeeded = useRef(false);
@@ -63,6 +64,7 @@ export default function EditPieceScreen() {
 			setLearningPhase(piece.learningPhase ?? null);
 			setTargetTempoBpmText(piece.targetTempoBpm?.toString() ?? "");
 			setDifficulty(piece.difficulty?.toString() ?? null);
+			setNotes(piece.notes ?? "");
 			hasSeeded.current = true;
 		}
 	}, [piece]);
@@ -118,6 +120,7 @@ export default function EditPieceScreen() {
 				learningPhase: state === "learning" ? learningPhase : null,
 				targetTempoBpm,
 				difficulty: parsedDifficulty,
+				notes: notes.trim() || null,
 			});
 			router.back();
 		} catch {
@@ -177,6 +180,15 @@ export default function EditPieceScreen() {
 				value={difficulty}
 				options={difficultyOptions}
 				onChange={setDifficulty}
+			/>
+
+			<TextInput
+				label={t("screen.editPiece.notesLabel")}
+				value={notes}
+				onChangeText={setNotes}
+				mode="outlined"
+				multiline
+				numberOfLines={3}
 			/>
 
 			<Button

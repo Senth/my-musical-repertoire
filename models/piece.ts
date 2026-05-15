@@ -43,4 +43,5 @@ export interface Piece {
 	lastTechnicalMistakes?: PracticeMistakes;
 	lastMemoryMistakes?: PracticeMistakes;
 	sectionCount?: number;
+	notes?: string | null;
 }

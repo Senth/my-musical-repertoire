@@ -26,6 +26,7 @@ interface FirestorePiece {
 	lastTechnicalMistakes?: PracticeMistakes;
 	lastMemoryMistakes?: PracticeMistakes;
 	sectionCount?: number;
+	notes?: string | null;
 }
 
 function fromFirestore(
@@ -46,6 +47,7 @@ function fromFirestore(
 		lastTechnicalMistakes: data.lastTechnicalMistakes,
 		lastMemoryMistakes: data.lastMemoryMistakes,
 		sectionCount: data.sectionCount ?? 0,
+		notes: data.notes ?? null,
 	};
 }
 
@@ -119,6 +121,7 @@ export function useUpdatePiece() {
 				| "lastPracticed"
 				| "lastTechnicalMistakes"
 				| "lastMemoryMistakes"
+				| "notes"
 			>
 		>,
 	) => {
