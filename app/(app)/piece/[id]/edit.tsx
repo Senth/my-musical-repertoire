@@ -232,7 +232,7 @@ export default function EditPieceScreen() {
 				visible={!!error}
 				onDismiss={() => setError(null)}
 				duration={4000}
-				action={{ label: "OK", onPress: () => setError(null) }}
+				action={{ label: t("common.ok"), onPress: () => setError(null) }}
 			>
 				{error ?? ""}
 			</Snackbar>

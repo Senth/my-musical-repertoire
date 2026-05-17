@@ -1,6 +1,7 @@
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useWindowDimensions, View } from "react-native";
+import { ScrollView, useWindowDimensions, View } from "react-native";
 import {
 	ActivityIndicator,
 	Button,
@@ -85,6 +86,7 @@ export default function OverviewScreen() {
 	const { techniques, loading: techniquesLoading } = useTechniques();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
+	const tabBarHeight = useBottomTabBarHeight();
 
 	const suggested = getSuggestedPieces(pieces);
 	const suggestedTechniques = getSuggestedTechniques(techniques);
@@ -117,162 +119,168 @@ export default function OverviewScreen() {
 			className="flex-1"
 			style={{ backgroundColor: theme.colors.background }}
 		>
-			<View
-				className="flex-1"
-				style={{ paddingHorizontal: isCompact ? 16 : 24, paddingTop: 24 }}
+			<ScrollView
+				contentContainerStyle={{
+					paddingHorizontal: isCompact ? 16 : 24,
+					paddingTop: 24,
+					paddingBottom: tabBarHeight + 96,
+				}}
 			>
-				<View className="w-full max-w-xl self-center flex-1">
-					{pieces.length === 0 ? (
-						<View className="flex-1 items-center justify-center">
-							<Text
-								variant="bodyLarge"
-								style={{
-									color: theme.colors.onSurfaceVariant,
-									textAlign: "center",
-								}}
-							>
-								{t("screen.overview.noPieces")}
-							</Text>
-						</View>
-					) : (
-						<View className="gap-4 pb-24">
-							<Text variant="titleMedium">
-								{t("screen.overview.practiceToday")}
-							</Text>
+				<View className="w-full max-w-xl self-center gap-4">
+					<Text variant="titleMedium">
+						{t("screen.overview.practiceToday")}
+					</Text>
 
-							{suggested.length === 0 ? (
-								<Text
-									variant="bodyLarge"
-									style={{
-										color: theme.colors.onSurfaceVariant,
-										textAlign: "center",
-									}}
-								>
-									{t("screen.overview.allCaughtUp")}
-								</Text>
-							) : (
-								suggested.map((piece) => (
-									<Card
-										key={piece.id}
-										mode="elevated"
-										onPress={() => router.push(`/piece/${piece.id}`)}
-									>
-										<Card.Title title={piece.title} subtitle={piece.composer} />
-										<Card.Content>
-											<View className="gap-2">
-												<View className="flex-row items-center gap-2 flex-wrap">
-													<PieceStateChip state={piece.state} />
-													{(piece.sectionCount ?? 0) > 0 && (
-														<Text
-															variant="bodySmall"
-															style={{ color: theme.colors.onSurfaceVariant }}
-														>
-															{t("piece.sectionCount", {
-																count: piece.sectionCount,
-															})}
-														</Text>
-													)}
-												</View>
-												<PieceProgressBar
-													technicalMistakes={piece.lastTechnicalMistakes}
-													memoryMistakes={piece.lastMemoryMistakes}
-												/>
+					{pieces.length === 0 ? (
+						<Text
+							variant="bodyLarge"
+							style={{
+								color: theme.colors.onSurfaceVariant,
+								textAlign: "center",
+							}}
+						>
+							{t("screen.overview.noPieces")}
+						</Text>
+					) : suggested.length === 0 ? (
+						<Text
+							variant="bodyLarge"
+							style={{
+								color: theme.colors.onSurfaceVariant,
+								textAlign: "center",
+							}}
+						>
+							{t("screen.overview.allCaughtUp")}
+						</Text>
+					) : (
+						suggested.map((piece) => (
+							<Card
+								key={piece.id}
+								mode="elevated"
+								onPress={() => router.push(`/piece/${piece.id}`)}
+							>
+								<Card.Title title={piece.title} subtitle={piece.composer} />
+								<Card.Content>
+									<View className="gap-2">
+										<View className="flex-row items-center gap-2 flex-wrap">
+											<PieceStateChip state={piece.state} />
+											{(piece.sectionCount ?? 0) > 0 && (
 												<Text
 													variant="bodySmall"
 													style={{ color: theme.colors.onSurfaceVariant }}
 												>
-													{formatDaysAgo(piece.lastPracticed, t)}
+													{t("piece.sectionCount", {
+														count: piece.sectionCount,
+													})}
 												</Text>
-												<Button
-													mode="contained-tonal"
-													compact
-													onPress={() =>
-														router.push(`/piece/${piece.id}/practice`)
-													}
-												>
-													{t("screen.overview.practice")}
-												</Button>
-											</View>
-										</Card.Content>
-									</Card>
-								))
-							)}
-
-							<Button
-								mode="text"
-								onPress={() => router.push("/(app)/(tabs)/piece")}
-								icon="format-list-bulleted"
-							>
-								{t("screen.overview.seeAllPieces")}
-							</Button>
-
-							{suggestedTechniques.length > 0 && (
-								<>
-									<Text variant="titleMedium">
-										{t("screen.overview.techniqueToday")}
-									</Text>
-
-									{suggestedTechniques.map((item) => (
-										<Card
-											key={item.id}
-											mode="elevated"
-											onPress={() => router.push(`/technique/${item.id}`)}
+											)}
+										</View>
+										<PieceProgressBar
+											technicalMistakes={piece.lastTechnicalMistakes}
+											memoryMistakes={piece.lastMemoryMistakes}
+										/>
+										<Text
+											variant="bodySmall"
+											style={{ color: theme.colors.onSurfaceVariant }}
 										>
-											<Card.Title title={item.title} />
-											<Card.Content>
-												<View className="gap-2">
-													<View className="flex-row items-center gap-2 flex-wrap">
-														<TechniqueStateChip state={item.state} />
-														{item.type && (
-															<Chip compact textStyle={{ fontSize: 11 }}>
-																{t(
-																	`technique.type.${item.type}` as Parameters<
-																		typeof t
-																	>[0],
-																)}
-															</Chip>
-														)}
-													</View>
-													<Text
-														variant="bodySmall"
-														style={{ color: theme.colors.onSurfaceVariant }}
-													>
-														{getTechniqueReason(item)}
-													</Text>
-													<Button
-														mode="contained-tonal"
-														compact
-														onPress={() =>
-															router.push(`/technique/${item.id}/practice`)
-														}
-													>
-														{t("screen.overview.practice")}
-													</Button>
-												</View>
-											</Card.Content>
-										</Card>
-									))}
-
-									<Button
-										mode="text"
-										onPress={() => router.push("/(app)/(tabs)/technique")}
-										icon="format-list-bulleted"
-									>
-										{t("screen.overview.seeAllTechniques")}
-									</Button>
-								</>
-							)}
-						</View>
+											{formatDaysAgo(piece.lastPracticed, t)}
+										</Text>
+										<Button
+											mode="contained-tonal"
+											compact
+											onPress={() => router.push(`/piece/${piece.id}/practice`)}
+										>
+											{t("screen.overview.practice")}
+										</Button>
+									</View>
+								</Card.Content>
+							</Card>
+						))
 					)}
+
+					{pieces.length > 0 && (
+						<Button
+							mode="text"
+							onPress={() => router.push("/(app)/(tabs)/piece")}
+							icon="format-list-bulleted"
+						>
+							{t("screen.overview.seeAllPieces")}
+						</Button>
+					)}
+
+					<Text variant="titleMedium">
+						{t("screen.overview.techniqueToday")}
+					</Text>
+
+					{suggestedTechniques.length === 0 ? (
+						<Text
+							variant="bodyLarge"
+							style={{
+								color: theme.colors.onSurfaceVariant,
+								textAlign: "center",
+							}}
+						>
+							{t("screen.overview.allCaughtUp")}
+						</Text>
+					) : (
+						suggestedTechniques.map((item) => (
+							<Card
+								key={item.id}
+								mode="elevated"
+								onPress={() => router.push(`/technique/${item.id}`)}
+							>
+								<Card.Title title={item.title} />
+								<Card.Content>
+									<View className="gap-2">
+										<View className="flex-row items-center gap-2 flex-wrap">
+											<TechniqueStateChip state={item.state} />
+											{item.type && (
+												<Chip compact textStyle={{ fontSize: 11 }}>
+													{t(
+														`technique.type.${item.type}` as Parameters<
+															typeof t
+														>[0],
+													)}
+												</Chip>
+											)}
+										</View>
+										<Text
+											variant="bodySmall"
+											style={{ color: theme.colors.onSurfaceVariant }}
+										>
+											{getTechniqueReason(item)}
+										</Text>
+										<Button
+											mode="contained-tonal"
+											compact
+											onPress={() =>
+												router.push(`/technique/${item.id}/practice`)
+											}
+										>
+											{t("screen.overview.practice")}
+										</Button>
+									</View>
+								</Card.Content>
+							</Card>
+						))
+					)}
+
+					<Button
+						mode="text"
+						onPress={() => router.push("/(app)/(tabs)/technique")}
+						icon="format-list-bulleted"
+					>
+						{t("screen.overview.seeAllTechniques")}
+					</Button>
 				</View>
-			</View>
+			</ScrollView>
 
 			<FAB
 				icon="plus"
+				accessibilityLabel={t("a11y.fab.addPiece")}
 				style={{
 					position: "absolute",
 					right: 16,
-					bottom: 16,
+					bottom: tabBarHeight + 16,
 					backgroundColor: theme.colors.primaryContainer,
 				}}
 				onPress={() => router.push("/piece/add")}

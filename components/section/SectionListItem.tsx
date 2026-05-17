@@ -81,6 +81,7 @@ export function SectionListItem({
 					<IconButton
 						icon="dots-vertical"
 						size={20}
+						accessibilityLabel={t("a11y.menu.options")}
 						onPress={() => setMenuVisible(true)}
 					/>
 				}

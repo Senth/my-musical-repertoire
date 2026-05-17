@@ -43,7 +43,28 @@
 		"daysAgo_one": "{{count}} day ago",
 		"daysAgo_other": "{{count}} days ago",
 		"neverPracticed": "Never practiced",
-		"score": "{{score}}/10"
+		"score": "{{score}}/10",
+		"ok": "OK"
+	},
+	"a11y": {
+		"fab": {
+			"add": "Add",
+			"addPiece": "Add piece",
+			"addTechnique": "Add technique",
+			"addSection": "Add section"
+		},
+		"menu": {
+			"options": "More options"
+		},
+		"drag": {
+			"reorder": "Drag to reorder"
+		},
+		"action": {
+			"edit": "Edit",
+			"delete": "Delete",
+			"archive": "Archive",
+			"practice": "Practice"
+		}
 	},
 	"technique": {
 		"state": {
@@ -146,6 +167,10 @@
 			"technicalMistakes": "Technical Mistakes",
 			"memoryMistakes": "Memory Mistakes",
 			"save": "Save",
+			"sectionLabel": "Section",
+			"sectionPickerTitle": "Select section",
+			"fullPiece": "Full piece",
+			"achievedBpmLabel": "Achieved BPM",
 			"mistakeLevel": {
 				"none": "None",
 				"few": "Few",
@@ -210,6 +235,10 @@
 			"title": "Techniques",
 			"searchPlaceholder": "Search techniques...",
 			"noResults": "No technique items match your search",
+			"noTechniques": "No techniques yet",
+			"noTechniquesMatchFilter": "No techniques match your filter",
+			"showAll": "Show all",
+			"addTechnique": "Add technique",
 			"showRetired": "Show retired",
 			"hideRetired": "Hide retired",
 			"neverPracticed": "Never practiced",

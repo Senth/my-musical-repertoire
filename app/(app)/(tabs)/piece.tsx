@@ -1,8 +1,10 @@
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, ScrollView, useWindowDimensions, View } from "react-native";
 import {
+	ActivityIndicator,
 	Card,
 	Divider,
 	FAB,
@@ -31,8 +33,9 @@ export default function PiecesScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
-	const { pieces } = usePieces();
+	const { pieces, loading } = usePieces();
 	const { deletePiece } = useDeletePiece();
+	const tabBarHeight = useBottomTabBarHeight();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [stateFilter, setStateFilter] = useState<StateFilter>("all");
 	const [menuVisible, setMenuVisible] = useState<string | null>(null);
@@ -81,6 +84,7 @@ export default function PiecesScreen() {
 				<IconButton
 					icon="dots-vertical"
 					size={20}
+					accessibilityLabel={t("a11y.menu.options")}
 					onPress={() => setMenuVisible(item.id ?? null)}
 				/>
 			}
@@ -200,7 +204,11 @@ export default function PiecesScreen() {
 				}
 			/>
 
-			{filteredPieces.length === 0 ? (
+			{loading ? (
+				<View className="flex-1 items-center justify-center">
+					<ActivityIndicator size="large" />
+				</View>
+			) : filteredPieces.length === 0 ? (
 				emptyState
 			) : isCompact ? (
 				<FlatList
@@ -306,14 +314,19 @@ export default function PiecesScreen() {
 				visible={!!deleteError}
 				onDismiss={() => setDeleteError(null)}
 				duration={4000}
-				action={{ label: "OK", onPress: () => setDeleteError(null) }}
+				action={{ label: t("common.ok"), onPress: () => setDeleteError(null) }}
 			>
 				{deleteError ?? ""}
 			</Snackbar>
 
 			<FAB
 				icon="plus"
-				style={{ position: "absolute", margin: 16, right: 0, bottom: 0 }}
+				accessibilityLabel={t("a11y.fab.addPiece")}
+				style={{
+					position: "absolute",
+					right: 16,
+					bottom: tabBarHeight + 16,
+				}}
 				onPress={() => router.push("/piece/add")}
 			/>
 		</View>

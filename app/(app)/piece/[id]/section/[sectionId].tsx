@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
 	KeyboardAvoidingView,
 	Platform,
+	ScrollView,
 	useWindowDimensions,
 	View,
 } from "react-native";
@@ -228,27 +229,32 @@ export default function SectionEditScreen() {
 			<KeyboardAvoidingView
 				behavior={Platform.OS === "ios" ? "padding" : "height"}
 				className="flex-1"
-				style={{
-					paddingHorizontal: isCompact ? 16 : 24,
-					paddingTop: 24,
-				}}
 			>
-				<View className="w-full max-w-xl self-center">
-					{isCompact ? (
-						formContent
-					) : (
-						<Card mode="elevated">
-							<Card.Content>{formContent}</Card.Content>
-						</Card>
-					)}
-				</View>
+				<ScrollView
+					contentContainerStyle={{
+						paddingHorizontal: isCompact ? 16 : 24,
+						paddingTop: 24,
+						paddingBottom: 40,
+					}}
+					keyboardShouldPersistTaps="handled"
+				>
+					<View className="w-full max-w-xl self-center">
+						{isCompact ? (
+							formContent
+						) : (
+							<Card mode="elevated">
+								<Card.Content>{formContent}</Card.Content>
+							</Card>
+						)}
+					</View>
+				</ScrollView>
 			</KeyboardAvoidingView>
 
 			<Snackbar
 				visible={!!error}
 				onDismiss={() => setError(null)}
 				duration={4000}
-				action={{ label: "OK", onPress: () => setError(null) }}
+				action={{ label: t("common.ok"), onPress: () => setError(null) }}
 			>
 				{error ?? ""}
 			</Snackbar>

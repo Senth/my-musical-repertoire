@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
 import {
+	ActivityIndicator,
 	Appbar,
 	Button,
 	Divider,
@@ -14,6 +15,7 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { SectionDetailRow } from "@/components/section/SectionDetailRow";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
@@ -27,8 +29,9 @@ export default function PieceDetailScreen() {
 	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
 
-	const { pieces } = usePieces();
+	const { pieces, loading: piecesLoading } = usePieces();
 	const { sections, loading: sectionsLoading } = useSections(id ?? "");
+	const insets = useSafeAreaInsets();
 	const { deletePiece } = useDeletePiece();
 	const { updatePiece } = useUpdatePiece();
 
@@ -75,6 +78,17 @@ export default function PieceDetailScreen() {
 		}
 	};
 
+	if (piecesLoading) {
+		return (
+			<View
+				className="flex-1 items-center justify-center"
+				style={{ backgroundColor: theme.colors.background }}
+			>
+				<ActivityIndicator size="large" />
+			</View>
+		);
+	}
+
 	if (!piece) {
 		return (
 			<View
@@ -96,10 +110,12 @@ export default function PieceDetailScreen() {
 				<Appbar.Content title={piece.title} />
 				<Appbar.Action
 					icon="pencil"
+					accessibilityLabel={t("a11y.action.edit")}
 					onPress={() => router.push(`/piece/${id}/edit`)}
 				/>
 				<Appbar.Action
 					icon="delete"
+					accessibilityLabel={t("a11y.action.delete")}
 					onPress={() => setDeleteDialogVisible(true)}
 				/>
 			</Appbar.Header>
@@ -162,6 +178,7 @@ export default function PieceDetailScreen() {
 							<IconButton
 								icon="pencil"
 								size={18}
+								accessibilityLabel={t("screen.pieceDetail.editNotes")}
 								onPress={() => setNotesEditing(true)}
 								style={{ margin: 0 }}
 							/>
@@ -257,7 +274,12 @@ export default function PieceDetailScreen() {
 
 			<FAB
 				icon="plus"
-				style={{ position: "absolute", right: 16, bottom: 16 }}
+				accessibilityLabel={t("a11y.fab.addSection")}
+				style={{
+					position: "absolute",
+					right: 16,
+					bottom: insets.bottom + 16,
+				}}
 				onPress={() => router.push(`/piece/${id}/section/new`)}
 			/>
 
@@ -273,7 +295,7 @@ export default function PieceDetailScreen() {
 				visible={!!error}
 				onDismiss={() => setError(null)}
 				duration={4000}
-				action={{ label: "OK", onPress: () => setError(null) }}
+				action={{ label: t("common.ok"), onPress: () => setError(null) }}
 			>
 				{error ?? ""}
 			</Snackbar>

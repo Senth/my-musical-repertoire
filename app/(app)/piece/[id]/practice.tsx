@@ -1,22 +1,29 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, ScrollView, useWindowDimensions, View } from "react-native";
 import {
+	ActivityIndicator,
 	Appbar,
 	Button,
 	Divider,
 	List,
 	Menu,
+	Modal,
+	Portal,
+	RadioButton,
+	SegmentedButtons,
 	Snackbar,
 	Text,
+	TextInput,
+	TouchableRipple,
 	useTheme,
 } from "react-native-paper";
-import { MistakeRadioGroup } from "@/components/practice/MistakeRadioGroup";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { useSavePractice } from "@/hooks/use-practices";
+import { useSections } from "@/hooks/use-sections";
 import { PracticeMistakes } from "@/models/practice";
 import { formatDaysAgo } from "@/utils/date";
 
@@ -29,12 +36,36 @@ function formatDateForInput(date: Date): string {
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
+const MISTAKE_BUTTONS = [
+	{
+		value: String(PracticeMistakes.none),
+		labelKey: "screen.practice.mistakeLevel.none",
+	},
+	{
+		value: String(PracticeMistakes.few),
+		labelKey: "screen.practice.mistakeLevel.few",
+	},
+	{
+		value: String(PracticeMistakes.some),
+		labelKey: "screen.practice.mistakeLevel.some",
+	},
+	{
+		value: String(PracticeMistakes.many),
+		labelKey: "screen.practice.mistakeLevel.many",
+	},
+	{
+		value: String(PracticeMistakes.everywhere),
+		labelKey: "screen.practice.mistakeLevel.everywhere",
+	},
+] as const;
+
 export default function PracticeScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
-	const { pieces } = usePieces();
+	const { pieces, loading: piecesLoading } = usePieces();
+	const { sections } = useSections(id ?? "");
 	const { savePractice } = useSavePractice();
 	const { deletePiece } = useDeletePiece();
 	const { width } = useWindowDimensions();
@@ -55,12 +86,26 @@ export default function PracticeScreen() {
 	const [memoryMistakes, setMemoryMistakes] = useState<PracticeMistakes>(
 		PracticeMistakes.none,
 	);
+	const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
+		null,
+	);
+	const [sectionPickerVisible, setSectionPickerVisible] = useState(false);
+	const [achievedBpm, setAchievedBpm] = useState<string>("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
 	const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
+
+	const selectedSection = selectedSectionId
+		? (sections.find((s) => s.id === selectedSectionId) ?? null)
+		: null;
+
+	// Re-initialize BPM whenever selected section changes
+	useEffect(() => {
+		setAchievedBpm(selectedSection?.currentBpm?.toString() ?? "");
+	}, [selectedSection?.currentBpm]);
 
 	const handleSave = async () => {
 		if (!id) return;
@@ -70,7 +115,18 @@ export default function PracticeScreen() {
 
 		try {
 			const practiceDate = new Date(`${date}T12:00:00`);
-			await savePractice(id, practiceDate, technicalMistakes, memoryMistakes);
+			const bpm =
+				selectedSectionId && achievedBpm.trim()
+					? Number.parseInt(achievedBpm.trim(), 10) || null
+					: null;
+			await savePractice(
+				id,
+				practiceDate,
+				technicalMistakes,
+				memoryMistakes,
+				bpm,
+				selectedSectionId,
+			);
 			setSaved(true);
 		} catch {
 			setError(t("error.firebase"));
@@ -93,6 +149,17 @@ export default function PracticeScreen() {
 		}
 	};
 
+	if (piecesLoading) {
+		return (
+			<View
+				className="flex-1 items-center justify-center"
+				style={{ backgroundColor: theme.colors.background }}
+			>
+				<ActivityIndicator size="large" />
+			</View>
+		);
+	}
+
 	if (!piece) {
 		return (
 			<View
@@ -103,6 +170,14 @@ export default function PracticeScreen() {
 			</View>
 		);
 	}
+
+	const selectedSectionLabel =
+		selectedSection?.label ?? t("screen.practice.fullPiece");
+
+	const mistakeButtons = MISTAKE_BUTTONS.map((b) => ({
+		value: b.value,
+		label: t(b.labelKey),
+	}));
 
 	return (
 		<View
@@ -118,6 +193,7 @@ export default function PracticeScreen() {
 					anchor={
 						<Appbar.Action
 							icon="dots-vertical"
+							accessibilityLabel={t("a11y.menu.options")}
 							onPress={() => setHeaderMenuVisible(true)}
 						/>
 					}
@@ -157,6 +233,7 @@ export default function PracticeScreen() {
 						style={{
 							paddingHorizontal: isCompact ? 16 : 24,
 							paddingTop: 24,
+							paddingBottom: 40,
 						}}
 					>
 						<View className="w-full max-w-xl self-center gap-6">
@@ -172,18 +249,29 @@ export default function PracticeScreen() {
 
 							<Divider />
 							<List.Item
-								title={t("screen.pieceSections.title")}
-								description={
-									(piece.sectionCount ?? 0) > 0
-										? t("piece.sectionCount", { count: piece.sectionCount })
-										: t("piece.noSections")
-								}
+								title={t("screen.practice.sectionLabel")}
+								description={selectedSectionLabel}
 								left={(props) => (
 									<List.Icon {...props} icon="music-note-plus" />
 								)}
-								right={(props) => <List.Icon {...props} icon="chevron-right" />}
-								onPress={() => router.push(`/piece/${id}/section`)}
+								right={(props) => <List.Icon {...props} icon="chevron-down" />}
+								onPress={() => setSectionPickerVisible(true)}
 							/>
+
+							{selectedSection && (
+								<View className="gap-2">
+									<Text variant="titleSmall">
+										{t("screen.practice.achievedBpmLabel")}
+									</Text>
+									<TextInput
+										mode="outlined"
+										keyboardType="numeric"
+										value={achievedBpm}
+										onChangeText={setAchievedBpm}
+										placeholder="e.g. 80"
+									/>
+								</View>
+							)}
 							<Divider />
 
 							<View className="gap-2">
@@ -224,17 +312,31 @@ export default function PracticeScreen() {
 								</Text>
 							</View>
 
-							<MistakeRadioGroup
-								label={t("screen.practice.technicalMistakes")}
-								value={technicalMistakes}
-								onChange={setTechnicalMistakes}
-							/>
+							<View className="gap-2">
+								<Text variant="titleSmall">
+									{t("screen.practice.technicalMistakes")}
+								</Text>
+								<SegmentedButtons
+									value={String(technicalMistakes)}
+									onValueChange={(v) =>
+										setTechnicalMistakes(Number(v) as PracticeMistakes)
+									}
+									buttons={mistakeButtons}
+								/>
+							</View>
 
-							<MistakeRadioGroup
-								label={t("screen.practice.memoryMistakes")}
-								value={memoryMistakes}
-								onChange={setMemoryMistakes}
-							/>
+							<View className="gap-2">
+								<Text variant="titleSmall">
+									{t("screen.practice.memoryMistakes")}
+								</Text>
+								<SegmentedButtons
+									value={String(memoryMistakes)}
+									onValueChange={(v) =>
+										setMemoryMistakes(Number(v) as PracticeMistakes)
+									}
+									buttons={mistakeButtons}
+								/>
+							</View>
 
 							<Button
 								mode="contained"
@@ -249,11 +351,63 @@ export default function PracticeScreen() {
 				</ScrollView>
 			)}
 
+			<Portal>
+				<Modal
+					visible={sectionPickerVisible}
+					onDismiss={() => setSectionPickerVisible(false)}
+					contentContainerStyle={{
+						backgroundColor: theme.colors.surface,
+						margin: 24,
+						padding: 24,
+						borderRadius: 12,
+					}}
+				>
+					<Text variant="titleMedium" style={{ marginBottom: 12 }}>
+						{t("screen.practice.sectionPickerTitle")}
+					</Text>
+					<RadioButton.Group
+						value={selectedSectionId ?? "__full__"}
+						onValueChange={(v) => {
+							setSelectedSectionId(v === "__full__" ? null : v);
+							setSectionPickerVisible(false);
+						}}
+					>
+						<TouchableRipple
+							onPress={() => {
+								setSelectedSectionId(null);
+								setSectionPickerVisible(false);
+							}}
+						>
+							<View className="flex-row items-center">
+								<RadioButton value="__full__" />
+								<Text variant="bodyLarge">
+									{t("screen.practice.fullPiece")}
+								</Text>
+							</View>
+						</TouchableRipple>
+						{sections.map((s) => (
+							<TouchableRipple
+								key={s.id}
+								onPress={() => {
+									setSelectedSectionId(s.id ?? null);
+									setSectionPickerVisible(false);
+								}}
+							>
+								<View className="flex-row items-center">
+									<RadioButton value={s.id ?? ""} />
+									<Text variant="bodyLarge">{s.label}</Text>
+								</View>
+							</TouchableRipple>
+						))}
+					</RadioButton.Group>
+				</Modal>
+			</Portal>
+
 			<Snackbar
 				visible={!!error}
 				onDismiss={() => setError(null)}
 				duration={4000}
-				action={{ label: "OK", onPress: () => setError(null) }}
+				action={{ label: t("common.ok"), onPress: () => setError(null) }}
 			>
 				{error ?? ""}
 			</Snackbar>

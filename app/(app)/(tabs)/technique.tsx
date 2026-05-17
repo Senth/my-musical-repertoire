@@ -1,8 +1,11 @@
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, ScrollView, useWindowDimensions, View } from "react-native";
 import {
+	ActivityIndicator,
+	Button,
 	Card,
 	Chip,
 	Divider,
@@ -34,8 +37,9 @@ export default function TechniquesScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
-	const { techniques } = useTechniques();
+	const { techniques, loading } = useTechniques();
 	const { deleteTechnique } = useDeleteTechnique();
+	const tabBarHeight = useBottomTabBarHeight();
 	const [menuVisible, setMenuVisible] = useState<string | null>(null);
 	const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
 	const [deletingItem, setDeletingItem] = useState<TechniqueItem | null>(null);
@@ -85,6 +89,7 @@ export default function TechniquesScreen() {
 				<IconButton
 					icon="dots-vertical"
 					size={20}
+					accessibilityLabel={t("a11y.menu.options")}
 					onPress={() => setMenuVisible(item.id ?? null)}
 				/>
 			}
@@ -147,6 +152,7 @@ export default function TechniquesScreen() {
 							<IconButton
 								icon="dots-vertical"
 								size={20}
+								accessibilityLabel={t("a11y.menu.options")}
 								onPress={() =>
 									setMenuVisible(
 										menuVisible === item.id ? null : (item.id ?? null),
@@ -193,14 +199,36 @@ export default function TechniquesScreen() {
 		/>
 	);
 
+	const noTechniquesAtAll = techniques.length === 0;
+	const filterHidesAll = !noTechniquesAtAll && visibleTechniques.length === 0;
+
 	const emptyState = (
-		<View className="flex-1 items-center justify-center p-8">
+		<View className="flex-1 items-center justify-center p-8 gap-3">
 			<Text
 				variant="bodyLarge"
 				style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}
 			>
-				{t("screen.techniques.noResults")}
+				{noTechniquesAtAll
+					? t("screen.techniques.noTechniques")
+					: filterHidesAll
+						? t("screen.techniques.noTechniquesMatchFilter")
+						: t("screen.techniques.noResults")}
 			</Text>
+			{noTechniquesAtAll ? (
+				<Button mode="contained" onPress={() => router.push("/technique/add")}>
+					{t("screen.techniques.addTechnique")}
+				</Button>
+			) : filterHidesAll ? (
+				<Button
+					mode="outlined"
+					onPress={() => {
+						setStateFilter("all");
+						setSearchQuery("");
+					}}
+				>
+					{t("screen.techniques.showAll")}
+				</Button>
+			) : null}
 		</View>
 	);
 
@@ -232,7 +260,11 @@ export default function TechniquesScreen() {
 				}
 			/>
 
-			{visibleTechniques.length === 0 ? (
+			{loading ? (
+				<View className="flex-1 items-center justify-center">
+					<ActivityIndicator size="large" />
+				</View>
+			) : visibleTechniques.length === 0 ? (
 				emptyState
 			) : isCompact ? (
 				<FlatList
@@ -330,14 +362,19 @@ export default function TechniquesScreen() {
 				visible={!!deleteError}
 				onDismiss={() => setDeleteError(null)}
 				duration={4000}
-				action={{ label: "OK", onPress: () => setDeleteError(null) }}
+				action={{ label: t("common.ok"), onPress: () => setDeleteError(null) }}
 			>
 				{deleteError ?? ""}
 			</Snackbar>
 
 			<FAB
 				icon="plus"
-				style={{ position: "absolute", margin: 16, right: 0, bottom: 0 }}
+				accessibilityLabel={t("a11y.fab.addTechnique")}
+				style={{
+					position: "absolute",
+					right: 16,
+					bottom: tabBarHeight + 16,
+				}}
 				onPress={() => router.push("/technique/add")}
 			/>
 		</View>

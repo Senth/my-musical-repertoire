@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import {
+	ActivityIndicator,
 	Appbar,
 	Button,
 	Menu,
@@ -27,7 +28,7 @@ export default function PracticeTechniqueScreen() {
 	const theme = useTheme();
 	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
-	const { techniques } = useTechniques();
+	const { techniques, loading: techniquesLoading } = useTechniques();
 	const { saveTechniqueLog } = useSaveTechniqueLog();
 	const { deleteTechnique } = useDeleteTechnique();
 	const { width } = useWindowDimensions();
@@ -43,7 +44,9 @@ export default function PracticeTechniqueScreen() {
 
 	const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
 	const [effort, setEffort] = useState<1 | 2 | 3 | 4 | 5>(3);
-	const [tempoBpm, setTempoBpm] = useState<string>("");
+	const [tempoBpm, setTempoBpm] = useState<string>(
+		technique?.lastAchievedTempoBpm?.toString() ?? "",
+	);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
@@ -87,6 +90,17 @@ export default function PracticeTechniqueScreen() {
 		}
 	};
 
+	if (techniquesLoading) {
+		return (
+			<View
+				className="flex-1 items-center justify-center"
+				style={{ backgroundColor: theme.colors.background }}
+			>
+				<ActivityIndicator size="large" />
+			</View>
+		);
+	}
+
 	if (!technique) {
 		return (
 			<View
@@ -121,6 +135,7 @@ export default function PracticeTechniqueScreen() {
 					anchor={
 						<Appbar.Action
 							icon="dots-vertical"
+							accessibilityLabel={t("a11y.menu.options")}
 							onPress={() => setHeaderMenuVisible(true)}
 						/>
 					}
@@ -236,7 +251,7 @@ export default function PracticeTechniqueScreen() {
 				visible={!!error}
 				onDismiss={() => setError(null)}
 				duration={4000}
-				action={{ label: "OK", onPress: () => setError(null) }}
+				action={{ label: t("common.ok"), onPress: () => setError(null) }}
 			>
 				{error ?? ""}
 			</Snackbar>

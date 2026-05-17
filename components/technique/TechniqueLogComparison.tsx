@@ -172,6 +172,35 @@ function TempoRow({
 	);
 }
 
+type Verdict = "firstPractice" | "improved" | "regressed" | "same";
+
+function computeVerdict(
+	currentQuality: number,
+	previousQuality: number | null | undefined,
+	currentEffort: number,
+	previousEffort: number | null | undefined,
+	currentTempo: number | null | undefined,
+	previousTempo: number | null | undefined,
+): Verdict {
+	if (previousQuality == null) return "firstPractice";
+
+	const qualityDelta = currentQuality - previousQuality;
+	const tempoBonus =
+		previousTempo != null &&
+		currentTempo != null &&
+		currentTempo > previousTempo
+			? 1
+			: 0;
+	const effortPenalty =
+		previousEffort != null && currentEffort > previousEffort ? 1 : 0;
+
+	const score = qualityDelta * 2 + tempoBonus - effortPenalty;
+
+	if (score > 0) return "improved";
+	if (score < 0) return "regressed";
+	return "same";
+}
+
 export function TechniqueLogComparison({
 	techniqueName,
 	currentQuality,
@@ -187,18 +216,22 @@ export function TechniqueLogComparison({
 	const theme = useTheme();
 	const router = useRouter();
 
-	const hasPrevious = previousQuality != null;
+	const verdict = computeVerdict(
+		currentQuality,
+		previousQuality,
+		currentEffort,
+		previousEffort,
+		currentTempoBpm,
+		previousTempoBpm,
+	);
 
-	let summaryKey: string;
-	if (!hasPrevious) {
-		summaryKey = "screen.practiceTechnique.comparison.firstPractice";
-	} else if (currentQuality > previousQuality) {
-		summaryKey = "screen.practiceTechnique.comparison.improved";
-	} else if (currentQuality < previousQuality) {
-		summaryKey = "screen.practiceTechnique.comparison.regressed";
-	} else {
-		summaryKey = "screen.practiceTechnique.comparison.same";
-	}
+	const summaryKey = `screen.practiceTechnique.comparison.${verdict}`;
+	const summaryColor =
+		verdict === "improved"
+			? theme.colors.tertiary
+			: verdict === "regressed"
+				? theme.colors.error
+				: theme.colors.onSurface;
 
 	return (
 		<View
@@ -218,18 +251,7 @@ export function TechniqueLogComparison({
 					</Text>
 				</View>
 
-				<Text
-					variant="titleMedium"
-					style={{
-						color: !hasPrevious
-							? theme.colors.onSurface
-							: currentQuality > previousQuality
-								? theme.colors.tertiary
-								: currentQuality < previousQuality
-									? theme.colors.error
-									: theme.colors.onSurface,
-					}}
-				>
+				<Text variant="titleMedium" style={{ color: summaryColor }}>
 					{t(summaryKey as Parameters<typeof t>[0])}
 				</Text>
 

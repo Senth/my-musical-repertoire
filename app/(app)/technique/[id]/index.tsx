@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
 import {
+	ActivityIndicator,
 	Appbar,
 	Button,
 	Chip,
@@ -22,7 +23,7 @@ export default function TechniqueDetailScreen() {
 	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
 
-	const { techniques } = useTechniques();
+	const { techniques, loading } = useTechniques();
 	const { deleteTechnique } = useDeleteTechnique();
 
 	const item = techniques.find((tech) => tech.id === id);
@@ -45,6 +46,17 @@ export default function TechniqueDetailScreen() {
 		}
 	};
 
+	if (loading) {
+		return (
+			<View
+				className="flex-1 items-center justify-center"
+				style={{ backgroundColor: theme.colors.background }}
+			>
+				<ActivityIndicator size="large" />
+			</View>
+		);
+	}
+
 	if (!item) {
 		return (
 			<View
@@ -66,10 +78,12 @@ export default function TechniqueDetailScreen() {
 				<Appbar.Content title={item.title} />
 				<Appbar.Action
 					icon="pencil"
+					accessibilityLabel={t("a11y.action.edit")}
 					onPress={() => router.push(`/technique/${id}/edit`)}
 				/>
 				<Appbar.Action
 					icon="delete"
+					accessibilityLabel={t("a11y.action.delete")}
 					onPress={() => setDeleteDialogVisible(true)}
 				/>
 			</Appbar.Header>
@@ -149,7 +163,7 @@ export default function TechniqueDetailScreen() {
 				visible={!!error}
 				onDismiss={() => setError(null)}
 				duration={4000}
-				action={{ label: "OK", onPress: () => setError(null) }}
+				action={{ label: t("common.ok"), onPress: () => setError(null) }}
 			>
 				{error ?? ""}
 			</Snackbar>
