@@ -10,17 +10,24 @@ import {
 	IconButton,
 	List,
 	Menu,
+	Searchbar,
 	Snackbar,
 	Text,
 	useTheme,
 } from "react-native-paper";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
+import { StateFilterChips } from "@/components/ui/StateFilterChips";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
-import type { TechniqueItem } from "@/models/technique";
+import {
+	TECHNIQUE_STATES,
+	type TechniqueItem,
+	type TechniqueState,
+} from "@/models/technique";
 import { formatDaysAgo } from "@/utils/date";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
+type StateFilter = TechniqueState | "all";
 type ContextMenu = { techniqueId: string; x: number; y: number };
 
 export default function TechniquesScreen() {
@@ -34,17 +41,27 @@ export default function TechniquesScreen() {
 	const [deletingItem, setDeletingItem] = useState<TechniqueItem | null>(null);
 	const [deleteLoading, setDeleteLoading] = useState(false);
 	const [deleteError, setDeleteError] = useState<string | null>(null);
-	const [showRetired, setShowRetired] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [stateFilter, setStateFilter] = useState<StateFilter>("all");
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
-	const visibleTechniques = useMemo(
-		() =>
-			showRetired
-				? techniques
-				: techniques.filter((t) => t.state !== "retired"),
-		[techniques, showRetired],
-	);
+	const visibleTechniques = useMemo(() => {
+		let result = techniques;
+		if (stateFilter !== "all") {
+			result = result.filter((item) => item.state === stateFilter);
+		} else {
+			// By default hide retired unless explicitly selected
+			result = result.filter((item) => item.state !== "retired");
+		}
+		if (searchQuery.trim()) {
+			const query = searchQuery.toLowerCase();
+			result = result.filter((item) =>
+				item.title.toLowerCase().includes(query),
+			);
+		}
+		return result;
+	}, [techniques, stateFilter, searchQuery]);
 
 	const handleDelete = async () => {
 		if (!deletingItem?.id) return;
@@ -72,6 +89,14 @@ export default function TechniquesScreen() {
 				/>
 			}
 		>
+			<Menu.Item
+				leadingIcon="play"
+				onPress={() => {
+					setMenuVisible(null);
+					router.push(`/technique/${item.id}/practice`);
+				}}
+				title={t("screen.techniques.menu.practice")}
+			/>
 			<Menu.Item
 				leadingIcon="pencil"
 				onPress={() => {
@@ -114,40 +139,50 @@ export default function TechniquesScreen() {
 			)}
 			right={() => (
 				<View className="justify-center">
-					<IconButton
-						icon="dots-vertical"
-						size={20}
-						onPress={() =>
-							setMenuVisible(menuVisible === item.id ? null : (item.id ?? null))
+					{/* ISSUE-003 fix: use anchor={<IconButton/>} so menu appears next to button */}
+					<Menu
+						visible={menuVisible === item.id}
+						onDismiss={() => setMenuVisible(null)}
+						anchor={
+							<IconButton
+								icon="dots-vertical"
+								size={20}
+								onPress={() =>
+									setMenuVisible(
+										menuVisible === item.id ? null : (item.id ?? null),
+									)
+								}
+							/>
 						}
-					/>
-					{menuVisible === item.id && (
-						<Menu
-							visible
-							onDismiss={() => setMenuVisible(null)}
-							anchor={{ x: 0, y: 0 }}
-						>
-							<Menu.Item
-								leadingIcon="pencil"
-								onPress={() => {
-									setMenuVisible(null);
-									router.push(`/technique/${item.id}/edit`);
-								}}
-								title={t("screen.techniques.menu.edit")}
-							/>
-							<Menu.Item
-								leadingIcon="delete"
-								onPress={() => {
-									setMenuVisible(null);
-									setDeletingItem(item);
-								}}
-								title={t("screen.techniques.menu.delete")}
-							/>
-						</Menu>
-					)}
+					>
+						<Menu.Item
+							leadingIcon="play"
+							onPress={() => {
+								setMenuVisible(null);
+								router.push(`/technique/${item.id}/practice`);
+							}}
+							title={t("screen.techniques.menu.practice")}
+						/>
+						<Menu.Item
+							leadingIcon="pencil"
+							onPress={() => {
+								setMenuVisible(null);
+								router.push(`/technique/${item.id}/edit`);
+							}}
+							title={t("screen.techniques.menu.edit")}
+						/>
+						<Menu.Item
+							leadingIcon="delete"
+							onPress={() => {
+								setMenuVisible(null);
+								setDeletingItem(item);
+							}}
+							title={t("screen.techniques.menu.delete")}
+						/>
+					</Menu>
 				</View>
 			)}
-			onPress={() => router.push(`/technique/${item.id}/edit`)}
+			onPress={() => router.push(`/technique/${item.id}`)}
 			onLongPress={(e) =>
 				setContextMenu({
 					techniqueId: item.id ?? "",
@@ -176,16 +211,26 @@ export default function TechniquesScreen() {
 		>
 			<View className="px-4 pt-4 pb-2 flex-row items-center justify-between">
 				<Text variant="headlineSmall">{t("screen.techniques.title")}</Text>
-				<Chip
-					compact
-					onPress={() => setShowRetired((v) => !v)}
-					selected={showRetired}
-				>
-					{showRetired
-						? t("screen.techniques.hideRetired")
-						: t("screen.techniques.showRetired")}
-				</Chip>
 			</View>
+
+			<View className="px-4 pb-2">
+				<Searchbar
+					placeholder={t("screen.techniques.searchPlaceholder")}
+					value={searchQuery}
+					onChangeText={setSearchQuery}
+				/>
+			</View>
+
+			<StateFilterChips
+				states={TECHNIQUE_STATES}
+				selected={stateFilter}
+				onSelect={setStateFilter}
+				labelFor={(s) =>
+					s === "all"
+						? t("screen.pieces.filterAll")
+						: t(`technique.state.${s}` as Parameters<typeof t>[0])
+				}
+			/>
 
 			{visibleTechniques.length === 0 ? (
 				emptyState
@@ -206,7 +251,7 @@ export default function TechniquesScreen() {
 							<Card
 								key={item.id}
 								mode="elevated"
-								onPress={() => router.push(`/technique/${item.id}/edit`)}
+								onPress={() => router.push(`/technique/${item.id}`)}
 							>
 								<Card.Title
 									title={item.title}
@@ -242,6 +287,15 @@ export default function TechniquesScreen() {
 				onDismiss={() => setContextMenu(null)}
 				anchor={contextMenu ?? { x: 0, y: 0 }}
 			>
+				<Menu.Item
+					leadingIcon="play"
+					onPress={() => {
+						const id = contextMenu?.techniqueId;
+						setContextMenu(null);
+						if (id) router.push(`/technique/${id}/practice`);
+					}}
+					title={t("screen.techniques.menu.practice")}
+				/>
 				<Menu.Item
 					leadingIcon="pencil"
 					onPress={() => {

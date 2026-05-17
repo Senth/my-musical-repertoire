@@ -123,12 +123,12 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
     - [x] Fix post-practice navigation: "Back to Overview" must navigate explicitly to `/(app)/(tabs)/overview` ([ISSUE-012](/.tmp/ui-ux-issues.md))
     - [x] Fix post-technique-log navigation: navigate explicitly to `/(app)/(tabs)/techniques` instead of `router.back()` ([ISSUE-013](/.tmp/ui-ux-issues.md))
     - [x] Practice and technique-log app bars: show piece/technique name as the title ([ISSUE-015](/.tmp/ui-ux-issues.md))
-  - [ ] **List Screen Enhancements**
+  - [x] **List Screen Enhancements**
     - [x] Add tab for Pieces — add FAB on Pieces screen to match Overview/Techniques ([ISSUE-007](/.tmp/ui-ux-issues.md))
-    - [ ] Create a "pill filter" component for filtering pieces by lifecycle state
-    - [ ] Techniques screen: add `Searchbar` using the same pattern as Pieces (reuse existing `screen.techniques.searchPlaceholder` key) ([ISSUE-022](/.tmp/ui-ux-issues.md))
-    - [ ] Standardize primary tap action: tap = detail everywhere; expose Practice as a clearly labeled secondary action across Overview cards, Pieces rows, and Techniques rows ([ISSUE-002](/.tmp/ui-ux-issues.md))
-    - [ ] Fix techniques compact-row menu anchor so popup appears next to the pressed button ([ISSUE-003](/.tmp/ui-ux-issues.md))
+    - [x] Create a `StateFilterChips` reusable component; refactor Pieces screen to use it; add pill filter to Techniques screen (All | Active | Maintenance | Retired)
+    - [x] Techniques screen: add `Searchbar` using the same pattern as Pieces (reuse existing `screen.techniques.searchPlaceholder` key) ([ISSUE-022](/.tmp/ui-ux-issues.md))
+    - [x] Standardize primary tap action: tap = detail everywhere; expose Practice as a clearly labeled secondary action across Overview cards, Pieces rows, and Techniques rows ([ISSUE-002](/.tmp/ui-ux-issues.md)); created technique detail screen (`/technique/[id]/index.tsx`)
+    - [x] Fix techniques compact-row menu anchor so popup appears next to the pressed button ([ISSUE-003](/.tmp/ui-ux-issues.md))
   - [ ] **Empty States & Loading Guards**
     - [ ] Overview: keep page scaffold visible when there are no pieces; show inline empty state only inside the Pieces section; always render the Techniques section ([ISSUE-001](/.tmp/ui-ux-issues.md))
     - [ ] Techniques: differentiate "no techniques exist" from "all are hidden by retired filter"; show contextual "Show retired" CTA ([ISSUE-006](/.tmp/ui-ux-issues.md))

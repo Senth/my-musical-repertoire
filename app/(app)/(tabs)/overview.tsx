@@ -155,7 +155,7 @@ export default function OverviewScreen() {
 									<Card
 										key={piece.id}
 										mode="elevated"
-										onPress={() => router.push(`/piece/${piece.id}/practice`)}
+										onPress={() => router.push(`/piece/${piece.id}`)}
 									>
 										<Card.Title title={piece.title} subtitle={piece.composer} />
 										<Card.Content>
@@ -183,6 +183,15 @@ export default function OverviewScreen() {
 												>
 													{formatDaysAgo(piece.lastPracticed, t)}
 												</Text>
+												<Button
+													mode="contained-tonal"
+													compact
+													onPress={() =>
+														router.push(`/piece/${piece.id}/practice`)
+													}
+												>
+													{t("screen.overview.practice")}
+												</Button>
 											</View>
 										</Card.Content>
 									</Card>
@@ -207,9 +216,7 @@ export default function OverviewScreen() {
 										<Card
 											key={item.id}
 											mode="elevated"
-											onPress={() =>
-												router.push(`/technique/${item.id}/practice`)
-											}
+											onPress={() => router.push(`/technique/${item.id}`)}
 										>
 											<Card.Title title={item.title} />
 											<Card.Content>
@@ -232,6 +239,15 @@ export default function OverviewScreen() {
 													>
 														{getTechniqueReason(item)}
 													</Text>
+													<Button
+														mode="contained-tonal"
+														compact
+														onPress={() =>
+															router.push(`/technique/${item.id}/practice`)
+														}
+													>
+														{t("screen.overview.practice")}
+													</Button>
 												</View>
 											</Card.Content>
 										</Card>

@@ -119,6 +119,7 @@
 			"allCaughtUp": "You're all caught up! Great job.",
 			"techniqueToday": "Suggested Techniques",
 			"seeAllTechniques": "See all techniques",
+			"practice": "Practice",
 			"techniqueReason": {
 				"activeLastPracticed": "Active · {{when}}",
 				"maintenanceDue": "Maintenance · due for review",
@@ -184,6 +185,7 @@
 			"noResults": "No pieces match your search",
 			"filterAll": "All",
 			"menu": {
+				"practice": "Practice",
 				"edit": "Edit",
 				"delete": "Delete"
 			},
@@ -197,14 +199,22 @@
 		"pieceList": {
 			"title": "My Repertoire"
 		},
+		"techniqueDetail": {
+			"practice": "Practice",
+			"notes": "Notes",
+			"notFound": "Technique not found",
+			"targetBpm": "Target: {{bpm}} BPM",
+			"lastPracticed": "Last practiced: {{when}}"
+		},
 		"techniques": {
 			"title": "Techniques",
 			"searchPlaceholder": "Search techniques...",
-			"noResults": "No technique items yet. Tap + to add your first item!",
+			"noResults": "No technique items match your search",
 			"showRetired": "Show retired",
 			"hideRetired": "Hide retired",
 			"neverPracticed": "Never practiced",
 			"menu": {
+				"practice": "Practice",
 				"edit": "Edit",
 				"delete": "Delete"
 			},

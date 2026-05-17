@@ -5,7 +5,7 @@ description: "Structured new-feature kickoff for my-musical-repertoire. Use when
 
 # New Feature Skill
 
-A structured kickoff flow for implementing new features in my-musical-repertoire. Ensures every feature is reviewed through a pedagogy lens before requirements are locked down.
+Orchestrates the full new-feature lifecycle: identify → pedagogy review → scope → spec → delegate to feature-large for implementation. Owns everything up to implementation; feature-large owns implementation.
 
 ## When to Use This Skill
 
@@ -13,25 +13,25 @@ A structured kickoff flow for implementing new features in my-musical-repertoire
 - User is about to begin coding a feature from `PLAN.md`
 - User wants a structured requirements session before writing code
 
-**Not for:** bug fixes, refactors, UI polish passes, or chores. Use this skill only for genuine new capabilities.
+**Not for:** bug fixes, refactors, UI polish passes, or chores.
 
 ## Workflow
 
 ### Step 1 — Identify the Feature
 
-Read `@PLAN.md` to understand the full plan context.
+Read `PLAN.md` to understand the full plan context.
 
 - If the user has specified a feature, confirm it before proceeding.
 - If no feature is specified, find the next unchecked item in `PLAN.md` (in phase order), suggest it to the user, and ask for confirmation before proceeding.
 
 ### Step 2 — Piano Teacher Review
 
-Invoke the `@.github/agents/piano-practice-teacher.agent.md` agent and present the feature to it. This step always runs, regardless of how technical the feature appears. Ask the teacher agent to:
+Invoke the `piano-practice-teacher` agent and present the feature to it. This step always runs. Ask the teacher agent to:
 
-- Share any pedagogical concerns, ideas, or things to think about when implementing this feature
+- Share pedagogical concerns, ideas, or things to consider when implementing this feature
 - Identify whether the feature is in the right phase order (does it depend on anything not yet built?)
 - Flag any logging, lifecycle, or recommendation signals the feature should capture to keep the recommendation engine well-fed
-- Call out any UX choices that would make practice harder rather than easier
+- Call out UX choices that would make practice harder rather than easier
 - Identify anything missing from the feature scope that a real teacher would expect to see
 
 Summarise the teacher's feedback clearly for the user before proceeding.
@@ -43,7 +43,7 @@ Invoke the `grill-me` skill, seeding it with:
 1. The feature description confirmed in Step 1
 2. The piano teacher's feedback from Step 2
 
-The grilling should resolve:
+The grilling must resolve:
 
 - Exact scope and boundaries of the feature
 - Data model requirements (Firestore collections, fields, types)
@@ -53,11 +53,11 @@ The grilling should resolve:
 - Any offline / sync considerations
 - Every concern or missing piece flagged by the piano teacher in Step 2
 
-Do not start implementing until the grill-me session reaches a shared understanding and the user gives the go-ahead.
+Do not proceed until grill-me reaches a shared understanding.
 
-### Step 4 — Spec, Confirm, and Implement
+### Step 4 — Write the Spec
 
-After grill-me, write a concise feature spec covering:
+Write a concise feature spec to `.tmp/specs/<feature-name>.md` (create the directory if it doesn't exist) covering:
 
 1. **What** — one-sentence description
 2. **Why** — pedagogical / product rationale
@@ -65,17 +65,21 @@ After grill-me, write a concise feature spec covering:
 4. **UI flow** — screen(s) and interactions
 5. **Logging** — what gets recorded and why
 6. **Out of scope** — explicit exclusions to prevent scope creep
+7. **Phases** — ordered implementation phases, each small enough for one sub-agent session
 
-Save the spec to `.tmp/specs/<feature-name>.md` in current dir, (create the directory if it doesn't exist).
+The Phases section is required. Break the feature into concrete, independently deliverable phases (e.g., "Phase 1: data model + Firestore writes", "Phase 2: UI list view", "Phase 3: recommendation signal integration").
 
-Ask the user to confirm the spec. Once confirmed:
+### Step 5 — User Confirmation
 
-1. Break the implementation into concrete steps and insert them as todos into the SQL `todos` table (with descriptive kebab-case IDs).
-2. Start implementing, updating todo status (`in_progress` → `done`) as you go.
+Present the spec to the user and wait for explicit confirmation before proceeding. If the user requests changes, update the spec and confirm again.
 
-### Step 5 — Mark PLAN.md Complete
+### Step 6 — Delegate to feature-large
 
-After all todos are done and the feature is verified working:
+Once the spec is confirmed, invoke the `feature-large` agent with:
 
-1. Check off the completed items in `PLAN.md` (change `- [ ]` to `- [x]`).
-2. If the agreed lifecycle states or other details differ from the original PLAN wording, update the text to reflect what was actually built.
+- The path to the spec file (`.tmp/specs/<feature-name>.md`)
+- An explicit note that **scoping is already complete — skip grill-me**
+- Instruction to use the spec's Phases section as its implementation plan (no separate PLAN.md needed)
+- Instruction to check off the completed item in `PLAN.md` after all phases are verified working
+
+The skill's job ends here. feature-large owns implementation, verification, and PLAN.md completion.

@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { FlatList, ScrollView, useWindowDimensions, View } from "react-native";
 import {
 	Card,
-	Chip,
 	Divider,
 	FAB,
 	IconButton,
@@ -18,6 +17,7 @@ import {
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
+import { StateFilterChips } from "@/components/ui/StateFilterChips";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { PIECE_STATES, type Piece, type PieceState } from "@/models/piece";
 import { formatDaysAgo } from "@/utils/date";
@@ -86,6 +86,14 @@ export default function PiecesScreen() {
 			}
 		>
 			<Menu.Item
+				leadingIcon="play"
+				onPress={() => {
+					setMenuVisible(null);
+					router.push(`/piece/${item.id}/practice`);
+				}}
+				title={t("screen.pieces.menu.practice")}
+			/>
+			<Menu.Item
 				leadingIcon="pencil"
 				onPress={() => {
 					setMenuVisible(null);
@@ -153,27 +161,6 @@ export default function PiecesScreen() {
 		/>
 	);
 
-	const filterChips = (
-		<ScrollView
-			horizontal
-			showsHorizontalScrollIndicator={false}
-			className="py-2"
-		>
-			<View className="flex-row gap-2 px-4">
-				{(["all", ...PIECE_STATES] as StateFilter[]).map((s) => (
-					<Chip
-						key={s}
-						selected={stateFilter === s}
-						onPress={() => setStateFilter(s)}
-						compact
-					>
-						{s === "all" ? t("screen.pieces.filterAll") : t(`piece.state.${s}`)}
-					</Chip>
-				))}
-			</View>
-		</ScrollView>
-	);
-
 	const emptyState = (
 		<View className="flex-1 items-center justify-center p-4">
 			<Text
@@ -202,7 +189,16 @@ export default function PiecesScreen() {
 				/>
 			</View>
 
-			{filterChips}
+			<StateFilterChips
+				states={PIECE_STATES}
+				selected={stateFilter}
+				onSelect={setStateFilter}
+				labelFor={(s) =>
+					s === "all"
+						? t("screen.pieces.filterAll")
+						: t(`piece.state.${s}` as Parameters<typeof t>[0])
+				}
+			/>
 
 			{filteredPieces.length === 0 ? (
 				emptyState
@@ -269,6 +265,15 @@ export default function PiecesScreen() {
 				onDismiss={() => setContextMenu(null)}
 				anchor={contextMenu ?? { x: 0, y: 0 }}
 			>
+				<Menu.Item
+					leadingIcon="play"
+					onPress={() => {
+						const pieceId = contextMenu?.pieceId;
+						setContextMenu(null);
+						if (pieceId) router.push(`/piece/${pieceId}/practice`);
+					}}
+					title={t("screen.pieces.menu.practice")}
+				/>
 				<Menu.Item
 					leadingIcon="pencil"
 					onPress={() => {
