@@ -1,5 +1,5 @@
 {
 	"permissions": {
-		"allow": ["Skill(caveman)"]
+		"allow": ["Skill(caveman)", "Skill(grill-me)", "Bash(xargs ls -la)"]
 	}
 }
