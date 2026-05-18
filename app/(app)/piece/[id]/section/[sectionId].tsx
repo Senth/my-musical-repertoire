@@ -12,6 +12,7 @@ import {
 	Appbar,
 	Button,
 	Card,
+	HelperText,
 	Snackbar,
 	Text,
 	TextInput,
@@ -58,7 +59,39 @@ export default function SectionEditScreen() {
 	const [notes, setNotes] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [labelError, setLabelError] = useState<string | null>(null);
+	const [endBarError, setEndBarError] = useState<string | null>(null);
+	const [bpmError, setBpmError] = useState<string | null>(null);
 	const hasSeeded = useRef(false);
+
+	const validateLabel = (): string | null => {
+		const err = !label.trim()
+			? t("screen.pieceSections.form.error.labelRequired")
+			: null;
+		setLabelError(err);
+		return err;
+	};
+
+	const validateEndBar = (): string | null => {
+		const startTrim = startBarText.trim();
+		const endTrim = endBarText.trim();
+		const err =
+			endTrim && !startTrim
+				? t("screen.pieceSections.form.error.endBarRequiresStartBar")
+				: null;
+		setEndBarError(err);
+		return err;
+	};
+
+	const validateBpm = (text: string): string | null => {
+		if (!text.trim()) return null;
+		const n = Number.parseInt(text.trim(), 10);
+		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
+	};
+
+	const handleBpmBlur = () => {
+		setBpmError(validateBpm(currentBpmText));
+	};
 
 	// Seed form once when editing an existing section and data arrives from Firestore
 	useEffect(() => {
@@ -80,18 +113,14 @@ export default function SectionEditScreen() {
 	};
 
 	const handleSave = async () => {
-		if (!label.trim()) {
-			setError(t("screen.pieceSections.form.error.labelRequired"));
-			return;
-		}
+		const labelErr = validateLabel();
+		const endBarErr = validateEndBar();
+		const bpmErr = validateBpm(currentBpmText);
+		setBpmError(bpmErr);
+		if (labelErr || endBarErr || bpmErr) return;
 
 		const startBar = parseOptionalInt(startBarText);
 		const endBar = parseOptionalInt(endBarText);
-
-		if (endBar != null && startBar == null) {
-			setError(t("screen.pieceSections.form.error.endBarRequiresStartBar"));
-			return;
-		}
 
 		if (!pieceId) return;
 
@@ -129,13 +158,20 @@ export default function SectionEditScreen() {
 
 	const formContent = (
 		<View className="gap-4">
-			<TextInput
-				label={t("screen.pieceSections.form.labelLabel")}
-				value={label}
-				onChangeText={setLabel}
-				mode="outlined"
-				autoFocus={isNew}
-			/>
+			<View>
+				<TextInput
+					label={t("screen.pieceSections.form.labelLabel")}
+					value={label}
+					onChangeText={setLabel}
+					mode="outlined"
+					autoFocus={isNew}
+					error={!!labelError}
+					onBlur={() => validateLabel()}
+				/>
+				<HelperText type="error" visible={!!labelError}>
+					{labelError ?? ""}
+				</HelperText>
+			</View>
 
 			<DropdownField
 				label={t("screen.pieceSections.form.phaseLabel")}
@@ -159,6 +195,7 @@ export default function SectionEditScreen() {
 						onChangeText={setStartBarText}
 						mode="outlined"
 						keyboardType="numeric"
+						onBlur={() => validateEndBar()}
 					/>
 					<Text
 						variant="bodyLarge"
@@ -173,17 +210,29 @@ export default function SectionEditScreen() {
 						onChangeText={setEndBarText}
 						mode="outlined"
 						keyboardType="numeric"
+						error={!!endBarError}
+						onBlur={() => validateEndBar()}
 					/>
 				</View>
+				<HelperText type="error" visible={!!endBarError}>
+					{endBarError ?? ""}
+				</HelperText>
 			</View>
 
-			<TextInput
-				label={t("screen.pieceSections.form.currentBpmLabel")}
-				value={currentBpmText}
-				onChangeText={setCurrentBpmText}
-				mode="outlined"
-				keyboardType="numeric"
-			/>
+			<View>
+				<TextInput
+					label={t("screen.pieceSections.form.currentBpmLabel")}
+					value={currentBpmText}
+					onChangeText={setCurrentBpmText}
+					mode="outlined"
+					keyboardType="numeric"
+					error={!!bpmError}
+					onBlur={handleBpmBlur}
+				/>
+				<HelperText type="error" visible={!!bpmError}>
+					{bpmError ?? ""}
+				</HelperText>
+			</View>
 
 			<TextInput
 				label={t("screen.pieceSections.form.notesLabel")}

@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, Divider, Text, useTheme } from "react-native-paper";
@@ -24,6 +23,8 @@ interface PracticeComparisonProps {
 	previousTechnical?: PracticeMistakes;
 	previousMemory?: PracticeMistakes;
 	isCompact: boolean;
+	onDone: () => void;
+	backLabel: string;
 }
 
 function ComparisonRow({
@@ -86,10 +87,11 @@ export function PracticeComparison({
 	previousTechnical,
 	previousMemory,
 	isCompact,
+	onDone,
+	backLabel,
 }: PracticeComparisonProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
-	const router = useRouter();
 
 	const hasPrevious =
 		previousTechnical !== undefined || previousMemory !== undefined;
@@ -178,11 +180,8 @@ export function PracticeComparison({
 				/>
 
 				<View className="mt-4">
-					<Button
-						mode="contained"
-						onPress={() => router.replace("/(app)/(tabs)/overview")}
-					>
-						{t("screen.practice.comparison.backToOverview")}
+					<Button mode="contained" onPress={onDone}>
+						{backLabel}
 					</Button>
 				</View>
 			</View>

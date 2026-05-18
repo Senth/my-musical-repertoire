@@ -20,7 +20,7 @@ import {
 } from "react-native-paper";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
-import { StateFilterChips } from "@/components/ui/StateFilterChips";
+import { StateFilterDropdown } from "@/components/ui/StateFilterDropdown";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
 import {
 	TECHNIQUE_STATES,
@@ -98,7 +98,7 @@ export default function TechniquesScreen() {
 				leadingIcon="play"
 				onPress={() => {
 					setMenuVisible(null);
-					router.push(`/technique/${item.id}/practice`);
+					router.push(`/technique/${item.id}/practice?from=techniques`);
 				}}
 				title={t("screen.techniques.menu.practice")}
 			/>
@@ -165,7 +165,7 @@ export default function TechniquesScreen() {
 							leadingIcon="play"
 							onPress={() => {
 								setMenuVisible(null);
-								router.push(`/technique/${item.id}/practice`);
+								router.push(`/technique/${item.id}/practice?from=techniques`);
 							}}
 							title={t("screen.techniques.menu.practice")}
 						/>
@@ -237,11 +237,7 @@ export default function TechniquesScreen() {
 			className="flex-1"
 			style={{ backgroundColor: theme.colors.background }}
 		>
-			<View className="px-4 pt-4 pb-2 flex-row items-center justify-between">
-				<Text variant="headlineSmall">{t("screen.techniques.title")}</Text>
-			</View>
-
-			<View className="px-4 pb-2">
+			<View className="px-4 pt-3 pb-2">
 				<Searchbar
 					placeholder={t("screen.techniques.searchPlaceholder")}
 					value={searchQuery}
@@ -249,15 +245,12 @@ export default function TechniquesScreen() {
 				/>
 			</View>
 
-			<StateFilterChips
+			<StateFilterDropdown
 				states={TECHNIQUE_STATES}
 				selected={stateFilter}
 				onSelect={setStateFilter}
-				labelFor={(s) =>
-					s === "all"
-						? t("screen.pieces.filterAll")
-						: t(`technique.state.${s}` as Parameters<typeof t>[0])
-				}
+				labelFor={(s) => t(`technique.state.${s}` as Parameters<typeof t>[0])}
+				statusLabel={t("common.filterStatus")}
 			/>
 
 			{loading ? (
@@ -272,6 +265,7 @@ export default function TechniquesScreen() {
 					keyExtractor={(item) => item.id ?? ""}
 					renderItem={renderCompactItem}
 					ItemSeparatorComponent={() => <Divider />}
+					style={{ flex: 1 }}
 				/>
 			) : (
 				<ScrollView>
@@ -324,7 +318,7 @@ export default function TechniquesScreen() {
 					onPress={() => {
 						const id = contextMenu?.techniqueId;
 						setContextMenu(null);
-						if (id) router.push(`/technique/${id}/practice`);
+						if (id) router.push(`/technique/${id}/practice?from=techniques`);
 					}}
 					title={t("screen.techniques.menu.practice")}
 				/>

@@ -6,6 +6,7 @@ import {
 	ActivityIndicator,
 	Appbar,
 	Button,
+	HelperText,
 	Menu,
 	SegmentedButtons,
 	Snackbar,
@@ -27,7 +28,7 @@ export default function PracticeTechniqueScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
-	const { id } = useLocalSearchParams<{ id: string }>();
+	const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
 	const { techniques, loading: techniquesLoading } = useTechniques();
 	const { saveTechniqueLog } = useSaveTechniqueLog();
 	const { deleteTechnique } = useDeleteTechnique();
@@ -35,6 +36,25 @@ export default function PracticeTechniqueScreen() {
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const technique = techniques.find((t) => t.id === id);
+
+	const getBackDestination = (): string => {
+		if (from === "overview") return "/(app)/(tabs)/overview";
+		if (from === "technique-detail") return `/technique/${id}`;
+		return "/(app)/(tabs)/technique";
+	};
+
+	const getBackLabel = (): string => {
+		if (from === "overview")
+			return t("screen.practiceTechnique.comparison.backToOverview");
+		if (from === "technique-detail")
+			return t("screen.practiceTechnique.comparison.backToTechnique");
+		return t("screen.practiceTechnique.comparison.backToTechniques");
+	};
+
+	const handleDone = () =>
+		router.replace(
+			getBackDestination() as Parameters<typeof router.replace>[0],
+		);
 
 	const previousDataRef = useRef({
 		quality: technique?.lastQuality,
@@ -49,7 +69,18 @@ export default function PracticeTechniqueScreen() {
 	);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [bpmError, setBpmError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
+
+	const validateBpm = (text: string): string | null => {
+		if (!text.trim()) return null;
+		const n = Number.parseInt(text.trim(), 10);
+		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
+	};
+
+	const handleBpmBlur = () => {
+		setBpmError(validateBpm(tempoBpm));
+	};
 	const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
@@ -58,6 +89,11 @@ export default function PracticeTechniqueScreen() {
 
 	const handleSave = async () => {
 		if (!id) return;
+		if (hasTempoTarget) {
+			const bpmErr = validateBpm(tempoBpm);
+			setBpmError(bpmErr);
+			if (bpmErr) return;
+		}
 		setLoading(true);
 		setError(null);
 		try {
@@ -172,6 +208,8 @@ export default function PracticeTechniqueScreen() {
 					previousTempoBpm={previousDataRef.current.tempoBpm}
 					targetTempoBpm={technique.targetTempoBpm}
 					isCompact={isCompact}
+					onDone={handleDone}
+					backLabel={getBackLabel()}
 				/>
 			) : (
 				<ScrollView>
@@ -230,7 +268,12 @@ export default function PracticeTechniqueScreen() {
 										value={tempoBpm}
 										onChangeText={setTempoBpm}
 										placeholder="e.g. 80"
+										error={!!bpmError}
+										onBlur={handleBpmBlur}
 									/>
+									<HelperText type="error" visible={!!bpmError}>
+										{bpmError ?? ""}
+									</HelperText>
 								</View>
 							)}
 

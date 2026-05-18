@@ -18,14 +18,25 @@ const discovery = {
 	tokenEndpoint: "https://oauth2.googleapis.com/token",
 };
 
-export function GoogleSignInButton() {
+interface GoogleSignInButtonProps {
+	onError?: (message: string) => void;
+}
+
+export function GoogleSignInButton({ onError }: GoogleSignInButtonProps = {}) {
 	const { t } = useTranslation();
 	const [loading, setLoading] = useState(false);
 
 	const clientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
 	if (Platform.OS === "web") {
-		return <GoogleSignInWeb t={t} loading={loading} setLoading={setLoading} />;
+		return (
+			<GoogleSignInWeb
+				t={t}
+				loading={loading}
+				setLoading={setLoading}
+				onError={onError}
+			/>
+		);
 	}
 
 	return (
@@ -34,6 +45,7 @@ export function GoogleSignInButton() {
 			loading={loading}
 			setLoading={setLoading}
 			clientId={clientId}
+			onError={onError}
 		/>
 	);
 }
@@ -42,10 +54,12 @@ function GoogleSignInWeb({
 	t,
 	loading,
 	setLoading,
+	onError,
 }: {
 	t: (key: string) => string;
 	loading: boolean;
 	setLoading: (v: boolean) => void;
+	onError?: (message: string) => void;
 }) {
 	const handleGoogleSignIn = async () => {
 		setLoading(true);
@@ -56,6 +70,7 @@ function GoogleSignInWeb({
 			await signInWithPopup(auth, provider);
 		} catch (e) {
 			console.error("Google sign-in error:", e);
+			onError?.(t("error.googleSignIn"));
 		} finally {
 			setLoading(false);
 		}
@@ -79,11 +94,13 @@ function GoogleSignInNative({
 	loading,
 	setLoading,
 	clientId,
+	onError,
 }: {
 	t: (key: string) => string;
 	loading: boolean;
 	setLoading: (v: boolean) => void;
 	clientId: string | undefined;
+	onError?: (message: string) => void;
 }) {
 	const redirectUri = AuthSession.makeRedirectUri();
 
@@ -128,6 +145,7 @@ function GoogleSignInNative({
 			}
 		} catch (e) {
 			console.error("Google sign-in error:", e);
+			onError?.(t("error.googleSignIn"));
 		} finally {
 			setLoading(false);
 		}

@@ -11,6 +11,10 @@ export default function AppTabsLayout() {
 		<Tabs
 			screenOptions={{
 				tabBarActiveTintColor: theme.colors.primary,
+				tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
+				tabBarStyle: { backgroundColor: theme.colors.elevation.level2 },
+				headerStyle: { backgroundColor: theme.colors.elevation.level2 },
+				headerTintColor: theme.colors.onSurface,
 			}}
 		>
 			<Tabs.Screen

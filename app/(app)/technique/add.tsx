@@ -12,6 +12,7 @@ import {
 	Appbar,
 	Button,
 	Card,
+	HelperText,
 	Snackbar,
 	TextInput,
 	useTheme,
@@ -42,6 +43,26 @@ export default function AddTechniqueScreen() {
 	const [notes, setNotes] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [titleError, setTitleError] = useState<string | null>(null);
+	const [bpmError, setBpmError] = useState<string | null>(null);
+
+	const validateTitle = (): string | null => {
+		const err = !title.trim()
+			? t("screen.addTechnique.error.titleRequired")
+			: null;
+		setTitleError(err);
+		return err;
+	};
+
+	const validateBpm = (text: string): string | null => {
+		if (!text.trim()) return null;
+		const n = Number.parseInt(text.trim(), 10);
+		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
+	};
+
+	const handleBpmBlur = () => {
+		setBpmError(validateBpm(targetTempoBpmText));
+	};
 
 	const stateOptions = TECHNIQUE_STATES.map((s) => ({
 		value: s,
@@ -57,10 +78,10 @@ export default function AddTechniqueScreen() {
 	];
 
 	const handleSave = async () => {
-		if (!title.trim()) {
-			setError(t("screen.addTechnique.error.titleRequired"));
-			return;
-		}
+		const titleErr = validateTitle();
+		const bpmErr = validateBpm(targetTempoBpmText);
+		setBpmError(bpmErr);
+		if (titleErr || bpmErr) return;
 
 		const targetTempoBpm = targetTempoBpmText.trim()
 			? Number.parseInt(targetTempoBpmText.trim(), 10) || null
@@ -86,13 +107,20 @@ export default function AddTechniqueScreen() {
 
 	const formContent = (
 		<View className="gap-4">
-			<TextInput
-				label={t("screen.addTechnique.titleLabel")}
-				value={title}
-				onChangeText={setTitle}
-				mode="outlined"
-				autoFocus
-			/>
+			<View>
+				<TextInput
+					label={t("screen.addTechnique.titleLabel")}
+					value={title}
+					onChangeText={setTitle}
+					mode="outlined"
+					autoFocus
+					error={!!titleError}
+					onBlur={() => validateTitle()}
+				/>
+				<HelperText type="error" visible={!!titleError}>
+					{titleError ?? ""}
+				</HelperText>
+			</View>
 
 			<DropdownField
 				label={t("screen.addTechnique.stateLabel")}
@@ -108,13 +136,20 @@ export default function AddTechniqueScreen() {
 				onChange={(v) => setType((v as TechniqueType) ?? null)}
 			/>
 
-			<TextInput
-				label={t("screen.addTechnique.targetTempoBpmLabel")}
-				value={targetTempoBpmText}
-				onChangeText={setTargetTempoBpmText}
-				mode="outlined"
-				keyboardType="numeric"
-			/>
+			<View>
+				<TextInput
+					label={t("screen.addTechnique.targetTempoBpmLabel")}
+					value={targetTempoBpmText}
+					onChangeText={setTargetTempoBpmText}
+					mode="outlined"
+					keyboardType="numeric"
+					error={!!bpmError}
+					onBlur={handleBpmBlur}
+				/>
+				<HelperText type="error" visible={!!bpmError}>
+					{bpmError ?? ""}
+				</HelperText>
+			</View>
 
 			<TextInput
 				label={t("screen.addTechnique.notesLabel")}

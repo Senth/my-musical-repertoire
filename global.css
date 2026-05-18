@@ -5,6 +5,8 @@ html,
 body,
 #root {
 	background-color: #fffbfe;
+	height: 100%;
+	overflow: hidden;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -12,6 +12,7 @@ import {
 	Appbar,
 	Button,
 	Card,
+	HelperText,
 	Snackbar,
 	TextInput,
 	useTheme,
@@ -48,7 +49,27 @@ export default function EditTechniqueScreen() {
 	const [notes, setNotes] = useState(item?.notes ?? "");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [titleError, setTitleError] = useState<string | null>(null);
+	const [bpmError, setBpmError] = useState<string | null>(null);
 	const hasSeeded = useRef(false);
+
+	const validateTitle = (): string | null => {
+		const err = !title.trim()
+			? t("screen.editTechnique.error.titleRequired")
+			: null;
+		setTitleError(err);
+		return err;
+	};
+
+	const validateBpm = (text: string): string | null => {
+		if (!text.trim()) return null;
+		const n = Number.parseInt(text.trim(), 10);
+		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
+	};
+
+	const handleBpmBlur = () => {
+		setBpmError(validateBpm(targetTempoBpmText));
+	};
 
 	// Seed form once the item loads from Firestore (avoids resetting user edits on re-renders)
 	useEffect(() => {
@@ -76,10 +97,10 @@ export default function EditTechniqueScreen() {
 	];
 
 	const handleSave = async () => {
-		if (!title.trim()) {
-			setError(t("screen.editTechnique.error.titleRequired"));
-			return;
-		}
+		const titleErr = validateTitle();
+		const bpmErr = validateBpm(targetTempoBpmText);
+		setBpmError(bpmErr);
+		if (titleErr || bpmErr) return;
 		if (!id) return;
 
 		const targetTempoBpm = targetTempoBpmText.trim()
@@ -107,13 +128,20 @@ export default function EditTechniqueScreen() {
 
 	const formContent = (
 		<View className="gap-4">
-			<TextInput
-				label={t("screen.editTechnique.titleLabel")}
-				value={title}
-				onChangeText={setTitle}
-				mode="outlined"
-				autoFocus
-			/>
+			<View>
+				<TextInput
+					label={t("screen.editTechnique.titleLabel")}
+					value={title}
+					onChangeText={setTitle}
+					mode="outlined"
+					autoFocus
+					error={!!titleError}
+					onBlur={() => validateTitle()}
+				/>
+				<HelperText type="error" visible={!!titleError}>
+					{titleError ?? ""}
+				</HelperText>
+			</View>
 
 			<DropdownField
 				label={t("screen.editTechnique.stateLabel")}
@@ -129,13 +157,20 @@ export default function EditTechniqueScreen() {
 				onChange={(v) => setType((v as TechniqueType) ?? null)}
 			/>
 
-			<TextInput
-				label={t("screen.editTechnique.targetTempoBpmLabel")}
-				value={targetTempoBpmText}
-				onChangeText={setTargetTempoBpmText}
-				mode="outlined"
-				keyboardType="numeric"
-			/>
+			<View>
+				<TextInput
+					label={t("screen.editTechnique.targetTempoBpmLabel")}
+					value={targetTempoBpmText}
+					onChangeText={setTargetTempoBpmText}
+					mode="outlined"
+					keyboardType="numeric"
+					error={!!bpmError}
+					onBlur={handleBpmBlur}
+				/>
+				<HelperText type="error" visible={!!bpmError}>
+					{bpmError ?? ""}
+				</HelperText>
+			</View>
 
 			<TextInput
 				label={t("screen.editTechnique.notesLabel")}

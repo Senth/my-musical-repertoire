@@ -19,7 +19,7 @@ import {
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
-import { StateFilterChips } from "@/components/ui/StateFilterChips";
+import { StateFilterDropdown } from "@/components/ui/StateFilterDropdown";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { PIECE_STATES, type Piece, type PieceState } from "@/models/piece";
 import { formatDaysAgo } from "@/utils/date";
@@ -93,7 +93,7 @@ export default function PiecesScreen() {
 				leadingIcon="play"
 				onPress={() => {
 					setMenuVisible(null);
-					router.push(`/piece/${item.id}/practice`);
+					router.push(`/piece/${item.id}/practice?from=pieces`);
 				}}
 				title={t("screen.pieces.menu.practice")}
 			/>
@@ -181,11 +181,7 @@ export default function PiecesScreen() {
 			className="flex-1"
 			style={{ backgroundColor: theme.colors.background }}
 		>
-			<View className="px-4 pt-4 pb-2 flex-row items-center justify-between">
-				<Text variant="headlineSmall">{t("screen.pieces.title")}</Text>
-			</View>
-
-			<View className="px-4 pb-2">
+			<View className="px-4 pt-3 pb-2">
 				<Searchbar
 					placeholder={t("screen.pieces.searchPlaceholder")}
 					value={searchQuery}
@@ -193,15 +189,12 @@ export default function PiecesScreen() {
 				/>
 			</View>
 
-			<StateFilterChips
+			<StateFilterDropdown
 				states={PIECE_STATES}
 				selected={stateFilter}
 				onSelect={setStateFilter}
-				labelFor={(s) =>
-					s === "all"
-						? t("screen.pieces.filterAll")
-						: t(`piece.state.${s}` as Parameters<typeof t>[0])
-				}
+				labelFor={(s) => t(`piece.state.${s}` as Parameters<typeof t>[0])}
+				statusLabel={t("common.filterStatus")}
 			/>
 
 			{loading ? (
@@ -216,6 +209,7 @@ export default function PiecesScreen() {
 					keyExtractor={(item) => item.id ?? ""}
 					renderItem={renderCompactItem}
 					ItemSeparatorComponent={() => <Divider />}
+					style={{ flex: 1 }}
 				/>
 			) : (
 				<ScrollView>
@@ -278,7 +272,7 @@ export default function PiecesScreen() {
 					onPress={() => {
 						const pieceId = contextMenu?.pieceId;
 						setContextMenu(null);
-						if (pieceId) router.push(`/piece/${pieceId}/practice`);
+						if (pieceId) router.push(`/piece/${pieceId}/practice?from=pieces`);
 					}}
 					title={t("screen.pieces.menu.practice")}
 				/>

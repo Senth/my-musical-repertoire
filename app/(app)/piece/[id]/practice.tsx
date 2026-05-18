@@ -7,6 +7,7 @@ import {
 	Appbar,
 	Button,
 	Divider,
+	HelperText,
 	List,
 	Menu,
 	Modal,
@@ -63,7 +64,7 @@ export default function PracticeScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
-	const { id } = useLocalSearchParams<{ id: string }>();
+	const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
 	const { pieces, loading: piecesLoading } = usePieces();
 	const { sections } = useSections(id ?? "");
 	const { savePractice } = useSavePractice();
@@ -72,6 +73,23 @@ export default function PracticeScreen() {
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const piece = pieces.find((p) => p.id === id);
+
+	const getBackDestination = (): string => {
+		if (from === "pieces") return "/(app)/(tabs)/piece";
+		if (from === "piece-detail") return `/piece/${id}`;
+		return "/(app)/(tabs)/overview";
+	};
+
+	const getBackLabel = (): string => {
+		if (from === "pieces") return t("screen.practice.comparison.backToPieces");
+		if (from === "piece-detail") return t("screen.practice.comparison.backToPiece");
+		return t("screen.practice.comparison.backToOverview");
+	};
+
+	const handleDone = () =>
+		router.replace(
+			getBackDestination() as Parameters<typeof router.replace>[0],
+		);
 
 	// Capture previous practice data before save overwrites it
 	const previousDataRef = useRef({
@@ -91,9 +109,20 @@ export default function PracticeScreen() {
 	);
 	const [sectionPickerVisible, setSectionPickerVisible] = useState(false);
 	const [achievedBpm, setAchievedBpm] = useState<string>("");
+	const [bpmError, setBpmError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
+
+	const validateBpm = (text: string): string | null => {
+		if (!text.trim()) return null;
+		const n = Number.parseInt(text.trim(), 10);
+		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
+	};
+
+	const handleBpmBlur = () => {
+		setBpmError(validateBpm(achievedBpm));
+	};
 	const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
@@ -109,6 +138,10 @@ export default function PracticeScreen() {
 
 	const handleSave = async () => {
 		if (!id) return;
+
+		const bpmErr = validateBpm(achievedBpm);
+		setBpmError(bpmErr);
+		if (bpmErr) return;
 
 		setLoading(true);
 		setError(null);
@@ -225,6 +258,8 @@ export default function PracticeScreen() {
 					previousTechnical={previousDataRef.current.technicalMistakes}
 					previousMemory={previousDataRef.current.memoryMistakes}
 					isCompact={isCompact}
+					onDone={handleDone}
+					backLabel={getBackLabel()}
 				/>
 			) : (
 				<ScrollView>
@@ -269,7 +304,12 @@ export default function PracticeScreen() {
 										value={achievedBpm}
 										onChangeText={setAchievedBpm}
 										placeholder="e.g. 80"
+										error={!!bpmError}
+										onBlur={handleBpmBlur}
 									/>
+									<HelperText type="error" visible={!!bpmError}>
+										{bpmError ?? ""}
+									</HelperText>
 								</View>
 							)}
 							<Divider />

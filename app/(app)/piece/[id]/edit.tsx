@@ -11,6 +11,7 @@ import {
 	Appbar,
 	Button,
 	Card,
+	HelperText,
 	Snackbar,
 	TextInput,
 	useTheme,
@@ -53,7 +54,36 @@ export default function EditPieceScreen() {
 	const [notes, setNotes] = useState(piece?.notes ?? "");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [titleError, setTitleError] = useState<string | null>(null);
+	const [composerError, setComposerError] = useState<string | null>(null);
+	const [bpmError, setBpmError] = useState<string | null>(null);
 	const hasSeeded = useRef(false);
+
+	const validateTitle = (): string | null => {
+		const err = !title.trim()
+			? t("screen.editPiece.error.titleRequired")
+			: null;
+		setTitleError(err);
+		return err;
+	};
+
+	const validateComposer = (): string | null => {
+		const err = !composer.trim()
+			? t("screen.editPiece.error.composerRequired")
+			: null;
+		setComposerError(err);
+		return err;
+	};
+
+	const validateBpm = (text: string): string | null => {
+		if (!text.trim()) return null;
+		const n = Number.parseInt(text.trim(), 10);
+		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
+	};
+
+	const handleBpmBlur = () => {
+		setBpmError(validateBpm(targetTempoBpmText));
+	};
 
 	// Seed form once the piece loads from Firestore (avoids resetting user edits on re-renders)
 	useEffect(() => {
@@ -91,14 +121,11 @@ export default function EditPieceScreen() {
 	];
 
 	const handleSave = async () => {
-		if (!title.trim()) {
-			setError(t("screen.editPiece.error.titleRequired"));
-			return;
-		}
-		if (!composer.trim()) {
-			setError(t("screen.editPiece.error.composerRequired"));
-			return;
-		}
+		const titleErr = validateTitle();
+		const composerErr = validateComposer();
+		const bpmErr = validateBpm(targetTempoBpmText);
+		setBpmError(bpmErr);
+		if (titleErr || composerErr || bpmErr) return;
 		if (!id) return;
 
 		const targetTempoBpm = targetTempoBpmText.trim()
@@ -132,20 +159,34 @@ export default function EditPieceScreen() {
 
 	const formContent = (
 		<View className="gap-4">
-			<TextInput
-				label={t("screen.editPiece.titleLabel")}
-				value={title}
-				onChangeText={setTitle}
-				mode="outlined"
-				autoFocus
-			/>
+			<View>
+				<TextInput
+					label={t("screen.editPiece.titleLabel")}
+					value={title}
+					onChangeText={setTitle}
+					mode="outlined"
+					autoFocus
+					error={!!titleError}
+					onBlur={() => validateTitle()}
+				/>
+				<HelperText type="error" visible={!!titleError}>
+					{titleError ?? ""}
+				</HelperText>
+			</View>
 
-			<TextInput
-				label={t("screen.editPiece.composerLabel")}
-				value={composer}
-				onChangeText={setComposer}
-				mode="outlined"
-			/>
+			<View>
+				<TextInput
+					label={t("screen.editPiece.composerLabel")}
+					value={composer}
+					onChangeText={setComposer}
+					mode="outlined"
+					error={!!composerError}
+					onBlur={() => validateComposer()}
+				/>
+				<HelperText type="error" visible={!!composerError}>
+					{composerError ?? ""}
+				</HelperText>
+			</View>
 
 			<DropdownField
 				label={t("screen.editPiece.stateLabel")}
@@ -167,13 +208,20 @@ export default function EditPieceScreen() {
 				/>
 			)}
 
-			<TextInput
-				label={t("screen.editPiece.targetTempoBpmLabel")}
-				value={targetTempoBpmText}
-				onChangeText={setTargetTempoBpmText}
-				mode="outlined"
-				keyboardType="numeric"
-			/>
+			<View>
+				<TextInput
+					label={t("screen.editPiece.targetTempoBpmLabel")}
+					value={targetTempoBpmText}
+					onChangeText={setTargetTempoBpmText}
+					mode="outlined"
+					keyboardType="numeric"
+					error={!!bpmError}
+					onBlur={handleBpmBlur}
+				/>
+				<HelperText type="error" visible={!!bpmError}>
+					{bpmError ?? ""}
+				</HelperText>
+			</View>
 
 			<DropdownField
 				label={t("screen.editPiece.difficultyLabel")}

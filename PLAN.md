@@ -112,7 +112,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Student or teacher manually introduces new technique items
   - [x] Add suggested techniques in the overview page (displayed similarly to suggested practices)
 - [x] Create GH Action and deploy to Google Storage for hosting the web version
-- [ ] Touch up UI/UX and fix any discrepancies
+- [x] Touch up UI/UX and fix any discrepancies
   - [x] **Section Form & Edit Page**
     - [x] Add section/edit section should be a new page for mobile instead of a modal/dialog — routed as `/pieces/{id}/section/{id}/edit`. This also resolves ISSUE-008 and ISSUE-011. ([ISSUE-008](/.tmp/ui-ux-issues.md), [ISSUE-011](/.tmp/ui-ux-issues.md))
     - [x] Remove target BPM override from the section edit screen. It should be using the piece-level target BPM for all sections.
@@ -139,15 +139,30 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
     - [x] Replace section admin link during practice with a lightweight read-only section picker sheet ([ISSUE-009](/.tmp/ui-ux-issues.md))
     - [x] Technique comparison: use composite verdict (quality + effort + tempo) instead of quality-only ([ISSUE-014](/.tmp/ui-ux-issues.md))
     - [x] For the BPM input on the practice screen, prefill it from the previous session, for any practice session.
-  - [ ] **Form Validation**
-    - [ ] Inline field validation across all forms: mark invalid `TextInput`s with `error` prop + helper text ([ISSUE-016](/.tmp/ui-ux-issues.md))
-    - [ ] Numeric BPM inputs: validate explicitly and show inline error on bad input ([ISSUE-017](/.tmp/ui-ux-issues.md))
-    - [ ] Surface Google sign-in errors to the user (snackbar/inline message, same pattern as email/password) ([ISSUE-019](/.tmp/ui-ux-issues.md))
+  - [x] **Form Validation**
+    - [x] Inline field validation across all forms: mark invalid `TextInput`s with `error` prop + helper text ([ISSUE-016](/.tmp/ui-ux-issues.md))
+    - [x] Numeric BPM inputs: validate explicitly and show inline error on bad input ([ISSUE-017](/.tmp/ui-ux-issues.md))
+    - [x] Surface Google sign-in errors to the user (snackbar/inline message, same pattern as email/password) ([ISSUE-019](/.tmp/ui-ux-issues.md))
   - [x] **Global Polish**
     - [x] Can't scroll on any of the pages.
     - [x] FAB positioning: apply safe-area insets and tab-bar-aware bottom spacing to all FABs ([ISSUE-021](/.tmp/ui-ux-issues.md))
     - [x] i18n: add `common.ok` translation key and replace all hardcoded `"OK"` snackbar labels ([ISSUE-020](/.tmp/ui-ux-issues.md))
     - [x] Accessibility: add localized `accessibilityLabel`/`accessibilityHint` to all icon-only actions (FABs, dots menus, drag handles, edit/delete buttons) ([ISSUE-018](/.tmp/ui-ux-issues.md))
+  - [x] **Misc**
+    - [x] Overview header and bottom tabs have light background instead of dark.
+    - [x] FAB in overview should allow user to select "Add piece" or "Add technique" instead of going directly to add-piece screen.
+    - [x] My repertoire tab/page should be renamed to "Pieces" to match the tab label and avoid confusion with the whole app's name.
+    - [x] Double "heading" on My Repertoire and Techniues detail pages.
+    - [x] Missing padding for Search and filter row on my repertoire and techniques list pages.
+    - [x] Filters should be presented as chips menu dropdown instead of inline pills to save vertical space. If "All/None" is selected it should instead show "Lifecycle" for example.
+    - [x] Lots of space between the pill filter and the actual list. Seems like the list is vertically centered instead of a top-aligned list with a header. This is especially noticeable on the techniques page when there are few items.
+    - [x] On web, both desktop and mobile we can't scroll.
+    - [x] On web, FAB is not shown until you scroll down to the bottom of the page (which currently is not possible).
+  - [ ] **Bugs**
+    - [ ] When practicing is done, we should return to the original page. So if we start pracicing from Overview, we should return from there (likewise if we first enter from the overview and go into the piece and then start practire). If we enter from pieces, we should go back to pieces after practice. Same goes with techniques.
+    - [ ] When pressing new practice or technique on web. The title focuses but then blurs immediately, which shows an error.
+    - [ ] Still can't scroll on the overview page and FAB is not shown in the correct place, and FAB is pushed down so we can't see it anymore if list is full. This is also true for Pieces and Techniques pages.
+    - [ ] Filter chip is stretched out over the whole row. I don't think this is how it's supposed to be according to MD3.
 
 ### Phase 3: Practice Task Model & Logging
 

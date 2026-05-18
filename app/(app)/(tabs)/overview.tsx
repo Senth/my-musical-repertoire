@@ -1,5 +1,6 @@
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import {
@@ -87,6 +88,7 @@ export default function OverviewScreen() {
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 	const tabBarHeight = useBottomTabBarHeight();
+	const [fabOpen, setFabOpen] = useState(false);
 
 	const suggested = getSuggestedPieces(pieces);
 	const suggestedTechniques = getSuggestedTechniques(techniques);
@@ -187,7 +189,7 @@ export default function OverviewScreen() {
 										<Button
 											mode="contained-tonal"
 											compact
-											onPress={() => router.push(`/piece/${piece.id}/practice`)}
+											onPress={() => router.push(`/piece/${piece.id}/practice?from=overview`)}
 										>
 											{t("screen.overview.practice")}
 										</Button>
@@ -253,7 +255,7 @@ export default function OverviewScreen() {
 											mode="contained-tonal"
 											compact
 											onPress={() =>
-												router.push(`/technique/${item.id}/practice`)
+												router.push(`/technique/${item.id}/practice?from=overview`)
 											}
 										>
 											{t("screen.overview.practice")}
@@ -274,16 +276,37 @@ export default function OverviewScreen() {
 				</View>
 			</ScrollView>
 
-			<FAB
-				icon="plus"
-				accessibilityLabel={t("a11y.fab.addPiece")}
+			<FAB.Group
+				open={fabOpen}
+				visible
+				icon={fabOpen ? "close" : "plus"}
+				accessibilityLabel={t("a11y.fab.add")}
+				actions={[
+					{
+						icon: "music",
+						label: t("a11y.fab.addPiece"),
+						onPress: () => {
+							setFabOpen(false);
+							router.push("/piece/add");
+						},
+						accessibilityLabel: t("a11y.fab.addPiece"),
+					},
+					{
+						icon: "piano",
+						label: t("a11y.fab.addTechnique"),
+						onPress: () => {
+							setFabOpen(false);
+							router.push("/technique/add");
+						},
+						accessibilityLabel: t("a11y.fab.addTechnique"),
+					},
+				]}
+				onStateChange={({ open }) => setFabOpen(open)}
 				style={{
 					position: "absolute",
 					right: 16,
 					bottom: tabBarHeight + 16,
-					backgroundColor: theme.colors.primaryContainer,
 				}}
-				onPress={() => router.push("/piece/add")}
 			/>
 		</View>
 	);

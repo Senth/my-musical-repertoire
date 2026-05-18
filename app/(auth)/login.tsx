@@ -96,7 +96,7 @@ export default function LoginScreen() {
 				{t("screen.login.email")}
 			</Button>
 
-			<GoogleSignInButton />
+			<GoogleSignInButton onError={(msg) => setError(msg)} />
 		</View>
 	);
 

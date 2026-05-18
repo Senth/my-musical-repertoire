@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, Divider, Text, useTheme } from "react-native-paper";
@@ -14,6 +13,8 @@ interface TechniqueLogComparisonProps {
 	previousTempoBpm?: number | null;
 	targetTempoBpm?: number | null;
 	isCompact: boolean;
+	onDone: () => void;
+	backLabel: string;
 }
 
 function QualityRow({
@@ -211,10 +212,11 @@ export function TechniqueLogComparison({
 	previousTempoBpm,
 	targetTempoBpm,
 	isCompact,
+	onDone,
+	backLabel,
 }: TechniqueLogComparisonProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
-	const router = useRouter();
 
 	const verdict = computeVerdict(
 		currentQuality,
@@ -279,11 +281,8 @@ export function TechniqueLogComparison({
 				)}
 
 				<View className="mt-4">
-					<Button
-						mode="contained"
-						onPress={() => router.replace("/(app)/(tabs)/technique")}
-					>
-						{t("screen.practiceTechnique.comparison.back")}
+					<Button mode="contained" onPress={onDone}>
+						{backLabel}
 					</Button>
 				</View>
 			</View>
