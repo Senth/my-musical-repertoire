@@ -123,7 +123,9 @@ export default function TechniqueDetailScreen() {
 				<View className="px-4 pt-4">
 					<Button
 						mode="contained"
-						onPress={() => router.push(`/technique/${id}/practice?from=technique-detail`)}
+						onPress={() =>
+							router.push(`/technique/${id}/practice?from=technique-detail`)
+						}
 						contentStyle={{ paddingVertical: 4 }}
 					>
 						{t("screen.techniqueDetail.practice")}

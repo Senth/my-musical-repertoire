@@ -189,7 +189,9 @@ export default function OverviewScreen() {
 										<Button
 											mode="contained-tonal"
 											compact
-											onPress={() => router.push(`/piece/${piece.id}/practice?from=overview`)}
+											onPress={() =>
+												router.push(`/piece/${piece.id}/practice?from=overview`)
+											}
 										>
 											{t("screen.overview.practice")}
 										</Button>
@@ -255,7 +257,9 @@ export default function OverviewScreen() {
 											mode="contained-tonal"
 											compact
 											onPress={() =>
-												router.push(`/technique/${item.id}/practice?from=overview`)
+												router.push(
+													`/technique/${item.id}/practice?from=overview`,
+												)
 											}
 										>
 											{t("screen.overview.practice")}

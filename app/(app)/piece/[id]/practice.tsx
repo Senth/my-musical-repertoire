@@ -82,7 +82,8 @@ export default function PracticeScreen() {
 
 	const getBackLabel = (): string => {
 		if (from === "pieces") return t("screen.practice.comparison.backToPieces");
-		if (from === "piece-detail") return t("screen.practice.comparison.backToPiece");
+		if (from === "piece-detail")
+			return t("screen.practice.comparison.backToPiece");
 		return t("screen.practice.comparison.backToOverview");
 	};
 

@@ -156,7 +156,9 @@ export default function PieceDetailScreen() {
 				<View className="px-4 pt-4">
 					<Button
 						mode="contained"
-						onPress={() => router.push(`/piece/${id}/practice?from=piece-detail`)}
+						onPress={() =>
+							router.push(`/piece/${id}/practice?from=piece-detail`)
+						}
 						contentStyle={{ paddingVertical: 4 }}
 					>
 						{t("screen.pieceDetail.practice")}

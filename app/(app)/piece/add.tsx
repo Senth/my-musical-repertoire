@@ -102,7 +102,7 @@ export default function AddPieceScreen() {
 					value={title}
 					onChangeText={setTitle}
 					mode="outlined"
-					autoFocus
+					autoFocus={Platform.OS !== "web"}
 					error={!!titleError}
 					onBlur={() => validateTitle()}
 				/>
