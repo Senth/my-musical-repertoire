@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from "expo-router";
 import { FirebaseError } from "firebase/app";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,7 +26,13 @@ type Mode = "signIn" | "register";
 
 export default function LoginScreen() {
 	const { t } = useTranslation();
-	const { signInWithEmail, registerWithEmail } = useAuth();
+	const {
+		signInWithEmail,
+		registerWithEmail,
+		getSignInMethodsForEmail,
+		sendPasswordResetEmail,
+	} = useAuth();
+	const { passwordSet } = useLocalSearchParams<{ passwordSet?: string }>();
 	const theme = useTheme();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
@@ -41,6 +48,10 @@ export default function LoginScreen() {
 	const [confirmPasswordError, setConfirmPasswordError] = useState<
 		string | null
 	>(null);
+	const [googleAccountDetected, setGoogleAccountDetected] = useState(false);
+	const [passwordResetSent, setPasswordResetSent] = useState(false);
+	const [passwordResetLoading, setPasswordResetLoading] = useState(false);
+	const [recoveryError, setRecoveryError] = useState<string | null>(null);
 
 	const switchMode = () => {
 		setMode((m) => (m === "signIn" ? "register" : "signIn"));
@@ -48,6 +59,22 @@ export default function LoginScreen() {
 		setPasswordError(null);
 		setConfirmPasswordError(null);
 		setServerError(null);
+		setGoogleAccountDetected(false);
+		setPasswordResetSent(false);
+		setRecoveryError(null);
+	};
+
+	const handleSetPassword = async () => {
+		setPasswordResetLoading(true);
+		setRecoveryError(null);
+		try {
+			await sendPasswordResetEmail(email.trim());
+			setPasswordResetSent(true);
+		} catch {
+			setRecoveryError(t("screen.login.setPasswordError"));
+		} finally {
+			setPasswordResetLoading(false);
+		}
 	};
 
 	const handleSubmit = async () => {
@@ -76,6 +103,33 @@ export default function LoginScreen() {
 			}
 		} catch (e) {
 			if (e instanceof FirebaseError) {
+				const isGoogleCheckable =
+					e.code === "auth/user-not-found" ||
+					e.code === "auth/wrong-password" ||
+					e.code === "auth/invalid-credential" ||
+					e.code === "auth/email-already-in-use";
+
+				if (isGoogleCheckable) {
+					try {
+						const methods = await getSignInMethodsForEmail(email.trim());
+						if (
+							methods.includes("google.com") &&
+							!methods.includes("password")
+						) {
+							try {
+								await sendPasswordResetEmail(email.trim());
+								setPasswordResetSent(true);
+							} catch {
+								// auto-send failed; user can still click "Set Password" manually
+							}
+							setGoogleAccountDetected(true);
+							return;
+						}
+					} catch {
+						// fetchSignInMethodsForEmail unavailable — fall through to generic error
+					}
+				}
+
 				switch (e.code) {
 					case "auth/user-not-found":
 						setEmailError(t("screen.login.error.userNotFound"));
@@ -113,6 +167,9 @@ export default function LoginScreen() {
 					onChangeText={(text) => {
 						setEmail(text);
 						setEmailError(null);
+						setGoogleAccountDetected(false);
+						setPasswordResetSent(false);
+						setRecoveryError(null);
 					}}
 					mode="outlined"
 					keyboardType="email-address"
@@ -173,8 +230,38 @@ export default function LoginScreen() {
 				{t(mode === "signIn" ? "screen.login.email" : "screen.login.register")}
 			</Button>
 
-			{mode === "signIn" && (
+			{mode === "signIn" && !googleAccountDetected && (
 				<GoogleSignInButton onError={(msg) => setServerError(msg)} />
+			)}
+
+			{googleAccountDetected && (
+				<View className="gap-2 mt-2">
+					<GoogleSignInButton onError={(msg) => setServerError(msg)} />
+					{passwordResetSent ? (
+						<HelperText type="info" visible>
+							{t("screen.login.setPasswordSent")}
+						</HelperText>
+					) : (
+						<>
+							<HelperText type="info" visible>
+								{t("screen.login.googleAccountDetected")}
+							</HelperText>
+							<Button
+								mode="outlined"
+								onPress={handleSetPassword}
+								loading={passwordResetLoading}
+								disabled={passwordResetLoading}
+							>
+								{t("screen.login.setPassword")}
+							</Button>
+							{recoveryError && (
+								<HelperText type="error" visible>
+									{recoveryError}
+								</HelperText>
+							)}
+						</>
+					)}
+				</View>
 			)}
 
 			<Button mode="text" onPress={switchMode}>
@@ -226,6 +313,14 @@ export default function LoginScreen() {
 				action={{ label: t("common.ok"), onPress: () => setServerError(null) }}
 			>
 				{serverError ?? ""}
+			</Snackbar>
+
+			<Snackbar
+				visible={passwordSet === "1"}
+				onDismiss={() => {}}
+				duration={5000}
+			>
+				{t("screen.resetPassword.successMessage")}
 			</Snackbar>
 		</View>
 	);

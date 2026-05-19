@@ -118,6 +118,17 @@
 			"targetBpm": "Target: {{bpm}} BPM",
 			"lastPracticed": "Last practiced: {{when}}"
 		},
+		"resetPassword": {
+			"title": "Set Your Password",
+			"newPasswordLabel": "New Password",
+			"submit": "Set Password",
+			"invalidLink": "This link is invalid. Please request a new password reset.",
+			"successMessage": "Password set! You can now sign in with your email and password.",
+			"error": {
+				"expired": "This link has expired or already been used. Please request a new one.",
+				"server": "Could not set password. Please try again."
+			}
+		},
 		"login": {
 			"title": "Sign In",
 			"titleRegister": "Register",
@@ -131,6 +142,10 @@
 			"loading": "Logging in...",
 			"switchToRegister": "Don't have an account? Register",
 			"switchToSignIn": "Already have an account? Sign In",
+			"googleAccountDetected": "This email is registered with Google Sign-In.",
+			"setPassword": "Set a password",
+			"setPasswordSent": "Check your inbox (and spam folder) to set your password.",
+			"setPasswordError": "Could not send the email. Please try again.",
 			"error": {
 				"email": "Please enter a valid email address.",
 				"userNotFound": "No user found with this email and password combination.",

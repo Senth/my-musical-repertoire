@@ -1,5 +1,8 @@
 import {
 	createUserWithEmailAndPassword,
+	fetchSignInMethodsForEmail,
+	confirmPasswordReset as firebaseConfirmPasswordReset,
+	sendPasswordResetEmail as firebaseSendPasswordResetEmail,
 	signOut as firebaseSignOut,
 	GoogleAuthProvider,
 	onAuthStateChanged,
@@ -23,6 +26,9 @@ interface AuthContextType {
 	registerWithEmail: (email: string, password: string) => Promise<void>;
 	signInWithGoogle: (idToken: string) => Promise<void>;
 	signOut: () => Promise<void>;
+	getSignInMethodsForEmail: (email: string) => Promise<string[]>;
+	sendPasswordResetEmail: (email: string) => Promise<void>;
+	confirmPasswordReset: (oobCode: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +62,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		await firebaseSignOut(auth);
 	};
 
+	const getSignInMethodsForEmail = async (email: string) => {
+		return fetchSignInMethodsForEmail(auth, email);
+	};
+
+	const sendPasswordResetEmail = async (email: string) => {
+		await firebaseSendPasswordResetEmail(auth, email);
+	};
+
+	const confirmPasswordReset = async (oobCode: string, newPassword: string) => {
+		await firebaseConfirmPasswordReset(auth, oobCode, newPassword);
+	};
+
 	return (
 		<AuthContext.Provider
 			value={{
@@ -65,6 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				registerWithEmail,
 				signInWithGoogle,
 				signOut,
+				getSignInMethodsForEmail,
+				sendPasswordResetEmail,
+				confirmPasswordReset,
 			}}
 		>
 			{children}
