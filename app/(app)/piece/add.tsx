@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	KeyboardAvoidingView,
@@ -18,6 +18,7 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { DropdownField } from "@/components/ui/DropdownField";
+import { useAutoFocusOnMount } from "@/hooks/use-auto-focus-on-mount";
 import { useAddPiece } from "@/hooks/use-pieces";
 import { PIECE_STATES, type PieceState } from "@/models/piece";
 
@@ -40,6 +41,8 @@ export default function AddPieceScreen() {
 	const [titleError, setTitleError] = useState<string | null>(null);
 	const [composerError, setComposerError] = useState<string | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
+	const titleTouched = useRef(false);
+	const titleInputRef = useAutoFocusOnMount<{ focus: () => void }>();
 
 	const validateTitle = (): string | null => {
 		const err = !title.trim() ? t("screen.addPiece.error.titleRequired") : null;
@@ -98,13 +101,18 @@ export default function AddPieceScreen() {
 		<View className="gap-4">
 			<View>
 				<TextInput
+					ref={titleInputRef}
 					label={t("screen.addPiece.titleLabel")}
 					value={title}
-					onChangeText={setTitle}
+					onChangeText={(v) => {
+						setTitle(v);
+						titleTouched.current = true;
+					}}
 					mode="outlined"
-					autoFocus={Platform.OS !== "web"}
 					error={!!titleError}
-					onBlur={() => validateTitle()}
+					onBlur={() => {
+						if (titleTouched.current) validateTitle();
+					}}
 				/>
 				<HelperText type="error" visible={!!titleError}>
 					{titleError ?? ""}
@@ -181,13 +189,20 @@ export default function AddPieceScreen() {
 					keyboardShouldPersistTaps="handled"
 				>
 					<View className="w-full max-w-xl self-center">
-						{isCompact ? (
-							formContent
-						) : (
-							<Card mode="elevated">
-								<Card.Content>{formContent}</Card.Content>
-							</Card>
-						)}
+						<Card
+							mode={isCompact ? "contained" : "elevated"}
+							style={
+								isCompact
+									? { backgroundColor: "transparent", elevation: 0 }
+									: undefined
+							}
+						>
+							<Card.Content
+								style={isCompact ? { paddingHorizontal: 0 } : undefined}
+							>
+								{formContent}
+							</Card.Content>
+						</Card>
 					</View>
 				</ScrollView>
 			</KeyboardAvoidingView>

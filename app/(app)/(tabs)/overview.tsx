@@ -122,6 +122,7 @@ export default function OverviewScreen() {
 			style={{ backgroundColor: theme.colors.background }}
 		>
 			<ScrollView
+				style={{ flex: 1 }}
 				contentContainerStyle={{
 					paddingHorizontal: isCompact ? 16 : 24,
 					paddingTop: 24,

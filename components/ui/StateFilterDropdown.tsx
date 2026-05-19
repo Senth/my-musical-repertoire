@@ -22,42 +22,44 @@ export function StateFilterDropdown<T extends string>({
 	const chipLabel = isFiltered ? labelFor(selected as T) : statusLabel;
 
 	return (
-		<View className="px-4 py-2 flex-row">
-			<Menu
-				visible={menuVisible}
-				onDismiss={() => setMenuVisible(false)}
-				anchor={
-					<Chip
-						compact
-						selected={isFiltered}
-						onPress={() => setMenuVisible(true)}
-						closeIcon={isFiltered ? "close" : undefined}
-						onClose={isFiltered ? () => onSelect("all") : undefined}
-					>
-						{chipLabel}
-					</Chip>
-				}
-			>
-				<Menu.Item
-					title={statusLabel}
-					onPress={() => {
-						onSelect("all");
-						setMenuVisible(false);
-					}}
-					trailingIcon={selected === "all" ? "check" : undefined}
-				/>
-				{states.map((s) => (
+		<View className="px-4 py-2">
+			<View style={{ alignSelf: "flex-start" }}>
+				<Menu
+					visible={menuVisible}
+					onDismiss={() => setMenuVisible(false)}
+					anchor={
+						<Chip
+							compact
+							selected={isFiltered}
+							onPress={() => setMenuVisible(true)}
+							closeIcon={isFiltered ? "close" : undefined}
+							onClose={isFiltered ? () => onSelect("all") : undefined}
+						>
+							{chipLabel}
+						</Chip>
+					}
+				>
 					<Menu.Item
-						key={s}
-						title={labelFor(s)}
+						title={statusLabel}
 						onPress={() => {
-							onSelect(s);
+							onSelect("all");
 							setMenuVisible(false);
 						}}
-						trailingIcon={selected === s ? "check" : undefined}
+						trailingIcon={selected === "all" ? "check" : undefined}
 					/>
-				))}
-			</Menu>
+					{states.map((s) => (
+						<Menu.Item
+							key={s}
+							title={labelFor(s)}
+							onPress={() => {
+								onSelect(s);
+								setMenuVisible(false);
+							}}
+							trailingIcon={selected === s ? "check" : undefined}
+						/>
+					))}
+				</Menu>
+			</View>
 		</View>
 	);
 }

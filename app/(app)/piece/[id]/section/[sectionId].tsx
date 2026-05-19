@@ -19,6 +19,7 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { DropdownField } from "@/components/ui/DropdownField";
+import { useAutoFocusOnMount } from "@/hooks/use-auto-focus-on-mount";
 import { usePieces } from "@/hooks/use-pieces";
 import {
 	useAddSection,
@@ -63,6 +64,8 @@ export default function SectionEditScreen() {
 	const [endBarError, setEndBarError] = useState<string | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const hasSeeded = useRef(false);
+	const labelTouched = useRef(false);
+	const labelInputRef = useAutoFocusOnMount<{ focus: () => void }>(isNew);
 
 	const validateLabel = (): string | null => {
 		const err = !label.trim()
@@ -160,13 +163,18 @@ export default function SectionEditScreen() {
 		<View className="gap-4">
 			<View>
 				<TextInput
+					ref={labelInputRef}
 					label={t("screen.pieceSections.form.labelLabel")}
 					value={label}
-					onChangeText={setLabel}
+					onChangeText={(v) => {
+						setLabel(v);
+						labelTouched.current = true;
+					}}
 					mode="outlined"
-					autoFocus={isNew}
 					error={!!labelError}
-					onBlur={() => validateLabel()}
+					onBlur={() => {
+						if (labelTouched.current) validateLabel();
+					}}
 				/>
 				<HelperText type="error" visible={!!labelError}>
 					{labelError ?? ""}
@@ -288,13 +296,20 @@ export default function SectionEditScreen() {
 					keyboardShouldPersistTaps="handled"
 				>
 					<View className="w-full max-w-xl self-center">
-						{isCompact ? (
-							formContent
-						) : (
-							<Card mode="elevated">
-								<Card.Content>{formContent}</Card.Content>
-							</Card>
-						)}
+						<Card
+							mode={isCompact ? "contained" : "elevated"}
+							style={
+								isCompact
+									? { backgroundColor: "transparent", elevation: 0 }
+									: undefined
+							}
+						>
+							<Card.Content
+								style={isCompact ? { paddingHorizontal: 0 } : undefined}
+							>
+								{formContent}
+							</Card.Content>
+						</Card>
 					</View>
 				</ScrollView>
 			</KeyboardAvoidingView>

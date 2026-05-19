@@ -268,7 +268,7 @@ export default function TechniquesScreen() {
 					style={{ flex: 1 }}
 				/>
 			) : (
-				<ScrollView>
+				<ScrollView style={{ flex: 1 }}>
 					<View
 						className="w-full max-w-xl self-center gap-3"
 						style={{ paddingHorizontal: 24, paddingBottom: 100 }}
