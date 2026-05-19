@@ -110,9 +110,6 @@ export default function AddPieceScreen() {
 					}}
 					mode="outlined"
 					error={!!titleError}
-					onBlur={() => {
-						if (titleTouched.current) validateTitle();
-					}}
 				/>
 				<HelperText type="error" visible={!!titleError}>
 					{titleError ?? ""}

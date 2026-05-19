@@ -119,18 +119,26 @@
 			"lastPracticed": "Last practiced: {{when}}"
 		},
 		"login": {
-			"title": "Login",
+			"title": "Sign In",
+			"titleRegister": "Register",
 			"google": "Sign in with Google",
 			"email": "Sign in with Email",
+			"register": "Register",
 			"emailLabel": "Email",
 			"passwordLabel": "Password",
+			"confirmPasswordLabel": "Confirm Password",
 			"or": "or",
 			"loading": "Logging in...",
+			"switchToRegister": "Don't have an account? Register",
+			"switchToSignIn": "Already have an account? Sign In",
 			"error": {
 				"email": "Please enter a valid email address.",
 				"userNotFound": "No user found with this email and password combination.",
 				"server": "An error occurred while logging in. Try another login method or try again later.",
-				"userDisabled": "This account has been disabled."
+				"userDisabled": "This account has been disabled.",
+				"emailInUse": "This email is already registered.",
+				"weakPassword": "Password must be at least 6 characters.",
+				"passwordMismatch": "Passwords do not match."
 			}
 		},
 		"overview": {

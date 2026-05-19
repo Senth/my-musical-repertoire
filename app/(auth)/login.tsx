@@ -11,6 +11,7 @@ import {
 	Appbar,
 	Button,
 	Card,
+	HelperText,
 	Snackbar,
 	TextInput,
 	useTheme,
@@ -20,45 +21,83 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
+type Mode = "signIn" | "register";
+
 export default function LoginScreen() {
 	const { t } = useTranslation();
-	const { signInWithEmail } = useAuth();
+	const { signInWithEmail, registerWithEmail } = useAuth();
 	const theme = useTheme();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
+	const [mode, setMode] = useState<Mode>("signIn");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
 	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const [serverError, setServerError] = useState<string | null>(null);
+	const [emailError, setEmailError] = useState<string | null>(null);
+	const [passwordError, setPasswordError] = useState<string | null>(null);
+	const [confirmPasswordError, setConfirmPasswordError] = useState<
+		string | null
+	>(null);
 
-	const handleEmailSignIn = async () => {
+	const switchMode = () => {
+		setMode((m) => (m === "signIn" ? "register" : "signIn"));
+		setEmailError(null);
+		setPasswordError(null);
+		setConfirmPasswordError(null);
+		setServerError(null);
+	};
+
+	const handleSubmit = async () => {
+		setEmailError(null);
+		setPasswordError(null);
+		setConfirmPasswordError(null);
+		setServerError(null);
+
 		if (!email.trim()) {
-			setError(t("screen.login.error.email"));
+			setEmailError(t("screen.login.error.email"));
+			return;
+		}
+
+		if (mode === "register" && password !== confirmPassword) {
+			setConfirmPasswordError(t("screen.login.error.passwordMismatch"));
 			return;
 		}
 
 		setLoading(true);
-		setError(null);
 
 		try {
-			await signInWithEmail(email.trim(), password.trim());
+			if (mode === "signIn") {
+				await signInWithEmail(email.trim(), password);
+			} else {
+				await registerWithEmail(email.trim(), password);
+			}
 		} catch (e) {
 			if (e instanceof FirebaseError) {
 				switch (e.code) {
 					case "auth/user-not-found":
-					case "auth/wrong-password":
-					case "auth/invalid-credential":
-						setError(t("screen.login.error.userNotFound"));
+						setEmailError(t("screen.login.error.userNotFound"));
 						break;
 					case "auth/user-disabled":
-						setError(t("screen.login.error.userDisabled"));
+						setEmailError(t("screen.login.error.userDisabled"));
+						break;
+					case "auth/wrong-password":
+					case "auth/invalid-credential":
+						setPasswordError(t("screen.login.error.userNotFound"));
+						break;
+					case "auth/email-already-in-use":
+						setEmailError(t("screen.login.error.emailInUse"));
+						break;
+					case "auth/weak-password":
+						setPasswordError(t("screen.login.error.weakPassword"));
 						break;
 					default:
-						setError(t("screen.login.error.server"));
+						setServerError(t("screen.login.error.server"));
 				}
 			} else {
-				setError(t("screen.login.error.server"));
+				setServerError(t("screen.login.error.server"));
 			}
 		} finally {
 			setLoading(false);
@@ -66,37 +105,85 @@ export default function LoginScreen() {
 	};
 
 	const formContent = (
-		<View className="gap-4">
-			<TextInput
-				label={t("screen.login.emailLabel")}
-				value={email}
-				onChangeText={setEmail}
-				mode="outlined"
-				keyboardType="email-address"
-				autoCapitalize="none"
-				autoComplete="email"
-			/>
+		<View className="gap-2">
+			<View>
+				<TextInput
+					label={t("screen.login.emailLabel")}
+					value={email}
+					onChangeText={(text) => {
+						setEmail(text);
+						setEmailError(null);
+					}}
+					mode="outlined"
+					keyboardType="email-address"
+					autoCapitalize="none"
+					autoComplete="email"
+					error={!!emailError}
+				/>
+				<HelperText type="error" visible={!!emailError}>
+					{emailError ?? ""}
+				</HelperText>
+			</View>
 
-			<TextInput
-				label={t("screen.login.passwordLabel")}
-				value={password}
-				onChangeText={setPassword}
-				mode="outlined"
-				secureTextEntry
-				autoComplete="password"
-			/>
+			<View>
+				<TextInput
+					label={t("screen.login.passwordLabel")}
+					value={password}
+					onChangeText={(text) => {
+						setPassword(text);
+						setPasswordError(null);
+					}}
+					mode="outlined"
+					secureTextEntry
+					autoComplete={mode === "signIn" ? "password" : "new-password"}
+					error={!!passwordError}
+				/>
+				<HelperText type="error" visible={!!passwordError}>
+					{passwordError ?? ""}
+				</HelperText>
+			</View>
+
+			{mode === "register" && (
+				<View>
+					<TextInput
+						label={t("screen.login.confirmPasswordLabel")}
+						value={confirmPassword}
+						onChangeText={(text) => {
+							setConfirmPassword(text);
+							setConfirmPasswordError(null);
+						}}
+						mode="outlined"
+						secureTextEntry
+						autoComplete="new-password"
+						error={!!confirmPasswordError}
+					/>
+					<HelperText type="error" visible={!!confirmPasswordError}>
+						{confirmPasswordError ?? ""}
+					</HelperText>
+				</View>
+			)}
 
 			<Button
 				mode="contained"
-				onPress={handleEmailSignIn}
+				onPress={handleSubmit}
 				loading={loading}
 				disabled={loading}
 				icon="email"
 			>
-				{t("screen.login.email")}
+				{t(mode === "signIn" ? "screen.login.email" : "screen.login.register")}
 			</Button>
 
-			<GoogleSignInButton onError={(msg) => setError(msg)} />
+			{mode === "signIn" && (
+				<GoogleSignInButton onError={(msg) => setServerError(msg)} />
+			)}
+
+			<Button mode="text" onPress={switchMode}>
+				{t(
+					mode === "signIn"
+						? "screen.login.switchToRegister"
+						: "screen.login.switchToSignIn",
+				)}
+			</Button>
 		</View>
 	);
 
@@ -107,7 +194,11 @@ export default function LoginScreen() {
 		>
 			<Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
 				<Appbar.Content
-					title={t("screen.login.title")}
+					title={t(
+						mode === "signIn"
+							? "screen.login.title"
+							: "screen.login.titleRegister",
+					)}
 					titleStyle={{ color: theme.colors.onPrimary }}
 				/>
 			</Appbar.Header>
@@ -129,12 +220,12 @@ export default function LoginScreen() {
 			</KeyboardAvoidingView>
 
 			<Snackbar
-				visible={!!error}
-				onDismiss={() => setError(null)}
+				visible={!!serverError}
+				onDismiss={() => setServerError(null)}
 				duration={4000}
-				action={{ label: t("common.ok"), onPress: () => setError(null) }}
+				action={{ label: t("common.ok"), onPress: () => setServerError(null) }}
 			>
-				{error ?? ""}
+				{serverError ?? ""}
 			</Snackbar>
 		</View>
 	);

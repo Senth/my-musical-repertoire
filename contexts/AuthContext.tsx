@@ -1,4 +1,5 @@
 import {
+	createUserWithEmailAndPassword,
 	signOut as firebaseSignOut,
 	GoogleAuthProvider,
 	onAuthStateChanged,
@@ -19,6 +20,7 @@ interface AuthContextType {
 	user: User | null;
 	loading: boolean;
 	signInWithEmail: (email: string, password: string) => Promise<void>;
+	registerWithEmail: (email: string, password: string) => Promise<void>;
 	signInWithGoogle: (idToken: string) => Promise<void>;
 	signOut: () => Promise<void>;
 }
@@ -41,6 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		await signInWithEmailAndPassword(auth, email, password);
 	};
 
+	const registerWithEmail = async (email: string, password: string) => {
+		await createUserWithEmailAndPassword(auth, email, password);
+	};
+
 	const signInWithGoogle = async (idToken: string) => {
 		const credential = GoogleAuthProvider.credential(idToken);
 		await signInWithCredential(auth, credential);
@@ -52,7 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	return (
 		<AuthContext.Provider
-			value={{ user, loading, signInWithEmail, signInWithGoogle, signOut }}
+			value={{
+				user,
+				loading,
+				signInWithEmail,
+				registerWithEmail,
+				signInWithGoogle,
+				signOut,
+			}}
 		>
 			{children}
 		</AuthContext.Provider>
