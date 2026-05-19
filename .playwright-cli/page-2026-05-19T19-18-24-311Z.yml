@@ -1,0 +1,111 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e55]:
+    - generic [ref=e57]:
+      - heading "Overview" [level=1] [ref=e60]
+      - generic [ref=e62]:
+        - generic [ref=e65]:
+          - generic [ref=e66]: Suggested Practices
+          - generic [ref=e69] [cursor=pointer]:
+            - generic [ref=e71]:
+              - generic [ref=e72]: This is not learning
+              - generic [ref=e73]: Hello
+            - generic [ref=e75]:
+              - generic [ref=e77]:
+                - button "Performance" [disabled]:
+                  - generic [ref=e79]: Performance
+              - generic [ref=e80]:
+                - progressbar [ref=e82]
+                - generic [ref=e85]: –
+              - generic [ref=e86]: Never practiced
+              - button "Practice" [ref=e88]:
+                - generic [ref=e90]: Practice
+          - generic [ref=e93] [cursor=pointer]:
+            - generic [ref=e95]:
+              - generic [ref=e96]: Hello
+              - generic [ref=e97]: Shohej
+            - generic [ref=e99]:
+              - generic [ref=e101]:
+                - button "Learning" [disabled]:
+                  - generic [ref=e103]: Learning
+              - generic [ref=e104]:
+                - progressbar [ref=e106]
+                - generic [ref=e109]: –
+              - generic [ref=e110]: Never practiced
+              - button "Practice" [ref=e112]:
+                - generic [ref=e114]: Practice
+          - generic [ref=e117] [cursor=pointer]:
+            - generic [ref=e119]:
+              - generic [ref=e120]: Another Piece
+              - generic [ref=e121]: Testing
+            - generic [ref=e123]:
+              - generic [ref=e125]:
+                - button "Learning" [disabled]:
+                  - generic [ref=e127]: Learning
+              - generic [ref=e128]:
+                - progressbar [ref=e130]
+                - generic [ref=e133]: –
+              - generic [ref=e134]: Never practiced
+              - button "Practice" [ref=e136]:
+                - generic [ref=e138]: Practice
+          - button "See all pieces" [ref=e140] [cursor=pointer]:
+            - generic [ref=e141]:
+              - generic [ref=e142]:
+                - img: 󰉹
+              - generic [ref=e143]: See all pieces
+          - generic [ref=e144]: Suggested Techniques
+          - generic [ref=e147] [cursor=pointer]:
+            - generic [ref=e150]: Hello
+            - generic [ref=e152]:
+              - generic [ref=e154]:
+                - button "Active" [disabled]:
+                  - generic [ref=e156]: Active
+              - generic [ref=e157]: New — not yet practiced
+              - button "Practice" [ref=e159]:
+                - generic [ref=e161]: Practice
+          - generic [ref=e164] [cursor=pointer]:
+            - generic [ref=e167]: C major
+            - generic [ref=e169]:
+              - generic [ref=e170]:
+                - generic [ref=e171]:
+                  - button "Active" [disabled]:
+                    - generic [ref=e173]: Active
+                - generic [ref=e174]:
+                  - button "Scale" [disabled]:
+                    - generic [ref=e176]: Scale
+              - generic [ref=e177]: Active · 4 days ago
+              - button "Practice" [ref=e179]:
+                - generic [ref=e181]: Practice
+          - button "See all techniques" [ref=e183] [cursor=pointer]:
+            - generic [ref=e184]:
+              - generic [ref=e185]:
+                - img: 󰉹
+              - generic [ref=e186]: See all techniques
+        - generic:
+          - button
+          - button "Add" [ref=e187]:
+            - button "Add" [ref=e188] [cursor=pointer]:
+              - generic:
+                - generic:
+                  - generic:
+                    - img: 󰐕
+    - tablist [ref=e190]:
+      - tab "  Overview" [selected] [ref=e192] [cursor=pointer]:
+        - generic [ref=e193]:
+          - generic [ref=e195]: 
+          - generic [ref=e197]: 
+        - generic [ref=e198]: Overview
+      - tab "  Pieces" [ref=e200] [cursor=pointer]:
+        - generic [ref=e201]:
+          - generic [ref=e203]: 
+          - generic [ref=e205]: 
+        - generic [ref=e206]: Pieces
+      - tab "  Techniques" [ref=e208] [cursor=pointer]:
+        - generic [ref=e209]:
+          - generic [ref=e211]: 
+          - generic [ref=e213]: 
+        - generic [ref=e214]: Techniques
+  - button "2 <button> cannot contain a nested <button" [ref=e216] [cursor=pointer]:
+    - generic [ref=e218]: "2"
+    - generic [ref=e219]: <button> cannot contain a nested <button
+    - button [ref=e220]:
+      - img [ref=e222]

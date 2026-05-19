@@ -161,9 +161,10 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] **Bugs**
     - [x] When practicing is done, we should return to the original page. So if we start pracicing from Overview, we should return from there (likewise if we first enter from the overview and go into the piece and then start practire). If we enter from pieces, we should go back to pieces after practice. Same goes with techniques.
     - [x] When pressing new practice or technique on web. The title focuses but then blurs immediately, which shows an error.
-    - [ ] Can't scroll on web on Overview, Pieces, or Technique pages, and probably sections as well.
-    - [ ] FAB button is not in the correct place (absolute positioned) and goes off screen when Overview, Pieces, or Technique pages have many items.
+    - [x] Can't scroll on web on Overview, Pieces, or Technique pages, and probably sections as well.
+    - [x] FAB button is not in the correct place (absolute positioned) and goes off screen when Overview, Pieces, or Technique pages have many items.
     - [x] Filter chip is stretched out over the whole row. I don't think this is how it's supposed to be according to MD3.
+    - [ ] Reset password not centered on the page
   - [ ] **Improvements**
     - [ ] Status filter on pieces/techniques should not show "Status" in the menu. Instead It would be good to have these as checkboxes so that you can select multiple at the same time. By default none is selected and is using default filtering.
 

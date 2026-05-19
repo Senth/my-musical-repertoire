@@ -1,0 +1,20 @@
+- generic [ref=e9]:
+  - generic [ref=e11]:
+    - heading "Techniques" [level=1] [ref=e14]
+    - generic [ref=e16]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - button "search" [disabled]
+        - search "Search techniques..." [ref=e20]
+        - button "clear" [ref=e22] [cursor=pointer]
+      - button "Status" [ref=e27] [cursor=pointer]:
+        - generic [ref=e29]: Status
+      - progressbar [ref=e31]
+      - button "Add technique" [ref=e46] [cursor=pointer]
+  - tablist [ref=e48]:
+    - tab "Overview" [ref=e50] [cursor=pointer]:
+      - generic [ref=e54]: Overview
+    - tab "Pieces" [ref=e56] [cursor=pointer]:
+      - generic [ref=e60]: Pieces
+    - tab "Techniques" [selected] [ref=e62] [cursor=pointer]:
+      - generic [ref=e66]: Techniques

@@ -9,6 +9,19 @@ body,
 	overflow: hidden;
 }
 
+/*
+ * NativeWind v5 preview emits `.flex-1` as `flex-grow: 1` only. React Native
+ * Web's base View class sets `flex-shrink: 0`, so `className="flex-1"` cannot
+ * shrink below its content size, which breaks ScrollView containment (scroll
+ * children inflate past the viewport). The `body` prefix bumps specificity
+ * above the RN-Web default so the full `flex: 1 1 0%` applies on web.
+ */
+body .flex-1 {
+	flex-shrink: 1;
+	flex-basis: 0%;
+	min-height: 0;
+}
+
 @media (prefers-color-scheme: dark) {
 	html,
 	body,
