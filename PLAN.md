@@ -163,30 +163,28 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
     - [x] When pressing new practice or technique on web. The title focuses but then blurs immediately, which shows an error.
     - [x] Can't scroll on web on Overview, Pieces, or Technique pages, and probably sections as well.
     - [x] FAB button is not in the correct place (absolute positioned) and goes off screen when Overview, Pieces, or Technique pages have many items.
+    - [ ] FAB button is not in the correct place and not in the same location across pages. (Too far up). Check MD3 guidelines for FAB placement.
     - [x] Filter chip is stretched out over the whole row. I don't think this is how it's supposed to be according to MD3.
     - [ ] Reset password not centered on the page
   - [ ] **Improvements**
     - [ ] Status filter on pieces/techniques should not show "Status" in the menu. Instead It would be good to have these as checkboxes so that you can select multiple at the same time. By default none is selected and is using default filtering.
+    - [ ] In practice screen, the BPM input should be pre-filled with the previous session's BPM for that piece/section/technique.
+    - [ ] When BPM has been set in the practice input field, add toggle Metronome on/off that plays a click track at the set BPM.
+    - [ ] If a piece has sections defined, better to show one section in Overview instead of full piece.
 
 ### Phase 3: Practice Task Model & Logging
 
-- [ ] Define reusable exercise block model
-  - [ ] Session domain (`technique`, `sight-reading`, `repertoire`)
-  - [ ] Repertoire focus category (`accuracy`, `rhythm`, `fingering`, `memory`, `tempo`, `tone`, `continuity`)
-  - [ ] Scope (`whole piece` or `section`) for repertoire blocks
-  - [ ] Reference to piece-level section when scope is `section` (not ad-hoc — use the piece's defined sections)
-  - [ ] Optional target BPM for tempo-relevant blocks (defaults to section's current BPM)
-  - [ ] Suggested duration
 - [ ] Per-block logging
   - [x] Log practice date
-  - [ ] Repertoire: accuracy result
-  - [ ] Repertoire: tempo achieved (BPM practiced at, updates section's current BPM)
-  - [ ] Repertoire: effort / perceived difficulty
-  - [ ] Repertoire: scope completed
+  - [ ] Pieces: accuracy result
+  - [ ] Pieces: tempo achieved (BPM practiced at, updates section's current BPM)
+  - [ ] Pieces: effort / perceived difficulty
+  - [ ] Pieces: scope completed
+  - [ ] Piece sections
   - [ ] Technique: completion + confidence/difficulty trend
   - [ ] Technique: optional tempo/BPM when relevant
-  - [ ] Sight-reading: material label + completion + perceived difficulty/confidence
   - [ ] Notes field (free text, optional)
+  - [ ] Sight-reading: material label + completion + perceived difficulty/confidence
 - [ ] Before/after comparison after saving
   - [x] Comparison screen component
 - [ ] Practice history screen
@@ -195,6 +193,13 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Technique-item history
   - [ ] Sight-reading history
 - [ ] Enable Firestore offline persistence
+- [ ] Define reusable exercise block model
+  - [ ] Session domain (`technique`, `sight-reading`, `repertoire`)
+  - [ ] Repertoire focus category (`accuracy`, `rhythm`, `fingering`, `memory`, `tempo`, `tone`, `continuity`)
+  - [ ] Scope (`whole piece` or `section`) for repertoire blocks
+  - [ ] Reference to piece-level section when scope is `section` (not ad-hoc — use the piece's defined sections)
+  - [ ] Optional target BPM for tempo-relevant blocks (defaults to section's current BPM)
+  - [ ] Suggested duration
 - [ ] Touch up UI/UX and fix any discrepancies
 
 ### Phase 4: Session Plan Generator
