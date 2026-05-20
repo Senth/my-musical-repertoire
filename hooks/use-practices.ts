@@ -48,6 +48,11 @@ export function useSavePractice() {
 		if (sectionId && achievedBpm != null) {
 			await updateSection(pieceId, sectionId, { currentBpm: achievedBpm });
 		}
+
+		// For full-piece practice (no section), denormalize BPM onto the piece
+		if (!sectionId && achievedBpm != null) {
+			await updatePiece(pieceId, { lastAchievedTempoBpm: achievedBpm });
+		}
 	};
 
 	return { savePractice };

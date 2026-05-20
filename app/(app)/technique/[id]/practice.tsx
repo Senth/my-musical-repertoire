@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import {
@@ -56,21 +56,34 @@ export default function PracticeTechniqueScreen() {
 			getBackDestination() as Parameters<typeof router.replace>[0],
 		);
 
-	const previousDataRef = useRef({
-		quality: technique?.lastQuality,
-		effort: technique?.lastEffort,
-		tempoBpm: technique?.lastAchievedTempoBpm,
-	});
+	const previousDataRef = useRef<{
+		quality: 1 | 2 | 3 | 4 | 5 | null | undefined;
+		effort: 1 | 2 | 3 | 4 | 5 | null | undefined;
+		tempoBpm: number | null | undefined;
+	}>({ quality: undefined, effort: undefined, tempoBpm: undefined });
+	const seededRef = useRef(false);
 
 	const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
 	const [effort, setEffort] = useState<1 | 2 | 3 | 4 | 5>(3);
-	const [tempoBpm, setTempoBpm] = useState<string>(
-		technique?.lastAchievedTempoBpm?.toString() ?? "",
-	);
+	const [tempoBpm, setTempoBpm] = useState<string>("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
+
+	// Seed BPM + capture previous data once technique loads (data arrives async).
+	// seededRef prevents overwriting user edits if Firestore fires again mid-session.
+	useEffect(() => {
+		if (technique && !seededRef.current) {
+			seededRef.current = true;
+			setTempoBpm(technique.lastAchievedTempoBpm?.toString() ?? "");
+			previousDataRef.current = {
+				quality: technique.lastQuality,
+				effort: technique.lastEffort,
+				tempoBpm: technique.lastAchievedTempoBpm,
+			};
+		}
+	}, [technique]);
 
 	const validateBpm = (text: string): string | null => {
 		if (!text.trim()) return null;
@@ -85,24 +98,18 @@ export default function PracticeTechniqueScreen() {
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
 
-	const hasTempoTarget = technique?.targetTempoBpm != null;
-
 	const handleSave = async () => {
 		if (!id) return;
-		if (hasTempoTarget) {
-			const bpmErr = validateBpm(tempoBpm);
-			setBpmError(bpmErr);
-			if (bpmErr) return;
-		}
+		const bpmErr = validateBpm(tempoBpm);
+		setBpmError(bpmErr);
+		if (bpmErr) return;
 		setLoading(true);
 		setError(null);
 		try {
 			await saveTechniqueLog(id, {
 				quality,
 				effort,
-				achievedTempoBpm: hasTempoTarget
-					? Number.parseFloat(tempoBpm) || null
-					: null,
+				achievedTempoBpm: Number.parseInt(tempoBpm.trim(), 10) || null,
 			});
 			setSaved(true);
 		} catch {
@@ -200,9 +207,7 @@ export default function PracticeTechniqueScreen() {
 					techniqueName={technique.title}
 					currentQuality={quality}
 					currentEffort={effort}
-					currentTempoBpm={
-						hasTempoTarget ? Number.parseFloat(tempoBpm) || null : null
-					}
+					currentTempoBpm={Number.parseInt(tempoBpm.trim(), 10) || null}
 					previousQuality={previousDataRef.current.quality}
 					previousEffort={previousDataRef.current.effort}
 					previousTempoBpm={previousDataRef.current.tempoBpm}
@@ -249,11 +254,11 @@ export default function PracticeTechniqueScreen() {
 								/>
 							</View>
 
-							{hasTempoTarget && (
-								<View className="gap-2">
-									<Text variant="titleSmall">
-										{t("screen.practiceTechnique.tempoAchievedLabel")}
-									</Text>
+							<View className="gap-2">
+								<Text variant="titleSmall">
+									{t("screen.practiceTechnique.tempoAchievedLabel")}
+								</Text>
+								{technique.targetTempoBpm != null && (
 									<Text
 										variant="bodySmall"
 										style={{ color: theme.colors.onSurfaceVariant }}
@@ -262,20 +267,20 @@ export default function PracticeTechniqueScreen() {
 											bpm: technique.targetTempoBpm,
 										})}
 									</Text>
-									<TextInput
-										mode="outlined"
-										keyboardType="numeric"
-										value={tempoBpm}
-										onChangeText={setTempoBpm}
-										placeholder="e.g. 80"
-										error={!!bpmError}
-										onBlur={handleBpmBlur}
-									/>
-									<HelperText type="error" visible={!!bpmError}>
-										{bpmError ?? ""}
-									</HelperText>
-								</View>
-							)}
+								)}
+								<TextInput
+									mode="outlined"
+									keyboardType="numeric"
+									value={tempoBpm}
+									onChangeText={setTempoBpm}
+									placeholder="e.g. 80"
+									error={!!bpmError}
+									onBlur={handleBpmBlur}
+								/>
+								<HelperText type="error" visible={!!bpmError}>
+									{bpmError ?? ""}
+								</HelperText>
+							</View>
 
 							<Button
 								mode="contained"

@@ -42,6 +42,7 @@ export interface Piece {
 	lastPracticed?: Date | null;
 	lastTechnicalMistakes?: PracticeMistakes;
 	lastMemoryMistakes?: PracticeMistakes;
+	lastAchievedTempoBpm?: number | null;
 	sectionCount?: number;
 	notes?: string | null;
 }

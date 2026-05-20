@@ -132,10 +132,16 @@ export default function PracticeScreen() {
 		? (sections.find((s) => s.id === selectedSectionId) ?? null)
 		: null;
 
-	// Re-initialize BPM whenever selected section changes
+	// Re-initialize BPM whenever section selection changes:
+	// - section selected → seed from section's currentBpm
+	// - full piece (no section) → seed from piece's lastAchievedTempoBpm
 	useEffect(() => {
-		setAchievedBpm(selectedSection?.currentBpm?.toString() ?? "");
-	}, [selectedSection?.currentBpm]);
+		if (selectedSection) {
+			setAchievedBpm(selectedSection.currentBpm?.toString() ?? "");
+		} else {
+			setAchievedBpm(piece?.lastAchievedTempoBpm?.toString() ?? "");
+		}
+	}, [selectedSection, piece]);
 
 	const handleSave = async () => {
 		if (!id) return;
@@ -149,10 +155,9 @@ export default function PracticeScreen() {
 
 		try {
 			const practiceDate = new Date(`${date}T12:00:00`);
-			const bpm =
-				selectedSectionId && achievedBpm.trim()
-					? Number.parseInt(achievedBpm.trim(), 10) || null
-					: null;
+			const bpm = achievedBpm.trim()
+				? Number.parseInt(achievedBpm.trim(), 10) || null
+				: null;
 			await savePractice(
 				id,
 				practiceDate,
@@ -294,25 +299,23 @@ export default function PracticeScreen() {
 								onPress={() => setSectionPickerVisible(true)}
 							/>
 
-							{selectedSection && (
-								<View className="gap-2">
-									<Text variant="titleSmall">
-										{t("screen.practice.achievedBpmLabel")}
-									</Text>
-									<TextInput
-										mode="outlined"
-										keyboardType="numeric"
-										value={achievedBpm}
-										onChangeText={setAchievedBpm}
-										placeholder="e.g. 80"
-										error={!!bpmError}
-										onBlur={handleBpmBlur}
-									/>
-									<HelperText type="error" visible={!!bpmError}>
-										{bpmError ?? ""}
-									</HelperText>
-								</View>
-							)}
+							<View className="gap-2">
+								<Text variant="titleSmall">
+									{t("screen.practice.achievedBpmLabel")}
+								</Text>
+								<TextInput
+									mode="outlined"
+									keyboardType="numeric"
+									value={achievedBpm}
+									onChangeText={setAchievedBpm}
+									placeholder="e.g. 80"
+									error={!!bpmError}
+									onBlur={handleBpmBlur}
+								/>
+								<HelperText type="error" visible={!!bpmError}>
+									{bpmError ?? ""}
+								</HelperText>
+							</View>
 							<Divider />
 
 							<View className="gap-2">

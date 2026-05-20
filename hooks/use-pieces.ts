@@ -25,6 +25,7 @@ interface FirestorePiece {
 	lastPracticed?: Timestamp | null;
 	lastTechnicalMistakes?: PracticeMistakes;
 	lastMemoryMistakes?: PracticeMistakes;
+	lastAchievedTempoBpm?: number | null;
 	sectionCount?: number;
 	notes?: string | null;
 }
@@ -46,6 +47,7 @@ function fromFirestore(
 		lastPracticed: data.lastPracticed?.toDate() ?? null,
 		lastTechnicalMistakes: data.lastTechnicalMistakes,
 		lastMemoryMistakes: data.lastMemoryMistakes,
+		lastAchievedTempoBpm: data.lastAchievedTempoBpm ?? null,
 		sectionCount: data.sectionCount ?? 0,
 		notes: data.notes ?? null,
 	};
@@ -121,6 +123,7 @@ export function useUpdatePiece() {
 				| "lastPracticed"
 				| "lastTechnicalMistakes"
 				| "lastMemoryMistakes"
+				| "lastAchievedTempoBpm"
 				| "notes"
 			>
 		>,

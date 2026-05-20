@@ -163,15 +163,19 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
     - [x] When pressing new practice or technique on web. The title focuses but then blurs immediately, which shows an error.
     - [x] Can't scroll on web on Overview, Pieces, or Technique pages, and probably sections as well.
     - [x] FAB button is not in the correct place (absolute positioned) and goes off screen when Overview, Pieces, or Technique pages have many items.
-    - [ ] FAB button is not in the correct place and not in the same location across pages. (Too far up). Check MD3 guidelines for FAB placement.
+    - [x] FAB button is not in the correct place and not in the same location across pages. (Too far up). Check MD3 guidelines for FAB placement.
     - [x] Filter chip is stretched out over the whole row. I don't think this is how it's supposed to be according to MD3.
   - [ ] **Improvements**
     - [ ] In practice screen, the BPM input should be pre-filled with the previous session's BPM (lastAchievedTempoBpm) for that piece/section/technique.
     - [ ] When BPM has been set in the practice input field, add toggle Metronome on/off that plays a click track at the set BPM.
-    - [ ] If a piece has sections defined, better to show one section in Overview instead of full piece.
 
 ### Phase 3: Practice Task Model & Logging
 
+- [ ] Piece Practice redesign:
+  - [ ] Remove date field (should always log with the current date)
+  - [ ] Sections should be displayed at bottom (between Memory mistakes and Save button)
+    - [ ] Display all sections in a compact list with label + progress line (current BPM vs target BPM) + Practice button for each section.
+    - [ ] When practing the full piece, but having mistakes it would be good to select specific sections that were problematic to focus on those. Unsure how to present this in the UI in a good way.
 - [ ] Per-block logging
   - [x] Log practice date
   - [ ] Pieces: accuracy result
