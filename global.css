@@ -10,6 +10,22 @@ body,
 }
 
 /*
+ * Use thin scrollbars across the app. The scrollbar width on thin is ~8px,
+ * narrower than the default ~17px. The FAB right offset is set to 24px in
+ * use-fab-style.web.ts (MD3's 16dp + 8px scrollbar clearance) so the FAB
+ * always sits 16dp from the content area edge when a scrollbar is present,
+ * and 24px from the viewport edge when there is none.
+ *
+ * Note: scrollbar-gutter: stable is intentionally NOT used globally because
+ * React Native Web nests many elements that would each reserve a gutter,
+ * accumulating unintended padding. Individual scroll containers in RN handle
+ * their own overflow layout.
+ */
+* {
+	scrollbar-width: thin;
+}
+
+/*
  * NativeWind v5 preview emits `.flex-1` as `flex-grow: 1` only. React Native
  * Web's base View class sets `flex-shrink: 0`, so `className="flex-1"` cannot
  * shrink below its content size, which breaks ScrollView containment (scroll

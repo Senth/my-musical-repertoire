@@ -15,10 +15,10 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { SectionDetailRow } from "@/components/section/SectionDetailRow";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
+import { useFabStyleStack } from "@/hooks/use-fab-style";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useSections } from "@/hooks/use-sections";
 import { formatDaysAgo } from "@/utils/date";
@@ -31,7 +31,7 @@ export default function PieceDetailScreen() {
 
 	const { pieces, loading: piecesLoading } = usePieces();
 	const { sections, loading: sectionsLoading } = useSections(id ?? "");
-	const insets = useSafeAreaInsets();
+	const fabStyle = useFabStyleStack();
 	const { deletePiece } = useDeletePiece();
 	const { updatePiece } = useUpdatePiece();
 
@@ -277,11 +277,7 @@ export default function PieceDetailScreen() {
 			<FAB
 				icon="plus"
 				accessibilityLabel={t("a11y.fab.addSection")}
-				style={{
-					position: "absolute",
-					right: 16,
-					bottom: insets.bottom + 16,
-				}}
+				style={fabStyle}
 				onPress={() => router.push(`/piece/${id}/section/new`)}
 			/>
 

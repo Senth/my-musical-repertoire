@@ -1,20 +1,24 @@
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, useWindowDimensions, View } from "react-native";
+import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import {
 	ActivityIndicator,
 	Button,
 	Card,
 	Chip,
 	FAB,
+	Portal,
+	Surface,
 	Text,
 	useTheme,
 } from "react-native-paper";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
+import { useFabStyleTabs } from "@/hooks/use-fab-style";
+import { useFabVisible } from "@/hooks/use-fab-visible";
 import { usePieces } from "@/hooks/use-pieces";
 import { useTechniques } from "@/hooks/use-techniques";
 import type { Piece } from "@/models/piece";
@@ -88,7 +92,13 @@ export default function OverviewScreen() {
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 	const tabBarHeight = useBottomTabBarHeight();
+	const fabStyle = useFabStyleTabs();
+	const fabVisible = useFabVisible();
 	const [fabOpen, setFabOpen] = useState(false);
+
+	useEffect(() => {
+		if (!fabVisible) setFabOpen(false);
+	}, [fabVisible]);
 
 	const suggested = getSuggestedPieces(pieces);
 	const suggestedTechniques = getSuggestedTechniques(techniques);
@@ -281,38 +291,90 @@ export default function OverviewScreen() {
 				</View>
 			</ScrollView>
 
-			<FAB.Group
-				open={fabOpen}
-				visible
-				icon={fabOpen ? "close" : "plus"}
-				accessibilityLabel={t("a11y.fab.add")}
-				actions={[
-					{
-						icon: "music",
-						label: t("a11y.fab.addPiece"),
-						onPress: () => {
-							setFabOpen(false);
-							router.push("/piece/add");
-						},
-						accessibilityLabel: t("a11y.fab.addPiece"),
-					},
-					{
-						icon: "piano",
-						label: t("a11y.fab.addTechnique"),
-						onPress: () => {
-							setFabOpen(false);
-							router.push("/technique/add");
-						},
-						accessibilityLabel: t("a11y.fab.addTechnique"),
-					},
-				]}
-				onStateChange={({ open }) => setFabOpen(open)}
-				style={{
-					position: "absolute",
-					right: 16,
-					bottom: tabBarHeight + 16,
-				}}
-			/>
+			{fabVisible && (
+				<Portal>
+					{fabOpen && (
+						<Pressable
+							style={{
+								position: "absolute",
+								top: 0,
+								left: 0,
+								right: 0,
+								bottom: 0,
+							}}
+							onPress={() => setFabOpen(false)}
+						/>
+					)}
+					{fabOpen && (
+						<View
+							style={{
+								position: "absolute",
+								right: fabStyle.right as number,
+								bottom: (fabStyle.bottom as number) + 56 + 8,
+								alignItems: "flex-end",
+								gap: 8,
+							}}
+						>
+							<View
+								style={{
+									flexDirection: "row",
+									alignItems: "center",
+									gap: 12,
+								}}
+							>
+								<Surface style={{ borderRadius: 4, elevation: 2 }}>
+									<Text
+										variant="labelLarge"
+										style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+									>
+										{t("a11y.fab.addTechnique")}
+									</Text>
+								</Surface>
+								<FAB
+									size="small"
+									icon="piano"
+									onPress={() => {
+										setFabOpen(false);
+										router.push("/technique/add");
+									}}
+									accessibilityLabel={t("a11y.fab.addTechnique")}
+								/>
+							</View>
+							<View
+								style={{
+									flexDirection: "row",
+									alignItems: "center",
+									gap: 12,
+								}}
+							>
+								<Surface style={{ borderRadius: 4, elevation: 2 }}>
+									<Text
+										variant="labelLarge"
+										style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+									>
+										{t("a11y.fab.addPiece")}
+									</Text>
+								</Surface>
+								<FAB
+									size="small"
+									icon="music"
+									onPress={() => {
+										setFabOpen(false);
+										router.push("/piece/add");
+									}}
+									accessibilityLabel={t("a11y.fab.addPiece")}
+								/>
+							</View>
+						</View>
+					)}
+					<FAB
+						icon={fabOpen ? "close" : "plus"}
+						accessibilityLabel={t("a11y.fab.add")}
+						style={fabStyle}
+						onPress={() => setFabOpen(!fabOpen)}
+					/>
+				</Portal>
+			)}
 		</View>
 	);
 }

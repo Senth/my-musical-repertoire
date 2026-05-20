@@ -1,4 +1,3 @@
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +12,7 @@ import {
 	IconButton,
 	List,
 	Menu,
+	Portal,
 	Searchbar,
 	Snackbar,
 	Text,
@@ -21,6 +21,8 @@ import {
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { StateFilterDropdown } from "@/components/ui/StateFilterDropdown";
+import { useFabStyleTabs } from "@/hooks/use-fab-style";
+import { useFabVisible } from "@/hooks/use-fab-visible";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
 import {
 	TECHNIQUE_STATES,
@@ -39,7 +41,8 @@ export default function TechniquesScreen() {
 	const router = useRouter();
 	const { techniques, loading } = useTechniques();
 	const { deleteTechnique } = useDeleteTechnique();
-	const tabBarHeight = useBottomTabBarHeight();
+	const fabStyle = useFabStyleTabs();
+	const fabVisible = useFabVisible();
 	const [menuVisible, setMenuVisible] = useState<string | null>(null);
 	const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
 	const [deletingItem, setDeletingItem] = useState<TechniqueItem | null>(null);
@@ -361,16 +364,16 @@ export default function TechniquesScreen() {
 				{deleteError ?? ""}
 			</Snackbar>
 
-			<FAB
-				icon="plus"
-				accessibilityLabel={t("a11y.fab.addTechnique")}
-				style={{
-					position: "absolute",
-					right: 16,
-					bottom: tabBarHeight + 16,
-				}}
-				onPress={() => router.push("/technique/add")}
-			/>
+			{fabVisible && (
+				<Portal>
+					<FAB
+						icon="plus"
+						accessibilityLabel={t("a11y.fab.addTechnique")}
+						style={fabStyle}
+						onPress={() => router.push("/technique/add")}
+					/>
+				</Portal>
+			)}
 		</View>
 	);
 }

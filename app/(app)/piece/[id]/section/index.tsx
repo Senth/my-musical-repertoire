@@ -18,8 +18,8 @@ import {
 	Text,
 	useTheme,
 } from "react-native-paper";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SectionListItem } from "@/components/section/SectionListItem";
+import { useFabStyleStack } from "@/hooks/use-fab-style";
 import { usePieces } from "@/hooks/use-pieces";
 import {
 	useArchiveSection,
@@ -40,7 +40,7 @@ export default function PieceSectionsScreen() {
 	const { sections, loading } = useSections(pieceId ?? "");
 	const { archiveSection } = useArchiveSection();
 	const { reorderSections } = useReorderSections();
-	const insets = useSafeAreaInsets();
+	const fabStyle = useFabStyleStack();
 
 	const [archivingSection, setArchivingSection] = useState<Section | null>(
 		null,
@@ -150,11 +150,7 @@ export default function PieceSectionsScreen() {
 				<FAB
 					icon="plus"
 					accessibilityLabel={t("a11y.fab.addSection")}
-					style={{
-						position: "absolute",
-						right: 16,
-						bottom: insets.bottom + 16,
-					}}
+					style={fabStyle}
 					onPress={handleAddPress}
 				/>
 

@@ -1,4 +1,3 @@
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,6 +10,7 @@ import {
 	IconButton,
 	List,
 	Menu,
+	Portal,
 	Searchbar,
 	Snackbar,
 	Text,
@@ -20,6 +20,8 @@ import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
 import { StateFilterDropdown } from "@/components/ui/StateFilterDropdown";
+import { useFabStyleTabs } from "@/hooks/use-fab-style";
+import { useFabVisible } from "@/hooks/use-fab-visible";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { PIECE_STATES, type Piece, type PieceState } from "@/models/piece";
 import { formatDaysAgo } from "@/utils/date";
@@ -35,7 +37,8 @@ export default function PiecesScreen() {
 	const router = useRouter();
 	const { pieces, loading } = usePieces();
 	const { deletePiece } = useDeletePiece();
-	const tabBarHeight = useBottomTabBarHeight();
+	const fabStyle = useFabStyleTabs();
+	const fabVisible = useFabVisible();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [stateFilter, setStateFilter] = useState<StateFilter>("all");
 	const [menuVisible, setMenuVisible] = useState<string | null>(null);
@@ -313,16 +316,16 @@ export default function PiecesScreen() {
 				{deleteError ?? ""}
 			</Snackbar>
 
-			<FAB
-				icon="plus"
-				accessibilityLabel={t("a11y.fab.addPiece")}
-				style={{
-					position: "absolute",
-					right: 16,
-					bottom: tabBarHeight + 16,
-				}}
-				onPress={() => router.push("/piece/add")}
-			/>
+			{fabVisible && (
+				<Portal>
+					<FAB
+						icon="plus"
+						accessibilityLabel={t("a11y.fab.addPiece")}
+						style={fabStyle}
+						onPress={() => router.push("/piece/add")}
+					/>
+				</Portal>
+			)}
 		</View>
 	);
 }
