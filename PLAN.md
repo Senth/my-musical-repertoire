@@ -165,9 +165,9 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
     - [x] FAB button is not in the correct place (absolute positioned) and goes off screen when Overview, Pieces, or Technique pages have many items.
     - [x] FAB button is not in the correct place and not in the same location across pages. (Too far up). Check MD3 guidelines for FAB placement.
     - [x] Filter chip is stretched out over the whole row. I don't think this is how it's supposed to be according to MD3.
-  - [ ] **Improvements**
-    - [ ] In practice screen, the BPM input should be pre-filled with the previous session's BPM (lastAchievedTempoBpm) for that piece/section/technique.
-    - [ ] When BPM has been set in the practice input field, add toggle Metronome on/off that plays a click track at the set BPM.
+  - [x] **Improvements**
+    - [x] In practice screen, the BPM input should be pre-filled with the previous session's BPM (lastAchievedTempoBpm) for that piece/section/technique.
+    - [x] When BPM has been set in the practice input field, add toggle Metronome on/off that plays a click track at the set BPM.
 
 ### Phase 3: Practice Task Model & Logging
 
@@ -284,6 +284,14 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - [ ] iOS support via EAS Build
 - [ ] Teacher-authored priorities or assignments layered on top of the student-first model
 - [ ] Touch up UI/UX and fix any discrepancies
+
+## Ideas
+
+- Metronome: time signature selector (4/4, 3/4, 6/8, 2/4) with beat-1 accent
+- Metronome: tap tempo input (tap 4–8 beats → computed BPM)
+- Metronome: volume / mute control
+- Metronome: visual beat pulse animation
+- Metronome: native Android audio via `expo-av` (replace current native no-op stub)
 
 ## Architecture Notes
 

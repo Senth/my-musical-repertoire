@@ -45,7 +45,11 @@
 		"neverPracticed": "Never practiced",
 		"score": "{{score}}/10",
 		"ok": "OK",
-		"filterStatus": "Status"
+		"filterStatus": "Status",
+		"metronome": {
+			"start": "Start Metronome",
+			"stop": "Stop Metronome"
+		}
 	},
 	"a11y": {
 		"fab": {

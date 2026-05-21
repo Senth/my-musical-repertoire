@@ -14,6 +14,7 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { MetronomeButton } from "@/components/practice/MetronomeButton";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import {
@@ -70,6 +71,7 @@ export default function PracticeTechniqueScreen() {
 	const [error, setError] = useState<string | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
+	const metronomeStopRef = useRef<(() => void) | null>(null);
 
 	// Seed BPM + capture previous data once technique loads (data arrives async).
 	// seededRef prevents overwriting user edits if Firestore fires again mid-session.
@@ -103,6 +105,7 @@ export default function PracticeTechniqueScreen() {
 		const bpmErr = validateBpm(tempoBpm);
 		setBpmError(bpmErr);
 		if (bpmErr) return;
+		metronomeStopRef.current?.();
 		setLoading(true);
 		setError(null);
 		try {
@@ -268,15 +271,24 @@ export default function PracticeTechniqueScreen() {
 										})}
 									</Text>
 								)}
-								<TextInput
-									mode="outlined"
-									keyboardType="numeric"
-									value={tempoBpm}
-									onChangeText={setTempoBpm}
-									placeholder="e.g. 80"
-									error={!!bpmError}
-									onBlur={handleBpmBlur}
-								/>
+								<View className="flex-row items-center gap-2">
+									<View className="flex-1">
+										<TextInput
+											mode="outlined"
+											keyboardType="numeric"
+											value={tempoBpm}
+											onChangeText={setTempoBpm}
+											placeholder="e.g. 80"
+											error={!!bpmError}
+											onBlur={handleBpmBlur}
+										/>
+									</View>
+									<MetronomeButton
+										bpm={tempoBpm}
+										disabled={!!bpmError}
+										stopRef={metronomeStopRef}
+									/>
+								</View>
 								<HelperText type="error" visible={!!bpmError}>
 									{bpmError ?? ""}
 								</HelperText>

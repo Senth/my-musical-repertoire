@@ -20,6 +20,7 @@ import {
 	TouchableRipple,
 	useTheme,
 } from "react-native-paper";
+import { MetronomeButton } from "@/components/practice/MetronomeButton";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
@@ -114,6 +115,7 @@ export default function PracticeScreen() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
+	const metronomeStopRef = useRef<(() => void) | null>(null);
 
 	const validateBpm = (text: string): string | null => {
 		if (!text.trim()) return null;
@@ -150,6 +152,7 @@ export default function PracticeScreen() {
 		setBpmError(bpmErr);
 		if (bpmErr) return;
 
+		metronomeStopRef.current?.();
 		setLoading(true);
 		setError(null);
 
@@ -303,15 +306,24 @@ export default function PracticeScreen() {
 								<Text variant="titleSmall">
 									{t("screen.practice.achievedBpmLabel")}
 								</Text>
-								<TextInput
-									mode="outlined"
-									keyboardType="numeric"
-									value={achievedBpm}
-									onChangeText={setAchievedBpm}
-									placeholder="e.g. 80"
-									error={!!bpmError}
-									onBlur={handleBpmBlur}
-								/>
+								<View className="flex-row items-center gap-2">
+									<View className="flex-1">
+										<TextInput
+											mode="outlined"
+											keyboardType="numeric"
+											value={achievedBpm}
+											onChangeText={setAchievedBpm}
+											placeholder="e.g. 80"
+											error={!!bpmError}
+											onBlur={handleBpmBlur}
+										/>
+									</View>
+									<MetronomeButton
+										bpm={achievedBpm}
+										disabled={!!bpmError}
+										stopRef={metronomeStopRef}
+									/>
+								</View>
 								<HelperText type="error" visible={!!bpmError}>
 									{bpmError ?? ""}
 								</HelperText>
