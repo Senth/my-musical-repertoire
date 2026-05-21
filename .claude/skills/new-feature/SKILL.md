@@ -5,11 +5,11 @@ description: "Structured new-feature kickoff for my-musical-repertoire. Use when
 
 # New Feature Skill
 
-Orchestrates the full new-feature lifecycle: identify → pedagogy review → scope → spec → delegate to feature-large for implementation. Owns everything up to implementation; feature-large owns implementation.
+Orchestrates the full new-feature lifecycle: identify → pedagogy review → scope → spec.
 
 ## When to Use This Skill
 
-- User says "implement feature", "start new feature", "work on PLAN.md item", "next feature", or similar
+- User says "start new feature", "work on PLAN.md item", "next feature", or similar
 - User is about to begin coding a feature from `PLAN.md`
 - User wants a structured requirements session before writing code
 
@@ -57,7 +57,7 @@ Do not proceed until grill-me reaches a shared understanding.
 
 ### Step 4 — Write the Spec
 
-Write a concise feature spec to `.tmp/specs/<feature-name>.md` (create the directory if it doesn't exist) covering:
+Write a concise feature spec to `docs/specs/<feature-name>.md` (create the directory if it doesn't exist) covering:
 
 1. **What** — one-sentence description
 2. **Why** — pedagogical / product rationale
@@ -65,21 +65,18 @@ Write a concise feature spec to `.tmp/specs/<feature-name>.md` (create the direc
 4. **UI flow** — screen(s) and interactions
 5. **Logging** — what gets recorded and why
 6. **Out of scope** — explicit exclusions to prevent scope creep
-7. **Phases** — ordered implementation phases, each small enough for one sub-agent session
+7. **Phases** — ordered implementation phases, each small enough for one sub-agent session. Last phase should include full end-to-end testing with playwright.
 
 The Phases section is required. Break the feature into concrete, independently deliverable phases (e.g., "Phase 1: data model + Firestore writes", "Phase 2: UI list view", "Phase 3: recommendation signal integration").
 
-### Step 5 — User Confirmation
+### Step 5 — Finalize Spec and Handoff
 
-Present the spec to the user and wait for explicit confirmation before proceeding. If the user requests changes, update the spec and confirm again.
+Once the spec is confirmed, add a # Phase 0: Handoff section to the top with instructions for the implementer agent.
 
-### Step 6 — Delegate to feature-large
-
-Once the spec is confirmed, invoke the `feature-large` agent with:
-
-- The path to the spec file (`.tmp/specs/<feature-name>.md`)
-- An explicit note that **scoping is already complete — skip grill-me**
+- The path to the spec file (`docs/specs/<feature-name>.md`)
 - Instruction to use the spec's Phases section as its implementation plan (no separate PLAN.md needed)
 - Instruction to check off the completed item in `PLAN.md` after all phases are verified working
 
-The skill's job ends here. feature-large owns implementation, verification, and PLAN.md completion.
+### Step 6 — User Confirmation
+
+Present the spec to the user and wait for explicit confirmation before proceeding. If the user requests changes, update the spec and confirm again.
