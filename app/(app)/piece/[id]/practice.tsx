@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform, ScrollView, useWindowDimensions, View } from "react-native";
+import { ScrollView, useWindowDimensions, View } from "react-native";
 import {
 	ActivityIndicator,
 	Appbar,
@@ -28,13 +28,6 @@ import { useSavePractice } from "@/hooks/use-practices";
 import { useSections } from "@/hooks/use-sections";
 import { PracticeMistakes } from "@/models/practice";
 import { formatDaysAgo } from "@/utils/date";
-
-function formatDateForInput(date: Date): string {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
-}
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
@@ -99,7 +92,6 @@ export default function PracticeScreen() {
 		memoryMistakes: piece?.lastMemoryMistakes,
 	});
 
-	const [date, setDate] = useState(formatDateForInput(new Date()));
 	const [technicalMistakes, setTechnicalMistakes] = useState<PracticeMistakes>(
 		PracticeMistakes.none,
 	);
@@ -157,7 +149,7 @@ export default function PracticeScreen() {
 		setError(null);
 
 		try {
-			const practiceDate = new Date(`${date}T12:00:00`);
+			const practiceDate = new Date();
 			const bpm = achievedBpm.trim()
 				? Number.parseInt(achievedBpm.trim(), 10) || null
 				: null;
@@ -289,6 +281,14 @@ export default function PracticeScreen() {
 								>
 									{piece.composer}
 								</Text>
+								<Text
+									variant="bodySmall"
+									style={{ color: theme.colors.onSurfaceVariant }}
+								>
+									{t("screen.practice.lastPracticed", {
+										when: formatDaysAgo(piece.lastPracticed, t),
+									})}
+								</Text>
 							</View>
 
 							<Divider />
@@ -329,44 +329,6 @@ export default function PracticeScreen() {
 								</HelperText>
 							</View>
 							<Divider />
-
-							<View className="gap-2">
-								<Text variant="titleSmall">
-									{t("screen.practice.dateLabel")}
-								</Text>
-								{Platform.OS === "web" ? (
-									<input
-										type="date"
-										value={date}
-										onChange={(e) => setDate(e.target.value)}
-										style={{
-											padding: 12,
-											borderRadius: 4,
-											border: `1px solid ${theme.colors.outline}`,
-											backgroundColor: theme.colors.surface,
-											color: theme.colors.onSurface,
-											fontSize: 16,
-										}}
-									/>
-								) : (
-									<Button
-										mode="outlined"
-										onPress={() => {
-											/* TODO: Native date picker */
-										}}
-									>
-										{new Date(`${date}T12:00:00`).toLocaleDateString()}
-									</Button>
-								)}
-								<Text
-									variant="bodySmall"
-									style={{ color: theme.colors.onSurfaceVariant }}
-								>
-									{t("screen.practice.lastPracticed", {
-										when: formatDaysAgo(piece.lastPracticed, t),
-									})}
-								</Text>
-							</View>
 
 							<View className="gap-2">
 								<Text variant="titleSmall">
