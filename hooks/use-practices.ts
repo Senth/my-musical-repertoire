@@ -1,7 +1,7 @@
 import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import type { PracticeMistakes } from "@/models/practice";
+import type { PracticeMistakes, PracticeTrigger } from "@/models/practice";
 import { useUpdatePiece } from "./use-pieces";
 import { useUpdateSection } from "./use-sections";
 
@@ -17,6 +17,8 @@ export function useSavePractice() {
 		memoryMistakes: PracticeMistakes,
 		achievedBpm?: number | null,
 		sectionId?: string | null,
+		flaggedSectionIds?: string[] | null,
+		triggeredFrom?: PracticeTrigger,
 	) => {
 		if (!user) throw new Error("Not authenticated");
 
@@ -35,6 +37,8 @@ export function useSavePractice() {
 			memoryMistakes,
 			achievedBpm: achievedBpm ?? null,
 			sectionId: sectionId ?? null,
+			flaggedSectionIds: flaggedSectionIds ?? null,
+			triggeredFrom: triggeredFrom ?? null,
 		});
 
 		// Denormalize last practice data onto the piece

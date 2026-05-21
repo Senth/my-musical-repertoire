@@ -197,10 +197,15 @@
 			"technicalMistakes": "Technical Mistakes",
 			"memoryMistakes": "Memory Mistakes",
 			"save": "Save",
-			"sectionLabel": "Section",
-			"sectionPickerTitle": "Select section",
-			"fullPiece": "Full piece",
 			"achievedBpmLabel": "Achieved BPM",
+			"sectionsPanel": {
+				"header": "Sections",
+				"headerCheckbox": "Sections — tap the ones that were problematic",
+				"bpmLine": "{{current}} / {{target}} BPM",
+				"practice": "Practice",
+				"a11yPractice": "Practice section {{label}}",
+				"a11yToggleFlag": "Flag section {{label}} as problematic"
+			},
 			"mistakeLevel": {
 				"none": "None",
 				"few": "Few",

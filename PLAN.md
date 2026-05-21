@@ -173,9 +173,9 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 
 - [ ] Piece Practice redesign:
   - [x] Remove date field (should always log with the current date)
-  - [ ] Sections should be displayed at bottom (between Memory mistakes and Save button)
-    - [ ] Display all sections in a compact list with label + progress line (current BPM vs target BPM) + Practice button for each section.
-    - [ ] When practing the full piece, but having mistakes it would be good to select specific sections that were problematic to focus on those. Unsure how to present this in the UI in a good way.
+  - [x] Sections should be displayed at bottom (between Memory mistakes and Save button)
+    - [x] Display all sections in a compact list with label + progress line (current BPM vs target BPM) + Practice button for each section.
+    - [x] When practing the full piece, but having mistakes it would be good to select specific sections that were problematic to focus on those. Unsure how to present this in the UI in a good way.
 - [ ] Piece section redesign:
   - [ ] Consult a UI/UX designer for this one, but also the piano teacher agent can provide input on what information is most important to show (and show be in focus). Make sure it looks good when piece has target bpm and section has working bpm set (see Terra's theme piece for example)
   - [ ] Manage & reorder sections can be removed.
@@ -213,6 +213,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Add Piece Album/Collection field (optional) and autocomplete it as well
   - [ ] Status filter on pieces/techniques should not show "Status" in the menu. Instead It would be good to have these as checkboxes so that you can select multiple at the same time. By default none is selected and is using default filtering.
   - [ ] Reset password not centered on the page
+  - [ ] Chips are too visual. They are visually bold and overwhelming making them the center of attention. Whereas they should only be complementary, but still be visually distinct enough to be easily scannable.
 
 ### Phase 4: Session Plan Generator
 
