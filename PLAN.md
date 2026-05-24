@@ -171,17 +171,17 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 
 ### Phase 3: Practice Task Model & Logging
 
-- [ ] Piece Practice redesign:
+- [x] Piece Practice redesign:
   - [x] Remove date field (should always log with the current date)
   - [x] Sections should be displayed at bottom (between Memory mistakes and Save button)
     - [x] Display all sections in a compact list with label + progress line (current BPM vs target BPM) + Practice button for each section.
     - [x] When practing the full piece, but having mistakes it would be good to select specific sections that were problematic to focus on those. Unsure how to present this in the UI in a good way.
-- [ ] Piece section redesign:
-  - [ ] Consult a UI/UX designer for this one, but also the piano teacher agent can provide input on what information is most important to show (and show be in focus). Make sure it looks good when piece has target bpm and section has working bpm set (see Terra's theme piece for example)
-  - [ ] Manage & reorder sections can be removed.
-  - [ ] Add small "Practice" button for each section.
-  - [ ] Left/Right padding missing
-  - [ ] Not all fields are shown.
+- [x] Piece section redesign:
+  - [x] Consult a UI/UX designer for this one, but also the piano teacher agent can provide input on what information is most important to show (and show be in focus). Make sure it looks good when piece has target bpm and section has working bpm set (see Terra's theme piece for example)
+  - [x] Manage & reorder sections can be removed.
+  - [x] Add small "Practice" button for each section.
+  - [x] Left/Right padding missing
+  - [x] Not all fields are shown.
 - [ ] Per-block logging
   - [x] Log practice date
   - [ ] Pieces: accuracy result
