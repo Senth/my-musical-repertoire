@@ -182,6 +182,13 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Add small "Practice" button for each section.
   - [x] Left/Right padding missing
   - [x] Not all fields are shown.
+- [ ] Define reusable exercise block model
+  - [ ] Session domain (`technique`, `sight-reading`, `repertoire`)
+  - [ ] Repertoire focus category (`accuracy`, `rhythm`, `fingering`, `memory`, `tempo`, `tone`, `continuity`)
+  - [ ] Scope (`whole piece` or `section`) for repertoire blocks
+  - [ ] Reference to piece-level section when scope is `section` (not ad-hoc — use the piece's defined sections)
+  - [ ] Optional target BPM for tempo-relevant blocks (defaults to section's current BPM)
+  - [ ] Suggested duration
 - [ ] Per-block logging
   - [x] Log practice date
   - [ ] Pieces: accuracy result
@@ -201,19 +208,14 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Technique-item history
   - [ ] Sight-reading history
 - [ ] Enable Firestore offline persistence
-- [ ] Define reusable exercise block model
-  - [ ] Session domain (`technique`, `sight-reading`, `repertoire`)
-  - [ ] Repertoire focus category (`accuracy`, `rhythm`, `fingering`, `memory`, `tempo`, `tone`, `continuity`)
-  - [ ] Scope (`whole piece` or `section`) for repertoire blocks
-  - [ ] Reference to piece-level section when scope is `section` (not ad-hoc — use the piece's defined sections)
-  - [ ] Optional target BPM for tempo-relevant blocks (defaults to section's current BPM)
-  - [ ] Suggested duration
 - [ ] Touch up UI/UX and fix any discrepancies
   - [ ] Autocomplete Composer field when creating/editing
   - [ ] Add Piece Album/Collection field (optional) and autocomplete it as well
   - [ ] Status filter on pieces/techniques should not show "Status" in the menu. Instead It would be good to have these as checkboxes so that you can select multiple at the same time. By default none is selected and is using default filtering.
   - [ ] Reset password not centered on the page
   - [ ] Chips are too visual. They are visually bold and overwhelming making them the center of attention. Whereas they should only be complementary, but still be visually distinct enough to be easily scannable.
+  - [ ] Paddings on each page (ask md3-designer to check for padding/margins consistency and adherence to guidelines)
+  - [ ] Some pages span whole width of the screen on desktop web, when they should be centered with a max width (like other pages).
 
 ### Phase 4: Session Plan Generator
 
