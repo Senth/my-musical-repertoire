@@ -15,6 +15,14 @@ const lightTheme = {
 		primary: "#7B1FA2",
 		primaryContainer: "#E1BEE7",
 		secondary: "#9C27B0",
+		warning: "#B45309",
+		onWarning: "#FFFFFF",
+		warningContainer: "#FEF3C7",
+		onWarningContainer: "#78350F",
+		success: "#047857",
+		onSuccess: "#FFFFFF",
+		successContainer: "#D1FAE5",
+		onSuccessContainer: "#064E3B",
 	},
 };
 
@@ -25,6 +33,14 @@ const darkTheme = {
 		primary: "#CE93D8",
 		primaryContainer: "#4A148C",
 		secondary: "#BA68C8",
+		warning: "#FCD34D",
+		onWarning: "#78350F",
+		warningContainer: "#92400E",
+		onWarningContainer: "#FEF3C7",
+		success: "#34D399",
+		onSuccess: "#064E3B",
+		successContainer: "#065F46",
+		onSuccessContainer: "#D1FAE5",
 	},
 };
 

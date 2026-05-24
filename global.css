@@ -38,6 +38,42 @@ body .flex-1 {
 	min-height: 0;
 }
 
+/*
+ * Same specificity bump for flex-direction utilities. React Native Web's base
+ * View class forces `flex-direction: column`, overriding NativeWind's
+ * `flex-row` / `flex-col` classes. Bump specificity via `body` prefix.
+ */
+body .flex-row {
+	flex-direction: row;
+}
+body .flex-col {
+	flex-direction: column;
+}
+body .flex-wrap {
+	flex-wrap: wrap;
+}
+body .items-center {
+	align-items: center;
+}
+body .items-start {
+	align-items: flex-start;
+}
+body .items-end {
+	align-items: flex-end;
+}
+body .justify-between {
+	justify-content: space-between;
+}
+body .justify-center {
+	justify-content: center;
+}
+body .justify-end {
+	justify-content: flex-end;
+}
+body .justify-start {
+	justify-content: flex-start;
+}
+
 @media (prefers-color-scheme: dark) {
 	html,
 	body,

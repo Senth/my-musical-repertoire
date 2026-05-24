@@ -27,6 +27,7 @@ interface FirestoreSection {
 	notes?: string | null;
 	archived: boolean;
 	createdAt?: { toDate: () => Date } | null;
+	lastPracticed?: { toDate: () => Date } | null;
 }
 
 function fromFirestore(
@@ -49,6 +50,7 @@ function fromFirestore(
 		notes: data.notes ?? null,
 		archived: data.archived ?? false,
 		createdAt: data.createdAt?.toDate() ?? null,
+		lastPracticed: data.lastPracticed?.toDate() ?? null,
 	};
 }
 
@@ -185,6 +187,7 @@ export function useUpdateSection() {
 				| "currentBpm"
 				| "targetBpmOverride"
 				| "notes"
+				| "lastPracticed"
 			>
 		>,
 	) => {

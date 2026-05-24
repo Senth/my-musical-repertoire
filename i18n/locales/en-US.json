@@ -35,7 +35,8 @@
 			"learning": "Learning",
 			"stabilizing": "Stabilizing",
 			"maintenance": "Maintenance"
-		}
+		},
+		"practiceLabel": "Practice this section"
 	},
 	"common": {
 		"today": "Today",
@@ -45,6 +46,7 @@
 		"neverPracticed": "Never practiced",
 		"score": "{{score}}/10",
 		"ok": "OK",
+		"done": "Done",
 		"filterStatus": "Status",
 		"metronome": {
 			"start": "Start Metronome",
@@ -117,7 +119,12 @@
 			"noNotes": "No notes yet",
 			"editNotes": "Edit notes",
 			"sections": "Sections",
-			"manageSections": "Manage & reorder sections",
+			"reorderSections": "Reorder sections",
+			"sectionsEmpty": {
+				"title": "No sections yet",
+				"body": "Break the piece into practiceable chunks",
+				"addButton": "Add section"
+			},
 			"pieceNotFound": "Piece not found",
 			"targetBpm": "Target: {{bpm}} BPM",
 			"lastPracticed": "Last practiced: {{when}}"
@@ -342,12 +349,6 @@
 			}
 		},
 		"pieceSections": {
-			"title": "Sections",
-			"empty": "No sections yet.\nTap + to add your first section.",
-			"menu": {
-				"edit": "Edit",
-				"archive": "Archive"
-			},
 			"archiveDialog": {
 				"title": "Archive Section",
 				"message": "\"{{name}}\" will be hidden from the list. Its practice history will be preserved.",

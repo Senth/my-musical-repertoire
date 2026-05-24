@@ -12,7 +12,9 @@ import {
 	Appbar,
 	Button,
 	Card,
+	Dialog,
 	HelperText,
+	Portal,
 	Snackbar,
 	Text,
 	TextInput,
@@ -23,6 +25,7 @@ import { useAutoFocusOnMount } from "@/hooks/use-auto-focus-on-mount";
 import { usePieces } from "@/hooks/use-pieces";
 import {
 	useAddSection,
+	useArchiveSection,
 	useSections,
 	useUpdateSection,
 } from "@/hooks/use-sections";
@@ -51,6 +54,7 @@ export default function SectionEditScreen() {
 
 	const { addSection } = useAddSection();
 	const { updateSection } = useUpdateSection();
+	const { archiveSection } = useArchiveSection();
 
 	const [label, setLabel] = useState("");
 	const [phase, setPhase] = useState<SectionPhase>("learning");
@@ -63,6 +67,8 @@ export default function SectionEditScreen() {
 	const [labelError, setLabelError] = useState<string | null>(null);
 	const [endBarError, setEndBarError] = useState<string | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
+	const [archiveDialogVisible, setArchiveDialogVisible] = useState(false);
+	const [archiveLoading, setArchiveLoading] = useState(false);
 	const hasSeeded = useRef(false);
 	const labelTouched = useRef(false);
 	const labelInputRef = useAutoFocusOnMount<{ focus: () => void }>(isNew);
@@ -263,8 +269,35 @@ export default function SectionEditScreen() {
 			>
 				{t("screen.pieceSections.form.save")}
 			</Button>
+
+			{!isNew && (
+				<Button
+					mode="outlined"
+					textColor={theme.colors.error}
+					style={{ borderColor: theme.colors.error }}
+					onPress={() => setArchiveDialogVisible(true)}
+					disabled={archiveLoading}
+				>
+					{t("screen.pieceSections.archiveDialog.confirm")}
+				</Button>
+			)}
 		</View>
 	);
+
+	const handleArchiveConfirm = async () => {
+		if (!pieceId || !sectionId || isNew) return;
+		setArchiveLoading(true);
+		try {
+			await archiveSection(pieceId, sectionId);
+			setArchiveDialogVisible(false);
+			router.back();
+		} catch {
+			setArchiveDialogVisible(false);
+			setError(t("error.deleteSection"));
+		} finally {
+			setArchiveLoading(false);
+		}
+	};
 
 	return (
 		<View
@@ -313,6 +346,40 @@ export default function SectionEditScreen() {
 					</View>
 				</ScrollView>
 			</KeyboardAvoidingView>
+
+			<Portal>
+				<Dialog
+					visible={archiveDialogVisible}
+					onDismiss={() => setArchiveDialogVisible(false)}
+				>
+					<Dialog.Title>
+						{t("screen.pieceSections.archiveDialog.title")}
+					</Dialog.Title>
+					<Dialog.Content>
+						<Text>
+							{t("screen.pieceSections.archiveDialog.message", {
+								name: section?.label ?? "",
+							})}
+						</Text>
+					</Dialog.Content>
+					<Dialog.Actions>
+						<Button
+							onPress={() => setArchiveDialogVisible(false)}
+							disabled={archiveLoading}
+						>
+							{t("screen.pieceSections.archiveDialog.cancel")}
+						</Button>
+						<Button
+							onPress={handleArchiveConfirm}
+							loading={archiveLoading}
+							disabled={archiveLoading}
+							textColor={theme.colors.error}
+						>
+							{t("screen.pieceSections.archiveDialog.confirm")}
+						</Button>
+					</Dialog.Actions>
+				</Dialog>
+			</Portal>
 
 			<Snackbar
 				visible={!!error}

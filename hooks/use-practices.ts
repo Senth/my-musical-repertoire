@@ -1,4 +1,11 @@
-import { addDoc, collection, Timestamp } from "firebase/firestore";
+import {
+	addDoc,
+	collection,
+	doc,
+	serverTimestamp,
+	Timestamp,
+	updateDoc,
+} from "firebase/firestore";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { PracticeMistakes, PracticeTrigger } from "@/models/practice";
@@ -56,6 +63,22 @@ export function useSavePractice() {
 		// For full-piece practice (no section), denormalize BPM onto the piece
 		if (!sectionId && achievedBpm != null) {
 			await updatePiece(pieceId, { lastAchievedTempoBpm: achievedBpm });
+		}
+
+		// Stamp lastPracticed on section(s).
+		const sectionRef = (sId: string) =>
+			doc(db, "users", user.uid, "pieces", pieceId, "sections", sId);
+
+		if (sectionId) {
+			await updateDoc(sectionRef(sectionId), {
+				lastPracticed: serverTimestamp(),
+			});
+		} else if (flaggedSectionIds && flaggedSectionIds.length > 0) {
+			await Promise.all(
+				flaggedSectionIds.map((sId) =>
+					updateDoc(sectionRef(sId), { lastPracticed: serverTimestamp() }),
+				),
+			);
 		}
 	};
 

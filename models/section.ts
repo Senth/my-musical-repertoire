@@ -20,4 +20,5 @@ export interface Section {
 	notes?: string | null;
 	archived: boolean;
 	createdAt?: Date | null;
+	lastPracticed?: Date | null;
 }
