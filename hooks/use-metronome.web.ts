@@ -30,7 +30,7 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
 		osc.type = "triangle";
 		osc.frequency.value = CLICK_FREQ_HZ;
 		gain.gain.setValueAtTime(0.0001, time);
-		gain.gain.exponentialRampToValueAtTime(0.5, time + 0.002);
+		gain.gain.exponentialRampToValueAtTime(1.0, time + 0.002);
 		gain.gain.exponentialRampToValueAtTime(0.0001, time + CLICK_DUR_S);
 		osc.connect(gain);
 		gain.connect(ctx.destination);
