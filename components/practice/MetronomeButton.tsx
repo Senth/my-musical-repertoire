@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "react-native-paper";
+import { Button, Tooltip } from "react-native-paper";
 import { useMetronome } from "@/hooks/use-metronome";
 
 interface MetronomeButtonProps {
@@ -36,6 +36,13 @@ export function MetronomeButton({
 
 	const { isRunning, toggle, stop } = useMetronome(debouncedBpm);
 
+	// Auto-stop when BPM becomes invalid/empty while metronome is running
+	useEffect(() => {
+		if (!valid && isRunning) {
+			stop();
+		}
+	}, [valid, isRunning, stop]);
+
 	useEffect(() => {
 		if (!stopRef) return;
 		stopRef.current = stop;
@@ -44,9 +51,7 @@ export function MetronomeButton({
 		};
 	}, [stop, stopRef]);
 
-	if (!bpm.trim()) return null;
-
-	return (
+	const button = (
 		<Button
 			mode="outlined"
 			icon="metronome"
@@ -56,4 +61,12 @@ export function MetronomeButton({
 			{isRunning ? t("common.metronome.stop") : t("common.metronome.start")}
 		</Button>
 	);
+
+	if (!valid) {
+		return (
+			<Tooltip title={t("common.metronome.enterBpmToEnable")}>{button}</Tooltip>
+		);
+	}
+
+	return button;
 }

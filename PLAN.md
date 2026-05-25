@@ -219,7 +219,8 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Paddings on each page (ask md3-designer to check for padding/margins consistency and adherence to guidelines)
   - [ ] Some pages span whole width of the screen on desktop web, when they should be centered with a max width (like other pages).
   - [ ] Some self-estimation bars uses numbers, some text. We should be consistent. Ideally the "best" should be at the same location (to the right). For examlp effort should be low, but it's on the left side. I think it's better to have text than numbers. However, we need to make sure that works even when the text doesn't fit (should maybe be smaller text so always fits?)
-  - [ ] Always show metronome button, but should be disabled when BPM is not set.
+  - [x] Always show metronome button, but should be disabled when BPM is not set.
+  - [ ] When adding piece, section, or technique. Title is focused on web, but immediately blurred. Try to fix with playwright.
 
 ### Phase 4: Session Plan Generator
 

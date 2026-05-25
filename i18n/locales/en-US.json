@@ -50,7 +50,8 @@
 		"filterStatus": "Status",
 		"metronome": {
 			"start": "Start Metronome",
-			"stop": "Stop Metronome"
+			"stop": "Stop Metronome",
+			"enterBpmToEnable": "Enter a BPM to enable the metronome"
 		}
 	},
 	"a11y": {
