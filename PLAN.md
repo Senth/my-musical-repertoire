@@ -209,6 +209,8 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Sight-reading history
 - [ ] Enable Firestore offline persistence
 - [ ] Touch up UI/UX and fix any discrepancies
+  - [ ] Piece practice page should show the bars, and target BPM.
+  - [ ] Metronome gain should be even higher.
   - [ ] Autocomplete Composer field when creating/editing
   - [ ] Add Piece Album/Collection field (optional) and autocomplete it as well
   - [ ] Status filter on pieces/techniques should not show "Status" in the menu. Instead It would be good to have these as checkboxes so that you can select multiple at the same time. By default none is selected and is using default filtering.
@@ -216,6 +218,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Chips are too visual. They are visually bold and overwhelming making them the center of attention. Whereas they should only be complementary, but still be visually distinct enough to be easily scannable.
   - [ ] Paddings on each page (ask md3-designer to check for padding/margins consistency and adherence to guidelines)
   - [ ] Some pages span whole width of the screen on desktop web, when they should be centered with a max width (like other pages).
+  - [ ] Some self-estimation bars uses numbers, some text. We should be consistent. Ideally the "best" should be at the same location (to the right). For examlp effort should be low, but it's on the left side. I think it's better to have text than numbers. However, we need to make sure that works even when the text doesn't fit (should maybe be smaller text so always fits?)
 
 ### Phase 4: Session Plan Generator
 
