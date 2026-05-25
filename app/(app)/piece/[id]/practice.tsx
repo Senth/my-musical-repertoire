@@ -321,10 +321,43 @@ export default function PracticeScreen() {
 
 							<Divider />
 
+							{scopedSection?.startBar != null && (
+								<Text
+									variant="bodyMedium"
+									style={{ color: theme.colors.onSurfaceVariant }}
+								>
+									{scopedSection.endBar != null
+										? t("screen.pieceSections.barRange", {
+												start: scopedSection.startBar,
+												end: scopedSection.endBar,
+											})
+										: t("screen.pieceSections.barFrom", {
+												start: scopedSection.startBar,
+											})}
+								</Text>
+							)}
+
 							<View className="gap-2">
 								<Text variant="titleSmall">
 									{t("screen.practice.achievedBpmLabel")}
 								</Text>
+								{(() => {
+									const effectiveTarget = scopedSection
+										? (scopedSection.targetBpmOverride ??
+											piece.targetTempoBpm ??
+											null)
+										: (piece.targetTempoBpm ?? null);
+									return effectiveTarget != null ? (
+										<Text
+											variant="bodySmall"
+											style={{ color: theme.colors.onSurfaceVariant }}
+										>
+											{t("screen.practiceTechnique.targetBpm", {
+												bpm: effectiveTarget,
+											})}
+										</Text>
+									) : null;
+								})()}
 								<View className="flex-row items-center gap-2">
 									<View className="flex-1">
 										<TextInput
