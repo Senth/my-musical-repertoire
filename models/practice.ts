@@ -1,4 +1,8 @@
-export type PracticeTrigger = "full-piece" | "section-panel" | "direct";
+export type PracticeTrigger =
+	| "full-piece"
+	| "section-panel"
+	| "direct"
+	| "session-coach";
 
 export interface PiecePractice {
 	id?: string;

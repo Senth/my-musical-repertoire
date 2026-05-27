@@ -11,9 +11,10 @@ import {
 	where,
 	writeBatch,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePieces } from "@/hooks/use-pieces";
 import type { Section, SectionPhase } from "@/models/section";
 
 interface FirestoreSection {
@@ -263,6 +264,64 @@ export function useReorderSections() {
 	};
 
 	return { reorderSections };
+}
+
+export function useAllSections() {
+	const { user } = useAuth();
+	const { pieces } = usePieces();
+	const [sectionsByPiece, setSectionsByPiece] = useState<
+		Record<string, Section[]>
+	>({});
+	const [loading, setLoading] = useState(true);
+
+	const pieceIds = pieces
+		.map((p) => p.id)
+		.filter((id): id is string => !!id)
+		.sort()
+		.join(",");
+
+	useEffect(() => {
+		if (!user) {
+			setSectionsByPiece({});
+			setLoading(false);
+			return;
+		}
+		const ids = pieceIds ? pieceIds.split(",") : [];
+		if (ids.length === 0) {
+			setSectionsByPiece({});
+			setLoading(false);
+			return;
+		}
+		const unsubs: Array<() => void> = [];
+		const seen = new Set<string>();
+		for (const pid of ids) {
+			const q = query(
+				sectionsRef(user.uid, pid),
+				where("archived", "==", false),
+				orderBy("order", "asc"),
+			);
+			const unsub = onSnapshot(q, (snap) => {
+				const arr = snap.docs.map((d) =>
+					fromFirestore(d.id, d.data() as FirestoreSection, pid, user.uid),
+				);
+				setSectionsByPiece((prev) => ({ ...prev, [pid]: arr }));
+				seen.add(pid);
+				if (seen.size === ids.length) {
+					setLoading(false);
+				}
+			});
+			unsubs.push(unsub);
+		}
+		return () => {
+			for (const u of unsubs) u();
+		};
+	}, [user, pieceIds]);
+
+	const sections = useMemo(
+		() => Object.values(sectionsByPiece).flat(),
+		[sectionsByPiece],
+	);
+	return { sections, loading };
 }
 
 export async function getSectionCount(

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import {
@@ -19,10 +19,11 @@ import { MetronomeButton } from "@/components/practice/MetronomeButton";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
+import { useCoach, useRegisterCoachSave } from "@/contexts/CoachContext";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { useSavePractice } from "@/hooks/use-practices";
 import { useSections } from "@/hooks/use-sections";
-import { PracticeMistakes } from "@/models/practice";
+import { PracticeMistakes, type PracticeTrigger } from "@/models/practice";
 import { formatDaysAgo } from "@/utils/date";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
@@ -50,27 +51,36 @@ const MISTAKE_BUTTONS = [
 	},
 ] as const;
 
-export default function PracticeScreen() {
+export interface PiecePracticeContentProps {
+	pieceId: string;
+	sectionId?: string | null;
+	from?: string;
+	triggerOverride?: PracticeTrigger;
+}
+
+export function PiecePracticeContent({
+	pieceId,
+	sectionId: sectionIdProp,
+	from,
+	triggerOverride,
+}: PiecePracticeContentProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
-	const { id, from, sectionId } = useLocalSearchParams<{
-		id: string;
-		from?: string;
-		sectionId?: string;
-	}>();
+	const coach = useCoach();
+	const inCoach = coach.inCoach;
 	const { pieces, loading: piecesLoading } = usePieces();
-	const { sections } = useSections(id ?? "");
+	const { sections } = useSections(pieceId);
 	const { savePractice } = useSavePractice();
 	const { deletePiece } = useDeletePiece();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
-	const piece = pieces.find((p) => p.id === id);
+	const piece = pieces.find((p) => p.id === pieceId);
 
 	const getBackDestination = (): string => {
 		if (from === "pieces") return "/(app)/(tabs)/piece";
-		if (from === "piece-detail") return `/piece/${id}`;
+		if (from === "piece-detail") return `/piece/${pieceId}`;
 		return "/(app)/(tabs)/overview";
 	};
 
@@ -105,11 +115,16 @@ export default function PracticeScreen() {
 	const [saved, setSaved] = useState(false);
 	const metronomeStopRef = useRef<(() => void) | null>(null);
 
-	const validateBpm = (text: string): string | null => {
-		if (!text.trim()) return null;
-		const n = Number.parseInt(text.trim(), 10);
-		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
-	};
+	const validateBpm = useCallback(
+		(text: string): string | null => {
+			if (!text.trim()) return null;
+			const n = Number.parseInt(text.trim(), 10);
+			return Number.isNaN(n) || n < 20 || n > 240
+				? t("error.bpmInvalid")
+				: null;
+		},
+		[t],
+	);
 
 	const handleBpmBlur = () => {
 		setBpmError(validateBpm(achievedBpm));
@@ -123,8 +138,8 @@ export default function PracticeScreen() {
 		[sections],
 	);
 
-	const scopedSection = sectionId
-		? (sections.find((s) => s.id === sectionId) ?? null)
+	const scopedSection = sectionIdProp
+		? (sections.find((s) => s.id === sectionIdProp) ?? null)
 		: null;
 
 	useEffect(() => {
@@ -149,30 +164,28 @@ export default function PracticeScreen() {
 	const handlePracticeSection = (sid: string) => {
 		metronomeStopRef.current?.();
 		router.push(
-			`/piece/${id}/practice?sectionId=${sid}&from=${from ?? "overview"}`,
+			`/piece/${pieceId}/practice?sectionId=${sid}&from=${from ?? "overview"}`,
 		);
 	};
 
-	const handleSave = async () => {
-		if (!id) return;
-
+	const performSave = useCallback(async (): Promise<{ ok: boolean }> => {
+		if (!pieceId) return { ok: false };
 		const bpmErr = validateBpm(achievedBpm);
 		setBpmError(bpmErr);
-		if (bpmErr) return;
-
+		if (bpmErr) return { ok: false };
 		metronomeStopRef.current?.();
 		setLoading(true);
 		setError(null);
-
 		try {
 			const practiceDate = new Date();
 			const bpm = achievedBpm.trim()
 				? Number.parseInt(achievedBpm.trim(), 10) || null
 				: null;
-			const triggeredFrom = scopedSection ? "section-panel" : "full-piece";
+			const triggeredFrom: PracticeTrigger =
+				triggerOverride ?? (scopedSection ? "section-panel" : "full-piece");
 			const flagged = scopedSection ? null : flaggedSectionIds;
 			await savePractice(
-				id,
+				pieceId,
 				practiceDate,
 				technicalMistakes,
 				memoryMistakes,
@@ -181,19 +194,43 @@ export default function PracticeScreen() {
 				flagged,
 				triggeredFrom,
 			);
-			setSaved(true);
+			return { ok: true };
 		} catch {
 			setError(t("error.firebase"));
+			return { ok: false };
 		} finally {
 			setLoading(false);
 		}
+	}, [
+		pieceId,
+		validateBpm,
+		achievedBpm,
+		triggerOverride,
+		scopedSection,
+		flaggedSectionIds,
+		savePractice,
+		technicalMistakes,
+		memoryMistakes,
+		t,
+	]);
+
+	const handleSave = async () => {
+		const result = await performSave();
+		if (result.ok) setSaved(true);
 	};
 
+	useRegisterCoachSave(
+		useCallback(async () => {
+			const result = await performSave();
+			return { saved: result.ok };
+		}, [performSave]),
+	);
+
 	const handleDelete = async () => {
-		if (!id) return;
+		if (!pieceId) return;
 		setDeleteLoading(true);
 		try {
-			await deletePiece(id);
+			await deletePiece(pieceId);
 			router.replace("/(app)/(tabs)/piece");
 		} catch {
 			setDeleteDialogVisible(false);
@@ -237,46 +274,48 @@ export default function PracticeScreen() {
 			className="flex-1"
 			style={{ backgroundColor: theme.colors.background }}
 		>
-			<Appbar.Header>
-				<Appbar.BackAction onPress={() => router.back()} />
-				<Appbar.Content
-					title={
-						piece?.title
-							? `${piece.title}${titleSuffix}`
-							: t("screen.practice.title")
-					}
-				/>
-				<Menu
-					visible={headerMenuVisible}
-					onDismiss={() => setHeaderMenuVisible(false)}
-					anchor={
-						<Appbar.Action
-							icon="dots-vertical"
-							accessibilityLabel={t("a11y.menu.options")}
-							onPress={() => setHeaderMenuVisible(true)}
+			{!inCoach && (
+				<Appbar.Header>
+					<Appbar.BackAction onPress={() => router.back()} />
+					<Appbar.Content
+						title={
+							piece?.title
+								? `${piece.title}${titleSuffix}`
+								: t("screen.practice.title")
+						}
+					/>
+					<Menu
+						visible={headerMenuVisible}
+						onDismiss={() => setHeaderMenuVisible(false)}
+						anchor={
+							<Appbar.Action
+								icon="dots-vertical"
+								accessibilityLabel={t("a11y.menu.options")}
+								onPress={() => setHeaderMenuVisible(true)}
+							/>
+						}
+					>
+						<Menu.Item
+							leadingIcon="pencil"
+							onPress={() => {
+								setHeaderMenuVisible(false);
+								router.push(`/piece/${pieceId}/edit`);
+							}}
+							title={t("screen.pieces.menu.edit")}
 						/>
-					}
-				>
-					<Menu.Item
-						leadingIcon="pencil"
-						onPress={() => {
-							setHeaderMenuVisible(false);
-							router.push(`/piece/${id}/edit`);
-						}}
-						title={t("screen.pieces.menu.edit")}
-					/>
-					<Menu.Item
-						leadingIcon="delete"
-						onPress={() => {
-							setHeaderMenuVisible(false);
-							setDeleteDialogVisible(true);
-						}}
-						title={t("screen.pieces.menu.delete")}
-					/>
-				</Menu>
-			</Appbar.Header>
+						<Menu.Item
+							leadingIcon="delete"
+							onPress={() => {
+								setHeaderMenuVisible(false);
+								setDeleteDialogVisible(true);
+							}}
+							title={t("screen.pieces.menu.delete")}
+						/>
+					</Menu>
+				</Appbar.Header>
+			)}
 
-			{saved ? (
+			{saved && !inCoach ? (
 				<PracticeComparison
 					pieceName={`${piece.composer} — ${piece.title}`}
 					currentTechnical={technicalMistakes}
@@ -419,35 +458,56 @@ export default function PracticeScreen() {
 								/>
 							)}
 
-							<Button
-								mode="contained"
-								onPress={handleSave}
-								loading={loading}
-								disabled={loading}
-							>
-								{t("screen.practice.save")}
-							</Button>
+							{!inCoach && (
+								<Button
+									mode="contained"
+									onPress={handleSave}
+									loading={loading}
+									disabled={loading}
+								>
+									{t("screen.practice.save")}
+								</Button>
+							)}
 						</View>
 					</View>
 				</ScrollView>
 			)}
 
-			<Snackbar
-				visible={!!error}
-				onDismiss={() => setError(null)}
-				duration={4000}
-				action={{ label: t("common.ok"), onPress: () => setError(null) }}
-			>
-				{error ?? ""}
-			</Snackbar>
+			{!inCoach && (
+				<Snackbar
+					visible={!!error}
+					onDismiss={() => setError(null)}
+					duration={4000}
+					action={{ label: t("common.ok"), onPress: () => setError(null) }}
+				>
+					{error ?? ""}
+				</Snackbar>
+			)}
 
-			<DeletePieceDialog
-				visible={deleteDialogVisible}
-				pieceName={piece?.title ?? ""}
-				loading={deleteLoading}
-				onConfirm={handleDelete}
-				onDismiss={() => setDeleteDialogVisible(false)}
-			/>
+			{!inCoach && (
+				<DeletePieceDialog
+					visible={deleteDialogVisible}
+					pieceName={piece?.title ?? ""}
+					loading={deleteLoading}
+					onConfirm={handleDelete}
+					onDismiss={() => setDeleteDialogVisible(false)}
+				/>
+			)}
 		</View>
+	);
+}
+
+export default function PracticeScreen() {
+	const { id, from, sectionId } = useLocalSearchParams<{
+		id: string;
+		from?: string;
+		sectionId?: string;
+	}>();
+	return (
+		<PiecePracticeContent
+			pieceId={id}
+			sectionId={sectionId ?? null}
+			from={from}
+		/>
 	);
 }

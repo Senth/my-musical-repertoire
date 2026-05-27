@@ -349,6 +349,63 @@
 				"backToTechnique": "Back to Technique"
 			}
 		},
+		"session": {
+			"newSession": "New Practice Session",
+			"emphasis": {
+				"balanced": "Balanced focus",
+				"technique-heavy": "Technique focused",
+				"reading-heavy": "Reading focused",
+				"repertoire-only": "Repertoire focused"
+			},
+			"setup": {
+				"title": "Set up session",
+				"minutesLabel": "Total minutes",
+				"minutesValue": "{{minutes}} min",
+				"techniqueLabel": "Include technique",
+				"sightReadingLabel": "Include sight-reading",
+				"emphasisLabel": "Emphasis",
+				"preview": "Estimated plan",
+				"noEligibleContent": "No content available — added to repertoire",
+				"start": "Start session",
+				"noContent": "No pieces or techniques yet — add some first"
+			},
+			"block": {
+				"warmup": "Warmup",
+				"technique": "Technique",
+				"sight-reading": "Sight-reading",
+				"repertoire-learning": "Learning",
+				"repertoire-stabilizing": "Stabilizing",
+				"repertoire-maintenance": "Maintenance",
+				"minutes": "{{minutes}} min",
+				"unspecified": "Your choice"
+			},
+			"coach": {
+				"title": "Coach",
+				"sessionLabel": "Session",
+				"blockLabel": "Block {{current}}/{{total}}",
+				"saveAndNext": "Save & next block",
+				"skip": "Skip",
+				"extend": "Extend +2 min",
+				"sightReadingBody": "Sight-reading — pick your material",
+				"warmupBody": "Warmup — gentle scales of your choice",
+				"done": "Done"
+			},
+			"resume": {
+				"banner": "Session in progress — {{emphasis}}, {{minutes}} min",
+				"blockOf": "Block {{current}} of {{total}}: {{title}}",
+				"resume": "Resume",
+				"end": "End"
+			},
+			"summary": {
+				"title": "Session complete",
+				"totalPracticed": "Total practiced: {{practiced}} of {{total}} min",
+				"blocksDone": "Blocks done: {{done}} of {{total}}",
+				"blocksSkipped": " ({{skipped}} skipped)",
+				"whatYouPracticed": "What you practiced",
+				"skipped": "(skipped)",
+				"done": "Done"
+			}
+		},
 		"pieceSections": {
 			"archiveDialog": {
 				"title": "Archive Section",

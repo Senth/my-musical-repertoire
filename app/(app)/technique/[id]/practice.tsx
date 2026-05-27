@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import {
@@ -17,6 +17,7 @@ import {
 import { MetronomeButton } from "@/components/practice/MetronomeButton";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
+import { useCoach, useRegisterCoachSave } from "@/contexts/CoachContext";
 import {
 	useDeleteTechnique,
 	useSaveTechniqueLog,
@@ -25,22 +26,31 @@ import {
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
-export default function PracticeTechniqueScreen() {
+export interface TechniquePracticeContentProps {
+	techniqueId: string;
+	from?: string;
+}
+
+export function TechniquePracticeContent({
+	techniqueId,
+	from,
+}: TechniquePracticeContentProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
-	const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+	const coach = useCoach();
+	const inCoach = coach.inCoach;
 	const { techniques, loading: techniquesLoading } = useTechniques();
 	const { saveTechniqueLog } = useSaveTechniqueLog();
 	const { deleteTechnique } = useDeleteTechnique();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
-	const technique = techniques.find((t) => t.id === id);
+	const technique = techniques.find((tn) => tn.id === techniqueId);
 
 	const getBackDestination = (): string => {
 		if (from === "overview") return "/(app)/(tabs)/overview";
-		if (from === "technique-detail") return `/technique/${id}`;
+		if (from === "technique-detail") return `/technique/${techniqueId}`;
 		return "/(app)/(tabs)/technique";
 	};
 
@@ -73,8 +83,6 @@ export default function PracticeTechniqueScreen() {
 	const [saved, setSaved] = useState(false);
 	const metronomeStopRef = useRef<(() => void) | null>(null);
 
-	// Seed BPM + capture previous data once technique loads (data arrives async).
-	// seededRef prevents overwriting user edits if Firestore fires again mid-session.
 	useEffect(() => {
 		if (technique && !seededRef.current) {
 			seededRef.current = true;
@@ -87,11 +95,16 @@ export default function PracticeTechniqueScreen() {
 		}
 	}, [technique]);
 
-	const validateBpm = (text: string): string | null => {
-		if (!text.trim()) return null;
-		const n = Number.parseInt(text.trim(), 10);
-		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
-	};
+	const validateBpm = useCallback(
+		(text: string): string | null => {
+			if (!text.trim()) return null;
+			const n = Number.parseInt(text.trim(), 10);
+			return Number.isNaN(n) || n < 20 || n > 240
+				? t("error.bpmInvalid")
+				: null;
+		},
+		[t],
+	);
 
 	const handleBpmBlur = () => {
 		setBpmError(validateBpm(tempoBpm));
@@ -100,33 +113,54 @@ export default function PracticeTechniqueScreen() {
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
 
-	const handleSave = async () => {
-		if (!id) return;
+	const performSave = useCallback(async (): Promise<{ ok: boolean }> => {
+		if (!techniqueId) return { ok: false };
 		const bpmErr = validateBpm(tempoBpm);
 		setBpmError(bpmErr);
-		if (bpmErr) return;
+		if (bpmErr) return { ok: false };
 		metronomeStopRef.current?.();
 		setLoading(true);
 		setError(null);
 		try {
-			await saveTechniqueLog(id, {
+			await saveTechniqueLog(techniqueId, {
 				quality,
 				effort,
 				achievedTempoBpm: Number.parseInt(tempoBpm.trim(), 10) || null,
 			});
-			setSaved(true);
+			return { ok: true };
 		} catch {
 			setError(t("error.firebase"));
+			return { ok: false };
 		} finally {
 			setLoading(false);
 		}
+	}, [
+		techniqueId,
+		validateBpm,
+		tempoBpm,
+		saveTechniqueLog,
+		quality,
+		effort,
+		t,
+	]);
+
+	const handleSave = async () => {
+		const result = await performSave();
+		if (result.ok) setSaved(true);
 	};
 
+	useRegisterCoachSave(
+		useCallback(async () => {
+			const result = await performSave();
+			return { saved: result.ok };
+		}, [performSave]),
+	);
+
 	const handleDelete = async () => {
-		if (!id) return;
+		if (!techniqueId) return;
 		setDeleteLoading(true);
 		try {
-			await deleteTechnique(id);
+			await deleteTechnique(techniqueId);
 			router.replace("/(app)/(tabs)/technique");
 		} catch {
 			setDeleteDialogVisible(false);
@@ -170,42 +204,44 @@ export default function PracticeTechniqueScreen() {
 			className="flex-1"
 			style={{ backgroundColor: theme.colors.background }}
 		>
-			<Appbar.Header>
-				<Appbar.BackAction onPress={() => router.back()} />
-				<Appbar.Content
-					title={technique?.title ?? t("screen.practiceTechnique.title")}
-				/>
-				<Menu
-					visible={headerMenuVisible}
-					onDismiss={() => setHeaderMenuVisible(false)}
-					anchor={
-						<Appbar.Action
-							icon="dots-vertical"
-							accessibilityLabel={t("a11y.menu.options")}
-							onPress={() => setHeaderMenuVisible(true)}
+			{!inCoach && (
+				<Appbar.Header>
+					<Appbar.BackAction onPress={() => router.back()} />
+					<Appbar.Content
+						title={technique?.title ?? t("screen.practiceTechnique.title")}
+					/>
+					<Menu
+						visible={headerMenuVisible}
+						onDismiss={() => setHeaderMenuVisible(false)}
+						anchor={
+							<Appbar.Action
+								icon="dots-vertical"
+								accessibilityLabel={t("a11y.menu.options")}
+								onPress={() => setHeaderMenuVisible(true)}
+							/>
+						}
+					>
+						<Menu.Item
+							leadingIcon="pencil"
+							onPress={() => {
+								setHeaderMenuVisible(false);
+								router.push(`/technique/${techniqueId}/edit`);
+							}}
+							title={t("screen.techniques.menu.edit")}
 						/>
-					}
-				>
-					<Menu.Item
-						leadingIcon="pencil"
-						onPress={() => {
-							setHeaderMenuVisible(false);
-							router.push(`/technique/${id}/edit`);
-						}}
-						title={t("screen.techniques.menu.edit")}
-					/>
-					<Menu.Item
-						leadingIcon="delete"
-						onPress={() => {
-							setHeaderMenuVisible(false);
-							setDeleteDialogVisible(true);
-						}}
-						title={t("screen.techniques.menu.delete")}
-					/>
-				</Menu>
-			</Appbar.Header>
+						<Menu.Item
+							leadingIcon="delete"
+							onPress={() => {
+								setHeaderMenuVisible(false);
+								setDeleteDialogVisible(true);
+							}}
+							title={t("screen.techniques.menu.delete")}
+						/>
+					</Menu>
+				</Appbar.Header>
+			)}
 
-			{saved ? (
+			{saved && !inCoach ? (
 				<TechniqueLogComparison
 					techniqueName={technique.title}
 					currentQuality={quality}
@@ -294,35 +330,46 @@ export default function PracticeTechniqueScreen() {
 								</HelperText>
 							</View>
 
-							<Button
-								mode="contained"
-								onPress={handleSave}
-								loading={loading}
-								disabled={loading}
-							>
-								{t("screen.practiceTechnique.save")}
-							</Button>
+							{!inCoach && (
+								<Button
+									mode="contained"
+									onPress={handleSave}
+									loading={loading}
+									disabled={loading}
+								>
+									{t("screen.practiceTechnique.save")}
+								</Button>
+							)}
 						</View>
 					</View>
 				</ScrollView>
 			)}
 
-			<Snackbar
-				visible={!!error}
-				onDismiss={() => setError(null)}
-				duration={4000}
-				action={{ label: t("common.ok"), onPress: () => setError(null) }}
-			>
-				{error ?? ""}
-			</Snackbar>
+			{!inCoach && (
+				<Snackbar
+					visible={!!error}
+					onDismiss={() => setError(null)}
+					duration={4000}
+					action={{ label: t("common.ok"), onPress: () => setError(null) }}
+				>
+					{error ?? ""}
+				</Snackbar>
+			)}
 
-			<DeleteTechniqueDialog
-				visible={deleteDialogVisible}
-				techniqueName={technique?.title ?? ""}
-				loading={deleteLoading}
-				onConfirm={handleDelete}
-				onDismiss={() => setDeleteDialogVisible(false)}
-			/>
+			{!inCoach && (
+				<DeleteTechniqueDialog
+					visible={deleteDialogVisible}
+					techniqueName={technique?.title ?? ""}
+					loading={deleteLoading}
+					onConfirm={handleDelete}
+					onDismiss={() => setDeleteDialogVisible(false)}
+				/>
+			)}
 		</View>
 	);
+}
+
+export default function PracticeTechniqueScreen() {
+	const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+	return <TechniquePracticeContent techniqueId={id} from={from} />;
 }

@@ -1,6 +1,6 @@
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import {
@@ -9,6 +9,7 @@ import {
 	Card,
 	Chip,
 	FAB,
+	IconButton,
 	Portal,
 	Surface,
 	Text,
@@ -17,14 +18,21 @@ import {
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
+import { useAuth } from "@/contexts/AuthContext";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
 import { usePieces } from "@/hooks/use-pieces";
 import { useTechniques } from "@/hooks/use-techniques";
 import type { Piece } from "@/models/piece";
 import { PracticeMistakes } from "@/models/practice";
+import {
+	type ActiveSession,
+	SESSION_EMPHASES,
+	type SessionEmphasis,
+} from "@/models/session";
 import type { TechniqueItem } from "@/models/technique";
 import { formatDaysAgo } from "@/utils/date";
+import { clearActiveSession, readActiveSession } from "@/utils/session-storage";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
@@ -87,6 +95,7 @@ export default function OverviewScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
+	const { user } = useAuth();
 	const { pieces, loading: piecesLoading } = usePieces();
 	const { techniques, loading: techniquesLoading } = useTechniques();
 	const { width } = useWindowDimensions();
@@ -95,6 +104,30 @@ export default function OverviewScreen() {
 	const fabStyle = useFabStyleTabs();
 	const fabVisible = useFabVisible();
 	const [fabOpen, setFabOpen] = useState(false);
+	const [activeSession, setActiveSession] = useState<ActiveSession | null>(
+		null,
+	);
+
+	const reloadActiveSession = useCallback(async () => {
+		if (!user) {
+			setActiveSession(null);
+			return;
+		}
+		const s = await readActiveSession(user.uid);
+		setActiveSession(s);
+	}, [user]);
+
+	useFocusEffect(
+		useCallback(() => {
+			reloadActiveSession();
+		}, [reloadActiveSession]),
+	);
+
+	const handleEndSession = useCallback(async () => {
+		if (!user) return;
+		await clearActiveSession(user.uid);
+		setActiveSession(null);
+	}, [user]);
 
 	useEffect(() => {
 		if (!fabVisible) setFabOpen(false);
@@ -140,6 +173,15 @@ export default function OverviewScreen() {
 				}}
 			>
 				<View className="w-full max-w-xl self-center gap-4">
+					<SessionEntryBlock
+						activeSession={activeSession}
+						onEnd={handleEndSession}
+						onResume={() => router.push("/session/coach")}
+						onStart={(em) =>
+							router.push(`/session/setup?emphasis=${em}` as const)
+						}
+					/>
+
 					<Text variant="titleMedium">
 						{t("screen.overview.practiceToday")}
 					</Text>
@@ -375,6 +417,81 @@ export default function OverviewScreen() {
 					/>
 				</Portal>
 			)}
+		</View>
+	);
+}
+
+function SessionEntryBlock({
+	activeSession,
+	onStart,
+	onResume,
+	onEnd,
+}: {
+	activeSession: ActiveSession | null;
+	onStart: (emphasis: SessionEmphasis) => void;
+	onResume: () => void;
+	onEnd: () => void;
+}) {
+	const { t } = useTranslation();
+	const theme = useTheme();
+	if (activeSession) {
+		const current =
+			activeSession.plan.blocks[activeSession.currentBlockIndex] ?? null;
+		const blockTitle =
+			current?.title ??
+			(current ? t(`screen.session.block.${current.kind}` as const) : "");
+		return (
+			<Card
+				mode="contained"
+				style={{ backgroundColor: theme.colors.primaryContainer }}
+			>
+				<Card.Content>
+					<View className="gap-2">
+						<Text variant="titleMedium">
+							{t("screen.session.resume.banner", {
+								emphasis: t(
+									`screen.session.emphasis.${activeSession.plan.emphasis}` as const,
+								),
+								minutes: activeSession.plan.totalMinutes,
+							})}
+						</Text>
+						<Text variant="bodyMedium">
+							{t("screen.session.resume.blockOf", {
+								current: activeSession.currentBlockIndex + 1,
+								total: activeSession.plan.blocks.length,
+								title: blockTitle,
+							})}
+						</Text>
+						<View className="flex-row gap-2 mt-1">
+							<Button mode="contained" onPress={onResume} icon="play">
+								{t("screen.session.resume.resume")}
+							</Button>
+							<Button mode="outlined" onPress={onEnd}>
+								{t("screen.session.resume.end")}
+							</Button>
+						</View>
+					</View>
+				</Card.Content>
+			</Card>
+		);
+	}
+	return (
+		<View className="gap-2">
+			<Text variant="titleMedium">{t("screen.session.newSession")}</Text>
+			{SESSION_EMPHASES.map((em) => (
+				<Card key={em} mode="contained" onPress={() => onStart(em)}>
+					<View className="flex-row items-center justify-between pl-4 pr-1 py-1">
+						<Text variant="bodyLarge">
+							{t(`screen.session.emphasis.${em}` as const)}
+						</Text>
+						<IconButton
+							icon="play"
+							onPress={() => onStart(em)}
+							accessibilityLabel={t(`screen.session.emphasis.${em}` as const)}
+						/>
+					</View>
+				</Card>
+			))}
 		</View>
 	);
 }

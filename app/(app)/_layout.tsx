@@ -6,6 +6,7 @@ export default function AppLayout() {
 			<Stack.Screen name="(tabs)" />
 			<Stack.Screen name="piece" />
 			<Stack.Screen name="technique" />
+			<Stack.Screen name="session" />
 		</Stack>
 	);
 }

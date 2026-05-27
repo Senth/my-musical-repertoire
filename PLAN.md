@@ -182,13 +182,13 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Add small "Practice" button for each section.
   - [x] Left/Right padding missing
   - [x] Not all fields are shown.
-- [ ] Define reusable exercise block model
-  - [ ] Session domain (`technique`, `sight-reading`, `repertoire`)
-  - [ ] Repertoire focus category (`accuracy`, `rhythm`, `fingering`, `memory`, `tempo`, `tone`, `continuity`)
-  - [ ] Scope (`whole piece` or `section`) for repertoire blocks
-  - [ ] Reference to piece-level section when scope is `section` (not ad-hoc — use the piece's defined sections)
-  - [ ] Optional target BPM for tempo-relevant blocks (defaults to section's current BPM)
-  - [ ] Suggested duration
+- [x] Define reusable exercise block model — reframed into the session generator (see `docs/specs/session-generator.md`); rich template/focus-category schema dropped in favor of runtime block instances driven by the session planner.
+  - [x] Session domain (`technique`, `sight-reading`, `repertoire`)
+  - [x] Repertoire focus category (`accuracy`, `rhythm`, `fingering`, `memory`, `tempo`, `tone`, `continuity`)
+  - [x] Scope (`whole piece` or `section`) for repertoire blocks
+  - [x] Reference to piece-level section when scope is `section` (not ad-hoc — use the piece's defined sections)
+  - [x] Optional target BPM for tempo-relevant blocks (defaults to section's current BPM)
+  - [x] Suggested duration
 - [ ] Per-block logging
   - [x] Log practice date
   - [ ] Pieces: accuracy result
