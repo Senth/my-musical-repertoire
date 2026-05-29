@@ -17,9 +17,10 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { ComposerAutocompleteInput } from "@/components/piece/ComposerAutocompleteInput";
 import { DropdownField } from "@/components/ui/DropdownField";
 import { useAutoFocusOnMount } from "@/hooks/use-auto-focus-on-mount";
-import { useAddPiece } from "@/hooks/use-pieces";
+import { useAddPiece, usePieces } from "@/hooks/use-pieces";
 import { PIECE_STATES, type PieceState } from "@/models/piece";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
@@ -29,6 +30,7 @@ export default function AddPieceScreen() {
 	const theme = useTheme();
 	const router = useRouter();
 	const { addPiece } = useAddPiece();
+	const { pieces } = usePieces();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
@@ -119,19 +121,17 @@ export default function AddPieceScreen() {
 				</HelperText>
 			</View>
 
-			<View>
-				<TextInput
-					label={t("screen.addPiece.composerLabel")}
-					value={composer}
-					onChangeText={setComposer}
-					mode="outlined"
-					error={!!composerError}
-					onBlur={() => validateComposer()}
-				/>
-				<HelperText type="error" visible={!!composerError}>
-					{composerError ?? ""}
-				</HelperText>
-			</View>
+			<ComposerAutocompleteInput
+				label={t("screen.addPiece.composerLabel")}
+				value={composer}
+				onChangeText={(text) => {
+					setComposer(text);
+					if (composerError) validateComposer();
+				}}
+				error={!!composerError}
+				helperText={composerError ?? undefined}
+				pieces={pieces}
+			/>
 
 			<DropdownField
 				label={t("screen.addPiece.stateLabel")}
