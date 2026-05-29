@@ -58,6 +58,7 @@ export interface ActiveSession {
 	plan: SessionPlan;
 	inputs: SessionInputs;
 	startedAt: string;
+	sessionId: string;
 	currentBlockIndex: number;
 	blockStates: BlockExecutionState[];
 	sessionElapsedSeconds: number;

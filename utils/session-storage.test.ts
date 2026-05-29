@@ -73,6 +73,7 @@ describe("session-storage", () => {
 				sightReadingEnabled: true,
 			},
 			startedAt: "2026-05-27T00:00:00.000Z",
+			sessionId: "test-session-id",
 			currentBlockIndex: 0,
 			blockStates: [],
 			sessionElapsedSeconds: 0,

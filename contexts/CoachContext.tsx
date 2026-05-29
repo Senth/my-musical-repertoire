@@ -16,6 +16,7 @@ type ValidateFn = () => boolean;
 
 export interface CoachContextValue {
 	inCoach: boolean;
+	sessionId: string | null;
 	saveHandlerRef: MutableRefObject<SaveFn | null>;
 	validateHandlerRef: MutableRefObject<ValidateFn | null>;
 }
@@ -24,18 +25,20 @@ const CoachContext = createContext<CoachContextValue | null>(null);
 
 export function CoachProvider({
 	inCoach,
+	sessionId,
 	saveHandlerRef,
 	validateHandlerRef,
 	children,
 }: {
 	inCoach: boolean;
+	sessionId: string | null;
 	saveHandlerRef: MutableRefObject<SaveFn | null>;
 	validateHandlerRef: MutableRefObject<ValidateFn | null>;
 	children: ReactNode;
 }) {
 	const value = useMemo<CoachContextValue>(
-		() => ({ inCoach, saveHandlerRef, validateHandlerRef }),
-		[inCoach, saveHandlerRef, validateHandlerRef],
+		() => ({ inCoach, sessionId, saveHandlerRef, validateHandlerRef }),
+		[inCoach, sessionId, saveHandlerRef, validateHandlerRef],
 	);
 	return (
 		<CoachContext.Provider value={value}>{children}</CoachContext.Provider>
@@ -52,6 +55,7 @@ export function useCoach(): CoachContextValue {
 	if (ctx) return ctx;
 	return {
 		inCoach: false,
+		sessionId: null,
 		saveHandlerRef: NOOP_SAVE_REF,
 		validateHandlerRef: NOOP_VALIDATE_REF,
 	};

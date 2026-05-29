@@ -5,7 +5,7 @@ import {
 	doc,
 	onSnapshot,
 	query,
-	type Timestamp,
+	Timestamp,
 	updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -179,13 +179,31 @@ export function useSaveTechniqueLog() {
 			quality: 1 | 2 | 3 | 4 | 5;
 			effort: 1 | 2 | 3 | 4 | 5;
 			achievedTempoBpm?: number | null;
+			sessionId?: string | null;
 		},
 	) => {
 		if (!user) throw new Error("Not authenticated");
 
-		const ref = doc(db, "users", user.uid, "techniques", techniqueId);
-		await updateDoc(ref, {
-			lastPracticedAt: new Date(),
+		const now = new Date();
+		const practiceLogsRef = collection(
+			db,
+			"users",
+			user.uid,
+			"techniques",
+			techniqueId,
+			"practiceLogs",
+		);
+		await addDoc(practiceLogsRef, {
+			date: Timestamp.fromDate(now),
+			quality: data.quality,
+			effort: data.effort,
+			achievedBpm: data.achievedTempoBpm ?? null,
+			sessionId: data.sessionId ?? null,
+		});
+
+		const techniqueRef = doc(db, "users", user.uid, "techniques", techniqueId);
+		await updateDoc(techniqueRef, {
+			lastPracticedAt: now,
 			lastQuality: data.quality,
 			lastEffort: data.effort,
 			lastAchievedTempoBpm: data.achievedTempoBpm ?? null,

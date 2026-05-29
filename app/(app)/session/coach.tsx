@@ -205,10 +205,12 @@ export default function CoachScreen() {
 	const coachValue: CoachContextValue = useMemo(
 		() => ({
 			inCoach: true,
+			sessionId: session?.sessionId ?? null,
 			saveHandlerRef,
 			validateHandlerRef,
 		}),
-		[],
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[session?.sessionId],
 	);
 
 	if (!loaded) {
@@ -276,6 +278,7 @@ export default function CoachScreen() {
 	return (
 		<CoachProvider
 			inCoach={coachValue.inCoach}
+			sessionId={coachValue.sessionId}
 			saveHandlerRef={coachValue.saveHandlerRef}
 			validateHandlerRef={coachValue.validateHandlerRef}
 		>

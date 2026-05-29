@@ -11,8 +11,20 @@ export interface PiecePractice {
 	technicalMistakes: PracticeMistakes;
 	memoryMistakes: PracticeMistakes;
 	achievedBpm?: number | null;
-	sectionId?: string | null;
 	flaggedSectionIds?: string[] | null;
+	triggeredFrom?: PracticeTrigger;
+	sessionId?: string | null;
+}
+
+export interface SectionPractice {
+	id?: string;
+	sectionId: string;
+	pieceId: string;
+	date: Date;
+	quality: 1 | 2 | 3 | 4 | 5;
+	effort: 1 | 2 | 3 | 4 | 5;
+	achievedBpm?: number | null;
+	sessionId?: string | null;
 	triggeredFrom?: PracticeTrigger;
 }
 

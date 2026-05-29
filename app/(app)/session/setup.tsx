@@ -1,4 +1,5 @@
 import Slider from "@react-native-community/slider";
+import { randomUUID } from "expo-crypto";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -125,6 +126,7 @@ export default function SessionSetupScreen() {
 				plan,
 				inputs,
 				startedAt: new Date().toISOString(),
+				sessionId: randomUUID(),
 				currentBlockIndex: 0,
 				blockStates,
 				sessionElapsedSeconds: 0,

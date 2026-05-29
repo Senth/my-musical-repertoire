@@ -7,17 +7,25 @@ service cloud.firestore {
     match /users/{userId}/pieces/{pieceId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
 
-      match /practices/{practiceId} {
+      match /practiceLogs/{logId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
       match /sections/{sectionId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        match /practiceLogs/{logId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
       }
     }
 
     match /users/{userId}/techniques/{techniqueId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /practiceLogs/{logId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
   }
 }

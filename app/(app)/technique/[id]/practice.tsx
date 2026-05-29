@@ -1,3 +1,4 @@
+import { randomUUID } from "expo-crypto";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -46,6 +47,7 @@ export function TechniquePracticeContent({
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
+	const standaloneSessionId = useRef(randomUUID());
 	const technique = techniques.find((tn) => tn.id === techniqueId);
 
 	const getBackDestination = (): string => {
@@ -122,10 +124,12 @@ export function TechniquePracticeContent({
 		setLoading(true);
 		setError(null);
 		try {
+			const sessionId = coach.sessionId ?? standaloneSessionId.current;
 			await saveTechniqueLog(techniqueId, {
 				quality,
 				effort,
 				achievedTempoBpm: Number.parseInt(tempoBpm.trim(), 10) || null,
+				sessionId,
 			});
 			return { ok: true };
 		} catch {
@@ -142,6 +146,7 @@ export function TechniquePracticeContent({
 		quality,
 		effort,
 		t,
+		coach.sessionId,
 	]);
 
 	const handleSave = async () => {

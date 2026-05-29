@@ -21,4 +21,6 @@ export interface Section {
 	archived: boolean;
 	createdAt?: Date | null;
 	lastPracticed?: Date | null;
+	lastQuality?: 1 | 2 | 3 | 4 | 5 | null;
+	lastEffort?: 1 | 2 | 3 | 4 | 5 | null;
 }

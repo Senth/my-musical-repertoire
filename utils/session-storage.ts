@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { randomUUID } from "expo-crypto";
 import type {
 	ActiveSession,
 	SessionEmphasis,
@@ -42,7 +43,9 @@ export async function readActiveSession(
 	const raw = await AsyncStorage.getItem(activeSessionKey(uid));
 	if (!raw) return null;
 	try {
-		return JSON.parse(raw) as ActiveSession;
+		const session = JSON.parse(raw) as ActiveSession;
+		if (!session.sessionId) session.sessionId = randomUUID();
+		return session;
 	} catch {
 		return null;
 	}

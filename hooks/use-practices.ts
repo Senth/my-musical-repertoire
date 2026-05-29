@@ -10,12 +10,10 @@ import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { PracticeMistakes, PracticeTrigger } from "@/models/practice";
 import { useUpdatePiece } from "./use-pieces";
-import { useUpdateSection } from "./use-sections";
 
 export function useSavePractice() {
 	const { user } = useAuth();
 	const { updatePiece } = useUpdatePiece();
-	const { updateSection } = useUpdateSection();
 
 	const savePractice = async (
 		pieceId: string,
@@ -23,57 +21,41 @@ export function useSavePractice() {
 		technicalMistakes: PracticeMistakes,
 		memoryMistakes: PracticeMistakes,
 		achievedBpm?: number | null,
-		sectionId?: string | null,
 		flaggedSectionIds?: string[] | null,
 		triggeredFrom?: PracticeTrigger,
+		sessionId?: string | null,
 	) => {
 		if (!user) throw new Error("Not authenticated");
 
-		const practicesRef = collection(
+		const practiceLogsRef = collection(
 			db,
 			"users",
 			user.uid,
 			"pieces",
 			pieceId,
-			"practices",
+			"practiceLogs",
 		);
 
-		await addDoc(practicesRef, {
+		await addDoc(practiceLogsRef, {
 			date: Timestamp.fromDate(date),
 			technicalMistakes,
 			memoryMistakes,
 			achievedBpm: achievedBpm ?? null,
-			sectionId: sectionId ?? null,
 			flaggedSectionIds: flaggedSectionIds ?? null,
 			triggeredFrom: triggeredFrom ?? null,
+			sessionId: sessionId ?? null,
 		});
 
-		// Denormalize last practice data onto the piece
 		await updatePiece(pieceId, {
 			lastPracticed: date,
 			lastTechnicalMistakes: technicalMistakes,
 			lastMemoryMistakes: memoryMistakes,
+			...(achievedBpm != null ? { lastAchievedTempoBpm: achievedBpm } : {}),
 		});
 
-		// Update section's currentBpm when both sectionId and achievedBpm are set
-		if (sectionId && achievedBpm != null) {
-			await updateSection(pieceId, sectionId, { currentBpm: achievedBpm });
-		}
-
-		// For full-piece practice (no section), denormalize BPM onto the piece
-		if (!sectionId && achievedBpm != null) {
-			await updatePiece(pieceId, { lastAchievedTempoBpm: achievedBpm });
-		}
-
-		// Stamp lastPracticed on section(s).
-		const sectionRef = (sId: string) =>
-			doc(db, "users", user.uid, "pieces", pieceId, "sections", sId);
-
-		if (sectionId) {
-			await updateDoc(sectionRef(sectionId), {
-				lastPracticed: serverTimestamp(),
-			});
-		} else if (flaggedSectionIds && flaggedSectionIds.length > 0) {
+		if (flaggedSectionIds && flaggedSectionIds.length > 0) {
+			const sectionRef = (sId: string) =>
+				doc(db, "users", user.uid, "pieces", pieceId, "sections", sId);
 			await Promise.all(
 				flaggedSectionIds.map((sId) =>
 					updateDoc(sectionRef(sId), { lastPracticed: serverTimestamp() }),
@@ -83,4 +65,65 @@ export function useSavePractice() {
 	};
 
 	return { savePractice };
+}
+
+export function useSaveSectionPractice() {
+	const { user } = useAuth();
+	const { updatePiece } = useUpdatePiece();
+
+	const saveSectionPractice = async (
+		pieceId: string,
+		sectionId: string,
+		date: Date,
+		quality: 1 | 2 | 3 | 4 | 5,
+		effort: 1 | 2 | 3 | 4 | 5,
+		achievedBpm?: number | null,
+		triggeredFrom?: PracticeTrigger,
+		sessionId?: string | null,
+	) => {
+		if (!user) throw new Error("Not authenticated");
+
+		const practiceLogsRef = collection(
+			db,
+			"users",
+			user.uid,
+			"pieces",
+			pieceId,
+			"sections",
+			sectionId,
+			"practiceLogs",
+		);
+
+		await addDoc(practiceLogsRef, {
+			date: Timestamp.fromDate(date),
+			quality,
+			effort,
+			achievedBpm: achievedBpm ?? null,
+			triggeredFrom: triggeredFrom ?? null,
+			sessionId: sessionId ?? null,
+		});
+
+		const sectionRef = doc(
+			db,
+			"users",
+			user.uid,
+			"pieces",
+			pieceId,
+			"sections",
+			sectionId,
+		);
+		await updateDoc(sectionRef, {
+			lastPracticed: serverTimestamp(),
+			lastQuality: quality,
+			lastEffort: effort,
+			...(achievedBpm != null ? { currentBpm: achievedBpm } : {}),
+		});
+
+		await updatePiece(pieceId, {
+			lastPracticed: date,
+			...(achievedBpm != null ? { lastAchievedTempoBpm: achievedBpm } : {}),
+		});
+	};
+
+	return { saveSectionPractice };
 }

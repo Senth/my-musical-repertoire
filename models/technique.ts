@@ -35,8 +35,17 @@ export interface TechniqueItem {
 	notes?: string | null;
 	dateIntroduced: Date;
 	lastPracticedAt?: Date | null;
-	// Denormalized from last practice block — populated by Phase 3 logging
 	lastQuality?: 1 | 2 | 3 | 4 | 5 | null;
 	lastEffort?: 1 | 2 | 3 | 4 | 5 | null;
 	lastAchievedTempoBpm?: number | null;
+}
+
+export interface TechniquePractice {
+	id?: string;
+	techniqueId: string;
+	date: Date;
+	quality: 1 | 2 | 3 | 4 | 5;
+	effort: 1 | 2 | 3 | 4 | 5;
+	achievedBpm?: number | null;
+	sessionId?: string | null;
 }

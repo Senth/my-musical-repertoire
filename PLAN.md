@@ -189,26 +189,13 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] Reference to piece-level section when scope is `section` (not ad-hoc — use the piece's defined sections)
   - [x] Optional target BPM for tempo-relevant blocks (defaults to section's current BPM)
   - [x] Suggested duration
-- [ ] Per-block logging
-  - [x] Log practice date
-  - [ ] Pieces: accuracy result
-  - [ ] Pieces: tempo achieved (BPM practiced at, updates section's current BPM)
-  - [ ] Pieces: effort / perceived difficulty
-  - [ ] Pieces: scope completed
-  - [ ] Piece sections
-  - [ ] Technique: completion + confidence/difficulty trend
-  - [ ] Technique: optional tempo/BPM when relevant
-  - [ ] Notes field (free text, optional)
-  - [ ] Sight-reading: material label + completion + perceived difficulty/confidence
-- [ ] Before/after comparison after saving
-  - [x] Comparison screen component
 - [ ] Practice history screen
   - [ ] Whole-piece history
   - [ ] Section history for targeted work
   - [ ] Technique-item history
   - [ ] Sight-reading history
 - [ ] Enable Firestore offline persistence
-- [ ] Touch up UI/UX and fix any discrepancies
+- [ ] Misc
   - [x] Piece practice page should show the bars, and target BPM.
   - [x] Metronome gain should be even higher.
   - [ ] Autocomplete Composer field when creating/editing
@@ -221,6 +208,9 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Some self-estimation bars uses numbers, some text. We should be consistent. Ideally the "best" should be at the same location (to the right). For examlp effort should be low, but it's on the left side. I think it's better to have text than numbers. However, we need to make sure that works even when the text doesn't fit (should maybe be smaller text so always fits?)
   - [x] Always show metronome button, but should be disabled when BPM is not set.
   - [ ] When adding piece, section, or technique. Title is focused on web, but immediately blurred. Try to fix with playwright.
+  - [ ] Add duration for pieces. This will help with the session plan generator to estimate how much time a full playthrough of a piece it will take.
+        During a session, if the piece is selected as a whole but does not have a duration. Suggest using the time elapsed of that block to estimate the piece duration after the user has pressed save and continue.
+  - [ ] When practicing a anything, it would be good to see the last log for that piece/section/technique to have a reference point.
 
 ### Phase 4: Session Plan Generator
 

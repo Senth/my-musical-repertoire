@@ -1,3 +1,4 @@
+import { randomUUID } from "expo-crypto";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,10 +19,11 @@ import {
 import { MetronomeButton } from "@/components/practice/MetronomeButton";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
+import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { useCoach, useRegisterCoachSave } from "@/contexts/CoachContext";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
-import { useSavePractice } from "@/hooks/use-practices";
+import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
 import { useSections } from "@/hooks/use-sections";
 import { PracticeMistakes, type PracticeTrigger } from "@/models/practice";
 import { formatDaysAgo } from "@/utils/date";
@@ -70,9 +72,11 @@ export function PiecePracticeContent({
 	const coach = useCoach();
 	const inCoach = coach.inCoach;
 	const { pieces, loading: piecesLoading } = usePieces();
-	const { sections } = useSections(pieceId);
+	const { sections, loading: sectionsLoading } = useSections(pieceId);
 	const { savePractice } = useSavePractice();
+	const { saveSectionPractice } = useSaveSectionPractice();
 	const { deletePiece } = useDeletePiece();
+	const standaloneSessionId = useRef(randomUUID());
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
@@ -100,6 +104,12 @@ export function PiecePracticeContent({
 		technicalMistakes: piece?.lastTechnicalMistakes,
 		memoryMistakes: piece?.lastMemoryMistakes,
 	});
+	const previousSectionDataRef = useRef<{
+		quality: 1 | 2 | 3 | 4 | 5 | null | undefined;
+		effort: 1 | 2 | 3 | 4 | 5 | null | undefined;
+		tempoBpm: number | null | undefined;
+	}>({ quality: undefined, effort: undefined, tempoBpm: undefined });
+	const seededSectionRef = useRef(false);
 
 	const [technicalMistakes, setTechnicalMistakes] = useState<PracticeMistakes>(
 		PracticeMistakes.none,
@@ -107,6 +117,8 @@ export function PiecePracticeContent({
 	const [memoryMistakes, setMemoryMistakes] = useState<PracticeMistakes>(
 		PracticeMistakes.none,
 	);
+	const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
+	const [effort, setEffort] = useState<1 | 2 | 3 | 4 | 5>(3);
 	const [flaggedSectionIds, setFlaggedSectionIds] = useState<string[]>([]);
 	const [achievedBpm, setAchievedBpm] = useState<string>("");
 	const [bpmError, setBpmError] = useState<string | null>(null);
@@ -145,6 +157,14 @@ export function PiecePracticeContent({
 	useEffect(() => {
 		if (scopedSection) {
 			setAchievedBpm(scopedSection.currentBpm?.toString() ?? "");
+			if (!seededSectionRef.current) {
+				seededSectionRef.current = true;
+				previousSectionDataRef.current = {
+					quality: scopedSection.lastQuality ?? null,
+					effort: scopedSection.lastEffort ?? null,
+					tempoBpm: scopedSection.currentBpm ?? null,
+				};
+			}
 		} else {
 			setAchievedBpm(piece?.lastAchievedTempoBpm?.toString() ?? "");
 		}
@@ -176,6 +196,7 @@ export function PiecePracticeContent({
 		metronomeStopRef.current?.();
 		setLoading(true);
 		setError(null);
+		const sessionId = coach.sessionId ?? standaloneSessionId.current;
 		try {
 			const practiceDate = new Date();
 			const bpm = achievedBpm.trim()
@@ -183,17 +204,30 @@ export function PiecePracticeContent({
 				: null;
 			const triggeredFrom: PracticeTrigger =
 				triggerOverride ?? (scopedSection ? "section-panel" : "full-piece");
-			const flagged = scopedSection ? null : flaggedSectionIds;
-			await savePractice(
-				pieceId,
-				practiceDate,
-				technicalMistakes,
-				memoryMistakes,
-				bpm,
-				scopedSection?.id ?? null,
-				flagged,
-				triggeredFrom,
-			);
+			if (scopedSection) {
+				if (!scopedSection.id) return { ok: false };
+				await saveSectionPractice(
+					pieceId,
+					scopedSection.id,
+					practiceDate,
+					quality,
+					effort,
+					bpm,
+					triggeredFrom,
+					sessionId,
+				);
+			} else {
+				await savePractice(
+					pieceId,
+					practiceDate,
+					technicalMistakes,
+					memoryMistakes,
+					bpm,
+					flaggedSectionIds,
+					triggeredFrom,
+					sessionId,
+				);
+			}
 			return { ok: true };
 		} catch {
 			setError(t("error.firebase"));
@@ -205,12 +239,16 @@ export function PiecePracticeContent({
 		pieceId,
 		validateBpm,
 		achievedBpm,
+		coach.sessionId,
 		triggerOverride,
 		scopedSection,
 		flaggedSectionIds,
 		savePractice,
+		saveSectionPractice,
 		technicalMistakes,
 		memoryMistakes,
+		quality,
+		effort,
 		t,
 	]);
 
@@ -262,9 +300,24 @@ export function PiecePracticeContent({
 		);
 	}
 
+	if (sectionIdProp && sectionsLoading) {
+		return (
+			<View
+				className="flex-1 items-center justify-center"
+				style={{ backgroundColor: theme.colors.background }}
+			>
+				<ActivityIndicator size="large" />
+			</View>
+		);
+	}
+
 	const mistakeButtons = MISTAKE_BUTTONS.map((b) => ({
 		value: b.value,
 		label: t(b.labelKey),
+	}));
+	const ratingButtons = (["1", "2", "3", "4", "5"] as const).map((v) => ({
+		value: v,
+		label: v,
 	}));
 
 	const titleSuffix = scopedSection ? ` — ${scopedSection.label}` : "";
@@ -315,7 +368,27 @@ export function PiecePracticeContent({
 				</Appbar.Header>
 			)}
 
-			{saved && !inCoach ? (
+			{saved && !inCoach && scopedSection ? (
+				<TechniqueLogComparison
+					techniqueName={`${piece.title} — ${scopedSection.label}`}
+					currentQuality={quality}
+					currentEffort={effort}
+					currentTempoBpm={
+						achievedBpm.trim()
+							? Number.parseInt(achievedBpm.trim(), 10) || null
+							: null
+					}
+					previousQuality={previousSectionDataRef.current.quality}
+					previousEffort={previousSectionDataRef.current.effort}
+					previousTempoBpm={previousSectionDataRef.current.tempoBpm}
+					targetTempoBpm={
+						scopedSection.targetBpmOverride ?? piece.targetTempoBpm ?? null
+					}
+					isCompact={isCompact}
+					onDone={handleDone}
+					backLabel={getBackLabel()}
+				/>
+			) : saved && !inCoach ? (
 				<PracticeComparison
 					pieceName={`${piece.composer} — ${piece.title}`}
 					currentTechnical={technicalMistakes}
@@ -421,31 +494,61 @@ export function PiecePracticeContent({
 							</View>
 							<Divider />
 
-							<View className="gap-2">
-								<Text variant="titleSmall">
-									{t("screen.practice.technicalMistakes")}
-								</Text>
-								<SegmentedButtons
-									value={String(technicalMistakes)}
-									onValueChange={(v) =>
-										setTechnicalMistakes(Number(v) as PracticeMistakes)
-									}
-									buttons={mistakeButtons}
-								/>
-							</View>
-
-							<View className="gap-2">
-								<Text variant="titleSmall">
-									{t("screen.practice.memoryMistakes")}
-								</Text>
-								<SegmentedButtons
-									value={String(memoryMistakes)}
-									onValueChange={(v) =>
-										setMemoryMistakes(Number(v) as PracticeMistakes)
-									}
-									buttons={mistakeButtons}
-								/>
-							</View>
+							{scopedSection ? (
+								<>
+									<View className="gap-2">
+										<Text variant="titleSmall">
+											{t("screen.practiceTechnique.qualityLabel")}
+										</Text>
+										<SegmentedButtons
+											value={quality.toString()}
+											onValueChange={(v) =>
+												setQuality(Number(v) as 1 | 2 | 3 | 4 | 5)
+											}
+											buttons={ratingButtons}
+										/>
+									</View>
+									<View className="gap-2">
+										<Text variant="titleSmall">
+											{t("screen.practiceTechnique.effortLabel")}
+										</Text>
+										<SegmentedButtons
+											value={effort.toString()}
+											onValueChange={(v) =>
+												setEffort(Number(v) as 1 | 2 | 3 | 4 | 5)
+											}
+											buttons={ratingButtons}
+										/>
+									</View>
+								</>
+							) : (
+								<>
+									<View className="gap-2">
+										<Text variant="titleSmall">
+											{t("screen.practice.technicalMistakes")}
+										</Text>
+										<SegmentedButtons
+											value={String(technicalMistakes)}
+											onValueChange={(v) =>
+												setTechnicalMistakes(Number(v) as PracticeMistakes)
+											}
+											buttons={mistakeButtons}
+										/>
+									</View>
+									<View className="gap-2">
+										<Text variant="titleSmall">
+											{t("screen.practice.memoryMistakes")}
+										</Text>
+										<SegmentedButtons
+											value={String(memoryMistakes)}
+											onValueChange={(v) =>
+												setMemoryMistakes(Number(v) as PracticeMistakes)
+											}
+											buttons={mistakeButtons}
+										/>
+									</View>
+								</>
+							)}
 
 							{!scopedSection && (
 								<SectionsPracticePanel
@@ -473,16 +576,14 @@ export function PiecePracticeContent({
 				</ScrollView>
 			)}
 
-			{!inCoach && (
-				<Snackbar
-					visible={!!error}
-					onDismiss={() => setError(null)}
-					duration={4000}
-					action={{ label: t("common.ok"), onPress: () => setError(null) }}
-				>
-					{error ?? ""}
-				</Snackbar>
-			)}
+			<Snackbar
+				visible={!!error}
+				onDismiss={() => setError(null)}
+				duration={4000}
+				action={{ label: t("common.ok"), onPress: () => setError(null) }}
+			>
+				{error ?? ""}
+			</Snackbar>
 
 			{!inCoach && (
 				<DeletePieceDialog
