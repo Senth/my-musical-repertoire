@@ -16,6 +16,7 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { ComposerAutocompleteInput } from "@/components/piece/ComposerAutocompleteInput";
 import { DropdownField } from "@/components/ui/DropdownField";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import {
@@ -174,19 +175,17 @@ export default function EditPieceScreen() {
 				</HelperText>
 			</View>
 
-			<View>
-				<TextInput
-					label={t("screen.editPiece.composerLabel")}
-					value={composer}
-					onChangeText={setComposer}
-					mode="outlined"
-					error={!!composerError}
-					onBlur={() => validateComposer()}
-				/>
-				<HelperText type="error" visible={!!composerError}>
-					{composerError ?? ""}
-				</HelperText>
-			</View>
+			<ComposerAutocompleteInput
+				label={t("screen.editPiece.composerLabel")}
+				value={composer}
+				onChangeText={(text) => {
+					setComposer(text);
+					if (composerError) validateComposer();
+				}}
+				error={!!composerError}
+				helperText={composerError ?? undefined}
+				pieces={pieces}
+			/>
 
 			<DropdownField
 				label={t("screen.editPiece.stateLabel")}
