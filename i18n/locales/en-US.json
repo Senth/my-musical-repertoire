@@ -367,7 +367,14 @@
 				"preview": "Estimated plan",
 				"noEligibleContent": "No content available — added to repertoire",
 				"start": "Start session",
-				"noContent": "No pieces or techniques yet — add some first"
+				"noContent": "No pieces or techniques yet — add some first",
+				"allPracticedToday": {
+					"technique": "All techniques practiced today — added {{minutes}} min to repertoire",
+					"repertoire-learning": "All learning pieces practiced today — added {{minutes}} min elsewhere",
+					"repertoire-stabilizing": "All stabilizing pieces practiced today — added {{minutes}} min elsewhere",
+					"repertoire-maintenance": "All maintenance pieces practiced today — added {{minutes}} min elsewhere",
+					"warmup": "Warmup techniques already practiced today — picking your own"
+				}
 			},
 			"block": {
 				"warmup": "Warmup",

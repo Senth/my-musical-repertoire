@@ -2,12 +2,15 @@ import type { Piece } from "@/models/piece";
 import type { Section, SectionPhase } from "@/models/section";
 import type {
 	BlockKind,
+	OmittedReason,
+	OmittedSlot,
 	PlannedBlock,
 	SessionEmphasis,
 	SessionInputs,
 	SessionPlan,
 } from "@/models/session";
 import type { TechniqueItem } from "@/models/technique";
+import { isPracticedToday } from "./day-boundary";
 
 export interface AllocationResult {
 	warmup: number;
@@ -104,7 +107,6 @@ function interpolateRow(
 ): { tech: number; read: number; rep: number; warmup: number } {
 	const rows = REF_ROWS[emphasis];
 	const clamped = clamp(total, 15, 90);
-	// Find bracketing rows
 	let lo = rows[0];
 	let hi = rows[rows.length - 1];
 	for (let i = 0; i < rows.length - 1; i++) {
@@ -115,7 +117,6 @@ function interpolateRow(
 		}
 	}
 	if (clamped > 60) {
-		// Extrapolate using 45->60 slope
 		lo = rows[2];
 		hi = rows[3];
 	}
@@ -168,7 +169,6 @@ export function allocateTime(inputs: SessionInputs): AllocationResult {
 	let rep = Math.round(raw.rep);
 	const warmup = raw.warmup;
 
-	// Domain disabled redistribution
 	if (!inputs.techniqueEnabled) {
 		rep += tech;
 		tech = 0;
@@ -178,7 +178,6 @@ export function allocateTime(inputs: SessionInputs): AllocationResult {
 		read = 0;
 	}
 
-	// Reconcile so sum equals total
 	const sum = tech + read + rep + warmup;
 	const slack = clamped - sum;
 	rep += slack;
@@ -282,6 +281,23 @@ function buildSectionCandidates(
 	return candidates;
 }
 
+function eligibleSectionCandidates(
+	slot: "learning" | "stabilizing",
+	pieces: Piece[],
+	sections: Section[],
+	now: Date,
+	usedSectionIds?: Set<string>,
+): SectionCandidate[] {
+	const filteredPieces = pieces.filter((p) => p.state === slot);
+	const candidates = buildSectionCandidates(filteredPieces, sections, now);
+	return candidates.filter((c) => {
+		if (isPracticedToday(c.lastPracticed, now)) return false;
+		if (usedSectionIds && c.section?.id && usedSectionIds.has(c.section.id))
+			return false;
+		return true;
+	});
+}
+
 function pickBestSection(
 	candidates: SectionCandidate[],
 ): SectionCandidate | null {
@@ -302,9 +318,15 @@ export function pickRepertoireSection(
 	sections: Section[],
 	allocatedMinutes: number,
 	now: Date = new Date(),
+	usedSectionIds?: Set<string>,
 ): PlannedBlock | null {
-	const filtered = pieces.filter((p) => p.state === slot);
-	const candidates = buildSectionCandidates(filtered, sections, now);
+	const candidates = eligibleSectionCandidates(
+		slot,
+		pieces,
+		sections,
+		now,
+		usedSectionIds,
+	);
 	const best = pickBestSection(candidates);
 	if (!best) return null;
 	const kind: BlockKind =
@@ -320,14 +342,26 @@ export function pickRepertoireSection(
 	};
 }
 
+function eligibleMaintenancePieces(
+	pieces: Piece[],
+	now: Date,
+	usedPieceIds?: Set<string>,
+): Piece[] {
+	return pieces.filter(
+		(p) =>
+			(p.state === "maintenance" || p.state === "performance") &&
+			!isPracticedToday(p.lastPracticed ?? null, now) &&
+			!(usedPieceIds && p.id && usedPieceIds.has(p.id)),
+	);
+}
+
 export function pickRepertoireMaintenance(
 	pieces: Piece[],
 	allocatedMinutes: number,
 	now: Date = new Date(),
+	usedPieceIds?: Set<string>,
 ): PlannedBlock | null {
-	const pool = pieces.filter(
-		(p) => p.state === "maintenance" || p.state === "performance",
-	);
+	const pool = eligibleMaintenancePieces(pieces, now, usedPieceIds);
 	if (pool.length === 0) return null;
 	const scored = pool.map((piece) => {
 		const stateWeight = piece.state === "performance" ? 3 : 1;
@@ -380,6 +414,20 @@ function sortTechniques(items: TechniqueItem[], now: Date): TechniqueScored[] {
 	return scored;
 }
 
+function eligibleTechniquesInState(
+	techniques: TechniqueItem[],
+	state: "active" | "maintenance",
+	now: Date,
+	usedTechniqueIds?: Set<string>,
+): TechniqueItem[] {
+	return techniques.filter(
+		(t) =>
+			t.state === state &&
+			!isPracticedToday(t.lastPracticedAt ?? null, now) &&
+			!(usedTechniqueIds && t.id && usedTechniqueIds.has(t.id)),
+	);
+}
+
 function computeTechniqueSplit(
 	slotMin: number,
 	count: number,
@@ -389,7 +437,6 @@ function computeTechniqueSplit(
 		if (count <= 1) return { active: count, maintenance: 0 };
 		return { active: count - 1, maintenance: 1 };
 	}
-	// slotMin > 14
 	if (count === 1) return { active: 1, maintenance: 0 };
 	if (count === 2) return { active: 1, maintenance: 1 };
 	return { active: 1, maintenance: 2 };
@@ -399,25 +446,33 @@ export function pickTechnique(
 	slotMin: number,
 	techniques: TechniqueItem[],
 	now: Date = new Date(),
+	usedTechniqueIds?: Set<string>,
 ): PlannedBlock[] {
 	if (slotMin <= 0) return [];
 	let count = clamp(Math.floor(slotMin / 5), 1, 3);
-	// Enforce min 3-min floor for multi-technique
 	while (count >= 2 && Math.floor(slotMin / count) < 3) {
 		count -= 1;
 	}
 	if (count < 1) count = 1;
 
-	const active = techniques.filter((t) => t.state === "active");
-	const maintenance = techniques.filter((t) => t.state === "maintenance");
+	const active = eligibleTechniquesInState(
+		techniques,
+		"active",
+		now,
+		usedTechniqueIds,
+	);
+	const maintenance = eligibleTechniquesInState(
+		techniques,
+		"maintenance",
+		now,
+		usedTechniqueIds,
+	);
 
 	if (active.length === 0 && maintenance.length === 0) return [];
 
 	const split = computeTechniqueSplit(slotMin, count);
-	// Cap by pool sizes
 	let activeCount = Math.min(split.active, active.length);
 	let maintCount = Math.min(split.maintenance, maintenance.length);
-	// Fill leftovers from the other pool
 	let remaining = count - activeCount - maintCount;
 	if (remaining > 0 && maintenance.length > maintCount) {
 		const add = Math.min(remaining, maintenance.length - maintCount);
@@ -432,9 +487,7 @@ export function pickTechnique(
 	count = activeCount + maintCount;
 	if (count === 0) return [];
 
-	// Re-enforce floor after pool capping
 	while (count >= 2 && Math.floor(slotMin / count) < 3) {
-		// drop from the larger pool first
 		if (maintCount >= activeCount && maintCount > 0) {
 			maintCount -= 1;
 		} else if (activeCount > 0) {
@@ -466,8 +519,14 @@ export function pickWarmup(
 	techniques: TechniqueItem[],
 	allocatedMinutes: number,
 	now: Date = new Date(),
+	usedTechniqueIds?: Set<string>,
 ): PlannedBlock {
-	const pool = techniques.filter((t) => t.state === "maintenance");
+	const pool = eligibleTechniquesInState(
+		techniques,
+		"maintenance",
+		now,
+		usedTechniqueIds,
+	);
 	if (pool.length === 0) {
 		return {
 			kind: "warmup",
@@ -477,7 +536,6 @@ export function pickWarmup(
 			subtitle: null,
 		};
 	}
-	// Longest-not-practiced: max daysSince. Tie-break dateIntroduced ASC.
 	const sorted = pool.slice().sort((a, b) => {
 		const aDays = daysSince(a.lastPracticedAt ?? null, now);
 		const bDays = daysSince(b.lastPracticedAt ?? null, now);
@@ -540,13 +598,17 @@ function redistributeRepertoireForAvailability(
 				hasIt: hasStabilizing,
 				baseWeight: 30,
 				current: s,
-				setter: (v) => (s = v),
+				setter: (v) => {
+					s = v;
+				},
 			},
 			{
 				hasIt: hasMaintenance,
 				baseWeight: 15,
 				current: m,
-				setter: (v) => (m = v),
+				setter: (v) => {
+					m = v;
+				},
 			},
 		]);
 	}
@@ -558,13 +620,17 @@ function redistributeRepertoireForAvailability(
 				hasIt: hasLearning,
 				baseWeight: 55,
 				current: l,
-				setter: (v) => (l = v),
+				setter: (v) => {
+					l = v;
+				},
 			},
 			{
 				hasIt: hasMaintenance,
 				baseWeight: 15,
 				current: m,
-				setter: (v) => (m = v),
+				setter: (v) => {
+					m = v;
+				},
 			},
 		]);
 	}
@@ -576,17 +642,35 @@ function redistributeRepertoireForAvailability(
 				hasIt: hasLearning,
 				baseWeight: 55,
 				current: l,
-				setter: (v) => (l = v),
+				setter: (v) => {
+					l = v;
+				},
 			},
 			{
 				hasIt: hasStabilizing,
 				baseWeight: 30,
 				current: s,
-				setter: (v) => (s = v),
+				setter: (v) => {
+					s = v;
+				},
 			},
 		]);
 	}
 	return { learning: l, stabilizing: s, maintenance: m };
+}
+
+function hasPiecesInState(pieces: Piece[], state: Piece["state"]): boolean {
+	return pieces.some((p) => p.state === state);
+}
+
+function hasAnyTechniqueInPool(techniques: TechniqueItem[]): boolean {
+	return techniques.some(
+		(t) => t.state === "active" || t.state === "maintenance",
+	);
+}
+
+function omittedReason(rawExists: boolean): OmittedReason {
+	return rawExists ? "practiced-today" : "no-content";
 }
 
 export function buildPlan(
@@ -597,35 +681,81 @@ export function buildPlan(
 	now: Date = new Date(),
 ): SessionPlan {
 	const alloc = allocateTime(inputs);
+	const usedTechniqueIds = new Set<string>();
+	const omitted: OmittedSlot[] = [];
 
-	const hasLearningPieces = pieces.some((p) => p.state === "learning");
-	const hasStabilizingPieces = pieces.some((p) => p.state === "stabilizing");
-	const hasMaintenancePieces = pieces.some(
-		(p) => p.state === "maintenance" || p.state === "performance",
-	);
-	const repSplit = redistributeRepertoireForAvailability(
-		alloc,
-		hasLearningPieces,
-		hasStabilizingPieces,
-		hasMaintenancePieces,
-	);
+	const warmupBlock: PlannedBlock | null =
+		alloc.warmup > 0 ? pickWarmup(techniques, alloc.warmup, now) : null;
+	if (warmupBlock?.techniqueId) usedTechniqueIds.add(warmupBlock.techniqueId);
 
 	let techMinutes = alloc.technique;
-	const techBlocks = pickTechnique(techMinutes, techniques, now);
+	const techBlocks = pickTechnique(
+		techMinutes,
+		techniques,
+		now,
+		usedTechniqueIds,
+	);
+	for (const tb of techBlocks) {
+		if (tb.techniqueId) usedTechniqueIds.add(tb.techniqueId);
+	}
+
+	const hasLearningEligible =
+		eligibleSectionCandidates("learning", pieces, sections, now).length > 0;
+	const hasStabilizingEligible =
+		eligibleSectionCandidates("stabilizing", pieces, sections, now).length > 0;
+	const hasMaintenanceEligible =
+		eligibleMaintenancePieces(pieces, now).length > 0;
+
+	const repSplit = redistributeRepertoireForAvailability(
+		alloc,
+		hasLearningEligible,
+		hasStabilizingEligible,
+		hasMaintenanceEligible,
+	);
+
 	if (techMinutes > 0 && techBlocks.length === 0) {
-		// No techniques available — push minutes into repertoire learning if possible
-		if (hasLearningPieces) {
+		omitted.push({
+			kind: "technique",
+			reason: omittedReason(hasAnyTechniqueInPool(techniques)),
+			redistributedMinutes: techMinutes,
+		});
+		if (hasLearningEligible) {
 			repSplit.learning += techMinutes;
-		} else if (hasStabilizingPieces) {
+		} else if (hasStabilizingEligible) {
 			repSplit.stabilizing += techMinutes;
-		} else if (hasMaintenancePieces) {
+		} else if (hasMaintenanceEligible) {
 			repSplit.maintenance += techMinutes;
 		}
 		techMinutes = 0;
 	}
 
-	const warmupBlock: PlannedBlock | null =
-		alloc.warmup > 0 ? pickWarmup(techniques, alloc.warmup, now) : null;
+	if (alloc.repertoireLearning > 0 && !hasLearningEligible) {
+		omitted.push({
+			kind: "repertoire-learning",
+			reason: omittedReason(hasPiecesInState(pieces, "learning")),
+			redistributedMinutes: alloc.repertoireLearning,
+		});
+	}
+	if (alloc.repertoireStabilizing > 0 && !hasStabilizingEligible) {
+		omitted.push({
+			kind: "repertoire-stabilizing",
+			reason: omittedReason(hasPiecesInState(pieces, "stabilizing")),
+			redistributedMinutes: alloc.repertoireStabilizing,
+		});
+	}
+	if (alloc.repertoireMaintenance > 0 && !hasMaintenanceEligible) {
+		const rawMaintenance =
+			hasPiecesInState(pieces, "maintenance") ||
+			hasPiecesInState(pieces, "performance");
+		omitted.push({
+			kind: "repertoire-maintenance",
+			reason: omittedReason(rawMaintenance),
+			redistributedMinutes: alloc.repertoireMaintenance,
+		});
+	}
+
+	const usedSectionIds = new Set<string>();
+	const usedPieceIds = new Set<string>();
 
 	const learningBlock =
 		repSplit.learning > 0
@@ -635,8 +765,12 @@ export function buildPlan(
 					sections,
 					repSplit.learning,
 					now,
+					usedSectionIds,
 				)
 			: null;
+	if (learningBlock?.sectionId) usedSectionIds.add(learningBlock.sectionId);
+	if (learningBlock?.pieceId) usedPieceIds.add(learningBlock.pieceId);
+
 	const stabilizingBlock =
 		repSplit.stabilizing > 0
 			? pickRepertoireSection(
@@ -645,11 +779,21 @@ export function buildPlan(
 					sections,
 					repSplit.stabilizing,
 					now,
+					usedSectionIds,
 				)
 			: null;
+	if (stabilizingBlock?.sectionId)
+		usedSectionIds.add(stabilizingBlock.sectionId);
+	if (stabilizingBlock?.pieceId) usedPieceIds.add(stabilizingBlock.pieceId);
+
 	const maintenanceBlock =
 		repSplit.maintenance > 0
-			? pickRepertoireMaintenance(pieces, repSplit.maintenance, now)
+			? pickRepertoireMaintenance(
+					pieces,
+					repSplit.maintenance,
+					now,
+					usedPieceIds,
+				)
 			: null;
 
 	const sightBlock: PlannedBlock | null =
@@ -688,5 +832,6 @@ export function buildPlan(
 		totalMinutes: clamp(inputs.totalMinutes, 15, 90),
 		blocks,
 		generatedAt: now.toISOString(),
+		omitted,
 	};
 }

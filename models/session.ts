@@ -31,11 +31,20 @@ export interface PlannedBlock {
 	rationale?: string | null;
 }
 
+export type OmittedReason = "practiced-today" | "no-content";
+
+export interface OmittedSlot {
+	kind: BlockKind;
+	reason: OmittedReason;
+	redistributedMinutes: number;
+}
+
 export interface SessionPlan {
 	emphasis: SessionEmphasis;
 	totalMinutes: number;
 	blocks: PlannedBlock[];
 	generatedAt: string;
+	omitted?: OmittedSlot[];
 }
 
 export interface SessionInputs {

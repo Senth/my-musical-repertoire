@@ -22,6 +22,7 @@ import { useTechniques } from "@/hooks/use-techniques";
 import {
 	type ActiveSession,
 	type BlockExecutionState,
+	type OmittedSlot,
 	type PlannedBlock,
 	SESSION_EMPHASES,
 	type SessionEmphasis,
@@ -247,6 +248,11 @@ export default function SessionSetupScreen() {
 									</Card.Content>
 								</Card>
 							)}
+							{plan?.omitted
+								?.filter((o) => o.reason === "practiced-today")
+								.map((o) => (
+									<OmittedRow key={`omitted:${o.kind}`} slot={o} />
+								))}
 						</View>
 
 						<Button
@@ -260,6 +266,23 @@ export default function SessionSetupScreen() {
 					</View>
 				</ScrollView>
 			)}
+		</View>
+	);
+}
+
+function OmittedRow({ slot }: { slot: OmittedSlot }) {
+	const { t } = useTranslation();
+	const theme = useTheme();
+	return (
+		<View className="flex-row items-start gap-3">
+			<Text
+				variant="bodyMedium"
+				style={{ color: theme.colors.onSurfaceVariant, fontStyle: "italic" }}
+			>
+				{t(`screen.session.setup.allPracticedToday.${slot.kind}` as const, {
+					minutes: slot.redistributedMinutes,
+				})}
+			</Text>
 		</View>
 	);
 }
