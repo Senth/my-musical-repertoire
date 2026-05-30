@@ -631,4 +631,304 @@ describe("buildPlan", () => {
 		const tIdx = plan.blocks.findIndex((b) => b.kind === "technique");
 		expect(tIdx).toBeLessThan(sIdx);
 	});
+
+	it("after practicing, next session picks stalest content (regression: same picks across sessions)", () => {
+		// Two learning pieces, two techniques. Session 1 picks the stalest.
+		// After session 1 updates lastPracticed, session 2 (next day) picks the OTHER items.
+		const session1Day = new Date("2026-05-27T12:00:00Z");
+		const session2Day = new Date("2026-05-28T12:00:00Z"); // next day
+
+		const pieces: Piece[] = [
+			makePiece({
+				id: "p1",
+				title: "A",
+				state: "learning",
+				lastPracticed: null, // never practiced → score = 10 × 999
+			}),
+			makePiece({
+				id: "p2",
+				title: "B",
+				state: "learning",
+				lastPracticed: new Date("2026-05-20T12:00:00Z"), // 7 days stale
+			}),
+		];
+		const ts: TechniqueItem[] = [
+			makeTechnique({
+				id: "t1",
+				title: "T1",
+				state: "active",
+				lastPracticedAt: null, // never → score = 10 × 999
+			}),
+			makeTechnique({
+				id: "t2",
+				title: "T2",
+				state: "active",
+				lastPracticedAt: new Date("2026-05-20T12:00:00Z"), // 7 days stale
+			}),
+		];
+
+		// Session 1: picks p1 (never practiced, higher score) and t1 (never practiced)
+		const plan1 = buildPlan(
+			inputs({ totalMinutes: 30, sightReadingEnabled: false }),
+			pieces,
+			[],
+			ts,
+			session1Day,
+		);
+		const plan1Piece = plan1.blocks.find(
+			(b) => b.kind === "repertoire-learning",
+		);
+		const plan1Tech = plan1.blocks.find((b) => b.kind === "technique");
+		expect(plan1Piece?.pieceId).toBe("p1"); // p1 wins (999 days > 7 days)
+		expect(plan1Tech?.techniqueId).toBe("t1"); // t1 wins (999 days > 7 days)
+
+		// Simulate session 1 completing: update lastPracticed for p1 and t1
+		const afterSession1Pieces: Piece[] = [
+			makePiece({
+				id: "p1",
+				title: "A",
+				state: "learning",
+				lastPracticed: session1Day, // just practiced
+			}),
+			makePiece({
+				id: "p2",
+				title: "B",
+				state: "learning",
+				lastPracticed: new Date("2026-05-20T12:00:00Z"), // 8 days stale now
+			}),
+		];
+		const afterSession1Techniques: TechniqueItem[] = [
+			makeTechnique({
+				id: "t1",
+				title: "T1",
+				state: "active",
+				lastPracticedAt: session1Day, // just practiced
+			}),
+			makeTechnique({
+				id: "t2",
+				title: "T2",
+				state: "active",
+				lastPracticedAt: new Date("2026-05-20T12:00:00Z"), // 8 days stale now
+			}),
+		];
+
+		// Session 2 (next day): p2 and t2 should now score higher
+		const plan2 = buildPlan(
+			inputs({ totalMinutes: 30, sightReadingEnabled: false }),
+			afterSession1Pieces,
+			[],
+			afterSession1Techniques,
+			session2Day,
+		);
+		const plan2Piece = plan2.blocks.find(
+			(b) => b.kind === "repertoire-learning",
+		);
+		const plan2Tech = plan2.blocks.find((b) => b.kind === "technique");
+		expect(plan2Piece?.pieceId).toBe("p2"); // p2 wins (8 days stale > 1 day)
+		expect(plan2Tech?.techniqueId).toBe("t2"); // t2 wins (8 days stale > 1 day)
+	});
+});
+
+describe("same-day exclusion", () => {
+	const NOW_LOCAL = new Date(2026, 4, 27, 12, 0); // local noon
+
+	function oneHourAgo(): Date {
+		return new Date(NOW_LOCAL.getTime() - 60 * 60 * 1000);
+	}
+
+	function twoDaysAgo(): Date {
+		return new Date(NOW_LOCAL.getTime() - 2 * 86400000);
+	}
+
+	it("excludes section practiced earlier today from learning slot", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", title: "A", state: "learning" }),
+			makePiece({ id: "p2", title: "B", state: "learning" }),
+		];
+		const sections: Section[] = [
+			makeSection({
+				id: "s1",
+				pieceId: "p1",
+				phase: "learning",
+				lastPracticed: oneHourAgo(),
+			}),
+			makeSection({
+				id: "s2",
+				pieceId: "p2",
+				phase: "learning",
+				lastPracticed: twoDaysAgo(),
+			}),
+		];
+		const block = pickRepertoireSection(
+			"learning",
+			pieces,
+			sections,
+			10,
+			NOW_LOCAL,
+		);
+		expect(block?.sectionId).toBe("s2");
+	});
+
+	it("excludes piece practiced earlier today from maintenance slot", () => {
+		const pieces: Piece[] = [
+			makePiece({
+				id: "p1",
+				title: "A",
+				state: "maintenance",
+				lastPracticed: oneHourAgo(),
+			}),
+			makePiece({
+				id: "p2",
+				title: "B",
+				state: "maintenance",
+				lastPracticed: twoDaysAgo(),
+			}),
+		];
+		const block = pickRepertoireMaintenance(pieces, 5, NOW_LOCAL);
+		expect(block?.pieceId).toBe("p2");
+	});
+
+	it("excludes technique practiced earlier today", () => {
+		const ts: TechniqueItem[] = [
+			makeTechnique({
+				id: "t1",
+				state: "active",
+				lastPracticedAt: oneHourAgo(),
+			}),
+			makeTechnique({
+				id: "t2",
+				state: "active",
+				lastPracticedAt: twoDaysAgo(),
+			}),
+		];
+		const blocks = pickTechnique(7, ts, NOW_LOCAL);
+		expect(blocks[0].techniqueId).toBe("t2");
+	});
+
+	it("warmup excludes maintenance technique practiced today; falls back to freeform if none left", () => {
+		const ts: TechniqueItem[] = [
+			makeTechnique({
+				id: "m1",
+				state: "maintenance",
+				lastPracticedAt: oneHourAgo(),
+			}),
+		];
+		const b = pickWarmup(ts, 5, NOW_LOCAL);
+		expect(b.techniqueId).toBeNull();
+	});
+
+	it("respects usedTechniqueIds for cross-block dedup", () => {
+		const ts: TechniqueItem[] = [
+			makeTechnique({
+				id: "t1",
+				state: "active",
+				lastPracticedAt: twoDaysAgo(),
+			}),
+			makeTechnique({
+				id: "t2",
+				state: "active",
+				lastPracticedAt: twoDaysAgo(),
+			}),
+		];
+		const used = new Set<string>(["t1"]);
+		const blocks = pickTechnique(7, ts, NOW_LOCAL, used);
+		expect(blocks[0].techniqueId).toBe("t2");
+	});
+
+	it("buildPlan: warmup and technique pick different techniques in 60-min session", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const ts: TechniqueItem[] = [
+			makeTechnique({
+				id: "a1",
+				state: "active",
+				lastPracticedAt: twoDaysAgo(),
+			}),
+			makeTechnique({
+				id: "m1",
+				state: "maintenance",
+				lastPracticedAt: twoDaysAgo(),
+			}),
+			makeTechnique({
+				id: "m2",
+				state: "maintenance",
+				lastPracticedAt: twoDaysAgo(),
+			}),
+		];
+		const plan = buildPlan(
+			inputs({ totalMinutes: 60 }),
+			pieces,
+			[],
+			ts,
+			NOW_LOCAL,
+		);
+		const warmup = plan.blocks.find((b) => b.kind === "warmup");
+		const techBlocks = plan.blocks.filter((b) => b.kind === "technique");
+		const warmupId = warmup?.techniqueId;
+		expect(warmupId).not.toBeNull();
+		for (const tb of techBlocks) {
+			expect(tb.techniqueId).not.toBe(warmupId);
+		}
+	});
+
+	it("buildPlan: omitted entry with reason=practiced-today when all techniques used today", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const ts: TechniqueItem[] = [
+			makeTechnique({
+				id: "a1",
+				state: "active",
+				lastPracticedAt: oneHourAgo(),
+			}),
+		];
+		const plan = buildPlan(
+			inputs({ totalMinutes: 30 }),
+			pieces,
+			[],
+			ts,
+			NOW_LOCAL,
+		);
+		expect(plan.blocks.find((b) => b.kind === "technique")).toBeUndefined();
+		const om = plan.omitted?.find((o) => o.kind === "technique");
+		expect(om?.reason).toBe("practiced-today");
+		expect(om?.redistributedMinutes).toBe(7);
+	});
+
+	it("buildPlan: omitted reason=no-content when pool has no techniques at all", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const plan = buildPlan(
+			inputs({ totalMinutes: 30 }),
+			pieces,
+			[],
+			[],
+			NOW_LOCAL,
+		);
+		const om = plan.omitted?.find((o) => o.kind === "technique");
+		expect(om?.reason).toBe("no-content");
+	});
+
+	it("buildPlan: redistribution when learning pool empty due to today-exclusion", () => {
+		const pieces: Piece[] = [
+			makePiece({
+				id: "p1",
+				state: "learning",
+				lastPracticed: oneHourAgo(),
+			}),
+			makePiece({
+				id: "p2",
+				state: "stabilizing",
+				lastPracticed: twoDaysAgo(),
+			}),
+		];
+		const plan = buildPlan(
+			inputs({ totalMinutes: 30 }),
+			pieces,
+			[],
+			[],
+			NOW_LOCAL,
+		);
+		expect(
+			plan.blocks.find((b) => b.kind === "repertoire-learning"),
+		).toBeUndefined();
+		const om = plan.omitted?.find((o) => o.kind === "repertoire-learning");
+		expect(om?.reason).toBe("practiced-today");
+	});
 });

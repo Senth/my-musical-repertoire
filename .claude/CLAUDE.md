@@ -1,8 +1,5 @@
 # CLAUDE.md
 
-<!-- Add your custom instructions below. Repowise will never modify anything outside the REPOWISE markers. -->
-<!-- Examples: coding style rules, test commands, workflow preferences, constraints -->
-
 ## Verifying changes
 
 - After implementation done, run all tests and lint. Fix all issue (included existing ones)
@@ -14,4 +11,9 @@
     - Test email: senth.wallace@gmail.com
     - Test password: hellomynameispassword123
 - Visual/interactive bugs: Identify and test with playwright skill.
-- When changing firestore rules: run `yarn deploy:dev` to deploy rules to dev environment.
+
+## Firebase
+
+- This project uses a real Firebase dev project. No emulators are running.
+- When `firestore.rules` are changed, these need to be deployed using `yarn deploy:web` to have an effect.
+- When a Firestore write fails with "Missing or insufficient permissions", check whether the relevant rule was deployed, not just written to `firestore.rules`.
