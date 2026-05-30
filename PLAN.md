@@ -211,6 +211,12 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Add duration for pieces. This will help with the session plan generator to estimate how much time a full playthrough of a piece it will take.
         During a session, if the piece is selected as a whole but does not have a duration. Suggest using the time elapsed of that block to estimate the piece duration after the user has pressed save and continue.
   - [ ] When practicing a anything, it would be good to see the last log for that piece/section/technique to have a reference point.
+  - [ ] Reloading a page and pressing back does nothing (if no context). I want us to improve the back-button
+    - [ ] When going through a piece to practice (through overview or pieces), after we have practiced it and going back we should end up in overview or pieces (not piece).
+    - [ ] Pressing back should always go back one step in the hierarchy. If we don't have any history, piece should go back to pieces list, technique should go back to techniques list, and sections should go back to piece details, etc.
+  - [ ] When practicing maintenance pieces, it should pick many if many are available instead of assigning 12 minutes to one piece
+- [ ] Bugs
+  - [ ] When in a session, the target BPM and other selection is saved from previous technique when multiple techniques are practiced.
 
 ### Phase 4: Session Plan Generator
 
