@@ -23,35 +23,38 @@ export function DropdownField({
 	const [visible, setVisible] = useState(false);
 	const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
 
+	const anchor = (
+		<View style={{ position: "relative" }}>
+			<TextInput
+				label={label}
+				value={selectedLabel}
+				mode="outlined"
+				editable={false}
+				right={<TextInput.Icon icon="chevron-down" />}
+			/>
+			<Pressable
+				onPress={() => setVisible(true)}
+				accessibilityRole="combobox"
+				accessibilityLabel={label}
+				accessibilityState={{ expanded: visible }}
+				style={{
+					position: "absolute",
+					top: 0,
+					left: 0,
+					right: 0,
+					bottom: 0,
+				}}
+			/>
+		</View>
+	);
+
+	// Only mount the Menu while open. A Menu mounted closed runs a spurious
+	// hide animation on web whose completion focuses the anchor's read-only
+	// input, stealing focus from autofocused fields on the add/edit screens.
+	if (!visible) return anchor;
+
 	return (
-		<Menu
-			visible={visible}
-			onDismiss={() => setVisible(false)}
-			anchor={
-				<View style={{ position: "relative" }}>
-					<TextInput
-						label={label}
-						value={selectedLabel}
-						mode="outlined"
-						editable={false}
-						right={<TextInput.Icon icon="chevron-down" />}
-					/>
-					<Pressable
-						onPress={() => setVisible(true)}
-						accessibilityRole="combobox"
-						accessibilityLabel={label}
-						accessibilityState={{ expanded: visible }}
-						style={{
-							position: "absolute",
-							top: 0,
-							left: 0,
-							right: 0,
-							bottom: 0,
-						}}
-					/>
-				</View>
-			}
-		>
+		<Menu visible onDismiss={() => setVisible(false)} anchor={anchor}>
 			{options.map((opt) => (
 				<Menu.Item
 					key={String(opt.value ?? "__null__")}
