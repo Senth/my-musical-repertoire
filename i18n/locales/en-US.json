@@ -183,7 +183,21 @@
 			"techniqueReason": {
 				"activeLastPracticed": "Active · {{when}}",
 				"maintenanceDue": "Maintenance · due for review",
-				"neverPracticed": "New — not yet practiced"
+				"neverPracticed": "New — not yet practiced",
+				"new": "New — practice for the first time",
+				"effortQuality": "Effort or quality needs work",
+				"daysSince": "{{days}} day(s) since last practice"
+			},
+			"pieceReason": {
+				"neverPracticed": "New piece — start your first session",
+				"bpmGap": "{{gap}} BPM below target",
+				"daysSince": "{{days}} day(s) since last practice"
+			},
+			"emptyState": {
+				"noActivePieces": "Start by adding a piece to your repertoire.",
+				"allPracticedToday": "Wow! You have practiced all your pieces today. Take a rest or add new pieces to practice!",
+				"allMaintenance": "All your pieces are in maintenance. Consider adding a new piece to learn!",
+				"allTechniquesPracticedToday": "You've practiced all your techniques today!"
 			}
 		},
 		"addPiece": {

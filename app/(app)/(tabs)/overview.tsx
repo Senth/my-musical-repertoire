@@ -1,6 +1,6 @@
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import {
@@ -22,74 +22,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
 import { usePieces } from "@/hooks/use-pieces";
+import { useAllSections } from "@/hooks/use-sections";
 import { useTechniques } from "@/hooks/use-techniques";
-import type { Piece } from "@/models/piece";
-import { PracticeMistakes } from "@/models/practice";
 import {
 	type ActiveSession,
 	SESSION_EMPHASES,
 	type SessionEmphasis,
 } from "@/models/session";
-import type { TechniqueItem } from "@/models/technique";
-import { formatDaysAgo } from "@/utils/date";
+import { suggestPieces, suggestTechniques } from "@/utils/overview-suggestions";
 import { clearActiveSession, readActiveSession } from "@/utils/session-storage";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
-
-function getSuggestedPieces(pieces: Piece[], count = 3): Piece[] {
-	const active = pieces.filter(
-		(p) => p.state !== "on_hold" && p.state !== "shelved",
-	);
-
-	const unpracticed = active.filter((p) => !p.lastPracticed);
-	const practiced = active.filter((p) => p.lastPracticed);
-
-	const sorted = [...practiced].sort((a, b) => {
-		// Performance pieces get highest priority
-		if (a.state === "performance" && b.state !== "performance") return -1;
-		if (b.state === "performance" && a.state !== "performance") return 1;
-
-		const scoreA =
-			(a.lastTechnicalMistakes ?? PracticeMistakes.none) +
-			(a.lastMemoryMistakes ?? PracticeMistakes.none);
-		const scoreB =
-			(b.lastTechnicalMistakes ?? PracticeMistakes.none) +
-			(b.lastMemoryMistakes ?? PracticeMistakes.none);
-		return scoreB - scoreA;
-	});
-
-	return [...unpracticed, ...sorted].slice(0, count);
-}
-
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
-function getSuggestedTechniques(items: TechniqueItem[]): TechniqueItem[] {
-	const now = new Date();
-
-	const byRecency = (a: TechniqueItem, b: TechniqueItem) => {
-		if (!a.lastPracticedAt && !b.lastPracticedAt) return 0;
-		if (!a.lastPracticedAt) return -1;
-		if (!b.lastPracticedAt) return 1;
-		return a.lastPracticedAt.getTime() - b.lastPracticedAt.getTime();
-	};
-
-	const active = items
-		.filter((i) => i.state === "active")
-		.sort(byRecency)
-		.slice(0, 2);
-
-	const maintenance = items
-		.filter(
-			(i) =>
-				i.state === "maintenance" &&
-				(!i.lastPracticedAt ||
-					now.getTime() - i.lastPracticedAt.getTime() >= SEVEN_DAYS_MS),
-		)
-		.sort(byRecency)
-		.slice(0, 1);
-
-	return [...active, ...maintenance];
-}
 
 export default function OverviewScreen() {
 	const { t } = useTranslation();
@@ -98,6 +41,7 @@ export default function OverviewScreen() {
 	const { user } = useAuth();
 	const { pieces, loading: piecesLoading } = usePieces();
 	const { techniques, loading: techniquesLoading } = useTechniques();
+	const { sections, loading: sectionsLoading } = useAllSections();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 	const tabBarHeight = useBottomTabBarHeight();
@@ -133,10 +77,17 @@ export default function OverviewScreen() {
 		if (!fabVisible) setFabOpen(false);
 	}, [fabVisible]);
 
-	const suggested = getSuggestedPieces(pieces);
-	const suggestedTechniques = getSuggestedTechniques(techniques);
+	const now = useMemo(() => new Date(), []);
+	const pieceSuggestions = useMemo(
+		() => suggestPieces(pieces, sections, now),
+		[pieces, sections, now],
+	);
+	const techniqueSuggestions = useMemo(
+		() => suggestTechniques(techniques, now),
+		[techniques, now],
+	);
 
-	if (piecesLoading || techniquesLoading) {
+	if (piecesLoading || techniquesLoading || sectionsLoading) {
 		return (
 			<View
 				className="flex-1 items-center justify-center"
@@ -146,18 +97,6 @@ export default function OverviewScreen() {
 			</View>
 		);
 	}
-
-	const getTechniqueReason = (item: TechniqueItem): string => {
-		if (!item.lastPracticedAt) {
-			return t("screen.overview.techniqueReason.neverPracticed");
-		}
-		if (item.state === "maintenance") {
-			return t("screen.overview.techniqueReason.maintenanceDue");
-		}
-		return t("screen.overview.techniqueReason.activeLastPracticed", {
-			when: formatDaysAgo(item.lastPracticedAt, t),
-		});
-	};
 
 	return (
 		<View
@@ -186,7 +125,7 @@ export default function OverviewScreen() {
 						{t("screen.overview.practiceToday")}
 					</Text>
 
-					{pieces.length === 0 ? (
+					{pieceSuggestions.emptyStateKey && (
 						<Text
 							variant="bodyLarge"
 							style={{
@@ -194,65 +133,55 @@ export default function OverviewScreen() {
 								textAlign: "center",
 							}}
 						>
-							{t("screen.overview.noPieces")}
+							{t(pieceSuggestions.emptyStateKey as Parameters<typeof t>[0])}
 						</Text>
-					) : suggested.length === 0 ? (
-						<Text
-							variant="bodyLarge"
-							style={{
-								color: theme.colors.onSurfaceVariant,
-								textAlign: "center",
-							}}
-						>
-							{t("screen.overview.allCaughtUp")}
-						</Text>
-					) : (
-						suggested.map((piece) => (
-							<Card
-								key={piece.id}
-								mode="elevated"
-								onPress={() => router.push(`/piece/${piece.id}`)}
-							>
-								<Card.Title title={piece.title} subtitle={piece.composer} />
-								<Card.Content>
-									<View className="gap-2">
-										<View className="flex-row items-center gap-2 flex-wrap">
-											<PieceStateChip state={piece.state} />
-											{(piece.sectionCount ?? 0) > 0 && (
-												<Text
-													variant="bodySmall"
-													style={{ color: theme.colors.onSurfaceVariant }}
-												>
-													{t("piece.sectionCount", {
-														count: piece.sectionCount,
-													})}
-												</Text>
-											)}
-										</View>
-										<PieceProgressBar
-											technicalMistakes={piece.lastTechnicalMistakes}
-											memoryMistakes={piece.lastMemoryMistakes}
-										/>
-										<Text
-											variant="bodySmall"
-											style={{ color: theme.colors.onSurfaceVariant }}
-										>
-											{formatDaysAgo(piece.lastPracticed, t)}
-										</Text>
-										<Button
-											mode="contained-tonal"
-											compact
-											onPress={() =>
-												router.push(`/piece/${piece.id}/practice?from=overview`)
-											}
-										>
-											{t("screen.overview.practice")}
-										</Button>
-									</View>
-								</Card.Content>
-							</Card>
-						))
 					)}
+
+					{pieceSuggestions.suggestions.map((s) => (
+						<Card
+							key={s.piece.id}
+							mode="elevated"
+							onPress={() => router.push(`/piece/${s.piece.id}`)}
+						>
+							<Card.Title title={s.piece.title} subtitle={s.piece.composer} />
+							<Card.Content>
+								<View className="gap-2">
+									<View className="flex-row items-center gap-2 flex-wrap">
+										<PieceStateChip state={s.piece.state} />
+										{(s.piece.sectionCount ?? 0) > 0 && (
+											<Text
+												variant="bodySmall"
+												style={{ color: theme.colors.onSurfaceVariant }}
+											>
+												{t("piece.sectionCount", {
+													count: s.piece.sectionCount,
+												})}
+											</Text>
+										)}
+									</View>
+									<PieceProgressBar
+										technicalMistakes={s.piece.lastTechnicalMistakes}
+										memoryMistakes={s.piece.lastMemoryMistakes}
+									/>
+									<Text
+										variant="bodySmall"
+										style={{ color: theme.colors.onSurfaceVariant }}
+									>
+										{t(s.reasonKey as Parameters<typeof t>[0], s.reasonParams)}
+									</Text>
+									<Button
+										mode="contained-tonal"
+										compact
+										onPress={() =>
+											router.push(`/piece/${s.piece.id}/practice?from=overview`)
+										}
+									>
+										{t("screen.overview.practice")}
+									</Button>
+								</View>
+							</Card.Content>
+						</Card>
+					))}
 
 					{pieces.length > 0 && (
 						<Button
@@ -268,7 +197,7 @@ export default function OverviewScreen() {
 						{t("screen.overview.techniqueToday")}
 					</Text>
 
-					{suggestedTechniques.length === 0 ? (
+					{techniqueSuggestions.emptyStateKey && (
 						<Text
 							variant="bodyLarge"
 							style={{
@@ -276,52 +205,52 @@ export default function OverviewScreen() {
 								textAlign: "center",
 							}}
 						>
-							{t("screen.overview.allCaughtUp")}
+							{t(techniqueSuggestions.emptyStateKey as Parameters<typeof t>[0])}
 						</Text>
-					) : (
-						suggestedTechniques.map((item) => (
-							<Card
-								key={item.id}
-								mode="elevated"
-								onPress={() => router.push(`/technique/${item.id}`)}
-							>
-								<Card.Title title={item.title} />
-								<Card.Content>
-									<View className="gap-2">
-										<View className="flex-row items-center gap-2 flex-wrap">
-											<TechniqueStateChip state={item.state} />
-											{item.type && (
-												<Chip compact textStyle={{ fontSize: 11 }}>
-													{t(
-														`technique.type.${item.type}` as Parameters<
-															typeof t
-														>[0],
-													)}
-												</Chip>
-											)}
-										</View>
-										<Text
-											variant="bodySmall"
-											style={{ color: theme.colors.onSurfaceVariant }}
-										>
-											{getTechniqueReason(item)}
-										</Text>
-										<Button
-											mode="contained-tonal"
-											compact
-											onPress={() =>
-												router.push(
-													`/technique/${item.id}/practice?from=overview`,
-												)
-											}
-										>
-											{t("screen.overview.practice")}
-										</Button>
-									</View>
-								</Card.Content>
-							</Card>
-						))
 					)}
+
+					{techniqueSuggestions.suggestions.map((s) => (
+						<Card
+							key={s.tech.id}
+							mode="elevated"
+							onPress={() => router.push(`/technique/${s.tech.id}`)}
+						>
+							<Card.Title title={s.tech.title} />
+							<Card.Content>
+								<View className="gap-2">
+									<View className="flex-row items-center gap-2 flex-wrap">
+										<TechniqueStateChip state={s.tech.state} />
+										{s.tech.type && (
+											<Chip compact textStyle={{ fontSize: 11 }}>
+												{t(
+													`technique.type.${s.tech.type}` as Parameters<
+														typeof t
+													>[0],
+												)}
+											</Chip>
+										)}
+									</View>
+									<Text
+										variant="bodySmall"
+										style={{ color: theme.colors.onSurfaceVariant }}
+									>
+										{t(s.reasonKey as Parameters<typeof t>[0], s.reasonParams)}
+									</Text>
+									<Button
+										mode="contained-tonal"
+										compact
+										onPress={() =>
+											router.push(
+												`/technique/${s.tech.id}/practice?from=overview`,
+											)
+										}
+									>
+										{t("screen.overview.practice")}
+									</Button>
+								</View>
+							</Card.Content>
+						</Card>
+					))}
 
 					<Button
 						mode="text"

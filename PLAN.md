@@ -210,6 +210,10 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [x] When practicing maintenance pieces, it should pick many if many are available instead of assigning 12 minutes to one piece
   - [x] Instead of carrying the session time forward to the next block if we're missing or have removed a section it should be distributed "evenly" across the remaining blocks. For example, if we have 30 minutes and 10 minutes would go to technique, 5 minutes to sight-reading, and 15 minutes to repertoire. We should distribute the 5 minutes like this: techniue = (10/30)*5 = 1.66 minutes, sight-reading = (5/30)*5 = 0.83 minutes, and repertoire = (15/30)\*5 = 2.5 minutes. This way we keep the same proportions as the original plan.
   - [ ] When practicing a anything, it would be good to see the last log for that piece/section/technique to have a reference point. This should be displayed both in the individual practice screens as well as in the session (which probably reuses the same practice screens).
+- [x] Overview suggestion overhaul
+  - [x] Use same scoring logic as the session plan generator to suggest pieces in the overview. No pieces that has been practiced today
+    - [x] 1 Learning piece, 1 Stabilizing piece, 2 Performance pieces, and 2 Maintenance pieces. If there are not enough pieces in a category, it will be empty. If there are no pieces at all (but the user has practiced something today), show "Wow! You have practiced all your pieces today. Take a rest or add new pieces to practice!". If the user has no pieces at all, show "Start by adding a piece to your repertoire.".
+    - [x] Techniques should be similarly suggested based on the same scoring as session as well. With 2 active techniques and 2 maintenance techniques.
 
 #### Bugs
 
@@ -217,6 +221,7 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - [ ] Reset password not centered on the page
 - [ ] Paddings on each page (ask md3-designer to check for padding/margins consistency and adherence to guidelines)
 - [ ] Some pages span whole width of the screen on desktop web, when they should be centered with a max width (like other pages).
+- [ ] Composer autocomplete suggestions are below other elements.
 - [ ] Reloading a page and pressing back does nothing (if no context). I want us to improve the back-button
   - [ ] When going through a piece to practice (through overview or pieces), after we have practiced it and going back we should end up in overview or pieces (not piece).
   - [ ] Pressing back should always go back one step in the hierarchy. If we don't have any history, piece should go back to pieces list, technique should go back to techniques list, and sections should go back to piece details, etc.
