@@ -28,9 +28,10 @@ interface FirestorePiece {
 	lastAchievedTempoBpm?: number | null;
 	sectionCount?: number;
 	notes?: string | null;
+	durationSeconds?: number | null;
 }
 
-function fromFirestore(
+export function fromFirestore(
 	id: string,
 	data: FirestorePiece,
 	userId: string,
@@ -50,6 +51,7 @@ function fromFirestore(
 		lastAchievedTempoBpm: data.lastAchievedTempoBpm ?? null,
 		sectionCount: data.sectionCount ?? 0,
 		notes: data.notes ?? null,
+		durationSeconds: data.durationSeconds ?? null,
 	};
 }
 
@@ -90,6 +92,7 @@ export function useAddPiece() {
 		composer: string,
 		state: PieceState = "learning",
 		targetTempoBpm: number | null = null,
+		durationSeconds: number | null = null,
 	) => {
 		if (!user) throw new Error("Not authenticated");
 
@@ -99,6 +102,7 @@ export function useAddPiece() {
 			composer,
 			state,
 			targetTempoBpm,
+			durationSeconds,
 			lastPracticed: null,
 		});
 	};
@@ -125,6 +129,7 @@ export function useUpdatePiece() {
 				| "lastMemoryMistakes"
 				| "lastAchievedTempoBpm"
 				| "notes"
+				| "durationSeconds"
 			>
 		>,
 	) => {

@@ -45,4 +45,5 @@ export interface Piece {
 	lastAchievedTempoBpm?: number | null;
 	sectionCount?: number;
 	notes?: string | null;
+	durationSeconds?: number | null; // full play-through estimate; null if unknown
 }

@@ -38,11 +38,13 @@ export default function AddPieceScreen() {
 	const [composer, setComposer] = useState("");
 	const [state, setState] = useState<PieceState>("learning");
 	const [targetTempoBpmText, setTargetTempoBpmText] = useState("");
+	const [durationMinutesText, setDurationMinutesText] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [titleError, setTitleError] = useState<string | null>(null);
 	const [composerError, setComposerError] = useState<string | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
+	const [durationError, setDurationError] = useState<string | null>(null);
 	const titleTouched = useRef(false);
 	const titleInputRef = useAutoFocusOnMount<{ focus: () => void }>();
 
@@ -70,6 +72,18 @@ export default function AddPieceScreen() {
 		setBpmError(validateBpm(targetTempoBpmText));
 	};
 
+	const validateDuration = (text: string): string | null => {
+		if (!text.trim()) return null;
+		const n = Number.parseInt(text.trim(), 10);
+		return Number.isNaN(n) || n < 1 || n > 600
+			? t("error.durationInvalid")
+			: null;
+	};
+
+	const handleDurationBlur = () => {
+		setDurationError(validateDuration(durationMinutesText));
+	};
+
 	const stateOptions = PIECE_STATES.map((s) => ({
 		value: s,
 		label: t(`piece.state.${s}`),
@@ -80,17 +94,29 @@ export default function AddPieceScreen() {
 		const composerErr = validateComposer();
 		const bpmErr = validateBpm(targetTempoBpmText);
 		setBpmError(bpmErr);
-		if (titleErr || composerErr || bpmErr) return;
+		const durationErr = validateDuration(durationMinutesText);
+		setDurationError(durationErr);
+		if (titleErr || composerErr || bpmErr || durationErr) return;
 
 		const targetTempoBpm = targetTempoBpmText.trim()
 			? Number.parseInt(targetTempoBpmText.trim(), 10) || null
+			: null;
+
+		const durationSeconds = durationMinutesText.trim()
+			? Number.parseInt(durationMinutesText.trim(), 10) * 60
 			: null;
 
 		setLoading(true);
 		setError(null);
 
 		try {
-			await addPiece(title.trim(), composer.trim(), state, targetTempoBpm);
+			await addPiece(
+				title.trim(),
+				composer.trim(),
+				state,
+				targetTempoBpm,
+				durationSeconds,
+			);
 			router.back();
 		} catch {
 			setError(t("error.firebase"));
@@ -152,6 +178,21 @@ export default function AddPieceScreen() {
 				/>
 				<HelperText type="error" visible={!!bpmError}>
 					{bpmError ?? ""}
+				</HelperText>
+			</View>
+
+			<View>
+				<TextInput
+					label={t("screen.addPiece.durationLabel")}
+					value={durationMinutesText}
+					onChangeText={setDurationMinutesText}
+					mode="outlined"
+					keyboardType="numeric"
+					error={!!durationError}
+					onBlur={handleDurationBlur}
+				/>
+				<HelperText type="error" visible={!!durationError}>
+					{durationError ?? ""}
 				</HelperText>
 			</View>
 

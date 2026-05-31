@@ -111,6 +111,7 @@
 		"deleteSection": "Failed to archive section. Please try again.",
 		"reorderSections": "Failed to reorder sections. Please try again.",
 		"bpmInvalid": "Enter a BPM between 20 and 240.",
+		"durationInvalid": "Enter a duration between 1 and 600 minutes.",
 		"googleSignIn": "Google sign-in failed. Please try again."
 	},
 	"screen": {
@@ -191,6 +192,7 @@
 			"composerLabel": "Composer",
 			"stateLabel": "Lifecycle State",
 			"targetTempoBpmLabel": "Target Tempo (BPM)",
+			"durationLabel": "Duration (minutes)",
 			"save": "Save",
 			"error": {
 				"titleRequired": "Title is required.",
@@ -241,6 +243,7 @@
 			"stateLabel": "Lifecycle State",
 			"learningPhaseLabel": "Learning Phase",
 			"targetTempoBpmLabel": "Target Tempo (BPM)",
+			"durationLabel": "Duration (minutes)",
 			"difficultyLabel": "Difficulty",
 			"notesLabel": "Notes (optional)",
 			"save": "Save",
@@ -395,7 +398,17 @@
 				"extend": "Extend +2 min",
 				"sightReadingBody": "Sight-reading — pick your material",
 				"warmupBody": "Warmup — gentle scales of your choice",
-				"done": "Done"
+				"done": "Done",
+				"durationPrompt": {
+					"title": "Set duration for {{piece}}?",
+					"measured": "Measured: ~{{time}}",
+					"minutesLabel": "Minutes",
+					"invalid": "Enter at least 1 minute.",
+					"skip": "Skip",
+					"skipA11y": "Skip setting duration",
+					"save": "Save",
+					"saveA11y": "Save duration"
+				}
 			},
 			"resume": {
 				"banner": "Session in progress — {{emphasis}}, {{minutes}} min",
