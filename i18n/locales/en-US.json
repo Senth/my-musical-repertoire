@@ -222,6 +222,18 @@
 			"memoryMistakes": "Memory Mistakes",
 			"save": "Save",
 			"achievedBpmLabel": "Achieved BPM",
+			"lastSession": {
+				"header": "Last session · {{when}}",
+				"headerAfterBreak": "Last session · {{when}} · after a break",
+				"tempo": "Tempo",
+				"tempoTarget": "(target {{bpm}})",
+				"tempoNone": "—",
+				"quality": "Quality",
+				"effort": "Effort",
+				"technical": "Technical",
+				"memory": "Memory",
+				"firstPractice": "First practice — no reference yet"
+			},
 			"sectionsPanel": {
 				"header": "Sections",
 				"headerCheckbox": "Sections — tap the ones that were problematic",
