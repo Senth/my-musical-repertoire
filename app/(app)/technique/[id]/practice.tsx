@@ -15,10 +15,12 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import { MetronomeButton } from "@/components/practice/MetronomeButton";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import { useCoach, useRegisterCoachSave } from "@/contexts/CoachContext";
+import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import {
 	useDeleteTechnique,
 	useSaveTechniqueLog,
@@ -50,6 +52,11 @@ export function TechniquePracticeContent({
 	const standaloneSessionId = useRef(randomUUID());
 	const technique = techniques.find((tn) => tn.id === techniqueId);
 
+	const { lastLog, loading: lastLogLoading } = useLastPracticeLog({
+		type: "technique",
+		techniqueId,
+	});
+
 	const getBackDestination = (): string => {
 		if (from === "overview") return "/(app)/(tabs)/overview";
 		if (from === "technique-detail") return `/technique/${techniqueId}`;
@@ -69,11 +76,6 @@ export function TechniquePracticeContent({
 			getBackDestination() as Parameters<typeof router.replace>[0],
 		);
 
-	const previousDataRef = useRef<{
-		quality: 1 | 2 | 3 | 4 | 5 | null | undefined;
-		effort: 1 | 2 | 3 | 4 | 5 | null | undefined;
-		tempoBpm: number | null | undefined;
-	}>({ quality: undefined, effort: undefined, tempoBpm: undefined });
 	const seededRef = useRef(false);
 
 	const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
@@ -89,11 +91,6 @@ export function TechniquePracticeContent({
 		if (technique && !seededRef.current) {
 			seededRef.current = true;
 			setTempoBpm(technique.lastAchievedTempoBpm?.toString() ?? "");
-			previousDataRef.current = {
-				quality: technique.lastQuality,
-				effort: technique.lastEffort,
-				tempoBpm: technique.lastAchievedTempoBpm,
-			};
 		}
 	}, [technique]);
 
@@ -252,9 +249,9 @@ export function TechniquePracticeContent({
 					currentQuality={quality}
 					currentEffort={effort}
 					currentTempoBpm={Number.parseInt(tempoBpm.trim(), 10) || null}
-					previousQuality={previousDataRef.current.quality}
-					previousEffort={previousDataRef.current.effort}
-					previousTempoBpm={previousDataRef.current.tempoBpm}
+					previousQuality={lastLog?.quality ?? undefined}
+					previousEffort={lastLog?.effort ?? undefined}
+					previousTempoBpm={lastLog?.achievedBpm ?? undefined}
 					targetTempoBpm={technique.targetTempoBpm}
 					isCompact={isCompact}
 					onDone={handleDone}
@@ -271,6 +268,13 @@ export function TechniquePracticeContent({
 					>
 						<View className="w-full max-w-xl self-center gap-6">
 							<Text variant="headlineSmall">{technique.title}</Text>
+
+							<LastSessionCard
+								lastLog={lastLog}
+								loading={lastLogLoading}
+								scope="technique"
+								targetBpm={technique.targetTempoBpm ?? null}
+							/>
 
 							<View className="gap-2">
 								<Text variant="titleSmall">

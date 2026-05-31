@@ -16,17 +16,19 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import { MetronomeButton } from "@/components/practice/MetronomeButton";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
+import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { useCoach, useRegisterCoachSave } from "@/contexts/CoachContext";
+import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
 import { useSections } from "@/hooks/use-sections";
 import { PracticeMistakes, type PracticeTrigger } from "@/models/practice";
-import { formatDaysAgo } from "@/utils/date";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
@@ -82,6 +84,11 @@ export function PiecePracticeContent({
 
 	const piece = pieces.find((p) => p.id === pieceId);
 
+	const lastLogScope = sectionIdProp
+		? { type: "section" as const, pieceId, sectionId: sectionIdProp }
+		: { type: "piece" as const, pieceId };
+	const { lastLog, loading: lastLogLoading } = useLastPracticeLog(lastLogScope);
+
 	const getBackDestination = (): string => {
 		if (from === "pieces") return "/(app)/(tabs)/piece";
 		if (from === "piece-detail") return `/piece/${pieceId}`;
@@ -99,17 +106,6 @@ export function PiecePracticeContent({
 		router.replace(
 			getBackDestination() as Parameters<typeof router.replace>[0],
 		);
-
-	const previousDataRef = useRef({
-		technicalMistakes: piece?.lastTechnicalMistakes,
-		memoryMistakes: piece?.lastMemoryMistakes,
-	});
-	const previousSectionDataRef = useRef<{
-		quality: 1 | 2 | 3 | 4 | 5 | null | undefined;
-		effort: 1 | 2 | 3 | 4 | 5 | null | undefined;
-		tempoBpm: number | null | undefined;
-	}>({ quality: undefined, effort: undefined, tempoBpm: undefined });
-	const seededSectionRef = useRef(false);
 
 	const [technicalMistakes, setTechnicalMistakes] = useState<PracticeMistakes>(
 		PracticeMistakes.none,
@@ -157,14 +153,6 @@ export function PiecePracticeContent({
 	useEffect(() => {
 		if (scopedSection) {
 			setAchievedBpm(scopedSection.currentBpm?.toString() ?? "");
-			if (!seededSectionRef.current) {
-				seededSectionRef.current = true;
-				previousSectionDataRef.current = {
-					quality: scopedSection.lastQuality ?? null,
-					effort: scopedSection.lastEffort ?? null,
-					tempoBpm: scopedSection.currentBpm ?? null,
-				};
-			}
 		} else {
 			setAchievedBpm(piece?.lastAchievedTempoBpm?.toString() ?? "");
 		}
@@ -378,9 +366,9 @@ export function PiecePracticeContent({
 							? Number.parseInt(achievedBpm.trim(), 10) || null
 							: null
 					}
-					previousQuality={previousSectionDataRef.current.quality}
-					previousEffort={previousSectionDataRef.current.effort}
-					previousTempoBpm={previousSectionDataRef.current.tempoBpm}
+					previousQuality={lastLog?.quality ?? undefined}
+					previousEffort={lastLog?.effort ?? undefined}
+					previousTempoBpm={lastLog?.achievedBpm ?? undefined}
 					targetTempoBpm={
 						scopedSection.targetBpmOverride ?? piece.targetTempoBpm ?? null
 					}
@@ -393,8 +381,8 @@ export function PiecePracticeContent({
 					pieceName={`${piece.composer} — ${piece.title}`}
 					currentTechnical={technicalMistakes}
 					currentMemory={memoryMistakes}
-					previousTechnical={previousDataRef.current.technicalMistakes}
-					previousMemory={previousDataRef.current.memoryMistakes}
+					previousTechnical={lastLog?.technicalMistakes ?? undefined}
+					previousMemory={lastLog?.memoryMistakes ?? undefined}
 					isCompact={isCompact}
 					onDone={handleDone}
 					backLabel={getBackLabel()}
@@ -421,15 +409,23 @@ export function PiecePracticeContent({
 								>
 									{piece.composer}
 								</Text>
-								<Text
-									variant="bodySmall"
-									style={{ color: theme.colors.onSurfaceVariant }}
-								>
-									{t("screen.practice.lastPracticed", {
-										when: formatDaysAgo(piece.lastPracticed, t),
-									})}
-								</Text>
+								{scopedSection && (
+									<SectionPhaseChip phase={scopedSection.phase} />
+								)}
 							</View>
+
+							<LastSessionCard
+								lastLog={lastLog}
+								loading={lastLogLoading}
+								scope={scopedSection ? "section" : "piece"}
+								targetBpm={
+									scopedSection
+										? (scopedSection.targetBpmOverride ??
+											piece.targetTempoBpm ??
+											null)
+										: (piece.targetTempoBpm ?? null)
+								}
+							/>
 
 							<Divider />
 
