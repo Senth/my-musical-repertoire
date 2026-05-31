@@ -355,14 +355,36 @@ function eligibleMaintenancePieces(
 	);
 }
 
-export function pickRepertoireMaintenance(
+// Per-piece maintenance cost in minutes: a full play-through + 20% buffer when
+// a duration is known, otherwise a flat 5-minute guess (no buffer).
+function maintenanceCost(piece: Piece): number {
+	if (piece.durationSeconds != null) {
+		return Math.max(1, Math.round((piece.durationSeconds / 60) * 1.2));
+	}
+	return 5;
+}
+
+export interface MaintenancePackResult {
+	blocks: PlannedBlock[];
+	leftoverMinutes: number;
+}
+
+/**
+ * Packs as many maintenance pieces as fit into the budget, best-score-first,
+ * one block per piece. The best piece is always taken (even if it overruns the
+ * budget) so maintenance is never empty when eligible pieces exist; subsequent
+ * pieces are taken only while they fully fit, stopping at the first that does not.
+ */
+export function pickRepertoireMaintenanceBlocks(
 	pieces: Piece[],
-	allocatedMinutes: number,
+	budgetMinutes: number,
 	now: Date = new Date(),
 	usedPieceIds?: Set<string>,
-): PlannedBlock | null {
+): MaintenancePackResult {
 	const pool = eligibleMaintenancePieces(pieces, now, usedPieceIds);
-	if (pool.length === 0) return null;
+	if (pool.length === 0) {
+		return { blocks: [], leftoverMinutes: Math.max(0, budgetMinutes) };
+	}
 	const scored = pool.map((piece) => {
 		const stateWeight = piece.state === "performance" ? 3 : 1;
 		const days = daysSince(piece.lastPracticed ?? null, now);
@@ -376,16 +398,27 @@ export function pickRepertoireMaintenance(
 		if (b.score !== a.score) return b.score - a.score;
 		return compareTitle(a.piece.title, b.piece.title);
 	});
-	const best = scored[0];
-	return {
-		kind: "repertoire-maintenance",
-		allocatedMinutes,
-		pieceId: best.piece.id ?? null,
-		sectionId: null,
-		title: best.piece.title,
-		subtitle: best.piece.composer,
-		score: best.score,
-	};
+
+	const blocks: PlannedBlock[] = [];
+	let remaining = budgetMinutes;
+	for (let i = 0; i < scored.length; i++) {
+		const { piece, score } = scored[i];
+		const cost = maintenanceCost(piece);
+		// First (best) piece is always taken at full cost, even if it overruns.
+		// Any later piece is taken only if it fully fits; otherwise stop.
+		if (i > 0 && cost > remaining) break;
+		blocks.push({
+			kind: "repertoire-maintenance",
+			allocatedMinutes: cost,
+			pieceId: piece.id ?? null,
+			sectionId: null,
+			title: piece.title,
+			subtitle: piece.composer,
+			score,
+		});
+		remaining -= cost;
+	}
+	return { blocks, leftoverMinutes: Math.max(0, remaining) };
 }
 
 interface TechniqueScored {
@@ -555,108 +588,95 @@ export function pickWarmup(
 	};
 }
 
-function redistributeRepertoireForAvailability(
-	alloc: AllocationResult,
-	hasLearning: boolean,
-	hasStabilizing: boolean,
-	hasMaintenance: boolean,
-): { learning: number; stabilizing: number; maintenance: number } {
-	let l = alloc.repertoireLearning;
-	let s = alloc.repertoireStabilizing;
-	let m = alloc.repertoireMaintenance;
+export const REDISTRIBUTABLE_SLOTS = [
+	"technique",
+	"sightReading",
+	"repertoireLearning",
+	"repertoireStabilizing",
+	"repertoireMaintenance",
+] as const;
 
-	const adjust = (
-		excess: number,
-		targets: {
-			hasIt: boolean;
-			baseWeight: number;
-			setter: (v: number) => void;
-			current: number;
-		}[],
-	) => {
-		const eligible = targets.filter((t) => t.hasIt);
-		const totalWeight = eligible.reduce((acc, t) => acc + t.baseWeight, 0);
-		if (eligible.length === 0 || totalWeight <= 0) return;
-		let used = 0;
-		for (let i = 0; i < eligible.length; i++) {
-			const isLast = i === eligible.length - 1;
-			const target = eligible[i];
-			const portion = isLast
-				? excess - used
-				: Math.round((excess * target.baseWeight) / totalWeight);
-			target.setter(target.current + portion);
-			target.current += portion;
-			used += portion;
+export type RedistributableSlot = (typeof REDISTRIBUTABLE_SLOTS)[number];
+
+export type SlotMinutes = Record<RedistributableSlot, number>;
+export type SlotAvailability = Record<RedistributableSlot, boolean>;
+
+/**
+ * Build-time, empty-content redistribution. Every slot that has minutes but no
+ * eligible content is zeroed and its minutes pooled, then spread across the
+ * surviving (available) slots in proportion to their current allocation.
+ * Integer split via last-gets-remainder so the total is conserved. Warmup is
+ * never part of this and is handled separately.
+ */
+export function redistributeForAvailability(
+	alloc: SlotMinutes,
+	available: SlotAvailability,
+): SlotMinutes {
+	const result: SlotMinutes = { ...alloc };
+	let freed = 0;
+	for (const slot of REDISTRIBUTABLE_SLOTS) {
+		if (result[slot] > 0 && !available[slot]) {
+			freed += result[slot];
+			result[slot] = 0;
 		}
-	};
+	}
+	if (freed <= 0) return result;
 
-	if (!hasLearning && l > 0) {
-		const moveable = l;
-		l = 0;
-		adjust(moveable, [
-			{
-				hasIt: hasStabilizing,
-				baseWeight: 30,
-				current: s,
-				setter: (v) => {
-					s = v;
-				},
-			},
-			{
-				hasIt: hasMaintenance,
-				baseWeight: 15,
-				current: m,
-				setter: (v) => {
-					m = v;
-				},
-			},
-		]);
+	const recipients = REDISTRIBUTABLE_SLOTS.filter(
+		(slot) => result[slot] > 0 && available[slot],
+	);
+	if (recipients.length === 0) return result; // nothing to receive → dropped
+
+	const totalAlloc = recipients.reduce((acc, slot) => acc + result[slot], 0);
+	let used = 0;
+	for (let i = 0; i < recipients.length; i++) {
+		const slot = recipients[i];
+		const isLast = i === recipients.length - 1;
+		const portion = isLast
+			? freed - used
+			: Math.round((freed * result[slot]) / totalAlloc);
+		result[slot] += portion;
+		used += portion;
 	}
-	if (!hasStabilizing && s > 0) {
-		const moveable = s;
-		s = 0;
-		adjust(moveable, [
-			{
-				hasIt: hasLearning,
-				baseWeight: 55,
-				current: l,
-				setter: (v) => {
-					l = v;
-				},
-			},
-			{
-				hasIt: hasMaintenance,
-				baseWeight: 15,
-				current: m,
-				setter: (v) => {
-					m = v;
-				},
-			},
-		]);
+	return result;
+}
+
+/**
+ * Add maintenance leftover minutes to the learning/stabilizing blocks in
+ * proportion to their current allocation (last-gets-remainder). Mutates blocks
+ * in place. Dropped if neither block exists.
+ */
+function applyMaintenanceLeftover(
+	leftoverMinutes: number,
+	learningBlock: PlannedBlock | null,
+	stabilizingBlock: PlannedBlock | null,
+): void {
+	if (leftoverMinutes <= 0) return;
+	const recipients = [learningBlock, stabilizingBlock].filter(
+		(b): b is PlannedBlock => b != null,
+	);
+	if (recipients.length === 0) return;
+	const totalAlloc = recipients.reduce((acc, b) => acc + b.allocatedMinutes, 0);
+	let used = 0;
+	for (let i = 0; i < recipients.length; i++) {
+		const isLast = i === recipients.length - 1;
+		const portion = isLast
+			? leftoverMinutes - used
+			: totalAlloc > 0
+				? Math.round(
+						(leftoverMinutes * recipients[i].allocatedMinutes) / totalAlloc,
+					)
+				: Math.round(leftoverMinutes / recipients.length);
+		recipients[i].allocatedMinutes += portion;
+		used += portion;
 	}
-	if (!hasMaintenance && m > 0) {
-		const moveable = m;
-		m = 0;
-		adjust(moveable, [
-			{
-				hasIt: hasLearning,
-				baseWeight: 55,
-				current: l,
-				setter: (v) => {
-					l = v;
-				},
-			},
-			{
-				hasIt: hasStabilizing,
-				baseWeight: 30,
-				current: s,
-				setter: (v) => {
-					s = v;
-				},
-			},
-		]);
-	}
-	return { learning: l, stabilizing: s, maintenance: m };
+}
+
+function hasEligibleTechnique(techniques: TechniqueItem[], now: Date): boolean {
+	return (
+		eligibleTechniquesInState(techniques, "active", now).length > 0 ||
+		eligibleTechniquesInState(techniques, "maintenance", now).length > 0
+	);
 }
 
 function hasPiecesInState(pieces: Piece[], state: Piece["state"]): boolean {
@@ -681,16 +701,74 @@ export function buildPlan(
 	now: Date = new Date(),
 ): SessionPlan {
 	const alloc = allocateTime(inputs);
-	const usedTechniqueIds = new Set<string>();
 	const omitted: OmittedSlot[] = [];
 
+	// Availability flags (warmup excluded — it has its own freeform fallback).
+	const techniqueEligible = hasEligibleTechnique(techniques, now);
+	const learningEligible =
+		eligibleSectionCandidates("learning", pieces, sections, now).length > 0;
+	const stabilizingEligible =
+		eligibleSectionCandidates("stabilizing", pieces, sections, now).length > 0;
+	const maintenanceEligible = eligibleMaintenancePieces(pieces, now).length > 0;
+
+	const baseAlloc: SlotMinutes = {
+		technique: alloc.technique,
+		sightReading: alloc.sightReading,
+		repertoireLearning: alloc.repertoireLearning,
+		repertoireStabilizing: alloc.repertoireStabilizing,
+		repertoireMaintenance: alloc.repertoireMaintenance,
+	};
+	const available: SlotAvailability = {
+		technique: techniqueEligible,
+		// Sight-reading is a freeform timer — always runnable when it has minutes.
+		sightReading: alloc.sightReading > 0,
+		repertoireLearning: learningEligible,
+		repertoireStabilizing: stabilizingEligible,
+		repertoireMaintenance: maintenanceEligible,
+	};
+
+	// Record omitted entries for slots that get zeroed (the setup preview uses them).
+	if (baseAlloc.technique > 0 && !available.technique) {
+		omitted.push({
+			kind: "technique",
+			reason: omittedReason(hasAnyTechniqueInPool(techniques)),
+			redistributedMinutes: baseAlloc.technique,
+		});
+	}
+	if (baseAlloc.repertoireLearning > 0 && !available.repertoireLearning) {
+		omitted.push({
+			kind: "repertoire-learning",
+			reason: omittedReason(hasPiecesInState(pieces, "learning")),
+			redistributedMinutes: baseAlloc.repertoireLearning,
+		});
+	}
+	if (baseAlloc.repertoireStabilizing > 0 && !available.repertoireStabilizing) {
+		omitted.push({
+			kind: "repertoire-stabilizing",
+			reason: omittedReason(hasPiecesInState(pieces, "stabilizing")),
+			redistributedMinutes: baseAlloc.repertoireStabilizing,
+		});
+	}
+	if (baseAlloc.repertoireMaintenance > 0 && !available.repertoireMaintenance) {
+		omitted.push({
+			kind: "repertoire-maintenance",
+			reason: omittedReason(
+				hasPiecesInState(pieces, "maintenance") ||
+					hasPiecesInState(pieces, "performance"),
+			),
+			redistributedMinutes: baseAlloc.repertoireMaintenance,
+		});
+	}
+
+	const updated = redistributeForAvailability(baseAlloc, available);
+
+	const usedTechniqueIds = new Set<string>();
 	const warmupBlock: PlannedBlock | null =
 		alloc.warmup > 0 ? pickWarmup(techniques, alloc.warmup, now) : null;
 	if (warmupBlock?.techniqueId) usedTechniqueIds.add(warmupBlock.techniqueId);
 
-	let techMinutes = alloc.technique;
 	const techBlocks = pickTechnique(
-		techMinutes,
+		updated.technique,
 		techniques,
 		now,
 		usedTechniqueIds,
@@ -699,71 +777,16 @@ export function buildPlan(
 		if (tb.techniqueId) usedTechniqueIds.add(tb.techniqueId);
 	}
 
-	const hasLearningEligible =
-		eligibleSectionCandidates("learning", pieces, sections, now).length > 0;
-	const hasStabilizingEligible =
-		eligibleSectionCandidates("stabilizing", pieces, sections, now).length > 0;
-	const hasMaintenanceEligible =
-		eligibleMaintenancePieces(pieces, now).length > 0;
-
-	const repSplit = redistributeRepertoireForAvailability(
-		alloc,
-		hasLearningEligible,
-		hasStabilizingEligible,
-		hasMaintenanceEligible,
-	);
-
-	if (techMinutes > 0 && techBlocks.length === 0) {
-		omitted.push({
-			kind: "technique",
-			reason: omittedReason(hasAnyTechniqueInPool(techniques)),
-			redistributedMinutes: techMinutes,
-		});
-		if (hasLearningEligible) {
-			repSplit.learning += techMinutes;
-		} else if (hasStabilizingEligible) {
-			repSplit.stabilizing += techMinutes;
-		} else if (hasMaintenanceEligible) {
-			repSplit.maintenance += techMinutes;
-		}
-		techMinutes = 0;
-	}
-
-	if (alloc.repertoireLearning > 0 && !hasLearningEligible) {
-		omitted.push({
-			kind: "repertoire-learning",
-			reason: omittedReason(hasPiecesInState(pieces, "learning")),
-			redistributedMinutes: alloc.repertoireLearning,
-		});
-	}
-	if (alloc.repertoireStabilizing > 0 && !hasStabilizingEligible) {
-		omitted.push({
-			kind: "repertoire-stabilizing",
-			reason: omittedReason(hasPiecesInState(pieces, "stabilizing")),
-			redistributedMinutes: alloc.repertoireStabilizing,
-		});
-	}
-	if (alloc.repertoireMaintenance > 0 && !hasMaintenanceEligible) {
-		const rawMaintenance =
-			hasPiecesInState(pieces, "maintenance") ||
-			hasPiecesInState(pieces, "performance");
-		omitted.push({
-			kind: "repertoire-maintenance",
-			reason: omittedReason(rawMaintenance),
-			redistributedMinutes: alloc.repertoireMaintenance,
-		});
-	}
-
 	const usedSectionIds = new Set<string>();
 	const usedPieceIds = new Set<string>();
 
 	const learningBlock =
-		repSplit.learning > 0
+		updated.repertoireLearning > 0
 			? pickRepertoireSection(
 					"learning",
 					pieces,
 					sections,
-					repSplit.learning,
+					updated.repertoireLearning,
 					now,
 					usedSectionIds,
 				)
@@ -772,12 +795,12 @@ export function buildPlan(
 	if (learningBlock?.pieceId) usedPieceIds.add(learningBlock.pieceId);
 
 	const stabilizingBlock =
-		repSplit.stabilizing > 0
+		updated.repertoireStabilizing > 0
 			? pickRepertoireSection(
 					"stabilizing",
 					pieces,
 					sections,
-					repSplit.stabilizing,
+					updated.repertoireStabilizing,
 					now,
 					usedSectionIds,
 				)
@@ -786,21 +809,26 @@ export function buildPlan(
 		usedSectionIds.add(stabilizingBlock.sectionId);
 	if (stabilizingBlock?.pieceId) usedPieceIds.add(stabilizingBlock.pieceId);
 
-	const maintenanceBlock =
-		repSplit.maintenance > 0
-			? pickRepertoireMaintenance(
+	const { blocks: maintenanceBlocks, leftoverMinutes } =
+		updated.repertoireMaintenance > 0
+			? pickRepertoireMaintenanceBlocks(
 					pieces,
-					repSplit.maintenance,
+					updated.repertoireMaintenance,
 					now,
 					usedPieceIds,
 				)
-			: null;
+			: { blocks: [] as PlannedBlock[], leftoverMinutes: 0 };
+	for (const mb of maintenanceBlocks) {
+		if (mb.pieceId) usedPieceIds.add(mb.pieceId);
+	}
+
+	applyMaintenanceLeftover(leftoverMinutes, learningBlock, stabilizingBlock);
 
 	const sightBlock: PlannedBlock | null =
-		alloc.sightReading > 0
+		updated.sightReading > 0
 			? {
 					kind: "sight-reading",
-					allocatedMinutes: alloc.sightReading,
+					allocatedMinutes: updated.sightReading,
 					title: null,
 					subtitle: null,
 				}
@@ -812,7 +840,8 @@ export function buildPlan(
 		"sight-reading": sightBlock ?? undefined,
 		"repertoire-learning": learningBlock ?? undefined,
 		"repertoire-stabilizing": stabilizingBlock ?? undefined,
-		"repertoire-maintenance": maintenanceBlock ?? undefined,
+		"repertoire-maintenance":
+			maintenanceBlocks.length > 0 ? maintenanceBlocks : undefined,
 	};
 
 	const order = ORDER_BY_EMPHASIS[inputs.emphasis];

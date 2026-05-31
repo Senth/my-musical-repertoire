@@ -49,6 +49,11 @@ export default function EditPieceScreen() {
 	const [targetTempoBpmText, setTargetTempoBpmText] = useState(
 		piece?.targetTempoBpm?.toString() ?? "",
 	);
+	const [durationMinutesText, setDurationMinutesText] = useState(
+		piece?.durationSeconds != null
+			? String(Math.round(piece.durationSeconds / 60))
+			: "",
+	);
 	const [difficulty, setDifficulty] = useState<string | null>(
 		piece?.difficulty?.toString() ?? null,
 	);
@@ -58,6 +63,7 @@ export default function EditPieceScreen() {
 	const [titleError, setTitleError] = useState<string | null>(null);
 	const [composerError, setComposerError] = useState<string | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
+	const [durationError, setDurationError] = useState<string | null>(null);
 	const hasSeeded = useRef(false);
 
 	const validateTitle = (): string | null => {
@@ -86,6 +92,18 @@ export default function EditPieceScreen() {
 		setBpmError(validateBpm(targetTempoBpmText));
 	};
 
+	const validateDuration = (text: string): string | null => {
+		if (!text.trim()) return null;
+		const n = Number.parseInt(text.trim(), 10);
+		return Number.isNaN(n) || n < 1 || n > 600
+			? t("error.durationInvalid")
+			: null;
+	};
+
+	const handleDurationBlur = () => {
+		setDurationError(validateDuration(durationMinutesText));
+	};
+
 	// Seed form once the piece loads from Firestore (avoids resetting user edits on re-renders)
 	useEffect(() => {
 		if (piece && !hasSeeded.current) {
@@ -94,6 +112,11 @@ export default function EditPieceScreen() {
 			setState(piece.state);
 			setLearningPhase(piece.learningPhase ?? null);
 			setTargetTempoBpmText(piece.targetTempoBpm?.toString() ?? "");
+			setDurationMinutesText(
+				piece.durationSeconds != null
+					? String(Math.round(piece.durationSeconds / 60))
+					: "",
+			);
 			setDifficulty(piece.difficulty?.toString() ?? null);
 			setNotes(piece.notes ?? "");
 			hasSeeded.current = true;
@@ -126,11 +149,17 @@ export default function EditPieceScreen() {
 		const composerErr = validateComposer();
 		const bpmErr = validateBpm(targetTempoBpmText);
 		setBpmError(bpmErr);
-		if (titleErr || composerErr || bpmErr) return;
+		const durationErr = validateDuration(durationMinutesText);
+		setDurationError(durationErr);
+		if (titleErr || composerErr || bpmErr || durationErr) return;
 		if (!id) return;
 
 		const targetTempoBpm = targetTempoBpmText.trim()
 			? Number.parseInt(targetTempoBpmText.trim(), 10) || null
+			: null;
+
+		const durationSeconds = durationMinutesText.trim()
+			? Number.parseInt(durationMinutesText.trim(), 10) * 60
 			: null;
 
 		const parsedDifficulty = difficulty
@@ -147,6 +176,7 @@ export default function EditPieceScreen() {
 				state,
 				learningPhase: state === "learning" ? learningPhase : null,
 				targetTempoBpm,
+				durationSeconds,
 				difficulty: parsedDifficulty,
 				notes: notes.trim() || null,
 			});
@@ -219,6 +249,21 @@ export default function EditPieceScreen() {
 				/>
 				<HelperText type="error" visible={!!bpmError}>
 					{bpmError ?? ""}
+				</HelperText>
+			</View>
+
+			<View>
+				<TextInput
+					label={t("screen.editPiece.durationLabel")}
+					value={durationMinutesText}
+					onChangeText={setDurationMinutesText}
+					mode="outlined"
+					keyboardType="numeric"
+					error={!!durationError}
+					onBlur={handleDurationBlur}
+				/>
+				<HelperText type="error" visible={!!durationError}>
+					{durationError ?? ""}
 				</HelperText>
 			</View>
 

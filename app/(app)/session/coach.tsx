@@ -2,12 +2,22 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { ActivityIndicator, Text, useTheme } from "react-native-paper";
+import {
+	ActivityIndicator,
+	Button,
+	Dialog,
+	HelperText,
+	Portal,
+	Text,
+	TextInput,
+	useTheme,
+} from "react-native-paper";
 import { PiecePracticeContent } from "@/app/(app)/piece/[id]/practice";
 import { TechniquePracticeContent } from "@/app/(app)/technique/[id]/practice";
-import { CoachShell } from "@/components/practice/CoachShell";
+import { CoachShell, formatMMSS } from "@/components/practice/CoachShell";
 import { useAuth } from "@/contexts/AuthContext";
 import { type CoachContextValue, CoachProvider } from "@/contexts/CoachContext";
+import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import type {
 	ActiveSession,
 	BlockExecutionState,
@@ -30,9 +40,16 @@ export default function CoachScreen() {
 	const theme = useTheme();
 	const router = useRouter();
 	const { user } = useAuth();
+	const { pieces } = usePieces();
+	const { updatePiece } = useUpdatePiece();
 	const [session, setSession] = useState<ActiveSession | null>(null);
 	const [loaded, setLoaded] = useState(false);
 	const [saving, setSaving] = useState(false);
+	const [durationPrompt, setDurationPrompt] = useState<{
+		pieceId: string;
+		title: string;
+		elapsedSeconds: number;
+	} | null>(null);
 	const [, setTick] = useState(0);
 	const cueFiredForIndexRef = useRef<Set<number>>(new Set());
 
@@ -177,11 +194,50 @@ export default function CoachScreen() {
 					return;
 				}
 			}
+			// Maintenance whole-piece block with no known duration → capture it
+			// from the elapsed play-through time before advancing.
+			if (
+				currentBlock.kind === "repertoire-maintenance" &&
+				currentBlock.pieceId
+			) {
+				const piece = pieces.find((p) => p.id === currentBlock.pieceId);
+				if (piece && piece.durationSeconds == null) {
+					setDurationPrompt({
+						pieceId: currentBlock.pieceId,
+						title: currentBlock.title ?? piece.title,
+						elapsedSeconds: diffSec(session.currentBlockStartedAt),
+					});
+					return;
+				}
+			}
 			await advance("completed");
 		} finally {
 			setSaving(false);
 		}
-	}, [session, currentBlock, advance]);
+	}, [session, currentBlock, advance, pieces]);
+
+	const handleDurationSave = useCallback(
+		async (minutes: number) => {
+			const prompt = durationPrompt;
+			setDurationPrompt(null);
+			if (prompt) {
+				try {
+					await updatePiece(prompt.pieceId, {
+						durationSeconds: minutes * 60,
+					});
+				} catch {
+					// Non-fatal: still advance even if the duration write fails.
+				}
+			}
+			await advance("completed");
+		},
+		[durationPrompt, updatePiece, advance],
+	);
+
+	const handleDurationSkip = useCallback(async () => {
+		setDurationPrompt(null);
+		await advance("completed");
+	}, [advance]);
 
 	const handleSkip = useCallback(async () => {
 		await advance("skipped");
@@ -305,7 +361,88 @@ export default function CoachScreen() {
 			>
 				{body}
 			</CoachShell>
+			<DurationPromptDialog
+				visible={!!durationPrompt}
+				title={durationPrompt?.title ?? ""}
+				elapsedSeconds={durationPrompt?.elapsedSeconds ?? 0}
+				onSave={handleDurationSave}
+				onSkip={handleDurationSkip}
+			/>
 		</CoachProvider>
+	);
+}
+
+function DurationPromptDialog({
+	visible,
+	title,
+	elapsedSeconds,
+	onSave,
+	onSkip,
+}: {
+	visible: boolean;
+	title: string;
+	elapsedSeconds: number;
+	onSave: (minutes: number) => void;
+	onSkip: () => void;
+}) {
+	const { t } = useTranslation();
+	const [minutesText, setMinutesText] = useState("");
+
+	useEffect(() => {
+		if (visible) {
+			setMinutesText(String(Math.max(1, Math.round(elapsedSeconds / 60))));
+		}
+	}, [visible, elapsedSeconds]);
+
+	const minutes = Number.parseInt(minutesText.trim(), 10);
+	const valid = !Number.isNaN(minutes) && minutes >= 1;
+
+	return (
+		<Portal>
+			<Dialog visible={visible} onDismiss={onSkip}>
+				<Dialog.Title>
+					{t("screen.session.coach.durationPrompt.title", { piece: title })}
+				</Dialog.Title>
+				<Dialog.Content>
+					<Text variant="bodyMedium">
+						{t("screen.session.coach.durationPrompt.measured", {
+							time: formatMMSS(elapsedSeconds),
+						})}
+					</Text>
+					<TextInput
+						label={t("screen.session.coach.durationPrompt.minutesLabel")}
+						value={minutesText}
+						onChangeText={setMinutesText}
+						mode="outlined"
+						keyboardType="numeric"
+						error={!valid}
+						style={{ marginTop: 12 }}
+					/>
+					<HelperText type="error" visible={!valid}>
+						{t("screen.session.coach.durationPrompt.invalid")}
+					</HelperText>
+				</Dialog.Content>
+				<Dialog.Actions>
+					<Button
+						onPress={onSkip}
+						accessibilityLabel={t(
+							"screen.session.coach.durationPrompt.skipA11y",
+						)}
+					>
+						{t("screen.session.coach.durationPrompt.skip")}
+					</Button>
+					<Button
+						onPress={() => onSave(minutes)}
+						disabled={!valid}
+						accessibilityLabel={t(
+							"screen.session.coach.durationPrompt.saveA11y",
+						)}
+					>
+						{t("screen.session.coach.durationPrompt.save")}
+					</Button>
+				</Dialog.Actions>
+			</Dialog>
+		</Portal>
 	);
 }
 

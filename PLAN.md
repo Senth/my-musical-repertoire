@@ -205,11 +205,11 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] Some self-estimation bars uses numbers, some text. We should be consistent. Ideally the "best" should be at the same location (to the right). For examlp effort should be low, but it's on the left side. I think it's better to have text than numbers. However, we need to make sure that works even when the text doesn't fit (should maybe be smaller text so always fits?)
   - [x] Always show metronome button, but should be disabled when BPM is not set.
   - [x] When adding piece, section, or technique. Title is focused on web, but immediately blurred. Try to fix with playwright.
-  - [ ] Add duration for pieces. This will help with the session plan generator to estimate how much time a full playthrough of a piece it will take.
+  - [x] Add duration for pieces. This will help with the session plan generator to estimate how much time a full playthrough of a piece it will take.
         During a session, if the piece is selected as a whole but does not have a duration. Suggest using the time elapsed of that block to estimate the piece duration after the user has pressed save and continue.
+  - [x] When practicing maintenance pieces, it should pick many if many are available instead of assigning 12 minutes to one piece
+  - [x] Instead of carrying the session time forward to the next block if we're missing or have removed a section it should be distributed "evenly" across the remaining blocks. For example, if we have 30 minutes and 10 minutes would go to technique, 5 minutes to sight-reading, and 15 minutes to repertoire. We should distribute the 5 minutes like this: techniue = (10/30)*5 = 1.66 minutes, sight-reading = (5/30)*5 = 0.83 minutes, and repertoire = (15/30)\*5 = 2.5 minutes. This way we keep the same proportions as the original plan.
   - [ ] When practicing a anything, it would be good to see the last log for that piece/section/technique to have a reference point. This should be displayed both in the individual practice screens as well as in the session (which probably reuses the same practice screens).
-  - [ ] When practicing maintenance pieces, it should pick many if many are available instead of assigning 12 minutes to one piece
-  - [ ] Instead of carrying the session time forward to the next block if we're missing or have removed a section it should be distributed "evenly" across the remaining blocks. For example, if we have 30 minutes and 10 minutes would go to technique, 5 minutes to sight-reading, and 15 minutes to repertoire. We should distribute the 5 minutes like this: techniue = (10/30)*5 = 1.66 minutes, sight-reading = (5/30)*5 = 0.83 minutes, and repertoire = (15/30)\*5 = 2.5 minutes. This way we keep the same proportions as the original plan.
 
 #### Bugs
 
@@ -229,18 +229,8 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
   - [ ] When two adjacent sections are individually stable, suggest a **seam exercise** (last 2 bars of A + first 2 bars of B)
   - [ ] After seam is practiced, suggest a **join block** (A+B combined)
   - [ ] Nudge the student when sections look stable enough to add the next section (student still decides)
-- [ ] Ask the student how much time is available before building the plan
-- [ ] Let the student choose a session emphasis/template
-  - [ ] Short-session templates: `technique-first`, `reading-first`, `repertoire-only maintenance`
-  - [ ] Medium and long-session templates with editable minutes per block
 - [ ] Use duration bands so block structure changes for short, medium, and long sessions
-- [ ] Generate a short session plan of concrete exercise blocks
-  - [ ] Short sessions: one supporting block (`technique` or `sight-reading`) plus the main repertoire block
-  - [ ] Repertoire blocks: at least one `learning`, weak-spot repair, or `maintenance` / continuity block when applicable
-  - [ ] Longer sessions should add depth before adding too much variety
-  - [ ] Repertoire is app-assigned first; technique and sight-reading remain template-driven initially
 - [ ] Explain why each suggested block was chosen
-- [ ] Replace the current simple overview sort with plan-based suggestions
 - [ ] Touch up UI/UX and fix any discrepancies
 
 ### Phase 5: Recommendation Engine Refinement
