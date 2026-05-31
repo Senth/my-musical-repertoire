@@ -198,25 +198,28 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - [ ] Misc
   - [x] Piece practice page should show the bars, and target BPM.
   - [x] Metronome gain should be even higher.
-  - [ ] Autocomplete Composer field when creating/editing
+  - [x] Autocomplete Composer field when creating/editing
   - [ ] Add Piece Album/Collection field (optional) and autocomplete it as well
   - [ ] Status filter on pieces/techniques should not show "Status" in the menu. Instead It would be good to have these as checkboxes so that you can select multiple at the same time. By default none is selected and is using default filtering.
-  - [ ] Reset password not centered on the page
   - [ ] Chips are too visual. They are visually bold and overwhelming making them the center of attention. Whereas they should only be complementary, but still be visually distinct enough to be easily scannable.
-  - [ ] Paddings on each page (ask md3-designer to check for padding/margins consistency and adherence to guidelines)
-  - [ ] Some pages span whole width of the screen on desktop web, when they should be centered with a max width (like other pages).
   - [ ] Some self-estimation bars uses numbers, some text. We should be consistent. Ideally the "best" should be at the same location (to the right). For examlp effort should be low, but it's on the left side. I think it's better to have text than numbers. However, we need to make sure that works even when the text doesn't fit (should maybe be smaller text so always fits?)
   - [x] Always show metronome button, but should be disabled when BPM is not set.
-  - [ ] When adding piece, section, or technique. Title is focused on web, but immediately blurred. Try to fix with playwright.
+  - [x] When adding piece, section, or technique. Title is focused on web, but immediately blurred. Try to fix with playwright.
   - [ ] Add duration for pieces. This will help with the session plan generator to estimate how much time a full playthrough of a piece it will take.
         During a session, if the piece is selected as a whole but does not have a duration. Suggest using the time elapsed of that block to estimate the piece duration after the user has pressed save and continue.
-  - [ ] When practicing a anything, it would be good to see the last log for that piece/section/technique to have a reference point.
-  - [ ] Reloading a page and pressing back does nothing (if no context). I want us to improve the back-button
-    - [ ] When going through a piece to practice (through overview or pieces), after we have practiced it and going back we should end up in overview or pieces (not piece).
-    - [ ] Pressing back should always go back one step in the hierarchy. If we don't have any history, piece should go back to pieces list, technique should go back to techniques list, and sections should go back to piece details, etc.
+  - [ ] When practicing a anything, it would be good to see the last log for that piece/section/technique to have a reference point. This should be displayed both in the individual practice screens as well as in the session (which probably reuses the same practice screens).
   - [ ] When practicing maintenance pieces, it should pick many if many are available instead of assigning 12 minutes to one piece
-- [ ] Bugs
-  - [ ] When in a session, the target BPM and other selection is saved from previous technique when multiple techniques are practiced.
+  - [ ] Instead of carrying the session time forward to the next block if we're missing or have removed a section it should be distributed "evenly" across the remaining blocks. For example, if we have 30 minutes and 10 minutes would go to technique, 5 minutes to sight-reading, and 15 minutes to repertoire. We should distribute the 5 minutes like this: techniue = (10/30)*5 = 1.66 minutes, sight-reading = (5/30)*5 = 0.83 minutes, and repertoire = (15/30)\*5 = 2.5 minutes. This way we keep the same proportions as the original plan.
+
+#### Bugs
+
+- [x] When in a session, the target BPM and other selection is saved from previous technique when multiple techniques are practiced.
+- [ ] Reset password not centered on the page
+- [ ] Paddings on each page (ask md3-designer to check for padding/margins consistency and adherence to guidelines)
+- [ ] Some pages span whole width of the screen on desktop web, when they should be centered with a max width (like other pages).
+- [ ] Reloading a page and pressing back does nothing (if no context). I want us to improve the back-button
+  - [ ] When going through a piece to practice (through overview or pieces), after we have practiced it and going back we should end up in overview or pieces (not piece).
+  - [ ] Pressing back should always go back one step in the hierarchy. If we don't have any history, piece should go back to pieces list, technique should go back to techniques list, and sections should go back to piece details, etc.
 
 ### Phase 4: Session Plan Generator
 

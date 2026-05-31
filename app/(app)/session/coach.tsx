@@ -233,7 +233,10 @@ export default function CoachScreen() {
 		case "warmup":
 			if (currentBlock.techniqueId) {
 				body = (
-					<TechniquePracticeContent techniqueId={currentBlock.techniqueId} />
+					<TechniquePracticeContent
+						key={session.currentBlockIndex}
+						techniqueId={currentBlock.techniqueId}
+					/>
 				);
 			} else {
 				body = (
@@ -244,7 +247,10 @@ export default function CoachScreen() {
 		case "technique":
 			if (currentBlock.techniqueId) {
 				body = (
-					<TechniquePracticeContent techniqueId={currentBlock.techniqueId} />
+					<TechniquePracticeContent
+						key={session.currentBlockIndex}
+						techniqueId={currentBlock.techniqueId}
+					/>
 				);
 			} else {
 				body = (
@@ -263,6 +269,7 @@ export default function CoachScreen() {
 			if (currentBlock.pieceId) {
 				body = (
 					<PiecePracticeContent
+						key={session.currentBlockIndex}
 						pieceId={currentBlock.pieceId}
 						sectionId={currentBlock.sectionId ?? null}
 						triggerOverride="session-coach"
