@@ -15,6 +15,7 @@ import {
 import { PiecePracticeContent } from "@/app/(app)/piece/[id]/practice";
 import { TechniquePracticeContent } from "@/app/(app)/technique/[id]/practice";
 import { CoachShell, formatMMSS } from "@/components/practice/CoachShell";
+import { SightReadingBlockBody } from "@/components/practice/SightReadingBlockBody";
 import { useAuth } from "@/contexts/AuthContext";
 import { type CoachContextValue, CoachProvider } from "@/contexts/CoachContext";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
@@ -57,6 +58,7 @@ export default function CoachScreen() {
 		null,
 	);
 	const validateHandlerRef = useRef<(() => boolean) | null>(null);
+	const sightReadingStopRef = useRef<(() => void) | null>(null);
 
 	useEffect(() => {
 		let active = true;
@@ -140,6 +142,7 @@ export default function CoachScreen() {
 	const advance = useCallback(
 		async (markStatus: "completed" | "skipped") => {
 			if (!session || !currentBlockState) return;
+			sightReadingStopRef.current?.();
 			const idx = session.currentBlockIndex;
 			const updatedBlockStates = session.blockStates.map((s, i) =>
 				i === idx
@@ -316,7 +319,10 @@ export default function CoachScreen() {
 			break;
 		case "sight-reading":
 			body = (
-				<FreeformBlockBody label={t("screen.session.coach.sightReadingBody")} />
+				<SightReadingBlockBody
+					key={session.currentBlockIndex}
+					stopRef={sightReadingStopRef}
+				/>
 			);
 			break;
 		case "repertoire-learning":

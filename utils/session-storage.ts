@@ -61,3 +61,18 @@ export async function writeActiveSession(
 export async function clearActiveSession(uid: string): Promise<void> {
 	await AsyncStorage.removeItem(activeSessionKey(uid));
 }
+
+function sightReadingBpmKey(uid: string): string {
+	return `sight-reading-bpm:${uid}`;
+}
+
+export async function readSightReadingBpm(uid: string): Promise<string | null> {
+	return AsyncStorage.getItem(sightReadingBpmKey(uid));
+}
+
+export async function writeSightReadingBpm(
+	uid: string,
+	bpm: string,
+): Promise<void> {
+	await AsyncStorage.setItem(sightReadingBpmKey(uid), bpm);
+}
