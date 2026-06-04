@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -19,6 +19,7 @@ import {
 import { ComposerAutocompleteInput } from "@/components/piece/ComposerAutocompleteInput";
 import { DropdownField } from "@/components/ui/DropdownField";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
+import { useUpNavigation } from "@/hooks/use-up-navigation";
 import {
 	LEARNING_PHASES,
 	type LearningPhase,
@@ -31,8 +32,8 @@ const MD3_MEDIUM_BREAKPOINT = 600;
 export default function EditPieceScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
-	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
+	const goBack = useUpNavigation(`/piece/${id}`);
 	const { pieces } = usePieces();
 	const { updatePiece } = useUpdatePiece();
 	const { width } = useWindowDimensions();
@@ -180,7 +181,7 @@ export default function EditPieceScreen() {
 				difficulty: parsedDifficulty,
 				notes: notes.trim() || null,
 			});
-			router.back();
+			goBack();
 		} catch {
 			setError(t("error.firebase"));
 		} finally {
@@ -300,7 +301,7 @@ export default function EditPieceScreen() {
 			style={{ backgroundColor: theme.colors.background }}
 		>
 			<Appbar.Header>
-				<Appbar.BackAction onPress={() => router.back()} />
+				<Appbar.BackAction onPress={goBack} />
 				<Appbar.Content title={t("screen.editPiece.title")} />
 			</Appbar.Header>
 
