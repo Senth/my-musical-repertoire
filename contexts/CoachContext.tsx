@@ -7,7 +7,7 @@ import {
 	useMemo,
 } from "react";
 
-export interface CoachSaveResult {
+interface CoachSaveResult {
 	saved: boolean;
 }
 

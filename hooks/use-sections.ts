@@ -329,12 +329,3 @@ export function useAllSections() {
 	);
 	return { sections, loading };
 }
-
-async function getSectionCount(
-	userId: string,
-	pieceId: string,
-): Promise<number> {
-	const q = query(sectionsRef(userId, pieceId), where("archived", "==", false));
-	const snapshot = await getDocs(q);
-	return snapshot.size;
-}
