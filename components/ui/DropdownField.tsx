@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Menu, TextInput } from "react-native-paper";
 
-export interface DropdownOption {
+interface DropdownOption {
 	value: string | null;
 	label: string;
 }

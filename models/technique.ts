@@ -39,13 +39,3 @@ export interface TechniqueItem {
 	lastEffort?: 1 | 2 | 3 | 4 | 5 | null;
 	lastAchievedTempoBpm?: number | null;
 }
-
-export interface TechniquePractice {
-	id?: string;
-	techniqueId: string;
-	date: Date;
-	quality: 1 | 2 | 3 | 4 | 5;
-	effort: 1 | 2 | 3 | 4 | 5;
-	achievedBpm?: number | null;
-	sessionId?: string | null;
-}

@@ -32,22 +32,6 @@ export function useFabStyleTabs(): ViewStyle {
 }
 
 /**
- * FAB.Group style for tab screens on web.
- * FAB.Group renders inline (not via Portal) and adds 16px internally from its
- * container edges to the visible button. To land at the correct MD3 position:
- *
- *   container right: 8  → container right edge at viewport_width - 8
- *   internal offset: 16 → button right edge at viewport_width - 8 - 16 = viewport_width - 24
- *   thin scrollbar: 8px → button is 16dp from content edge ✓
- *
- *   bottom: 0 → container bottom = content area bottom (bounded by tab bar on web)
- *   internal 16px → button 16dp above tab bar ✓
- */
-export function useFabGroupStyleTabs(): ViewStyle {
-	return { position: "absolute", right: SCROLLBAR_WIDTH, bottom: 0 };
-}
-
-/**
  * FAB style for non-tab stack screens on web.
  * No safe area bottom inset on web. Same right offset as tab screens.
  */

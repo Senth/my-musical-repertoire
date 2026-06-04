@@ -1,7 +1,7 @@
 # TODO
 
 > **Generated mirror — do not edit by hand.** Source of truth = [GitHub Issues](https://github.com/Senth/my-musical-repertoire/issues) + the Kanban board.
-> Regenerate with `scripts/sync-todo.sh`. Last synced: 2026-06-04 14:03 UTC.
+> Regenerate with `scripts/sync-todo.sh`. Last synced: 2026-06-04 16:00 UTC.
 
 ## Working On
 

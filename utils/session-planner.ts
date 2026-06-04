@@ -443,7 +443,7 @@ export function pickWarmup(
 	};
 }
 
-export const REDISTRIBUTABLE_SLOTS = [
+const REDISTRIBUTABLE_SLOTS = [
 	"technique",
 	"sightReading",
 	"repertoireLearning",

@@ -1,3 +1,5 @@
+// Native variant of use-fab-style.web.ts, resolved by Metro on native; not reachable from fallow's web entry points.
+// fallow-ignore-file unused-file
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import type { ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,15 +9,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
  * On native, content View may extend behind the tab bar, so we offset by tabBarHeight.
  */
 export function useFabStyleTabs(): ViewStyle {
-	const tabBarHeight = useBottomTabBarHeight();
-	return { position: "absolute", right: 16, bottom: tabBarHeight + 16 };
-}
-
-/**
- * FAB.Group style for tab screens.
- * FAB.Group internally adds its own 16px margins, so we match with the same formula.
- */
-export function useFabGroupStyleTabs(): ViewStyle {
 	const tabBarHeight = useBottomTabBarHeight();
 	return { position: "absolute", right: 16, bottom: tabBarHeight + 16 };
 }

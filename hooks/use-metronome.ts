@@ -1,3 +1,5 @@
+// Native variant of use-metronome.web.ts, resolved by Metro on native; not reachable from fallow's web entry points.
+// fallow-ignore-file unused-file
 export interface UseMetronomeReturn {
 	isRunning: boolean;
 	toggle: () => void;

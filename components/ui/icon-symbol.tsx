@@ -1,3 +1,5 @@
+// Native/web default variant resolved by Metro alongside icon-symbol.ios.tsx; not reachable from fallow's web entry points.
+// fallow-ignore-file unused-file
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
