@@ -3,7 +3,8 @@ import { type RefObject, useCallback, useRef } from "react";
 
 type Focusable = { focus: () => void };
 
-export function useAutoFocusOnMount<T extends Focusable>(
+// biome-ignore lint/suspicious/noExplicitAny: default lets callers skip the generic and still satisfy any component's ref prop
+export function useAutoFocusOnMount<T extends Focusable = any>(
 	enabled: boolean = true,
 ): RefObject<T | null> {
 	const ref = useRef<T | null>(null);

@@ -26,6 +26,7 @@ import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { useFabStyleStack } from "@/hooks/use-fab-style";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useReorderSections, useSections } from "@/hooks/use-sections";
+import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { Section } from "@/models/section";
 import { formatDaysAgo } from "@/utils/date";
 
@@ -34,6 +35,7 @@ export default function PieceDetailScreen() {
 	const theme = useTheme();
 	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
+	const goBack = useUpNavigation("/(app)/(tabs)/piece");
 
 	const { pieces, loading: piecesLoading } = usePieces();
 	const { sections, loading: sectionsLoading } = useSections(id ?? "");
@@ -183,7 +185,7 @@ export default function PieceDetailScreen() {
 			style={{ backgroundColor: theme.colors.background }}
 		>
 			<Appbar.Header>
-				<Appbar.BackAction onPress={() => router.back()} />
+				<Appbar.BackAction onPress={goBack} />
 				<Appbar.Content title={piece.title} />
 				<Appbar.Action
 					icon="pencil"

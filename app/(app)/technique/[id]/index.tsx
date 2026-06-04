@@ -15,6 +15,7 @@ import {
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
+import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { formatDaysAgo } from "@/utils/date";
 
 export default function TechniqueDetailScreen() {
@@ -22,6 +23,7 @@ export default function TechniqueDetailScreen() {
 	const theme = useTheme();
 	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
+	const goBack = useUpNavigation("/(app)/(tabs)/technique");
 
 	const { techniques, loading } = useTechniques();
 	const { deleteTechnique } = useDeleteTechnique();
@@ -74,7 +76,7 @@ export default function TechniqueDetailScreen() {
 			style={{ backgroundColor: theme.colors.background }}
 		>
 			<Appbar.Header>
-				<Appbar.BackAction onPress={() => router.back()} />
+				<Appbar.BackAction onPress={goBack} />
 				<Appbar.Content title={item.title} />
 				<Appbar.Action
 					icon="pencil"

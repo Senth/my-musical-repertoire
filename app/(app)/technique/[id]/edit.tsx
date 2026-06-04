@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -18,6 +18,7 @@ import {
 } from "react-native-paper";
 import { DropdownField } from "@/components/ui/DropdownField";
 import { useTechniques, useUpdateTechnique } from "@/hooks/use-techniques";
+import { useUpNavigation } from "@/hooks/use-up-navigation";
 import {
 	TECHNIQUE_STATES,
 	TECHNIQUE_TYPES,
@@ -30,8 +31,8 @@ const MD3_MEDIUM_BREAKPOINT = 600;
 export default function EditTechniqueScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
-	const router = useRouter();
 	const { id } = useLocalSearchParams<{ id: string }>();
+	const goBack = useUpNavigation(`/technique/${id}`);
 	const { techniques } = useTechniques();
 	const { updateTechnique } = useUpdateTechnique();
 	const { width } = useWindowDimensions();
@@ -97,7 +98,7 @@ export default function EditTechniqueScreen() {
 				targetTempoBpm,
 				notes: notes.trim() || null,
 			});
-			router.back();
+			goBack();
 		} catch {
 			setError(t("error.firebase"));
 		} finally {
@@ -163,7 +164,7 @@ export default function EditTechniqueScreen() {
 			style={{ backgroundColor: theme.colors.background }}
 		>
 			<Appbar.Header>
-				<Appbar.BackAction onPress={() => router.back()} />
+				<Appbar.BackAction onPress={goBack} />
 				<Appbar.Content title={t("screen.editTechnique.title")} />
 			</Appbar.Header>
 

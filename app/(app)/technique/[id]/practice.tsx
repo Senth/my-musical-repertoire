@@ -26,6 +26,7 @@ import {
 	useSaveTechniqueLog,
 	useTechniques,
 } from "@/hooks/use-techniques";
+import { useUpNavigation } from "@/hooks/use-up-navigation";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
@@ -63,18 +64,25 @@ export function TechniquePracticeContent({
 		return "/(app)/(tabs)/technique";
 	};
 
+	const getDoneDestination = (): string => {
+		if (from === "overview") return "/(app)/(tabs)/overview";
+		return "/(app)/(tabs)/technique";
+	};
+
 	const getBackLabel = (): string => {
 		if (from === "overview")
 			return t("screen.practiceTechnique.comparison.backToOverview");
-		if (from === "technique-detail")
-			return t("screen.practiceTechnique.comparison.backToTechnique");
 		return t("screen.practiceTechnique.comparison.backToTechniques");
 	};
 
 	const handleDone = () =>
 		router.replace(
-			getBackDestination() as Parameters<typeof router.replace>[0],
+			getDoneDestination() as Parameters<typeof router.replace>[0],
 		);
+
+	const goBack = useUpNavigation(
+		getBackDestination() as Parameters<typeof router.replace>[0],
+	);
 
 	const seededRef = useRef(false);
 
@@ -208,7 +216,7 @@ export function TechniquePracticeContent({
 		>
 			{!inCoach && (
 				<Appbar.Header>
-					<Appbar.BackAction onPress={() => router.back()} />
+					<Appbar.BackAction onPress={goBack} />
 					<Appbar.Content
 						title={technique?.title ?? t("screen.practiceTechnique.title")}
 					/>
