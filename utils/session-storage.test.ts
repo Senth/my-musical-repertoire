@@ -4,8 +4,10 @@ import {
 	clearActiveSession,
 	readActiveSession,
 	readSessionInputs,
+	readSightReadingBpm,
 	writeActiveSession,
 	writeSessionInputs,
+	writeSightReadingBpm,
 } from "./session-storage";
 
 jest.mock("@react-native-async-storage/async-storage", () => {
@@ -87,5 +89,14 @@ describe("session-storage", () => {
 	it("returns null for malformed active session", async () => {
 		mocked.__store.set("active-session:u1", "{broken");
 		expect(await readActiveSession("u1")).toBeNull();
+	});
+
+	it("round trips sight-reading bpm per uid", async () => {
+		expect(await readSightReadingBpm("u1")).toBeNull();
+		await writeSightReadingBpm("u1", "72");
+		expect(await readSightReadingBpm("u1")).toBe("72");
+		expect(await readSightReadingBpm("u2")).toBeNull();
+		await writeSightReadingBpm("u1", "120");
+		expect(await readSightReadingBpm("u1")).toBe("120");
 	});
 });

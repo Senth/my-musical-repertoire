@@ -7,7 +7,7 @@ description: "Structured new-feature kickoff for my-musical-repertoire. Use when
 
 Orchestrates the full new-feature lifecycle: identify → pedagogy review → scope → spec.
 
-Tasks live in **GitHub Issues + the Kanban board** (Backlog / Next Up / In Progress), not in markdown. There is no PLAN.md. Labels: `bug`, `feature`, `idea`, `cleanup`. `TODO.md` is a generated mirror — never hand-edit it. Project context: `docs/PROJECT.md`; specs: `docs/specs/`.
+Tasks live in **GitHub Issues + the Kanban board** (Backlog / Next Up / In Progress), not in markdown. Labels: `bug`, `feature`, `idea`, `cleanup`. `TODO.md` is a generated mirror — never hand-edit it. Project context: `docs/PROJECT.md`; specs: `docs/specs/`.
 
 ## When to Use This Skill
 
