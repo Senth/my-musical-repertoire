@@ -5,11 +5,8 @@
 **Spec file:** `docs/specs/sections-panel-in-practice.md`
 
 **Implementer instructions:**
-- Use the Phases section (Phase 1–6) as your implementation plan. No separate PLAN.md needed.
-- After all phases are verified working, check off these items in `PLAN.md`:
-  - `- [ ] Sections should be displayed at bottom (between Memory mistakes and Save button)`
-  - `- [ ] Display all sections in a compact list with label + progress line (current BPM vs target BPM) + Practice button for each section.`
-  - `- [ ] When practing the full piece, but having mistakes it would be good to select specific sections that were problematic to focus on those. Unsure how to present this in the UI in a good way.`
+- Use the Phases section (Phase 1–6) as your implementation plan.
+- Tracking: GitHub Issues + Kanban board (no PLAN.md).
 - Run `yarn lint` after each phase. Fix all issues including pre-existing ones.
 - Manual testing via playwright skill (login: senth.wallace@gmail.com / hellomynameispassword123, local server at http://localhost:8081).
 - Never commit — user reviews and commits manually.

@@ -1,16 +1,18 @@
 ---
 name: new-feature
-description: "Structured new-feature kickoff for my-musical-repertoire. Use when implementing a new feature, starting work on a PLAN.md item, or planning the next feature. First consults the piano-practice-teacher agent for pedagogical feedback, then runs grill-me to surface requirements and edge cases before coding begins. Not for bug fixes, refactors, or chores."
+description: "Structured new-feature kickoff for my-musical-repertoire. Use when implementing a new feature, starting work on a backlog issue, or planning the next feature. First consults the piano-practice-teacher agent for pedagogical feedback, then runs grill-me to surface requirements and edge cases before coding begins. Not for bug fixes, refactors, or chores."
 ---
 
 # New Feature Skill
 
 Orchestrates the full new-feature lifecycle: identify → pedagogy review → scope → spec.
 
+Tasks live in **GitHub Issues + the Kanban board** (Backlog / Next Up / In Progress), not in markdown. There is no PLAN.md. Labels: `bug`, `feature`, `idea`, `cleanup`. `TODO.md` is a generated mirror — never hand-edit it. Project context: `docs/PROJECT.md`; specs: `docs/specs/`.
+
 ## When to Use This Skill
 
-- User says "start new feature", "work on PLAN.md item", "next feature", or similar
-- User is about to begin coding a feature from `PLAN.md`
+- User says "start new feature", "work on a backlog issue", "next feature", or similar
+- User is about to begin coding a feature from the GitHub board
 - User wants a structured requirements session before writing code
 
 **Not for:** bug fixes, refactors, UI polish passes, or chores.
@@ -19,17 +21,17 @@ Orchestrates the full new-feature lifecycle: identify → pedagogy review → sc
 
 ### Step 1 — Identify the Feature
 
-Read `PLAN.md` to understand the full plan context.
+Look at the backlog: `gh issue list --label feature --state open` (and the board's **Next Up** column, mirrored in `TODO.md`). Read `docs/PROJECT.md` for vision/requirements context.
 
-- If the user has specified a feature, confirm it before proceeding.
-- If no feature is specified, find the next unchecked item in `PLAN.md` (in phase order), suggest it to the user, and ask for confirmation before proceeding.
+- If the user has specified a feature/issue, confirm it before proceeding. If it has no issue yet, note one will be created in Step 5.
+- If no feature is specified, suggest the top item in **Next Up** (fall back to Backlog) and ask for confirmation before proceeding.
 
 ### Step 2 — Piano Teacher Review
 
 Invoke the `piano-practice-teacher` agent and present the feature to it. This step always runs. Ask the teacher agent to:
 
 - Share pedagogical concerns, ideas, or things to consider when implementing this feature
-- Identify whether the feature is in the right phase order (does it depend on anything not yet built?)
+- Identify whether the feature depends on anything not yet built
 - Flag any logging, lifecycle, or recommendation signals the feature should capture to keep the recommendation engine well-fed
 - Call out UX choices that would make practice harder rather than easier
 - Identify anything missing from the feature scope that a real teacher would expect to see
@@ -71,11 +73,13 @@ The Phases section is required. Break the feature into concrete, independently d
 
 ### Step 5 — Finalize Spec and Handoff
 
-Once the spec is confirmed, add a # Phase 0: Handoff section to the top with instructions for the implementer agent.
+Once the spec is confirmed, add a `# Phase 0: Handoff` section to the top with instructions for the implementer agent:
 
 - The path to the spec file (`docs/specs/<feature-name>.md`)
-- Instruction to use the spec's Phases section as its implementation plan (no separate PLAN.md needed)
-- Instruction to check off the completed item in `PLAN.md` after all phases are verified working
+- Instruction to use the spec's Phases section as its implementation plan
+- **Ensure a tracking issue exists.** Use the existing issue, or create one with `gh issue create --label feature` (it auto-lands in Backlog). Put the implementation phases as a task-list in the issue body and link the spec.
+- Move the issue to **In Progress** on the board, then run `scripts/sync-todo.sh`.
+- After all phases are verified working, close the issue (PR body `Closes #NN`) and run `scripts/sync-todo.sh` to refresh `TODO.md`.
 
 ### Step 6 — User Confirmation
 

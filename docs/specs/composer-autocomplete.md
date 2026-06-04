@@ -1,8 +1,8 @@
 # Phase 0: Handoff
 
 **Spec:** `docs/specs/composer-autocomplete.md`
-**Implementation plan:** Use the Phases section below. No separate PLAN.md needed.
-**After all phases verified working:** Check off `- [ ] Autocomplete Composer field when creating/editing` in `PLAN.md`.
+**Implementation plan:** Use the Phases section below.
+**Tracking:** GitHub Issues + Kanban board (no PLAN.md).
 
 ---
 

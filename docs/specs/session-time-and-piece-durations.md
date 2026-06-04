@@ -6,7 +6,7 @@
 
 **Implementer instructions:**
 
-- Use the **Phases** section (Phase 1–6) as the implementation plan. No separate PLAN.md needed.
+- Use the **Phases** section (Phase 1–6) as the implementation plan.
 - Build phases in order — later phases depend on earlier ones (data model before planner before UI).
 - Run `yarn lint` and `yarn test` after each phase. Fix **all** issues, including pre-existing.
 - All new UI strings go through i18n (`i18n/locales`). No hardcoded strings. Add localized `accessibilityLabel`/`accessibilityHint` to any new icon-only controls.
@@ -14,10 +14,7 @@
 - Manually test via Playwright (login `senth.wallace@gmail.com` / `hellomynameispassword123`, local server `http://localhost:8081`).
 - Never commit — the user reviews and commits manually.
 - Respond in caveman ultra.
-- After all phases verified working, check off these three items in `PLAN.md` (under **Phase 3: Practice Task Model & Logging → Misc**):
-  - `Add duration for pieces …`
-  - `When practicing maintenance pieces, it should pick many …`
-  - `Instead of carrying the session time forward … distributed "evenly" …`
+- After all phases verified working, close the tracking issue.
 
 ## 1. What
 

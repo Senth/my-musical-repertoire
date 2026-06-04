@@ -2,12 +2,9 @@
 
 **Spec:** `docs/specs/overview-suggestion-overhaul.md`
 
-Use the **Phases** section below as your implementation plan. No separate PLAN.md needed.
+Use the **Phases** section below as your implementation plan.
 
-After all phases are verified working, check off this item in `PLAN.md`:
-```
-- [ ] Overview suggestion overhaul
-```
+Tracking: GitHub Issues + Kanban board (no PLAN.md).
 
 ---
 
