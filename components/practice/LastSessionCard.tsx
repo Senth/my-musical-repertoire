@@ -5,7 +5,7 @@ import type { NormalizedLastLog } from "@/hooks/use-last-practice-log";
 import { PracticeMistakes } from "@/models/practice";
 import { formatDaysAgo } from "@/utils/date";
 
-export const AFTER_BREAK_DAYS = 10;
+const AFTER_BREAK_DAYS = 10;
 
 const MISTAKE_LEVEL_KEYS: Record<PracticeMistakes, string> = {
 	[PracticeMistakes.none]: "screen.practice.mistakeLevel.none",

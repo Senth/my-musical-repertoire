@@ -24,4 +24,4 @@ const app = initializeApp(firebaseConfig);
 const auth = Platform.OS === "web" ? getAuth(app) : initializeAuth(app);
 const db = getFirestore(app);
 
-export { app, auth, db };
+export { auth, db };

@@ -330,7 +330,7 @@ export function useAllSections() {
 	return { sections, loading };
 }
 
-export async function getSectionCount(
+async function getSectionCount(
 	userId: string,
 	pieceId: string,
 ): Promise<number> {

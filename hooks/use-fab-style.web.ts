@@ -43,7 +43,7 @@ export function useFabStyleTabs(): ViewStyle {
  *   bottom: 0 → container bottom = content area bottom (bounded by tab bar on web)
  *   internal 16px → button 16dp above tab bar ✓
  */
-export function useFabGroupStyleTabs(): ViewStyle {
+function useFabGroupStyleTabs(): ViewStyle {
 	return { position: "absolute", right: SCROLLBAR_WIDTH, bottom: 0 };
 }
 
