@@ -28,6 +28,7 @@ import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
 import { useSections } from "@/hooks/use-sections";
+import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { PracticeMistakes, type PracticeTrigger } from "@/models/practice";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
@@ -95,17 +96,25 @@ export function PiecePracticeContent({
 		return "/(app)/(tabs)/overview";
 	};
 
+	const getDoneDestination = (): string => {
+		if (from === "overview") return "/(app)/(tabs)/overview";
+		return "/(app)/(tabs)/piece";
+	};
+
 	const getBackLabel = (): string => {
-		if (from === "pieces") return t("screen.practice.comparison.backToPieces");
-		if (from === "piece-detail")
-			return t("screen.practice.comparison.backToPiece");
-		return t("screen.practice.comparison.backToOverview");
+		if (from === "overview")
+			return t("screen.practice.comparison.backToOverview");
+		return t("screen.practice.comparison.backToPieces");
 	};
 
 	const handleDone = () =>
 		router.replace(
-			getBackDestination() as Parameters<typeof router.replace>[0],
+			getDoneDestination() as Parameters<typeof router.replace>[0],
 		);
+
+	const goBack = useUpNavigation(
+		getBackDestination() as Parameters<typeof router.replace>[0],
+	);
 
 	const [technicalMistakes, setTechnicalMistakes] = useState<PracticeMistakes>(
 		PracticeMistakes.none,
@@ -317,7 +326,7 @@ export function PiecePracticeContent({
 		>
 			{!inCoach && (
 				<Appbar.Header>
-					<Appbar.BackAction onPress={() => router.back()} />
+					<Appbar.BackAction onPress={goBack} />
 					<Appbar.Content
 						title={
 							piece?.title

@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePieces } from "@/hooks/use-pieces";
 import { useAllSections } from "@/hooks/use-sections";
 import { useTechniques } from "@/hooks/use-techniques";
+import { useUpNavigation } from "@/hooks/use-up-navigation";
 import {
 	type ActiveSession,
 	type BlockExecutionState,
@@ -50,6 +51,7 @@ export default function SessionSetupScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
+	const goBack = useUpNavigation("/(app)/(tabs)/overview");
 	const { user } = useAuth();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
@@ -149,7 +151,7 @@ export default function SessionSetupScreen() {
 			style={{ backgroundColor: theme.colors.background }}
 		>
 			<Appbar.Header>
-				<Appbar.BackAction onPress={() => router.back()} />
+				<Appbar.BackAction onPress={goBack} />
 				<Appbar.Content title={t("screen.session.setup.title")} />
 			</Appbar.Header>
 			{loading ? (
@@ -174,7 +176,7 @@ export default function SessionSetupScreen() {
 							<Chip
 								icon="tune"
 								style={{ alignSelf: "flex-start" }}
-								onPress={() => router.back()}
+								onPress={goBack}
 								accessibilityLabel={t(
 									`screen.session.emphasis.${emphasis}` as const,
 								)}

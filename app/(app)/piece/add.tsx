@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -21,6 +20,7 @@ import { ComposerAutocompleteInput } from "@/components/piece/ComposerAutocomple
 import { DropdownField } from "@/components/ui/DropdownField";
 import { useAutoFocusOnMount } from "@/hooks/use-auto-focus-on-mount";
 import { useAddPiece, usePieces } from "@/hooks/use-pieces";
+import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { PIECE_STATES, type PieceState } from "@/models/piece";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
@@ -28,7 +28,7 @@ const MD3_MEDIUM_BREAKPOINT = 600;
 export default function AddPieceScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
-	const router = useRouter();
+	const goBack = useUpNavigation("/(app)/(tabs)/piece");
 	const { addPiece } = useAddPiece();
 	const { pieces } = usePieces();
 	const { width } = useWindowDimensions();
@@ -46,7 +46,7 @@ export default function AddPieceScreen() {
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const [durationError, setDurationError] = useState<string | null>(null);
 	const titleTouched = useRef(false);
-	const titleInputRef = useAutoFocusOnMount<{ focus: () => void }>();
+	const titleInputRef = useAutoFocusOnMount();
 
 	const validateTitle = (): string | null => {
 		const err = !title.trim() ? t("screen.addPiece.error.titleRequired") : null;
@@ -117,7 +117,7 @@ export default function AddPieceScreen() {
 				targetTempoBpm,
 				durationSeconds,
 			);
-			router.back();
+			goBack();
 		} catch {
 			setError(t("error.firebase"));
 		} finally {
@@ -213,7 +213,7 @@ export default function AddPieceScreen() {
 			style={{ backgroundColor: theme.colors.background }}
 		>
 			<Appbar.Header>
-				<Appbar.BackAction onPress={() => router.back()} />
+				<Appbar.BackAction onPress={goBack} />
 				<Appbar.Content title={t("screen.addPiece.title")} />
 			</Appbar.Header>
 

@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -29,6 +29,7 @@ import {
 	useSections,
 	useUpdateSection,
 } from "@/hooks/use-sections";
+import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { SECTION_PHASES, type SectionPhase } from "@/models/section";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
@@ -36,12 +37,12 @@ const MD3_MEDIUM_BREAKPOINT = 600;
 export default function SectionEditScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
-	const router = useRouter();
 	const { id: pieceId, sectionId } = useLocalSearchParams<{
 		id: string;
 		sectionId: string;
 	}>();
 	const isNew = sectionId === "new";
+	const goBack = useUpNavigation(`/piece/${pieceId}`);
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
@@ -71,7 +72,7 @@ export default function SectionEditScreen() {
 	const [archiveLoading, setArchiveLoading] = useState(false);
 	const hasSeeded = useRef(false);
 	const labelTouched = useRef(false);
-	const labelInputRef = useAutoFocusOnMount<{ focus: () => void }>(isNew);
+	const labelInputRef = useAutoFocusOnMount(isNew);
 
 	const validateLabel = (): string | null => {
 		const err = !label.trim()
@@ -152,7 +153,7 @@ export default function SectionEditScreen() {
 			} else if (sectionId) {
 				await updateSection(pieceId, sectionId, sectionData);
 			}
-			router.back();
+			goBack();
 		} catch {
 			setError(t("error.firebase"));
 		} finally {
@@ -290,7 +291,7 @@ export default function SectionEditScreen() {
 		try {
 			await archiveSection(pieceId, sectionId);
 			setArchiveDialogVisible(false);
-			router.back();
+			goBack();
 		} catch {
 			setArchiveDialogVisible(false);
 			setError(t("error.deleteSection"));
@@ -305,7 +306,7 @@ export default function SectionEditScreen() {
 			style={{ backgroundColor: theme.colors.background }}
 		>
 			<Appbar.Header>
-				<Appbar.BackAction onPress={() => router.back()} />
+				<Appbar.BackAction onPress={goBack} />
 				<Appbar.Content
 					title={
 						isNew

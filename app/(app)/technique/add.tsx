@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -20,6 +19,7 @@ import {
 import { DropdownField } from "@/components/ui/DropdownField";
 import { useAutoFocusOnMount } from "@/hooks/use-auto-focus-on-mount";
 import { useAddTechnique } from "@/hooks/use-techniques";
+import { useUpNavigation } from "@/hooks/use-up-navigation";
 import {
 	TECHNIQUE_STATES,
 	TECHNIQUE_TYPES,
@@ -32,7 +32,7 @@ const MD3_MEDIUM_BREAKPOINT = 600;
 export default function AddTechniqueScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
-	const router = useRouter();
+	const goBack = useUpNavigation("/(app)/(tabs)/technique");
 	const { addTechnique } = useAddTechnique();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
@@ -47,7 +47,7 @@ export default function AddTechniqueScreen() {
 	const [titleError, setTitleError] = useState<string | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const titleTouched = useRef(false);
-	const titleInputRef = useAutoFocusOnMount<{ focus: () => void }>();
+	const titleInputRef = useAutoFocusOnMount();
 
 	const validateTitle = (): string | null => {
 		const err = !title.trim()
@@ -100,7 +100,7 @@ export default function AddTechniqueScreen() {
 				targetTempoBpm,
 				notes: notes.trim() || null,
 			});
-			router.back();
+			goBack();
 		} catch {
 			setError(t("error.firebase"));
 		} finally {
@@ -185,7 +185,7 @@ export default function AddTechniqueScreen() {
 			style={{ backgroundColor: theme.colors.background }}
 		>
 			<Appbar.Header>
-				<Appbar.BackAction onPress={() => router.back()} />
+				<Appbar.BackAction onPress={goBack} />
 				<Appbar.Content title={t("screen.addTechnique.title")} />
 			</Appbar.Header>
 
