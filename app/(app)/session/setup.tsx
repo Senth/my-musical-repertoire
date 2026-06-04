@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import {
-	ActivityIndicator,
 	Appbar,
 	Button,
 	Card,
@@ -15,6 +14,7 @@ import {
 	Text,
 	useTheme,
 } from "react-native-paper";
+import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePieces } from "@/hooks/use-pieces";
 import { useAllSections } from "@/hooks/use-sections";
@@ -155,12 +155,7 @@ export default function SessionSetupScreen() {
 				<Appbar.Content title={t("screen.session.setup.title")} />
 			</Appbar.Header>
 			{loading ? (
-				<View
-					className="flex-1 items-center justify-center"
-					style={{ backgroundColor: theme.colors.background }}
-				>
-					<ActivityIndicator size="large" />
-				</View>
+				<LoadingScreen />
 			) : (
 				<ScrollView
 					contentContainerStyle={{

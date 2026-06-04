@@ -8,21 +8,21 @@ import DraggableFlatList, {
 } from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
-	ActivityIndicator,
 	Appbar,
 	Button,
 	Divider,
 	FAB,
 	IconButton,
 	Menu,
-	Snackbar,
 	Text,
 	TextInput,
 	useTheme,
 } from "react-native-paper";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { SectionDetailRow } from "@/components/section/SectionDetailRow";
+import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
+import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { useFabStyleStack } from "@/hooks/use-fab-style";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useReorderSections, useSections } from "@/hooks/use-sections";
@@ -150,25 +150,11 @@ export default function PieceDetailScreen() {
 	);
 
 	if (piecesLoading) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<ActivityIndicator size="large" />
-			</View>
-		);
+		return <LoadingScreen />;
 	}
 
 	if (!piece) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<Text variant="bodyLarge">{t("screen.pieceDetail.pieceNotFound")}</Text>
-			</View>
-		);
+		return <MessageScreen message={t("screen.pieceDetail.pieceNotFound")} />;
 	}
 
 	const lastPracticedLine = t("screen.pieceDetail.lastPracticed", {
@@ -425,14 +411,7 @@ export default function PieceDetailScreen() {
 				onDismiss={() => setDeleteDialogVisible(false)}
 			/>
 
-			<Snackbar
-				visible={!!error}
-				onDismiss={() => setError(null)}
-				duration={4000}
-				action={{ label: t("common.ok"), onPress: () => setError(null) }}
-			>
-				{error ?? ""}
-			</Snackbar>
+			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
 		</View>
 	);
 }

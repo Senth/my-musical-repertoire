@@ -4,29 +4,31 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import {
-	ActivityIndicator,
 	Appbar,
 	Button,
 	HelperText,
 	Menu,
-	SegmentedButtons,
-	Snackbar,
 	Text,
 	TextInput,
 	useTheme,
 } from "react-native-paper";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import { MetronomeButton } from "@/components/practice/MetronomeButton";
+import { RatingField } from "@/components/practice/RatingField";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
-import { useCoach, useRegisterCoachSave } from "@/contexts/CoachContext";
+import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
+import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
+import { useCoach } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
+import { usePracticeSave } from "@/hooks/use-practice-save";
 import {
 	useDeleteTechnique,
 	useSaveTechniqueLog,
 	useTechniques,
 } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
+import { validateBpm as validateBpmRange } from "@/utils/validation";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
@@ -103,13 +105,7 @@ export function TechniquePracticeContent({
 	}, [technique]);
 
 	const validateBpm = useCallback(
-		(text: string): string | null => {
-			if (!text.trim()) return null;
-			const n = Number.parseInt(text.trim(), 10);
-			return Number.isNaN(n) || n < 20 || n > 240
-				? t("error.bpmInvalid")
-				: null;
-		},
+		(text: string) => validateBpmRange(text, t),
 		[t],
 	);
 
@@ -154,17 +150,7 @@ export function TechniquePracticeContent({
 		coach.sessionId,
 	]);
 
-	const handleSave = async () => {
-		const result = await performSave();
-		if (result.ok) setSaved(true);
-	};
-
-	useRegisterCoachSave(
-		useCallback(async () => {
-			const result = await performSave();
-			return { saved: result.ok };
-		}, [performSave]),
-	);
+	const handleSave = usePracticeSave(performSave, () => setSaved(true));
 
 	const handleDelete = async () => {
 		if (!techniqueId) return;
@@ -181,27 +167,11 @@ export function TechniquePracticeContent({
 	};
 
 	if (techniquesLoading) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<ActivityIndicator size="large" />
-			</View>
-		);
+		return <LoadingScreen />;
 	}
 
 	if (!technique) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<Text variant="bodyLarge">
-					{t("screen.practiceTechnique.notFound")}
-				</Text>
-			</View>
-		);
+		return <MessageScreen message={t("screen.practiceTechnique.notFound")} />;
 	}
 
 	const ratingButtons = (["1", "2", "3", "4", "5"] as const).map((v) => ({
@@ -284,31 +254,19 @@ export function TechniquePracticeContent({
 								targetBpm={technique.targetTempoBpm ?? null}
 							/>
 
-							<View className="gap-2">
-								<Text variant="titleSmall">
-									{t("screen.practiceTechnique.qualityLabel")}
-								</Text>
-								<SegmentedButtons
-									value={quality.toString()}
-									onValueChange={(v) =>
-										setQuality(Number(v) as 1 | 2 | 3 | 4 | 5)
-									}
-									buttons={ratingButtons}
-								/>
-							</View>
+							<RatingField
+								label={t("screen.practiceTechnique.qualityLabel")}
+								value={quality}
+								onChange={setQuality}
+								buttons={ratingButtons}
+							/>
 
-							<View className="gap-2">
-								<Text variant="titleSmall">
-									{t("screen.practiceTechnique.effortLabel")}
-								</Text>
-								<SegmentedButtons
-									value={effort.toString()}
-									onValueChange={(v) =>
-										setEffort(Number(v) as 1 | 2 | 3 | 4 | 5)
-									}
-									buttons={ratingButtons}
-								/>
-							</View>
+							<RatingField
+								label={t("screen.practiceTechnique.effortLabel")}
+								value={effort}
+								onChange={setEffort}
+								buttons={ratingButtons}
+							/>
 
 							<View className="gap-2">
 								<Text variant="titleSmall">
@@ -363,14 +321,7 @@ export function TechniquePracticeContent({
 			)}
 
 			{!inCoach && (
-				<Snackbar
-					visible={!!error}
-					onDismiss={() => setError(null)}
-					duration={4000}
-					action={{ label: t("common.ok"), onPress: () => setError(null) }}
-				>
-					{error ?? ""}
-				</Snackbar>
+				<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
 			)}
 
 			{!inCoach && (

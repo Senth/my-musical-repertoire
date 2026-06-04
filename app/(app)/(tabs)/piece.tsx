@@ -9,7 +9,6 @@ import {
 	FAB,
 	IconButton,
 	List,
-	Menu,
 	Portal,
 	Searchbar,
 	Snackbar,
@@ -19,6 +18,7 @@ import {
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
+import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { StateFilterDropdown } from "@/components/ui/StateFilterDropdown";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
@@ -79,8 +79,14 @@ export default function PiecesScreen() {
 		}
 	};
 
+	const pieceMenuLabels = {
+		practice: t("screen.pieces.menu.practice"),
+		edit: t("screen.pieces.menu.edit"),
+		delete: t("screen.pieces.menu.delete"),
+	};
+
 	const renderCardMenu = (item: Piece) => (
-		<Menu
+		<RowActionsMenu
 			visible={menuVisible === item.id}
 			onDismiss={() => setMenuVisible(null)}
 			anchor={
@@ -91,32 +97,20 @@ export default function PiecesScreen() {
 					onPress={() => setMenuVisible(item.id ?? null)}
 				/>
 			}
-		>
-			<Menu.Item
-				leadingIcon="play"
-				onPress={() => {
-					setMenuVisible(null);
-					router.push(`/piece/${item.id}/practice?from=pieces`);
-				}}
-				title={t("screen.pieces.menu.practice")}
-			/>
-			<Menu.Item
-				leadingIcon="pencil"
-				onPress={() => {
-					setMenuVisible(null);
-					router.push(`/piece/${item.id}/edit`);
-				}}
-				title={t("screen.pieces.menu.edit")}
-			/>
-			<Menu.Item
-				leadingIcon="delete"
-				onPress={() => {
-					setMenuVisible(null);
-					setDeletingPiece(item);
-				}}
-				title={t("screen.pieces.menu.delete")}
-			/>
-		</Menu>
+			onPractice={() => {
+				setMenuVisible(null);
+				router.push(`/piece/${item.id}/practice?from=pieces`);
+			}}
+			onEdit={() => {
+				setMenuVisible(null);
+				router.push(`/piece/${item.id}/edit`);
+			}}
+			onDelete={() => {
+				setMenuVisible(null);
+				setDeletingPiece(item);
+			}}
+			labels={pieceMenuLabels}
+		/>
 	);
 
 	const renderCompactItem = ({ item }: { item: Piece }) => (
@@ -265,39 +259,27 @@ export default function PiecesScreen() {
 			)}
 
 			{/* Long-press context menu for compact list items */}
-			<Menu
+			<RowActionsMenu
 				visible={contextMenu !== null}
 				onDismiss={() => setContextMenu(null)}
 				anchor={contextMenu ?? { x: 0, y: 0 }}
-			>
-				<Menu.Item
-					leadingIcon="play"
-					onPress={() => {
-						const pieceId = contextMenu?.pieceId;
-						setContextMenu(null);
-						if (pieceId) router.push(`/piece/${pieceId}/practice?from=pieces`);
-					}}
-					title={t("screen.pieces.menu.practice")}
-				/>
-				<Menu.Item
-					leadingIcon="pencil"
-					onPress={() => {
-						const pieceId = contextMenu?.pieceId;
-						setContextMenu(null);
-						if (pieceId) router.push(`/piece/${pieceId}/edit`);
-					}}
-					title={t("screen.pieces.menu.edit")}
-				/>
-				<Menu.Item
-					leadingIcon="delete"
-					onPress={() => {
-						const piece = pieces.find((p) => p.id === contextMenu?.pieceId);
-						setContextMenu(null);
-						if (piece) setDeletingPiece(piece);
-					}}
-					title={t("screen.pieces.menu.delete")}
-				/>
-			</Menu>
+				onPractice={() => {
+					const pieceId = contextMenu?.pieceId;
+					setContextMenu(null);
+					if (pieceId) router.push(`/piece/${pieceId}/practice?from=pieces`);
+				}}
+				onEdit={() => {
+					const pieceId = contextMenu?.pieceId;
+					setContextMenu(null);
+					if (pieceId) router.push(`/piece/${pieceId}/edit`);
+				}}
+				onDelete={() => {
+					const piece = pieces.find((p) => p.id === contextMenu?.pieceId);
+					setContextMenu(null);
+					if (piece) setDeletingPiece(piece);
+				}}
+				labels={pieceMenuLabels}
+			/>
 
 			<DeletePieceDialog
 				visible={deletingPiece !== null}

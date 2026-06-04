@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import {
-	ActivityIndicator,
 	Button,
 	Card,
 	Chip,
@@ -17,6 +16,7 @@ import {
 } from "react-native-paper";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
+import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
@@ -88,14 +88,7 @@ export default function OverviewScreen() {
 	);
 
 	if (piecesLoading || techniquesLoading || sectionsLoading) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<ActivityIndicator size="large" />
-			</View>
-		);
+		return <LoadingScreen />;
 	}
 
 	return (

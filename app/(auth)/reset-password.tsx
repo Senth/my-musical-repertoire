@@ -3,13 +3,8 @@ import { FirebaseError } from "firebase/app";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import {
-	Appbar,
-	Button,
-	HelperText,
-	TextInput,
-	useTheme,
-} from "react-native-paper";
+import { Appbar, Button, HelperText, useTheme } from "react-native-paper";
+import { FormTextField } from "@/components/ui/FormTextField";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function ResetPasswordScreen() {
@@ -94,41 +89,29 @@ export default function ResetPasswordScreen() {
 
 			<View className="flex-1 justify-center items-center px-4">
 				<View className="w-full max-w-md gap-2">
-					<View>
-						<TextInput
-							label={t("screen.resetPassword.newPasswordLabel")}
-							value={password}
-							onChangeText={(text) => {
-								setPassword(text);
-								setPasswordError(null);
-							}}
-							mode="outlined"
-							secureTextEntry
-							autoComplete="new-password"
-							error={!!passwordError}
-						/>
-						<HelperText type="error" visible={!!passwordError}>
-							{passwordError ?? ""}
-						</HelperText>
-					</View>
+					<FormTextField
+						label={t("screen.resetPassword.newPasswordLabel")}
+						value={password}
+						onChangeText={(text) => {
+							setPassword(text);
+							setPasswordError(null);
+						}}
+						secureTextEntry
+						autoComplete="new-password"
+						error={passwordError}
+					/>
 
-					<View>
-						<TextInput
-							label={t("screen.login.confirmPasswordLabel")}
-							value={confirmPassword}
-							onChangeText={(text) => {
-								setConfirmPassword(text);
-								setConfirmPasswordError(null);
-							}}
-							mode="outlined"
-							secureTextEntry
-							autoComplete="new-password"
-							error={!!confirmPasswordError}
-						/>
-						<HelperText type="error" visible={!!confirmPasswordError}>
-							{confirmPasswordError ?? ""}
-						</HelperText>
-					</View>
+					<FormTextField
+						label={t("screen.login.confirmPasswordLabel")}
+						value={confirmPassword}
+						onChangeText={(text) => {
+							setConfirmPassword(text);
+							setConfirmPasswordError(null);
+						}}
+						secureTextEntry
+						autoComplete="new-password"
+						error={confirmPasswordError}
+					/>
 
 					{serverError && (
 						<HelperText type="error" visible>

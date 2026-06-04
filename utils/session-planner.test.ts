@@ -13,6 +13,7 @@ import {
 	type SlotAvailability,
 	type SlotMinutes,
 } from "./session-planner";
+import { makePiece, makeSection, makeTechnique } from "./test-factories";
 
 function inputs(overrides: Partial<SessionInputs> = {}): SessionInputs {
 	return {
@@ -21,60 +22,6 @@ function inputs(overrides: Partial<SessionInputs> = {}): SessionInputs {
 		techniqueEnabled: true,
 		sightReadingEnabled: true,
 		...overrides,
-	};
-}
-
-function makePiece(
-	over: Partial<Piece> & { id: string; title?: string },
-): Piece {
-	return {
-		userId: "u",
-		title: over.title ?? `Piece ${over.id}`,
-		composer: "C",
-		state: "learning",
-		targetTempoBpm: null,
-		lastPracticed: null,
-		lastAchievedTempoBpm: null,
-		sectionCount: 0,
-		...over,
-	};
-}
-
-function makeSection(
-	over: Partial<Section> & { id: string; pieceId: string },
-): Section {
-	return {
-		userId: "u",
-		label: "Sec",
-		order: 0,
-		phase: "learning",
-		archived: false,
-		startBar: null,
-		endBar: null,
-		currentBpm: null,
-		targetBpmOverride: null,
-		notes: null,
-		createdAt: null,
-		lastPracticed: null,
-		...over,
-	};
-}
-
-function makeTechnique(
-	over: Partial<TechniqueItem> & { id: string; title?: string },
-): TechniqueItem {
-	return {
-		userId: "u",
-		title: over.title ?? `T ${over.id}`,
-		state: "active",
-		type: null,
-		targetTempoBpm: null,
-		dateIntroduced: new Date("2026-01-01T00:00:00Z"),
-		lastPracticedAt: null,
-		lastQuality: null,
-		lastEffort: null,
-		lastAchievedTempoBpm: null,
-		...over,
 	};
 }
 

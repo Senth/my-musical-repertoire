@@ -1,61 +1,8 @@
-import type { Piece, PieceState } from "@/models/piece";
+import type { PieceState } from "@/models/piece";
 import type { Section } from "@/models/section";
-import type { TechniqueItem, TechniqueState } from "@/models/technique";
+import type { TechniqueState } from "@/models/technique";
 import { suggestPieces, suggestTechniques } from "./overview-suggestions";
-
-function makePiece(
-	over: Partial<Piece> & { id: string; state?: PieceState },
-): Piece {
-	return {
-		userId: "u",
-		title: `Piece ${over.id}`,
-		composer: "C",
-		state: "learning",
-		targetTempoBpm: null,
-		lastPracticed: null,
-		lastAchievedTempoBpm: null,
-		sectionCount: 0,
-		...over,
-	};
-}
-
-function makeSection(
-	over: Partial<Section> & { id: string; pieceId: string },
-): Section {
-	return {
-		userId: "u",
-		label: "Sec",
-		order: 0,
-		phase: "learning",
-		archived: false,
-		startBar: null,
-		endBar: null,
-		currentBpm: null,
-		targetBpmOverride: null,
-		notes: null,
-		createdAt: null,
-		lastPracticed: null,
-		...over,
-	};
-}
-
-function makeTechnique(
-	over: Partial<TechniqueItem> & { id: string },
-): TechniqueItem {
-	return {
-		userId: "u",
-		title: `T ${over.id}`,
-		state: "active",
-		type: null,
-		targetTempoBpm: null,
-		dateIntroduced: new Date("2026-01-01T00:00:00Z"),
-		lastPracticedAt: null,
-		lastQuality: null,
-		lastEffort: null,
-		lastAchievedTempoBpm: null,
-		...over,
-	};
-}
+import { makePiece, makeSection, makeTechnique } from "./test-factories";
 
 const NOW = new Date("2026-05-27T12:00:00Z");
 const TODAY = new Date(NOW.getTime() - 30 * 60 * 1000); // 30 min ago = today

@@ -1,7 +1,7 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, Divider, Text, useTheme } from "react-native-paper";
+import { TrendIcon } from "@/components/ui/TrendIcon";
 
 interface TechniqueLogComparisonProps {
 	techniqueName: string;
@@ -31,15 +31,6 @@ function QualityRow({
 
 	const hasPrevious = previous != null;
 	const diff = hasPrevious ? current - previous : 0;
-	const improved = diff > 0;
-	const regressed = diff < 0;
-
-	const iconName = improved ? "arrow-up" : regressed ? "arrow-down" : "minus";
-	const iconColor = improved
-		? theme.colors.tertiary
-		: regressed
-			? theme.colors.error
-			: theme.colors.onSurfaceVariant;
 
 	return (
 		<View className="gap-1">
@@ -49,13 +40,7 @@ function QualityRow({
 					<Text variant="bodyLarge">
 						{t(`technique.quality.${current}` as Parameters<typeof t>[0])}
 					</Text>
-					{hasPrevious && (
-						<MaterialCommunityIcons
-							name={iconName}
-							size={20}
-							color={iconColor}
-						/>
-					)}
+					<TrendIcon diff={diff} visible={hasPrevious} />
 				</View>
 				{hasPrevious && (
 					<Text
@@ -122,15 +107,6 @@ function TempoRow({
 
 	const hasPrevious = previous != null;
 	const diff = hasPrevious && current != null ? current - previous : 0;
-	const improved = diff > 0;
-	const regressed = diff < 0;
-
-	const iconName = improved ? "arrow-up" : regressed ? "arrow-down" : "minus";
-	const iconColor = improved
-		? theme.colors.tertiary
-		: regressed
-			? theme.colors.error
-			: theme.colors.onSurfaceVariant;
 
 	return (
 		<View className="gap-1">
@@ -140,13 +116,7 @@ function TempoRow({
 					<Text variant="bodyLarge">
 						{current != null ? `${current} BPM` : "—"}
 					</Text>
-					{hasPrevious && current != null && (
-						<MaterialCommunityIcons
-							name={iconName}
-							size={20}
-							color={iconColor}
-						/>
-					)}
+					<TrendIcon diff={diff} visible={hasPrevious && current != null} />
 				</View>
 				<View className="items-end gap-1">
 					{hasPrevious && (

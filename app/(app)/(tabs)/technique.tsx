@@ -11,7 +11,6 @@ import {
 	FAB,
 	IconButton,
 	List,
-	Menu,
 	Portal,
 	Searchbar,
 	Snackbar,
@@ -20,6 +19,7 @@ import {
 } from "react-native-paper";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
+import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { StateFilterDropdown } from "@/components/ui/StateFilterDropdown";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
@@ -84,8 +84,14 @@ export default function TechniquesScreen() {
 		}
 	};
 
+	const techniqueMenuLabels = {
+		practice: t("screen.techniques.menu.practice"),
+		edit: t("screen.techniques.menu.edit"),
+		delete: t("screen.techniques.menu.delete"),
+	};
+
 	const renderCardMenu = (item: TechniqueItem) => (
-		<Menu
+		<RowActionsMenu
 			visible={menuVisible === item.id}
 			onDismiss={() => setMenuVisible(null)}
 			anchor={
@@ -96,32 +102,20 @@ export default function TechniquesScreen() {
 					onPress={() => setMenuVisible(item.id ?? null)}
 				/>
 			}
-		>
-			<Menu.Item
-				leadingIcon="play"
-				onPress={() => {
-					setMenuVisible(null);
-					router.push(`/technique/${item.id}/practice?from=techniques`);
-				}}
-				title={t("screen.techniques.menu.practice")}
-			/>
-			<Menu.Item
-				leadingIcon="pencil"
-				onPress={() => {
-					setMenuVisible(null);
-					router.push(`/technique/${item.id}/edit`);
-				}}
-				title={t("screen.techniques.menu.edit")}
-			/>
-			<Menu.Item
-				leadingIcon="delete"
-				onPress={() => {
-					setMenuVisible(null);
-					setDeletingItem(item);
-				}}
-				title={t("screen.techniques.menu.delete")}
-			/>
-		</Menu>
+			onPractice={() => {
+				setMenuVisible(null);
+				router.push(`/technique/${item.id}/practice?from=techniques`);
+			}}
+			onEdit={() => {
+				setMenuVisible(null);
+				router.push(`/technique/${item.id}/edit`);
+			}}
+			onDelete={() => {
+				setMenuVisible(null);
+				setDeletingItem(item);
+			}}
+			labels={techniqueMenuLabels}
+		/>
 	);
 
 	const renderCompactItem = ({ item }: { item: TechniqueItem }) => (
@@ -146,50 +140,7 @@ export default function TechniquesScreen() {
 				</View>
 			)}
 			right={() => (
-				<View className="justify-center">
-					{/* ISSUE-003 fix: use anchor={<IconButton/>} so menu appears next to button */}
-					<Menu
-						visible={menuVisible === item.id}
-						onDismiss={() => setMenuVisible(null)}
-						anchor={
-							<IconButton
-								icon="dots-vertical"
-								size={20}
-								accessibilityLabel={t("a11y.menu.options")}
-								onPress={() =>
-									setMenuVisible(
-										menuVisible === item.id ? null : (item.id ?? null),
-									)
-								}
-							/>
-						}
-					>
-						<Menu.Item
-							leadingIcon="play"
-							onPress={() => {
-								setMenuVisible(null);
-								router.push(`/technique/${item.id}/practice?from=techniques`);
-							}}
-							title={t("screen.techniques.menu.practice")}
-						/>
-						<Menu.Item
-							leadingIcon="pencil"
-							onPress={() => {
-								setMenuVisible(null);
-								router.push(`/technique/${item.id}/edit`);
-							}}
-							title={t("screen.techniques.menu.edit")}
-						/>
-						<Menu.Item
-							leadingIcon="delete"
-							onPress={() => {
-								setMenuVisible(null);
-								setDeletingItem(item);
-							}}
-							title={t("screen.techniques.menu.delete")}
-						/>
-					</Menu>
-				</View>
+				<View className="justify-center">{renderCardMenu(item)}</View>
 			)}
 			onPress={() => router.push(`/technique/${item.id}`)}
 			onLongPress={(e) =>
@@ -311,41 +262,29 @@ export default function TechniquesScreen() {
 			)}
 
 			{/* Long-press context menu for compact list items */}
-			<Menu
+			<RowActionsMenu
 				visible={contextMenu !== null}
 				onDismiss={() => setContextMenu(null)}
 				anchor={contextMenu ?? { x: 0, y: 0 }}
-			>
-				<Menu.Item
-					leadingIcon="play"
-					onPress={() => {
-						const id = contextMenu?.techniqueId;
-						setContextMenu(null);
-						if (id) router.push(`/technique/${id}/practice?from=techniques`);
-					}}
-					title={t("screen.techniques.menu.practice")}
-				/>
-				<Menu.Item
-					leadingIcon="pencil"
-					onPress={() => {
-						const id = contextMenu?.techniqueId;
-						setContextMenu(null);
-						if (id) router.push(`/technique/${id}/edit`);
-					}}
-					title={t("screen.techniques.menu.edit")}
-				/>
-				<Menu.Item
-					leadingIcon="delete"
-					onPress={() => {
-						const item = techniques.find(
-							(t) => t.id === contextMenu?.techniqueId,
-						);
-						setContextMenu(null);
-						if (item) setDeletingItem(item);
-					}}
-					title={t("screen.techniques.menu.delete")}
-				/>
-			</Menu>
+				onPractice={() => {
+					const id = contextMenu?.techniqueId;
+					setContextMenu(null);
+					if (id) router.push(`/technique/${id}/practice?from=techniques`);
+				}}
+				onEdit={() => {
+					const id = contextMenu?.techniqueId;
+					setContextMenu(null);
+					if (id) router.push(`/technique/${id}/edit`);
+				}}
+				onDelete={() => {
+					const item = techniques.find(
+						(tn) => tn.id === contextMenu?.techniqueId,
+					);
+					setContextMenu(null);
+					if (item) setDeletingItem(item);
+				}}
+				labels={techniqueMenuLabels}
+			/>
 
 			<DeleteTechniqueDialog
 				visible={deletingItem !== null}
