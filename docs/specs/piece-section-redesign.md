@@ -3,8 +3,8 @@
 ## Phase 0: Handoff
 
 - Spec path: `docs/specs/piece-section-redesign.md`
-- Implementer: use the **Phases** section below as the implementation plan. No separate PLAN.md update mid-flight.
-- After all phases verified working, check off the PLAN.md item: Phase 3 → "Piece section redesign" (and its sub-bullets, lines 179–184).
+- Implementer: use the **Phases** section below as the implementation plan.
+- After all phases verified working, close the tracking issue.
 - Verification gates per project CLAUDE.md: `yarn lint` clean, `yarn test` green (fix all existing failures too), manual playwright pass on http://localhost:8081 with `senth.wallace@gmail.com` / `hellomynameispassword123`.
 - Reference example: piece named **"Terra's theme"** — has target BPM with sections at working BPM; redesign must look good there.
 
@@ -95,7 +95,7 @@ The standalone `manageSections` `List.Item` (link to `/piece/[id]/section`) is r
 ## Out of Scope
 
 - `lastPracticed` retroactive backfill from old practice logs.
-- Per-block accuracy / effort / scope / tempo-achieved fields (separate PLAN.md item).
+- Per-block accuracy / effort / scope / tempo-achieved fields (separate issue).
 - Hands-separate flag, practice count, phase-transition nudges, recommendation engine signals.
 - BPM bump suggestions / phase nudges.
 - Whole-piece history / charts.
@@ -170,4 +170,4 @@ The standalone `manageSections` `List.Item` (link to `/piece/[id]/section`) is r
   8. Archive from section edit → returns to piece detail, row gone.
   9. Tap Practice on piece (top button) → flow unaffected.
 - Screenshots into `$PWD/.tmp/`.
-- Final: `yarn lint`, `yarn test` green; check off PLAN.md sub-items.
+- Final: `yarn lint`, `yarn test` green; close the tracking issue.

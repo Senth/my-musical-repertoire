@@ -4,11 +4,10 @@
 
 **Implementer instructions:**
 
-- Use the **Phases** section below as your implementation plan. No separate PLAN.md planning needed.
+- Use the **Phases** section below as your implementation plan.
 - Work the phases in order; each is sized for one focused session.
-- After all phases are verified working (tests + lint green, Playwright pass on individual screens **and** inside the session coach), check off the PLAN.md item:
-  `- [ ] When practicing anything, it would be good to see the last log for that piece/section/technique to have a reference point...` (Phase 3, Misc, ~line 212).
-- A deferred follow-up ("note for next time" per-log field) has already been added to PLAN.md — do **not** implement it here; it is explicitly out of scope.
+- After all phases are verified working (tests + lint green, Playwright pass on individual screens **and** inside the session coach), close the tracking issue.
+- A deferred follow-up ("note for next time" per-log field) is tracked as issue #16 — do **not** implement it here; it is explicitly out of scope.
 - Caveman responses for any user-facing replies.
 
 ---
@@ -84,7 +83,7 @@ Read-only feature — **produces no new logged signals** (the "note for next tim
 
 ## 6. Out of scope
 
-- **Per-log "note for next time" free-text field** — deferred to a follow-up (added to PLAN.md). The card shows existing metrics only.
+- **Per-log "note for next time" free-text field** — deferred to a follow-up (issue #16). The card shows existing metrics only.
 - Multi-log **trend / sparkline** — single last log only.
 - **Regression verdict / coloring / arrows** in the reference — stays neutral; verdict remains in the post-save comparison.
 - Changing **BPM prefill** logic.
@@ -116,4 +115,4 @@ Read-only feature — **produces no new logged signals** (the "note for next tim
   - Inside an active **session coach** block — card renders identically for piece/section/technique blocks.
   - Verify neutral styling (no red/green, no arrows) and "after a break" framing on an item with an old log.
 - Run **all** tests + lint (`yarn` scripts); fix every issue including pre-existing.
-- Confirm the deferred "note for next time" item exists in PLAN.md; check off the feature item (Phase 3 Misc, ~line 212).
+- Close the tracking issue once shipped. (Deferred "note for next time" follow-up = issue #16.)

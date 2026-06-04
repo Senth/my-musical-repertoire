@@ -5,10 +5,9 @@
 **Spec file:** `docs/specs/session-generator.md`
 
 **Implementer instructions:**
-- Use the Phases section (Phase 1–7) as the implementation plan. No separate PLAN.md needed.
-- After all phases verified working, check off this PLAN.md item:
-  - `- [ ] Define reusable exercise block model` (and all its sub-bullets) under **Phase 3: Practice Task Model & Logging** — replaced by this session generator scope.
-- This spec **reframes** the original "reusable exercise block model" item. The rich template/focus-category schema is dropped; the session generator delivers the user-visible value. Note this in the PLAN.md checkmark commit message.
+- Use the Phases section (Phase 1–7) as the implementation plan.
+- After all phases verified working, close the tracking issue.
+- This spec **reframes** the original "reusable exercise block model" item. The rich template/focus-category schema is dropped; the session generator delivers the user-visible value.
 - Run `yarn lint` after each phase. Fix all issues including pre-existing.
 - Manually test via Playwright (login: senth.wallace@gmail.com / hellomynameispassword123, local server at http://localhost:8081).
 - Never commit — user reviews and commits manually.
@@ -19,7 +18,7 @@
 
 A session generator + coach for practice. The student picks an emphasis (Balanced / Technique-heavy / Reading-heavy / Repertoire-only), confirms available minutes and which domains are active, then the app generates a structured session — a sequence of blocks (warmup, technique, sight-reading, repertoire sub-blocks for learning / stabilizing / maintenance) with allocated minutes. The app guides the student block-by-block in **coach mode**: existing piece/technique practice screens are wrapped with dual progress bars (session + block) and a "Save & next" flow. Sessions are ephemeral; an active session can be resumed if the app is closed mid-flow.
 
-This spec REFRAMES PLAN.md's "Define reusable exercise block model" item. The original block-template schema is dropped; instead, blocks exist as runtime instances of the generated session. The session generator delivers the user-visible value the block model was scaffolding for.
+This spec REFRAMES the "Define reusable exercise block model" item. The original block-template schema is dropped; instead, blocks exist as runtime instances of the generated session. The session generator delivers the user-visible value the block model was scaffolding for.
 
 ## 2. Why
 

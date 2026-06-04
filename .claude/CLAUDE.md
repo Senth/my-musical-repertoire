@@ -1,5 +1,17 @@
 # CLAUDE.md
 
+## Tasks & Docs
+
+- **Tasks live in GitHub Issues + the Kanban Project board** — not in markdown. There is no
+  PLAN.md. Use `gh issue list/view/create/close` and `gh project` (board: Backlog / Next Up /
+  In Progress). Labels: `bug`, `feature`, `idea`, `cleanup`.
+- [`TODO.md`](../TODO.md) is a **generated mirror** of the board (`## Working On / Next Up /
+  Backlog`). Never hand-edit it; regenerate with `scripts/sync-todo.sh` after creating or
+  closing issues. It also auto-runs on branch checkout.
+- Close issues from PRs with `Closes #NN` in the PR/commit body.
+- Vision, requirements, decisions, and architecture: [`docs/PROJECT.md`](../docs/PROJECT.md).
+  Per-feature deep specs: [`docs/specs/`](../docs/specs/).
+
 ## Verifying changes
 
 - After implementation done, run all tests and lint. Fix all issue (included existing ones)
