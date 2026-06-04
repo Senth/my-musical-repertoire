@@ -7,6 +7,7 @@ import {
 	readSightReadingBpm,
 	writeSightReadingBpm,
 } from "@/utils/session-storage";
+import { validateBpm } from "@/utils/validation";
 import { MetronomeButton } from "./MetronomeButton";
 
 interface SightReadingBlockBodyProps {
@@ -34,15 +35,9 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 		};
 	}, [user]);
 
-	const validateBpm = (text: string): string | null => {
-		if (!text.trim()) return null;
-		const n = Number.parseInt(text.trim(), 10);
-		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
-	};
-
 	const handleChange = (text: string) => {
 		setBpm(text);
-		const err = validateBpm(text);
+		const err = validateBpm(text, t);
 		setBpmError(err);
 		if (err || !text.trim()) return;
 		if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -77,7 +72,7 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 									onChangeText={handleChange}
 									placeholder="e.g. 72"
 									error={!!bpmError}
-									onBlur={() => setBpmError(validateBpm(bpm))}
+									onBlur={() => setBpmError(validateBpm(bpm, t))}
 								/>
 							</View>
 							<MetronomeButton

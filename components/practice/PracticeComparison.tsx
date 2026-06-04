@@ -1,4 +1,3 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, Divider, Text, useTheme } from "react-native-paper";
@@ -6,6 +5,7 @@ import {
 	calculateScore,
 	PieceProgressBar,
 } from "@/components/ui/PieceProgressBar";
+import { TrendIcon } from "@/components/ui/TrendIcon";
 import { PracticeMistakes } from "@/models/practice";
 
 const MISTAKE_LABELS: Record<PracticeMistakes, string> = {
@@ -42,15 +42,6 @@ function ComparisonRow({
 	const hasComparison = previous !== undefined;
 	// Lower mistakes = improvement
 	const diff = hasComparison ? previous - current : 0;
-	const improved = diff > 0;
-	const regressed = diff < 0;
-
-	const iconName = improved ? "arrow-up" : regressed ? "arrow-down" : "minus";
-	const iconColor = improved
-		? theme.colors.tertiary
-		: regressed
-			? theme.colors.error
-			: theme.colors.onSurfaceVariant;
 
 	return (
 		<View className="gap-1">
@@ -58,13 +49,7 @@ function ComparisonRow({
 			<View className="flex-row items-center justify-between">
 				<View className="flex-row items-center gap-2">
 					<Text variant="bodyLarge">{t(MISTAKE_LABELS[current])}</Text>
-					{hasComparison && (
-						<MaterialCommunityIcons
-							name={iconName}
-							size={20}
-							color={iconColor}
-						/>
-					)}
+					<TrendIcon diff={diff} visible={hasComparison} />
 				</View>
 				{hasComparison && (
 					<Text

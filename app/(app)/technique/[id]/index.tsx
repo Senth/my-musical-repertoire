@@ -3,17 +3,17 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
 import {
-	ActivityIndicator,
 	Appbar,
 	Button,
 	Chip,
 	Divider,
-	Snackbar,
 	Text,
 	useTheme,
 } from "react-native-paper";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
+import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
+import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { formatDaysAgo } from "@/utils/date";
@@ -49,25 +49,11 @@ export default function TechniqueDetailScreen() {
 	};
 
 	if (loading) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<ActivityIndicator size="large" />
-			</View>
-		);
+		return <LoadingScreen />;
 	}
 
 	if (!item) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<Text variant="bodyLarge">{t("screen.techniqueDetail.notFound")}</Text>
-			</View>
-		);
+		return <MessageScreen message={t("screen.techniqueDetail.notFound")} />;
 	}
 
 	return (
@@ -163,14 +149,7 @@ export default function TechniqueDetailScreen() {
 				onDismiss={() => setDeleteDialogVisible(false)}
 			/>
 
-			<Snackbar
-				visible={!!error}
-				onDismiss={() => setError(null)}
-				duration={4000}
-				action={{ label: t("common.ok"), onPress: () => setError(null) }}
-			>
-				{error ?? ""}
-			</Snackbar>
+			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
 		</View>
 	);
 }

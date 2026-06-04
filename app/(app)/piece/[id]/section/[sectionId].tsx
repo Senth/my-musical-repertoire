@@ -1,26 +1,19 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 import {
-	KeyboardAvoidingView,
-	Platform,
-	ScrollView,
-	useWindowDimensions,
-	View,
-} from "react-native";
-import {
-	Appbar,
 	Button,
-	Card,
 	Dialog,
 	HelperText,
 	Portal,
-	Snackbar,
 	Text,
 	TextInput,
 	useTheme,
 } from "react-native-paper";
 import { DropdownField } from "@/components/ui/DropdownField";
+import { FormScaffold } from "@/components/ui/FormScaffold";
+import { FormTextField } from "@/components/ui/FormTextField";
 import { useAutoFocusOnMount } from "@/hooks/use-auto-focus-on-mount";
 import { usePieces } from "@/hooks/use-pieces";
 import {
@@ -31,8 +24,7 @@ import {
 } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { SECTION_PHASES, type SectionPhase } from "@/models/section";
-
-const MD3_MEDIUM_BREAKPOINT = 600;
+import { validateBpm } from "@/utils/validation";
 
 export default function SectionEditScreen() {
 	const { t } = useTranslation();
@@ -43,8 +35,6 @@ export default function SectionEditScreen() {
 	}>();
 	const isNew = sectionId === "new";
 	const goBack = useUpNavigation(`/piece/${pieceId}`);
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const { pieces } = usePieces();
 	const piece = pieces.find((p) => p.id === pieceId);
@@ -93,14 +83,8 @@ export default function SectionEditScreen() {
 		return err;
 	};
 
-	const validateBpm = (text: string): string | null => {
-		if (!text.trim()) return null;
-		const n = Number.parseInt(text.trim(), 10);
-		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
-	};
-
 	const handleBpmBlur = () => {
-		setBpmError(validateBpm(currentBpmText));
+		setBpmError(validateBpm(currentBpmText, t));
 	};
 
 	// Seed form once when editing an existing section and data arrives from Firestore
@@ -125,7 +109,7 @@ export default function SectionEditScreen() {
 	const handleSave = async () => {
 		const labelErr = validateLabel();
 		const endBarErr = validateEndBar();
-		const bpmErr = validateBpm(currentBpmText);
+		const bpmErr = validateBpm(currentBpmText, t);
 		setBpmError(bpmErr);
 		if (labelErr || endBarErr || bpmErr) return;
 
@@ -168,25 +152,19 @@ export default function SectionEditScreen() {
 
 	const formContent = (
 		<View className="gap-4">
-			<View>
-				<TextInput
-					ref={labelInputRef}
-					label={t("screen.pieceSections.form.labelLabel")}
-					value={label}
-					onChangeText={(v) => {
-						setLabel(v);
-						labelTouched.current = true;
-					}}
-					mode="outlined"
-					error={!!labelError}
-					onBlur={() => {
-						if (labelTouched.current) validateLabel();
-					}}
-				/>
-				<HelperText type="error" visible={!!labelError}>
-					{labelError ?? ""}
-				</HelperText>
-			</View>
+			<FormTextField
+				ref={labelInputRef}
+				label={t("screen.pieceSections.form.labelLabel")}
+				value={label}
+				onChangeText={(v) => {
+					setLabel(v);
+					labelTouched.current = true;
+				}}
+				error={labelError}
+				onBlur={() => {
+					if (labelTouched.current) validateLabel();
+				}}
+			/>
 
 			<DropdownField
 				label={t("screen.pieceSections.form.phaseLabel")}
@@ -234,20 +212,14 @@ export default function SectionEditScreen() {
 				</HelperText>
 			</View>
 
-			<View>
-				<TextInput
-					label={t("screen.pieceSections.form.currentBpmLabel")}
-					value={currentBpmText}
-					onChangeText={setCurrentBpmText}
-					mode="outlined"
-					keyboardType="numeric"
-					error={!!bpmError}
-					onBlur={handleBpmBlur}
-				/>
-				<HelperText type="error" visible={!!bpmError}>
-					{bpmError ?? ""}
-				</HelperText>
-			</View>
+			<FormTextField
+				label={t("screen.pieceSections.form.currentBpmLabel")}
+				value={currentBpmText}
+				onChangeText={setCurrentBpmText}
+				keyboardType="numeric"
+				error={bpmError}
+				onBlur={handleBpmBlur}
+			/>
 
 			<TextInput
 				label={t("screen.pieceSections.form.notesLabel")}
@@ -301,52 +273,20 @@ export default function SectionEditScreen() {
 	};
 
 	return (
-		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
-		>
-			<Appbar.Header>
-				<Appbar.BackAction onPress={goBack} />
-				<Appbar.Content
-					title={
-						isNew
-							? t("screen.pieceSections.addSection")
-							: t("screen.pieceSections.editSection")
-					}
-					subtitle={piece ? `${piece.composer} — ${piece.title}` : undefined}
-				/>
-			</Appbar.Header>
-
-			<KeyboardAvoidingView
-				behavior={Platform.OS === "ios" ? "padding" : "height"}
-				className="flex-1"
+		<>
+			<FormScaffold
+				title={
+					isNew
+						? t("screen.pieceSections.addSection")
+						: t("screen.pieceSections.editSection")
+				}
+				subtitle={piece ? `${piece.composer} — ${piece.title}` : undefined}
+				onBack={goBack}
+				error={error}
+				onDismissError={() => setError(null)}
 			>
-				<ScrollView
-					contentContainerStyle={{
-						paddingHorizontal: isCompact ? 16 : 24,
-						paddingTop: 24,
-						paddingBottom: 40,
-					}}
-					keyboardShouldPersistTaps="handled"
-				>
-					<View className="w-full max-w-xl self-center">
-						<Card
-							mode={isCompact ? "contained" : "elevated"}
-							style={
-								isCompact
-									? { backgroundColor: "transparent", elevation: 0 }
-									: undefined
-							}
-						>
-							<Card.Content
-								style={isCompact ? { paddingHorizontal: 0 } : undefined}
-							>
-								{formContent}
-							</Card.Content>
-						</Card>
-					</View>
-				</ScrollView>
-			</KeyboardAvoidingView>
+				{formContent}
+			</FormScaffold>
 
 			<Portal>
 				<Dialog
@@ -381,15 +321,6 @@ export default function SectionEditScreen() {
 					</Dialog.Actions>
 				</Dialog>
 			</Portal>
-
-			<Snackbar
-				visible={!!error}
-				onDismiss={() => setError(null)}
-				duration={4000}
-				action={{ label: t("common.ok"), onPress: () => setError(null) }}
-			>
-				{error ?? ""}
-			</Snackbar>
-		</View>
+		</>
 	);
 }

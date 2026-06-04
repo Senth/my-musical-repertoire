@@ -4,14 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import {
-	ActivityIndicator,
 	Appbar,
 	Button,
 	Divider,
 	HelperText,
 	Menu,
 	SegmentedButtons,
-	Snackbar,
 	Text,
 	TextInput,
 	useTheme,
@@ -19,17 +17,22 @@ import {
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import { MetronomeButton } from "@/components/practice/MetronomeButton";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
+import { RatingField } from "@/components/practice/RatingField";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
+import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
-import { useCoach, useRegisterCoachSave } from "@/contexts/CoachContext";
+import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
+import { useCoach } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
+import { usePracticeSave } from "@/hooks/use-practice-save";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
 import { useSections } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { PracticeMistakes, type PracticeTrigger } from "@/models/practice";
+import { validateBpm as validateBpmRange } from "@/utils/validation";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
@@ -133,13 +136,7 @@ export function PiecePracticeContent({
 	const metronomeStopRef = useRef<(() => void) | null>(null);
 
 	const validateBpm = useCallback(
-		(text: string): string | null => {
-			if (!text.trim()) return null;
-			const n = Number.parseInt(text.trim(), 10);
-			return Number.isNaN(n) || n < 20 || n > 240
-				? t("error.bpmInvalid")
-				: null;
-		},
+		(text: string) => validateBpmRange(text, t),
 		[t],
 	);
 
@@ -249,17 +246,7 @@ export function PiecePracticeContent({
 		t,
 	]);
 
-	const handleSave = async () => {
-		const result = await performSave();
-		if (result.ok) setSaved(true);
-	};
-
-	useRegisterCoachSave(
-		useCallback(async () => {
-			const result = await performSave();
-			return { saved: result.ok };
-		}, [performSave]),
-	);
+	const handleSave = usePracticeSave(performSave, () => setSaved(true));
 
 	const handleDelete = async () => {
 		if (!pieceId) return;
@@ -276,36 +263,15 @@ export function PiecePracticeContent({
 	};
 
 	if (piecesLoading) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<ActivityIndicator size="large" />
-			</View>
-		);
+		return <LoadingScreen />;
 	}
 
 	if (!piece) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<Text variant="bodyLarge">{t("screen.practice.pieceNotFound")}</Text>
-			</View>
-		);
+		return <MessageScreen message={t("screen.practice.pieceNotFound")} />;
 	}
 
 	if (sectionIdProp && sectionsLoading) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<ActivityIndicator size="large" />
-			</View>
-		);
+		return <LoadingScreen />;
 	}
 
 	const mistakeButtons = MISTAKE_BUTTONS.map((b) => ({
@@ -501,30 +467,18 @@ export function PiecePracticeContent({
 
 							{scopedSection ? (
 								<>
-									<View className="gap-2">
-										<Text variant="titleSmall">
-											{t("screen.practiceTechnique.qualityLabel")}
-										</Text>
-										<SegmentedButtons
-											value={quality.toString()}
-											onValueChange={(v) =>
-												setQuality(Number(v) as 1 | 2 | 3 | 4 | 5)
-											}
-											buttons={ratingButtons}
-										/>
-									</View>
-									<View className="gap-2">
-										<Text variant="titleSmall">
-											{t("screen.practiceTechnique.effortLabel")}
-										</Text>
-										<SegmentedButtons
-											value={effort.toString()}
-											onValueChange={(v) =>
-												setEffort(Number(v) as 1 | 2 | 3 | 4 | 5)
-											}
-											buttons={ratingButtons}
-										/>
-									</View>
+									<RatingField
+										label={t("screen.practiceTechnique.qualityLabel")}
+										value={quality}
+										onChange={setQuality}
+										buttons={ratingButtons}
+									/>
+									<RatingField
+										label={t("screen.practiceTechnique.effortLabel")}
+										value={effort}
+										onChange={setEffort}
+										buttons={ratingButtons}
+									/>
 								</>
 							) : (
 								<>
@@ -581,14 +535,7 @@ export function PiecePracticeContent({
 				</ScrollView>
 			)}
 
-			<Snackbar
-				visible={!!error}
-				onDismiss={() => setError(null)}
-				duration={4000}
-				action={{ label: t("common.ok"), onPress: () => setError(null) }}
-			>
-				{error ?? ""}
-			</Snackbar>
+			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
 
 			{!inCoach && (
 				<DeletePieceDialog

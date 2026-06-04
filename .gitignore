@@ -52,3 +52,4 @@ expo-env.d.ts
 /.repowise
 /.firebase
 /.playwright-cli/
+TODO.md

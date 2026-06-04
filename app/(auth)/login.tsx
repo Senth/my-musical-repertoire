@@ -14,10 +14,10 @@ import {
 	Card,
 	HelperText,
 	Snackbar,
-	TextInput,
 	useTheme,
 } from "react-native-paper";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignIn";
+import { FormTextField } from "@/components/ui/FormTextField";
 import { useAuth } from "@/contexts/AuthContext";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
@@ -160,64 +160,46 @@ export default function LoginScreen() {
 
 	const formContent = (
 		<View className="gap-2">
-			<View>
-				<TextInput
-					label={t("screen.login.emailLabel")}
-					value={email}
-					onChangeText={(text) => {
-						setEmail(text);
-						setEmailError(null);
-						setGoogleAccountDetected(false);
-						setPasswordResetSent(false);
-						setRecoveryError(null);
-					}}
-					mode="outlined"
-					keyboardType="email-address"
-					autoCapitalize="none"
-					autoComplete="email"
-					error={!!emailError}
-				/>
-				<HelperText type="error" visible={!!emailError}>
-					{emailError ?? ""}
-				</HelperText>
-			</View>
+			<FormTextField
+				label={t("screen.login.emailLabel")}
+				value={email}
+				onChangeText={(text) => {
+					setEmail(text);
+					setEmailError(null);
+					setGoogleAccountDetected(false);
+					setPasswordResetSent(false);
+					setRecoveryError(null);
+				}}
+				keyboardType="email-address"
+				autoCapitalize="none"
+				autoComplete="email"
+				error={emailError}
+			/>
 
-			<View>
-				<TextInput
-					label={t("screen.login.passwordLabel")}
-					value={password}
-					onChangeText={(text) => {
-						setPassword(text);
-						setPasswordError(null);
-					}}
-					mode="outlined"
-					secureTextEntry
-					autoComplete={mode === "signIn" ? "password" : "new-password"}
-					error={!!passwordError}
-				/>
-				<HelperText type="error" visible={!!passwordError}>
-					{passwordError ?? ""}
-				</HelperText>
-			</View>
+			<FormTextField
+				label={t("screen.login.passwordLabel")}
+				value={password}
+				onChangeText={(text) => {
+					setPassword(text);
+					setPasswordError(null);
+				}}
+				secureTextEntry
+				autoComplete={mode === "signIn" ? "password" : "new-password"}
+				error={passwordError}
+			/>
 
 			{mode === "register" && (
-				<View>
-					<TextInput
-						label={t("screen.login.confirmPasswordLabel")}
-						value={confirmPassword}
-						onChangeText={(text) => {
-							setConfirmPassword(text);
-							setConfirmPasswordError(null);
-						}}
-						mode="outlined"
-						secureTextEntry
-						autoComplete="new-password"
-						error={!!confirmPasswordError}
-					/>
-					<HelperText type="error" visible={!!confirmPasswordError}>
-						{confirmPasswordError ?? ""}
-					</HelperText>
-				</View>
+				<FormTextField
+					label={t("screen.login.confirmPasswordLabel")}
+					value={confirmPassword}
+					onChangeText={(text) => {
+						setConfirmPassword(text);
+						setConfirmPasswordError(null);
+					}}
+					secureTextEntry
+					autoComplete="new-password"
+					error={confirmPasswordError}
+				/>
 			)}
 
 			<Button

@@ -1,22 +1,10 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-	KeyboardAvoidingView,
-	Platform,
-	ScrollView,
-	useWindowDimensions,
-	View,
-} from "react-native";
-import {
-	Appbar,
-	Button,
-	Card,
-	HelperText,
-	Snackbar,
-	TextInput,
-	useTheme,
-} from "react-native-paper";
+import { View } from "react-native";
+import { Button, TextInput } from "react-native-paper";
 import { DropdownField } from "@/components/ui/DropdownField";
+import { FormScaffold } from "@/components/ui/FormScaffold";
+import { FormTextField } from "@/components/ui/FormTextField";
 import { useAutoFocusOnMount } from "@/hooks/use-auto-focus-on-mount";
 import { useAddTechnique } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
@@ -26,16 +14,12 @@ import {
 	type TechniqueState,
 	type TechniqueType,
 } from "@/models/technique";
-
-const MD3_MEDIUM_BREAKPOINT = 600;
+import { validateBpm } from "@/utils/validation";
 
 export default function AddTechniqueScreen() {
 	const { t } = useTranslation();
-	const theme = useTheme();
 	const goBack = useUpNavigation("/(app)/(tabs)/technique");
 	const { addTechnique } = useAddTechnique();
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const [title, setTitle] = useState("");
 	const [state, setState] = useState<TechniqueState>("active");
@@ -57,14 +41,8 @@ export default function AddTechniqueScreen() {
 		return err;
 	};
 
-	const validateBpm = (text: string): string | null => {
-		if (!text.trim()) return null;
-		const n = Number.parseInt(text.trim(), 10);
-		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
-	};
-
 	const handleBpmBlur = () => {
-		setBpmError(validateBpm(targetTempoBpmText));
+		setBpmError(validateBpm(targetTempoBpmText, t));
 	};
 
 	const stateOptions = TECHNIQUE_STATES.map((s) => ({
@@ -82,7 +60,7 @@ export default function AddTechniqueScreen() {
 
 	const handleSave = async () => {
 		const titleErr = validateTitle();
-		const bpmErr = validateBpm(targetTempoBpmText);
+		const bpmErr = validateBpm(targetTempoBpmText, t);
 		setBpmError(bpmErr);
 		if (titleErr || bpmErr) return;
 
@@ -110,25 +88,19 @@ export default function AddTechniqueScreen() {
 
 	const formContent = (
 		<View className="gap-4">
-			<View>
-				<TextInput
-					ref={titleInputRef}
-					label={t("screen.addTechnique.titleLabel")}
-					value={title}
-					onChangeText={(v) => {
-						setTitle(v);
-						titleTouched.current = true;
-					}}
-					mode="outlined"
-					error={!!titleError}
-					onBlur={() => {
-						if (titleTouched.current) validateTitle();
-					}}
-				/>
-				<HelperText type="error" visible={!!titleError}>
-					{titleError ?? ""}
-				</HelperText>
-			</View>
+			<FormTextField
+				ref={titleInputRef}
+				label={t("screen.addTechnique.titleLabel")}
+				value={title}
+				onChangeText={(v) => {
+					setTitle(v);
+					titleTouched.current = true;
+				}}
+				error={titleError}
+				onBlur={() => {
+					if (titleTouched.current) validateTitle();
+				}}
+			/>
 
 			<DropdownField
 				label={t("screen.addTechnique.stateLabel")}
@@ -144,20 +116,14 @@ export default function AddTechniqueScreen() {
 				onChange={(v) => setType((v as TechniqueType) ?? null)}
 			/>
 
-			<View>
-				<TextInput
-					label={t("screen.addTechnique.targetTempoBpmLabel")}
-					value={targetTempoBpmText}
-					onChangeText={setTargetTempoBpmText}
-					mode="outlined"
-					keyboardType="numeric"
-					error={!!bpmError}
-					onBlur={handleBpmBlur}
-				/>
-				<HelperText type="error" visible={!!bpmError}>
-					{bpmError ?? ""}
-				</HelperText>
-			</View>
+			<FormTextField
+				label={t("screen.addTechnique.targetTempoBpmLabel")}
+				value={targetTempoBpmText}
+				onChangeText={setTargetTempoBpmText}
+				keyboardType="numeric"
+				error={bpmError}
+				onBlur={handleBpmBlur}
+			/>
 
 			<TextInput
 				label={t("screen.addTechnique.notesLabel")}
@@ -180,53 +146,13 @@ export default function AddTechniqueScreen() {
 	);
 
 	return (
-		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+		<FormScaffold
+			title={t("screen.addTechnique.title")}
+			onBack={goBack}
+			error={error}
+			onDismissError={() => setError(null)}
 		>
-			<Appbar.Header>
-				<Appbar.BackAction onPress={goBack} />
-				<Appbar.Content title={t("screen.addTechnique.title")} />
-			</Appbar.Header>
-
-			<KeyboardAvoidingView
-				behavior={Platform.OS === "ios" ? "padding" : "height"}
-				className="flex-1"
-			>
-				<ScrollView
-					contentContainerStyle={{
-						paddingHorizontal: isCompact ? 16 : 24,
-						paddingTop: 24,
-						paddingBottom: 40,
-					}}
-				>
-					<View className="w-full max-w-xl self-center">
-						<Card
-							mode={isCompact ? "contained" : "elevated"}
-							style={
-								isCompact
-									? { backgroundColor: "transparent", elevation: 0 }
-									: undefined
-							}
-						>
-							<Card.Content
-								style={isCompact ? { paddingHorizontal: 0 } : undefined}
-							>
-								{formContent}
-							</Card.Content>
-						</Card>
-					</View>
-				</ScrollView>
-			</KeyboardAvoidingView>
-
-			<Snackbar
-				visible={!!error}
-				onDismiss={() => setError(null)}
-				duration={4000}
-				action={{ label: t("common.ok"), onPress: () => setError(null) }}
-			>
-				{error ?? ""}
-			</Snackbar>
-		</View>
+			{formContent}
+		</FormScaffold>
 	);
 }

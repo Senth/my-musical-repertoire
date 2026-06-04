@@ -8,15 +8,9 @@ import {
 	useWindowDimensions,
 	View,
 } from "react-native";
-import {
-	Appbar,
-	Button,
-	Card,
-	Snackbar,
-	TextInput,
-	useTheme,
-} from "react-native-paper";
+import { Appbar, Button, Card, TextInput, useTheme } from "react-native-paper";
 import { DropdownField } from "@/components/ui/DropdownField";
+import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { useTechniques, useUpdateTechnique } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import {
@@ -191,14 +185,7 @@ export default function EditTechniqueScreen() {
 				</ScrollView>
 			</KeyboardAvoidingView>
 
-			<Snackbar
-				visible={!!error}
-				onDismiss={() => setError(null)}
-				duration={4000}
-				action={{ label: t("common.ok"), onPress: () => setError(null) }}
-			>
-				{error ?? ""}
-			</Snackbar>
+			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
 		</View>
 	);
 }

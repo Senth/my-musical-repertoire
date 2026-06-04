@@ -1,22 +1,12 @@
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, useWindowDimensions, View } from "react-native";
-import {
-	ActivityIndicator,
-	Appbar,
-	Button,
-	Divider,
-	Text,
-	useTheme,
-} from "react-native-paper";
+import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
+import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import { useAuth } from "@/contexts/AuthContext";
-import type {
-	ActiveSession,
-	BlockExecutionState,
-	PlannedBlock,
-} from "@/models/session";
-import { clearActiveSession, readActiveSession } from "@/utils/session-storage";
+import { useActiveSession } from "@/hooks/use-active-session";
+import type { BlockExecutionState, PlannedBlock } from "@/models/session";
+import { clearActiveSession } from "@/utils/session-storage";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
@@ -27,25 +17,7 @@ export default function SessionSummaryScreen() {
 	const { user } = useAuth();
 	const { width } = useWindowDimensions();
 	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
-	const [session, setSession] = useState<ActiveSession | null>(null);
-	const [loaded, setLoaded] = useState(false);
-
-	useEffect(() => {
-		let active = true;
-		(async () => {
-			if (!user) {
-				setLoaded(true);
-				return;
-			}
-			const s = await readActiveSession(user.uid);
-			if (!active) return;
-			setSession(s);
-			setLoaded(true);
-		})();
-		return () => {
-			active = false;
-		};
-	}, [user]);
+	const { session, loaded } = useActiveSession(user);
 
 	const handleDone = async () => {
 		if (user) {
@@ -55,14 +27,7 @@ export default function SessionSummaryScreen() {
 	};
 
 	if (!loaded) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<ActivityIndicator size="large" />
-			</View>
-		);
+		return <LoadingScreen />;
 	}
 
 	if (!session) {

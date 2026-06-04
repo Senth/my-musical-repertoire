@@ -7,17 +7,11 @@ import {
 	useWindowDimensions,
 	View,
 } from "react-native";
-import {
-	Appbar,
-	Button,
-	Card,
-	HelperText,
-	Snackbar,
-	TextInput,
-	useTheme,
-} from "react-native-paper";
+import { Appbar, Button, Card, TextInput, useTheme } from "react-native-paper";
 import { ComposerAutocompleteInput } from "@/components/piece/ComposerAutocompleteInput";
 import { DropdownField } from "@/components/ui/DropdownField";
+import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
+import { FormTextField } from "@/components/ui/FormTextField";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import {
@@ -26,6 +20,7 @@ import {
 	PIECE_STATES,
 	type PieceState,
 } from "@/models/piece";
+import { validateBpm, validateDuration } from "@/utils/validation";
 
 const MD3_MEDIUM_BREAKPOINT = 600;
 
@@ -83,26 +78,12 @@ export default function EditPieceScreen() {
 		return err;
 	};
 
-	const validateBpm = (text: string): string | null => {
-		if (!text.trim()) return null;
-		const n = Number.parseInt(text.trim(), 10);
-		return Number.isNaN(n) || n < 20 || n > 240 ? t("error.bpmInvalid") : null;
-	};
-
 	const handleBpmBlur = () => {
-		setBpmError(validateBpm(targetTempoBpmText));
-	};
-
-	const validateDuration = (text: string): string | null => {
-		if (!text.trim()) return null;
-		const n = Number.parseInt(text.trim(), 10);
-		return Number.isNaN(n) || n < 1 || n > 600
-			? t("error.durationInvalid")
-			: null;
+		setBpmError(validateBpm(targetTempoBpmText, t));
 	};
 
 	const handleDurationBlur = () => {
-		setDurationError(validateDuration(durationMinutesText));
+		setDurationError(validateDuration(durationMinutesText, t));
 	};
 
 	// Seed form once the piece loads from Firestore (avoids resetting user edits on re-renders)
@@ -148,9 +129,9 @@ export default function EditPieceScreen() {
 	const handleSave = async () => {
 		const titleErr = validateTitle();
 		const composerErr = validateComposer();
-		const bpmErr = validateBpm(targetTempoBpmText);
+		const bpmErr = validateBpm(targetTempoBpmText, t);
 		setBpmError(bpmErr);
-		const durationErr = validateDuration(durationMinutesText);
+		const durationErr = validateDuration(durationMinutesText, t);
 		setDurationError(durationErr);
 		if (titleErr || composerErr || bpmErr || durationErr) return;
 		if (!id) return;
@@ -191,20 +172,14 @@ export default function EditPieceScreen() {
 
 	const formContent = (
 		<View className="gap-4">
-			<View>
-				<TextInput
-					label={t("screen.editPiece.titleLabel")}
-					value={title}
-					onChangeText={setTitle}
-					mode="outlined"
-					autoFocus
-					error={!!titleError}
-					onBlur={() => validateTitle()}
-				/>
-				<HelperText type="error" visible={!!titleError}>
-					{titleError ?? ""}
-				</HelperText>
-			</View>
+			<FormTextField
+				label={t("screen.editPiece.titleLabel")}
+				value={title}
+				onChangeText={setTitle}
+				autoFocus
+				error={titleError}
+				onBlur={() => validateTitle()}
+			/>
 
 			<ComposerAutocompleteInput
 				label={t("screen.editPiece.composerLabel")}
@@ -238,35 +213,23 @@ export default function EditPieceScreen() {
 				/>
 			)}
 
-			<View>
-				<TextInput
-					label={t("screen.editPiece.targetTempoBpmLabel")}
-					value={targetTempoBpmText}
-					onChangeText={setTargetTempoBpmText}
-					mode="outlined"
-					keyboardType="numeric"
-					error={!!bpmError}
-					onBlur={handleBpmBlur}
-				/>
-				<HelperText type="error" visible={!!bpmError}>
-					{bpmError ?? ""}
-				</HelperText>
-			</View>
+			<FormTextField
+				label={t("screen.editPiece.targetTempoBpmLabel")}
+				value={targetTempoBpmText}
+				onChangeText={setTargetTempoBpmText}
+				keyboardType="numeric"
+				error={bpmError}
+				onBlur={handleBpmBlur}
+			/>
 
-			<View>
-				<TextInput
-					label={t("screen.editPiece.durationLabel")}
-					value={durationMinutesText}
-					onChangeText={setDurationMinutesText}
-					mode="outlined"
-					keyboardType="numeric"
-					error={!!durationError}
-					onBlur={handleDurationBlur}
-				/>
-				<HelperText type="error" visible={!!durationError}>
-					{durationError ?? ""}
-				</HelperText>
-			</View>
+			<FormTextField
+				label={t("screen.editPiece.durationLabel")}
+				value={durationMinutesText}
+				onChangeText={setDurationMinutesText}
+				keyboardType="numeric"
+				error={durationError}
+				onBlur={handleDurationBlur}
+			/>
 
 			<DropdownField
 				label={t("screen.editPiece.difficultyLabel")}
@@ -321,14 +284,7 @@ export default function EditPieceScreen() {
 				</View>
 			</KeyboardAvoidingView>
 
-			<Snackbar
-				visible={!!error}
-				onDismiss={() => setError(null)}
-				duration={4000}
-				action={{ label: t("common.ok"), onPress: () => setError(null) }}
-			>
-				{error ?? ""}
-			</Snackbar>
+			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
 		</View>
 	);
 }

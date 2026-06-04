@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import {
-	ActivityIndicator,
 	Button,
 	Dialog,
 	HelperText,
@@ -16,8 +15,10 @@ import { PiecePracticeContent } from "@/app/(app)/piece/[id]/practice";
 import { TechniquePracticeContent } from "@/app/(app)/technique/[id]/practice";
 import { CoachShell, formatMMSS } from "@/components/practice/CoachShell";
 import { SightReadingBlockBody } from "@/components/practice/SightReadingBlockBody";
+import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import { useAuth } from "@/contexts/AuthContext";
 import { type CoachContextValue, CoachProvider } from "@/contexts/CoachContext";
+import { useActiveSession } from "@/hooks/use-active-session";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import type {
 	ActiveSession,
@@ -25,7 +26,7 @@ import type {
 	PlannedBlock,
 } from "@/models/session";
 import { playBlockEndCue } from "@/utils/session-cue";
-import { readActiveSession, writeActiveSession } from "@/utils/session-storage";
+import { writeActiveSession } from "@/utils/session-storage";
 
 const TICK_MS = 1000;
 
@@ -38,13 +39,11 @@ function diffSec(fromIso: string | null | undefined): number {
 
 export default function CoachScreen() {
 	const { t } = useTranslation();
-	const theme = useTheme();
 	const router = useRouter();
 	const { user } = useAuth();
 	const { pieces } = usePieces();
 	const { updatePiece } = useUpdatePiece();
-	const [session, setSession] = useState<ActiveSession | null>(null);
-	const [loaded, setLoaded] = useState(false);
+	const { session, setSession, loaded } = useActiveSession(user);
 	const [saving, setSaving] = useState(false);
 	const [durationPrompt, setDurationPrompt] = useState<{
 		pieceId: string;
@@ -59,23 +58,6 @@ export default function CoachScreen() {
 	);
 	const validateHandlerRef = useRef<(() => boolean) | null>(null);
 	const sightReadingStopRef = useRef<(() => void) | null>(null);
-
-	useEffect(() => {
-		let active = true;
-		(async () => {
-			if (!user) {
-				setLoaded(true);
-				return;
-			}
-			const s = await readActiveSession(user.uid);
-			if (!active) return;
-			setSession(s);
-			setLoaded(true);
-		})();
-		return () => {
-			active = false;
-		};
-	}, [user]);
 
 	useEffect(() => {
 		const id = setInterval(() => {
@@ -183,7 +165,7 @@ export default function CoachScreen() {
 			setSession(nextSession);
 			await persist(nextSession);
 		},
-		[session, currentBlockState, persist, router],
+		[session, currentBlockState, persist, router, setSession],
 	);
 
 	const handleSaveAndNext = useCallback(async () => {
@@ -255,7 +237,7 @@ export default function CoachScreen() {
 		const next = { ...session, blockStates: updated };
 		setSession(next);
 		await persist(next);
-	}, [session, currentBlockState, persist]);
+	}, [session, currentBlockState, persist, setSession]);
 
 	const handleExit = useCallback(() => {
 		router.replace("/(app)/(tabs)/overview");
@@ -273,14 +255,7 @@ export default function CoachScreen() {
 	);
 
 	if (!loaded) {
-		return (
-			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<ActivityIndicator size="large" />
-			</View>
-		);
+		return <LoadingScreen />;
 	}
 
 	if (!session || !currentBlock) {
