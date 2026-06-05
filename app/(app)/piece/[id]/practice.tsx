@@ -7,15 +7,13 @@ import {
 	Appbar,
 	Button,
 	Divider,
-	HelperText,
 	Menu,
 	SegmentedButtons,
 	Text,
-	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { BpmControl } from "@/components/practice/BpmControl";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
-import { MetronomeButton } from "@/components/practice/MetronomeButton";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { RatingField } from "@/components/practice/RatingField";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
@@ -441,27 +439,14 @@ export function PiecePracticeContent({
 										</Text>
 									) : null;
 								})()}
-								<View className="flex-row items-center gap-2">
-									<View className="flex-1">
-										<TextInput
-											mode="outlined"
-											keyboardType="numeric"
-											value={achievedBpm}
-											onChangeText={setAchievedBpm}
-											placeholder="e.g. 80"
-											error={!!bpmError}
-											onBlur={handleBpmBlur}
-										/>
-									</View>
-									<MetronomeButton
-										bpm={achievedBpm}
-										disabled={!!bpmError}
-										stopRef={metronomeStopRef}
-									/>
-								</View>
-								<HelperText type="error" visible={!!bpmError}>
-									{bpmError ?? ""}
-								</HelperText>
+								<BpmControl
+									value={achievedBpm}
+									onChangeText={setAchievedBpm}
+									error={bpmError}
+									onBlur={handleBpmBlur}
+									stopRef={metronomeStopRef}
+									placeholder="e.g. 80"
+								/>
 							</View>
 							<Divider />
 

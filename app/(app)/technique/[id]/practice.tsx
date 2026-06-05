@@ -3,17 +3,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, useWindowDimensions, View } from "react-native";
-import {
-	Appbar,
-	Button,
-	HelperText,
-	Menu,
-	Text,
-	TextInput,
-	useTheme,
-} from "react-native-paper";
+import { Appbar, Button, Menu, Text, useTheme } from "react-native-paper";
+import { BpmControl } from "@/components/practice/BpmControl";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
-import { MetronomeButton } from "@/components/practice/MetronomeButton";
 import { RatingField } from "@/components/practice/RatingField";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
@@ -282,27 +274,14 @@ export function TechniquePracticeContent({
 										})}
 									</Text>
 								)}
-								<View className="flex-row items-center gap-2">
-									<View className="flex-1">
-										<TextInput
-											mode="outlined"
-											keyboardType="numeric"
-											value={tempoBpm}
-											onChangeText={setTempoBpm}
-											placeholder="e.g. 80"
-											error={!!bpmError}
-											onBlur={handleBpmBlur}
-										/>
-									</View>
-									<MetronomeButton
-										bpm={tempoBpm}
-										disabled={!!bpmError}
-										stopRef={metronomeStopRef}
-									/>
-								</View>
-								<HelperText type="error" visible={!!bpmError}>
-									{bpmError ?? ""}
-								</HelperText>
+								<BpmControl
+									value={tempoBpm}
+									onChangeText={setTempoBpm}
+									error={bpmError}
+									onBlur={handleBpmBlur}
+									stopRef={metronomeStopRef}
+									placeholder="e.g. 80"
+								/>
 							</View>
 
 							{!inCoach && (
