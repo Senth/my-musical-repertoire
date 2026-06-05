@@ -1,5 +1,0 @@
-- generic [ref=e14]:
-  - generic [ref=e16]:
-    - button "Back" [ref=e18] [cursor=pointer]
-    - heading "Sections" [level=1] [ref=e21]
-  - button "Add section" [ref=e27] [cursor=pointer]
