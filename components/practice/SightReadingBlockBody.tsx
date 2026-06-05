@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
-import { HelperText, Text, TextInput, useTheme } from "react-native-paper";
+import { Text, useTheme } from "react-native-paper";
 import { useAuth } from "@/contexts/AuthContext";
 import {
 	readSightReadingBpm,
 	writeSightReadingBpm,
 } from "@/utils/session-storage";
 import { validateBpm } from "@/utils/validation";
-import { MetronomeButton } from "./MetronomeButton";
+import { BpmControl } from "./BpmControl";
 
 interface SightReadingBlockBodyProps {
 	stopRef: React.MutableRefObject<(() => void) | null>;
@@ -62,29 +62,13 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 					>
 						{t("screen.session.coach.sightReadingBody")}
 					</Text>
-					<View className="gap-2">
-						<View className="flex-row items-center gap-2">
-							<View className="flex-1">
-								<TextInput
-									mode="outlined"
-									keyboardType="numeric"
-									value={bpm}
-									onChangeText={handleChange}
-									placeholder="e.g. 72"
-									error={!!bpmError}
-									onBlur={() => setBpmError(validateBpm(bpm, t))}
-								/>
-							</View>
-							<MetronomeButton
-								bpm={bpm}
-								disabled={!!bpmError}
-								stopRef={stopRef}
-							/>
-						</View>
-						<HelperText type="error" visible={!!bpmError}>
-							{bpmError ?? ""}
-						</HelperText>
-					</View>
+					<BpmControl
+						value={bpm}
+						onChangeText={handleChange}
+						error={bpmError}
+						onBlur={() => setBpmError(validateBpm(bpm, t))}
+						stopRef={stopRef}
+					/>
 				</View>
 			</View>
 		</ScrollView>
