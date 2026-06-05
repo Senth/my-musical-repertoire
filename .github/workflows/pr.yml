@@ -42,3 +42,8 @@ jobs:
         with:
           cmd: build:web
 
+      - name: Test
+        uses: borales/actions-yarn@v5
+        with:
+          cmd: test --watchAll=false
+
