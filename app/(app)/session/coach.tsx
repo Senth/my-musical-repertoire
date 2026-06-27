@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { type CoachContextValue, CoachProvider } from "@/contexts/CoachContext";
 import { useActiveSession } from "@/hooks/use-active-session";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
+import { useSessionPause } from "@/hooks/use-session-pause";
 import type {
 	ActiveSession,
 	BlockExecutionState,
@@ -82,6 +83,10 @@ export default function CoachScreen() {
 		},
 		[user],
 	);
+
+	// Pause the timers when the user leaves the coach and resume on return:
+	// total continues from where it left off, current block resets to 0:00.
+	useSessionPause({ session, setSession, persist, loaded });
 
 	const currentBlock: PlannedBlock | null = useMemo(() => {
 		if (!session) return null;
