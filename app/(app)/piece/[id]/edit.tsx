@@ -1,16 +1,11 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-	KeyboardAvoidingView,
-	Platform,
-	useWindowDimensions,
-	View,
-} from "react-native";
-import { Appbar, Button, Card, TextInput, useTheme } from "react-native-paper";
+import { View } from "react-native";
+import { Button, TextInput } from "react-native-paper";
 import { ComposerAutocompleteInput } from "@/components/piece/ComposerAutocompleteInput";
 import { DropdownField } from "@/components/ui/DropdownField";
-import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
+import { FormScaffold } from "@/components/ui/FormScaffold";
 import { FormTextField } from "@/components/ui/FormTextField";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
@@ -22,17 +17,12 @@ import {
 } from "@/models/piece";
 import { validateBpm, validateDuration } from "@/utils/validation";
 
-const MD3_MEDIUM_BREAKPOINT = 600;
-
 export default function EditPieceScreen() {
 	const { t } = useTranslation();
-	const theme = useTheme();
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const goBack = useUpNavigation(`/piece/${id}`);
 	const { pieces } = usePieces();
 	const { updatePiece } = useUpdatePiece();
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const piece = pieces.find((p) => p.id === id);
 
@@ -259,32 +249,13 @@ export default function EditPieceScreen() {
 	);
 
 	return (
-		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+		<FormScaffold
+			title={t("screen.editPiece.title")}
+			onBack={goBack}
+			error={error}
+			onDismissError={() => setError(null)}
 		>
-			<Appbar.Header>
-				<Appbar.BackAction onPress={goBack} />
-				<Appbar.Content title={t("screen.editPiece.title")} />
-			</Appbar.Header>
-
-			<KeyboardAvoidingView
-				behavior={Platform.OS === "ios" ? "padding" : "height"}
-				className="flex-1"
-				style={{ paddingHorizontal: isCompact ? 16 : 24, paddingTop: 24 }}
-			>
-				<View className="w-full max-w-xl self-center">
-					{isCompact ? (
-						formContent
-					) : (
-						<Card mode="elevated">
-							<Card.Content>{formContent}</Card.Content>
-						</Card>
-					)}
-				</View>
-			</KeyboardAvoidingView>
-
-			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
-		</View>
+			{formContent}
+		</FormScaffold>
 	);
 }

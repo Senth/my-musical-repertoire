@@ -2,12 +2,7 @@ import { useLocalSearchParams } from "expo-router";
 import { FirebaseError } from "firebase/app";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-	KeyboardAvoidingView,
-	Platform,
-	useWindowDimensions,
-	View,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 import {
 	Appbar,
 	Button,
@@ -19,8 +14,7 @@ import {
 import { GoogleSignInButton } from "@/components/auth/GoogleSignIn";
 import { FormTextField } from "@/components/ui/FormTextField";
 import { useAuth } from "@/contexts/AuthContext";
-
-const MD3_MEDIUM_BREAKPOINT = 600;
+import { useIsCompact } from "@/hooks/use-is-compact";
 
 type Mode = "signIn" | "register";
 
@@ -34,8 +28,7 @@ export default function LoginScreen() {
 	} = useAuth();
 	const { passwordSet } = useLocalSearchParams<{ passwordSet?: string }>();
 	const theme = useTheme();
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
+	const isCompact = useIsCompact();
 
 	const [mode, setMode] = useState<Mode>("signIn");
 	const [email, setEmail] = useState("");

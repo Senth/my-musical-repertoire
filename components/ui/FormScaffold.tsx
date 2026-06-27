@@ -1,15 +1,8 @@
 import type { ReactNode } from "react";
-import {
-	KeyboardAvoidingView,
-	Platform,
-	ScrollView,
-	useWindowDimensions,
-	View,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { Appbar, Card, useTheme } from "react-native-paper";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
-
-const MD3_MEDIUM_BREAKPOINT = 600;
+import { useIsCompact } from "@/hooks/use-is-compact";
 
 interface FormScaffoldProps {
 	title: string;
@@ -34,8 +27,7 @@ export function FormScaffold({
 	children,
 }: FormScaffoldProps) {
 	const theme = useTheme();
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
+	const isCompact = useIsCompact();
 
 	return (
 		<View

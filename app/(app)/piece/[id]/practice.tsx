@@ -2,7 +2,7 @@ import { randomUUID } from "expo-crypto";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, useWindowDimensions, View } from "react-native";
+import { View } from "react-native";
 import {
 	Appbar,
 	Button,
@@ -22,6 +22,7 @@ import { TechniqueLogComparison } from "@/components/technique/TechniqueLogCompa
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
+import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useCoach } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
@@ -31,8 +32,6 @@ import { useSections } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { PracticeMistakes, type PracticeTrigger } from "@/models/practice";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
-
-const MD3_MEDIUM_BREAKPOINT = 600;
 
 const MISTAKE_BUTTONS = [
 	{
@@ -81,8 +80,6 @@ export function PiecePracticeContent({
 	const { saveSectionPractice } = useSaveSectionPractice();
 	const { deletePiece } = useDeletePiece();
 	const standaloneSessionId = useRef(randomUUID());
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const piece = pieces.find((p) => p.id === pieceId);
 
@@ -345,7 +342,6 @@ export function PiecePracticeContent({
 					targetTempoBpm={
 						scopedSection.targetBpmOverride ?? piece.targetTempoBpm ?? null
 					}
-					isCompact={isCompact}
 					onDone={handleDone}
 					backLabel={getBackLabel()}
 				/>
@@ -356,168 +352,154 @@ export function PiecePracticeContent({
 					currentMemory={memoryMistakes}
 					previousTechnical={lastLog?.technicalMistakes ?? undefined}
 					previousMemory={lastLog?.memoryMistakes ?? undefined}
-					isCompact={isCompact}
 					onDone={handleDone}
 					backLabel={getBackLabel()}
 				/>
 			) : (
-				<ScrollView>
-					<View
-						className="gap-6"
-						style={{
-							paddingHorizontal: isCompact ? 16 : 24,
-							paddingTop: 24,
-							paddingBottom: 40,
-						}}
-					>
-						<View className="w-full max-w-xl self-center gap-6">
-							<View className="gap-1">
-								<Text variant="headlineSmall">
-									{piece.title}
-									{titleSuffix}
-								</Text>
+				<ScreenContent paddingBottom={40}>
+					<View className="gap-1">
+						<Text variant="headlineSmall">
+							{piece.title}
+							{titleSuffix}
+						</Text>
+						<Text
+							variant="bodyLarge"
+							style={{ color: theme.colors.onSurfaceVariant }}
+						>
+							{piece.composer}
+						</Text>
+						{scopedSection && <SectionPhaseChip phase={scopedSection.phase} />}
+					</View>
+
+					<LastSessionCard
+						lastLog={lastLog}
+						loading={lastLogLoading}
+						scope={scopedSection ? "section" : "piece"}
+						targetBpm={
+							scopedSection
+								? (scopedSection.targetBpmOverride ??
+									piece.targetTempoBpm ??
+									null)
+								: (piece.targetTempoBpm ?? null)
+						}
+					/>
+
+					<Divider />
+
+					{scopedSection?.startBar != null && (
+						<Text
+							variant="bodyMedium"
+							style={{ color: theme.colors.onSurfaceVariant }}
+						>
+							{scopedSection.endBar != null
+								? t("screen.pieceSections.barRange", {
+										start: scopedSection.startBar,
+										end: scopedSection.endBar,
+									})
+								: t("screen.pieceSections.barFrom", {
+										start: scopedSection.startBar,
+									})}
+						</Text>
+					)}
+
+					<View className="gap-2">
+						<Text variant="titleSmall">
+							{t("screen.practice.achievedBpmLabel")}
+						</Text>
+						{(() => {
+							const effectiveTarget = scopedSection
+								? (scopedSection.targetBpmOverride ??
+									piece.targetTempoBpm ??
+									null)
+								: (piece.targetTempoBpm ?? null);
+							return effectiveTarget != null ? (
 								<Text
-									variant="bodyLarge"
+									variant="bodySmall"
 									style={{ color: theme.colors.onSurfaceVariant }}
 								>
-									{piece.composer}
+									{t("screen.practiceTechnique.targetBpm", {
+										bpm: effectiveTarget,
+									})}
 								</Text>
-								{scopedSection && (
-									<SectionPhaseChip phase={scopedSection.phase} />
-								)}
-							</View>
+							) : null;
+						})()}
+						<BpmControl
+							value={achievedBpm}
+							onChangeText={setAchievedBpm}
+							error={bpmError}
+							onBlur={handleBpmBlur}
+							stopRef={metronomeStopRef}
+							placeholder="e.g. 80"
+						/>
+					</View>
+					<Divider />
 
-							<LastSessionCard
-								lastLog={lastLog}
-								loading={lastLogLoading}
-								scope={scopedSection ? "section" : "piece"}
-								targetBpm={
-									scopedSection
-										? (scopedSection.targetBpmOverride ??
-											piece.targetTempoBpm ??
-											null)
-										: (piece.targetTempoBpm ?? null)
-								}
+					{scopedSection ? (
+						<>
+							<RatingField
+								label={t("screen.practiceTechnique.qualityLabel")}
+								value={quality}
+								onChange={setQuality}
+								buttons={ratingButtons}
 							/>
-
-							<Divider />
-
-							{scopedSection?.startBar != null && (
-								<Text
-									variant="bodyMedium"
-									style={{ color: theme.colors.onSurfaceVariant }}
-								>
-									{scopedSection.endBar != null
-										? t("screen.pieceSections.barRange", {
-												start: scopedSection.startBar,
-												end: scopedSection.endBar,
-											})
-										: t("screen.pieceSections.barFrom", {
-												start: scopedSection.startBar,
-											})}
-								</Text>
-							)}
-
+							<RatingField
+								label={t("screen.practiceTechnique.effortLabel")}
+								value={effort}
+								onChange={setEffort}
+								buttons={ratingButtons}
+							/>
+						</>
+					) : (
+						<>
 							<View className="gap-2">
 								<Text variant="titleSmall">
-									{t("screen.practice.achievedBpmLabel")}
+									{t("screen.practice.technicalMistakes")}
 								</Text>
-								{(() => {
-									const effectiveTarget = scopedSection
-										? (scopedSection.targetBpmOverride ??
-											piece.targetTempoBpm ??
-											null)
-										: (piece.targetTempoBpm ?? null);
-									return effectiveTarget != null ? (
-										<Text
-											variant="bodySmall"
-											style={{ color: theme.colors.onSurfaceVariant }}
-										>
-											{t("screen.practiceTechnique.targetBpm", {
-												bpm: effectiveTarget,
-											})}
-										</Text>
-									) : null;
-								})()}
-								<BpmControl
-									value={achievedBpm}
-									onChangeText={setAchievedBpm}
-									error={bpmError}
-									onBlur={handleBpmBlur}
-									stopRef={metronomeStopRef}
-									placeholder="e.g. 80"
+								<SegmentedButtons
+									value={String(technicalMistakes)}
+									onValueChange={(v) =>
+										setTechnicalMistakes(Number(v) as PracticeMistakes)
+									}
+									buttons={mistakeButtons}
 								/>
 							</View>
-							<Divider />
-
-							{scopedSection ? (
-								<>
-									<RatingField
-										label={t("screen.practiceTechnique.qualityLabel")}
-										value={quality}
-										onChange={setQuality}
-										buttons={ratingButtons}
-									/>
-									<RatingField
-										label={t("screen.practiceTechnique.effortLabel")}
-										value={effort}
-										onChange={setEffort}
-										buttons={ratingButtons}
-									/>
-								</>
-							) : (
-								<>
-									<View className="gap-2">
-										<Text variant="titleSmall">
-											{t("screen.practice.technicalMistakes")}
-										</Text>
-										<SegmentedButtons
-											value={String(technicalMistakes)}
-											onValueChange={(v) =>
-												setTechnicalMistakes(Number(v) as PracticeMistakes)
-											}
-											buttons={mistakeButtons}
-										/>
-									</View>
-									<View className="gap-2">
-										<Text variant="titleSmall">
-											{t("screen.practice.memoryMistakes")}
-										</Text>
-										<SegmentedButtons
-											value={String(memoryMistakes)}
-											onValueChange={(v) =>
-												setMemoryMistakes(Number(v) as PracticeMistakes)
-											}
-											buttons={mistakeButtons}
-										/>
-									</View>
-								</>
-							)}
-
-							{!scopedSection && (
-								<SectionsPracticePanel
-									sections={activeSections}
-									piece={piece}
-									mistakeLevel={showCheckboxes ? "checkbox" : "normal"}
-									flaggedIds={flaggedSectionIds}
-									onToggleFlag={handleToggleFlag}
-									onPractice={handlePracticeSection}
+							<View className="gap-2">
+								<Text variant="titleSmall">
+									{t("screen.practice.memoryMistakes")}
+								</Text>
+								<SegmentedButtons
+									value={String(memoryMistakes)}
+									onValueChange={(v) =>
+										setMemoryMistakes(Number(v) as PracticeMistakes)
+									}
+									buttons={mistakeButtons}
 								/>
-							)}
+							</View>
+						</>
+					)}
 
-							{!inCoach && (
-								<Button
-									mode="contained"
-									onPress={handleSave}
-									loading={loading}
-									disabled={loading}
-								>
-									{t("screen.practice.save")}
-								</Button>
-							)}
-						</View>
-					</View>
-				</ScrollView>
+					{!scopedSection && (
+						<SectionsPracticePanel
+							sections={activeSections}
+							piece={piece}
+							mistakeLevel={showCheckboxes ? "checkbox" : "normal"}
+							flaggedIds={flaggedSectionIds}
+							onToggleFlag={handleToggleFlag}
+							onPractice={handlePracticeSection}
+						/>
+					)}
+
+					{!inCoach && (
+						<Button
+							mode="contained"
+							onPress={handleSave}
+							loading={loading}
+							disabled={loading}
+						>
+							{t("screen.practice.save")}
+						</Button>
+					)}
+				</ScreenContent>
 			)}
 
 			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
