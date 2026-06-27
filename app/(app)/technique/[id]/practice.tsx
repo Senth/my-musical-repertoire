@@ -2,7 +2,7 @@ import { randomUUID } from "expo-crypto";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, useWindowDimensions, View } from "react-native";
+import { View } from "react-native";
 import { Appbar, Button, Menu, Text, useTheme } from "react-native-paper";
 import { BpmControl } from "@/components/practice/BpmControl";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
@@ -11,6 +11,7 @@ import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDia
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
+import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useCoach } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { usePracticeSave } from "@/hooks/use-practice-save";
@@ -21,8 +22,6 @@ import {
 } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
-
-const MD3_MEDIUM_BREAKPOINT = 600;
 
 export interface TechniquePracticeContentProps {
 	techniqueId: string;
@@ -41,8 +40,6 @@ export function TechniquePracticeContent({
 	const { techniques, loading: techniquesLoading } = useTechniques();
 	const { saveTechniqueLog } = useSaveTechniqueLog();
 	const { deleteTechnique } = useDeleteTechnique();
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const standaloneSessionId = useRef(randomUUID());
 	const technique = techniques.find((tn) => tn.id === techniqueId);
@@ -223,80 +220,69 @@ export function TechniquePracticeContent({
 					previousEffort={lastLog?.effort ?? undefined}
 					previousTempoBpm={lastLog?.achievedBpm ?? undefined}
 					targetTempoBpm={technique.targetTempoBpm}
-					isCompact={isCompact}
 					onDone={handleDone}
 					backLabel={getBackLabel()}
 				/>
 			) : (
-				<ScrollView>
-					<View
-						className="gap-6"
-						style={{
-							paddingHorizontal: isCompact ? 16 : 24,
-							paddingTop: 24,
-						}}
-					>
-						<View className="w-full max-w-xl self-center gap-6">
-							<Text variant="headlineSmall">{technique.title}</Text>
+				<ScreenContent>
+					<Text variant="headlineSmall">{technique.title}</Text>
 
-							<LastSessionCard
-								lastLog={lastLog}
-								loading={lastLogLoading}
-								scope="technique"
-								targetBpm={technique.targetTempoBpm ?? null}
-							/>
+					<LastSessionCard
+						lastLog={lastLog}
+						loading={lastLogLoading}
+						scope="technique"
+						targetBpm={technique.targetTempoBpm ?? null}
+					/>
 
-							<RatingField
-								label={t("screen.practiceTechnique.qualityLabel")}
-								value={quality}
-								onChange={setQuality}
-								buttons={ratingButtons}
-							/>
+					<RatingField
+						label={t("screen.practiceTechnique.qualityLabel")}
+						value={quality}
+						onChange={setQuality}
+						buttons={ratingButtons}
+					/>
 
-							<RatingField
-								label={t("screen.practiceTechnique.effortLabel")}
-								value={effort}
-								onChange={setEffort}
-								buttons={ratingButtons}
-							/>
+					<RatingField
+						label={t("screen.practiceTechnique.effortLabel")}
+						value={effort}
+						onChange={setEffort}
+						buttons={ratingButtons}
+					/>
 
-							<View className="gap-2">
-								<Text variant="titleSmall">
-									{t("screen.practiceTechnique.tempoAchievedLabel")}
-								</Text>
-								{technique.targetTempoBpm != null && (
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{t("screen.practiceTechnique.targetBpm", {
-											bpm: technique.targetTempoBpm,
-										})}
-									</Text>
-								)}
-								<BpmControl
-									value={tempoBpm}
-									onChangeText={setTempoBpm}
-									error={bpmError}
-									onBlur={handleBpmBlur}
-									stopRef={metronomeStopRef}
-									placeholder="e.g. 80"
-								/>
-							</View>
-
-							{!inCoach && (
-								<Button
-									mode="contained"
-									onPress={handleSave}
-									loading={loading}
-									disabled={loading}
-								>
-									{t("screen.practiceTechnique.save")}
-								</Button>
-							)}
-						</View>
+					<View className="gap-2">
+						<Text variant="titleSmall">
+							{t("screen.practiceTechnique.tempoAchievedLabel")}
+						</Text>
+						{technique.targetTempoBpm != null && (
+							<Text
+								variant="bodySmall"
+								style={{ color: theme.colors.onSurfaceVariant }}
+							>
+								{t("screen.practiceTechnique.targetBpm", {
+									bpm: technique.targetTempoBpm,
+								})}
+							</Text>
+						)}
+						<BpmControl
+							value={tempoBpm}
+							onChangeText={setTempoBpm}
+							error={bpmError}
+							onBlur={handleBpmBlur}
+							stopRef={metronomeStopRef}
+							placeholder="e.g. 80"
+						/>
 					</View>
-				</ScrollView>
+
+					{!inCoach && (
+						<Button
+							mode="contained"
+							onPress={handleSave}
+							loading={loading}
+							disabled={loading}
+						>
+							{t("screen.practiceTechnique.save")}
+						</Button>
+					)}
+				</ScreenContent>
 			)}
 
 			{!inCoach && (

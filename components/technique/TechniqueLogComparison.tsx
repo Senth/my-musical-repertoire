@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, Divider, Text, useTheme } from "react-native-paper";
+import { ScreenContent } from "@/components/ui/ScreenContent";
 import { TrendIcon } from "@/components/ui/TrendIcon";
 
 interface TechniqueLogComparisonProps {
@@ -12,7 +13,6 @@ interface TechniqueLogComparisonProps {
 	previousEffort?: 1 | 2 | 3 | 4 | 5 | null;
 	previousTempoBpm?: number | null;
 	targetTempoBpm?: number | null;
-	isCompact: boolean;
 	onDone: () => void;
 	backLabel: string;
 }
@@ -181,7 +181,6 @@ export function TechniqueLogComparison({
 	previousEffort,
 	previousTempoBpm,
 	targetTempoBpm,
-	isCompact,
 	onDone,
 	backLabel,
 }: TechniqueLogComparisonProps) {
@@ -206,56 +205,51 @@ export function TechniqueLogComparison({
 				: theme.colors.onSurface;
 
 	return (
-		<View
-			className="gap-6"
-			style={{ paddingHorizontal: isCompact ? 16 : 24, paddingTop: 24 }}
-		>
-			<View className="w-full max-w-xl self-center gap-6">
-				<View className="gap-1">
-					<Text variant="headlineSmall">
-						{t("screen.practiceTechnique.comparison.title")}
-					</Text>
-					<Text
-						variant="bodyLarge"
-						style={{ color: theme.colors.onSurfaceVariant }}
-					>
-						{techniqueName}
-					</Text>
-				</View>
-
-				<Text variant="titleMedium" style={{ color: summaryColor }}>
-					{t(summaryKey as Parameters<typeof t>[0])}
+		<ScreenContent scroll={false}>
+			<View className="gap-1">
+				<Text variant="headlineSmall">
+					{t("screen.practiceTechnique.comparison.title")}
 				</Text>
-
-				<Divider />
-
-				<QualityRow
-					label={t("screen.practiceTechnique.comparison.qualityLabel")}
-					current={currentQuality}
-					previous={previousQuality}
-				/>
-
-				<EffortRow
-					label={t("screen.practiceTechnique.comparison.effortLabel")}
-					current={currentEffort}
-					previous={previousEffort}
-				/>
-
-				{targetTempoBpm != null && (
-					<TempoRow
-						label={t("screen.practiceTechnique.comparison.tempoAchievedLabel")}
-						current={currentTempoBpm}
-						previous={previousTempoBpm}
-						target={targetTempoBpm}
-					/>
-				)}
-
-				<View className="mt-4">
-					<Button mode="contained" onPress={onDone}>
-						{backLabel}
-					</Button>
-				</View>
+				<Text
+					variant="bodyLarge"
+					style={{ color: theme.colors.onSurfaceVariant }}
+				>
+					{techniqueName}
+				</Text>
 			</View>
-		</View>
+
+			<Text variant="titleMedium" style={{ color: summaryColor }}>
+				{t(summaryKey as Parameters<typeof t>[0])}
+			</Text>
+
+			<Divider />
+
+			<QualityRow
+				label={t("screen.practiceTechnique.comparison.qualityLabel")}
+				current={currentQuality}
+				previous={previousQuality}
+			/>
+
+			<EffortRow
+				label={t("screen.practiceTechnique.comparison.effortLabel")}
+				current={currentEffort}
+				previous={previousEffort}
+			/>
+
+			{targetTempoBpm != null && (
+				<TempoRow
+					label={t("screen.practiceTechnique.comparison.tempoAchievedLabel")}
+					current={currentTempoBpm}
+					previous={previousTempoBpm}
+					target={targetTempoBpm}
+				/>
+			)}
+
+			<View className="mt-4">
+				<Button mode="contained" onPress={onDone}>
+					{backLabel}
+				</Button>
+			</View>
+		</ScreenContent>
 	);
 }

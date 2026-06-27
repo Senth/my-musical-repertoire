@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FlatList, ScrollView, useWindowDimensions, View } from "react-native";
+import { FlatList, View } from "react-native";
 import {
 	ActivityIndicator,
 	Card,
@@ -19,14 +19,14 @@ import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
+import { ScreenContent } from "@/components/ui/ScreenContent";
 import { StateFilterDropdown } from "@/components/ui/StateFilterDropdown";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
+import { useIsCompact } from "@/hooks/use-is-compact";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { PIECE_STATES, type Piece, type PieceState } from "@/models/piece";
 import { formatDaysAgo } from "@/utils/date";
-
-const MD3_MEDIUM_BREAKPOINT = 600;
 
 type StateFilter = PieceState | "all";
 type ContextMenu = { pieceId: string; x: number; y: number };
@@ -46,8 +46,7 @@ export default function PiecesScreen() {
 	const [deletingPiece, setDeletingPiece] = useState<Piece | null>(null);
 	const [deleteLoading, setDeleteLoading] = useState(false);
 	const [deleteError, setDeleteError] = useState<string | null>(null);
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
+	const isCompact = useIsCompact();
 
 	const filteredPieces = useMemo(() => {
 		let result = pieces;
@@ -209,53 +208,53 @@ export default function PiecesScreen() {
 					style={{ flex: 1 }}
 				/>
 			) : (
-				<ScrollView style={{ flex: 1 }}>
-					<View
-						className="w-full max-w-xl self-center gap-3"
-						style={{ paddingHorizontal: 24, paddingBottom: 100 }}
-					>
-						{filteredPieces.map((item) => (
-							<Card
-								key={item.id}
-								mode="elevated"
-								onPress={() => router.push(`/piece/${item.id}`)}
-							>
-								<Card.Title
-									title={item.title}
-									subtitle={item.composer}
-									right={() => renderCardMenu(item)}
-								/>
-								<Card.Content>
-									<View className="gap-2">
-										<View className="flex-row items-center gap-2 flex-wrap">
-											<PieceStateChip state={item.state} />
-											{(item.sectionCount ?? 0) > 0 && (
-												<Text
-													variant="bodySmall"
-													style={{ color: theme.colors.onSurfaceVariant }}
-												>
-													{t("piece.sectionCount", {
-														count: item.sectionCount,
-													})}
-												</Text>
-											)}
-										</View>
-										<PieceProgressBar
-											technicalMistakes={item.lastTechnicalMistakes}
-											memoryMistakes={item.lastMemoryMistakes}
-										/>
-										<Text
-											variant="bodySmall"
-											style={{ color: theme.colors.onSurfaceVariant }}
-										>
-											{formatDaysAgo(item.lastPracticed, t)}
-										</Text>
+				<ScreenContent
+					gap={3}
+					paddingTop={0}
+					paddingBottom={100}
+					style={{ flex: 1 }}
+				>
+					{filteredPieces.map((item) => (
+						<Card
+							key={item.id}
+							mode="elevated"
+							onPress={() => router.push(`/piece/${item.id}`)}
+						>
+							<Card.Title
+								title={item.title}
+								subtitle={item.composer}
+								right={() => renderCardMenu(item)}
+							/>
+							<Card.Content>
+								<View className="gap-2">
+									<View className="flex-row items-center gap-2 flex-wrap">
+										<PieceStateChip state={item.state} />
+										{(item.sectionCount ?? 0) > 0 && (
+											<Text
+												variant="bodySmall"
+												style={{ color: theme.colors.onSurfaceVariant }}
+											>
+												{t("piece.sectionCount", {
+													count: item.sectionCount,
+												})}
+											</Text>
+										)}
 									</View>
-								</Card.Content>
-							</Card>
-						))}
-					</View>
-				</ScrollView>
+									<PieceProgressBar
+										technicalMistakes={item.lastTechnicalMistakes}
+										memoryMistakes={item.lastMemoryMistakes}
+									/>
+									<Text
+										variant="bodySmall"
+										style={{ color: theme.colors.onSurfaceVariant }}
+									>
+										{formatDaysAgo(item.lastPracticed, t)}
+									</Text>
+								</View>
+							</Card.Content>
+						</Card>
+					))}
+				</ScreenContent>
 			)}
 
 			{/* Long-press context menu for compact list items */}

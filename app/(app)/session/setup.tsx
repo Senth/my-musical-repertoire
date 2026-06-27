@@ -3,7 +3,7 @@ import { randomUUID } from "expo-crypto";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, useWindowDimensions, View } from "react-native";
+import { View } from "react-native";
 import {
 	Appbar,
 	Button,
@@ -15,6 +15,7 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
+import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePieces } from "@/hooks/use-pieces";
 import { useAllSections } from "@/hooks/use-sections";
@@ -36,7 +37,6 @@ import {
 	writeSessionInputs,
 } from "@/utils/session-storage";
 
-const MD3_MEDIUM_BREAKPOINT = 600;
 const MIN_MINUTES = 15;
 const MAX_MINUTES = 90;
 const STEP_MINUTES = 5;
@@ -53,8 +53,6 @@ export default function SessionSetupScreen() {
 	const router = useRouter();
 	const goBack = useUpNavigation("/(app)/(tabs)/overview");
 	const { user } = useAuth();
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 	const params = useLocalSearchParams<{ emphasis?: string }>();
 	const emphasis: SessionEmphasis = isEmphasis(params.emphasis)
 		? params.emphasis
@@ -157,111 +155,104 @@ export default function SessionSetupScreen() {
 			{loading ? (
 				<LoadingScreen />
 			) : (
-				<ScrollView
-					contentContainerStyle={{
-						paddingHorizontal: isCompact ? 16 : 24,
-						paddingVertical: 24,
-					}}
-				>
-					<View className="w-full max-w-xl self-center gap-6">
-						<View className="gap-2">
-							<Text variant="titleSmall">
-								{t("screen.session.setup.emphasisLabel")}
-							</Text>
-							<Chip
-								icon="tune"
-								style={{ alignSelf: "flex-start" }}
-								onPress={goBack}
-								accessibilityLabel={t(
-									`screen.session.emphasis.${emphasis}` as const,
-								)}
-							>
-								{t(`screen.session.emphasis.${emphasis}` as const)}
-							</Chip>
-						</View>
-
-						<View className="gap-2">
-							<View className="flex-row items-center justify-between">
-								<Text variant="titleSmall">
-									{t("screen.session.setup.minutesLabel")}
-								</Text>
-								<Text variant="titleMedium">
-									{t("screen.session.setup.minutesValue", {
-										minutes: totalMinutes,
-									})}
-								</Text>
-							</View>
-							<Slider
-								minimumValue={MIN_MINUTES}
-								maximumValue={MAX_MINUTES}
-								step={STEP_MINUTES}
-								value={totalMinutes}
-								onValueChange={(v) => setTotalMinutes(Math.round(v))}
-								minimumTrackTintColor={theme.colors.primary}
-								maximumTrackTintColor={theme.colors.surfaceVariant}
-								thumbTintColor={theme.colors.primary}
-							/>
-						</View>
-
-						<View className="flex-row items-center justify-between">
-							<Text variant="titleSmall">
-								{t("screen.session.setup.techniqueLabel")}
-							</Text>
-							<Switch
-								value={techniqueEnabled}
-								onValueChange={setTechniqueEnabled}
-							/>
-						</View>
-
-						<View className="flex-row items-center justify-between">
-							<Text variant="titleSmall">
-								{t("screen.session.setup.sightReadingLabel")}
-							</Text>
-							<Switch
-								value={sightReadingEnabled}
-								onValueChange={setSightReadingEnabled}
-							/>
-						</View>
-
-						<Divider />
-
-						<View className="gap-2">
-							<Text variant="titleSmall">
-								{t("screen.session.setup.preview")}
-							</Text>
-							{plan && plan.blocks.length > 0 ? (
-								plan.blocks.map((block) => (
-									<PreviewRow
-										key={`${block.kind}:${block.pieceId ?? ""}:${block.sectionId ?? ""}:${block.techniqueId ?? ""}:${block.allocatedMinutes}`}
-										block={block}
-									/>
-								))
-							) : (
-								<Card mode="contained">
-									<Card.Content>
-										<Text variant="bodyMedium">
-											{t("screen.session.setup.noContent")}
-										</Text>
-									</Card.Content>
-								</Card>
+				<ScreenContent gap={6} paddingBottom={24}>
+					<View className="gap-2">
+						<Text variant="titleSmall">
+							{t("screen.session.setup.emphasisLabel")}
+						</Text>
+						<Chip
+							icon="tune"
+							style={{ alignSelf: "flex-start" }}
+							onPress={goBack}
+							accessibilityLabel={t(
+								`screen.session.emphasis.${emphasis}` as const,
 							)}
-							{plan?.omitted
-								?.filter((o) => o.reason === "practiced-today")
-								.map((o) => (
-									<OmittedRow key={`omitted:${o.kind}`} slot={o} />
-								))}
-						</View>
-
-						<Button
-							mode="contained"
-							onPress={handleStart}
-							loading={starting}
-							disabled={starting || !plan || plan.blocks.length === 0}
 						>
-							{t("screen.session.setup.start")}
-						</Button>
+							{t(`screen.session.emphasis.${emphasis}` as const)}
+						</Chip>
 					</View>
-				</ScrollView>
+
+					<View className="gap-2">
+						<View className="flex-row items-center justify-between">
+							<Text variant="titleSmall">
+								{t("screen.session.setup.minutesLabel")}
+							</Text>
+							<Text variant="titleMedium">
+								{t("screen.session.setup.minutesValue", {
+									minutes: totalMinutes,
+								})}
+							</Text>
+						</View>
+						<Slider
+							minimumValue={MIN_MINUTES}
+							maximumValue={MAX_MINUTES}
+							step={STEP_MINUTES}
+							value={totalMinutes}
+							onValueChange={(v) => setTotalMinutes(Math.round(v))}
+							minimumTrackTintColor={theme.colors.primary}
+							maximumTrackTintColor={theme.colors.surfaceVariant}
+							thumbTintColor={theme.colors.primary}
+						/>
+					</View>
+
+					<View className="flex-row items-center justify-between">
+						<Text variant="titleSmall">
+							{t("screen.session.setup.techniqueLabel")}
+						</Text>
+						<Switch
+							value={techniqueEnabled}
+							onValueChange={setTechniqueEnabled}
+						/>
+					</View>
+
+					<View className="flex-row items-center justify-between">
+						<Text variant="titleSmall">
+							{t("screen.session.setup.sightReadingLabel")}
+						</Text>
+						<Switch
+							value={sightReadingEnabled}
+							onValueChange={setSightReadingEnabled}
+						/>
+					</View>
+
+					<Divider />
+
+					<View className="gap-2">
+						<Text variant="titleSmall">
+							{t("screen.session.setup.preview")}
+						</Text>
+						{plan && plan.blocks.length > 0 ? (
+							plan.blocks.map((block) => (
+								<PreviewRow
+									key={`${block.kind}:${block.pieceId ?? ""}:${block.sectionId ?? ""}:${block.techniqueId ?? ""}:${block.allocatedMinutes}`}
+									block={block}
+								/>
+							))
+						) : (
+							<Card mode="contained">
+								<Card.Content>
+									<Text variant="bodyMedium">
+										{t("screen.session.setup.noContent")}
+									</Text>
+								</Card.Content>
+							</Card>
+						)}
+						{plan?.omitted
+							?.filter((o) => o.reason === "practiced-today")
+							.map((o) => (
+								<OmittedRow key={`omitted:${o.kind}`} slot={o} />
+							))}
+					</View>
+
+					<Button
+						mode="contained"
+						onPress={handleStart}
+						loading={starting}
+						disabled={starting || !plan || plan.blocks.length === 0}
+					>
+						{t("screen.session.setup.start")}
+					</Button>
+				</ScreenContent>
 			)}
 		</View>
 	);

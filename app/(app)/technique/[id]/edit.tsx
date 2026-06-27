@@ -1,16 +1,10 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-	KeyboardAvoidingView,
-	Platform,
-	ScrollView,
-	useWindowDimensions,
-	View,
-} from "react-native";
-import { Appbar, Button, Card, TextInput, useTheme } from "react-native-paper";
+import { View } from "react-native";
+import { Button, TextInput } from "react-native-paper";
 import { DropdownField } from "@/components/ui/DropdownField";
-import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
+import { FormScaffold } from "@/components/ui/FormScaffold";
 import { useTechniques, useUpdateTechnique } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import {
@@ -20,17 +14,12 @@ import {
 	type TechniqueType,
 } from "@/models/technique";
 
-const MD3_MEDIUM_BREAKPOINT = 600;
-
 export default function EditTechniqueScreen() {
 	const { t } = useTranslation();
-	const theme = useTheme();
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const goBack = useUpNavigation(`/technique/${id}`);
 	const { techniques } = useTechniques();
 	const { updateTechnique } = useUpdateTechnique();
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 
 	const item = techniques.find((tech) => tech.id === id);
 
@@ -153,39 +142,13 @@ export default function EditTechniqueScreen() {
 	);
 
 	return (
-		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+		<FormScaffold
+			title={t("screen.editTechnique.title")}
+			onBack={goBack}
+			error={error}
+			onDismissError={() => setError(null)}
 		>
-			<Appbar.Header>
-				<Appbar.BackAction onPress={goBack} />
-				<Appbar.Content title={t("screen.editTechnique.title")} />
-			</Appbar.Header>
-
-			<KeyboardAvoidingView
-				behavior={Platform.OS === "ios" ? "padding" : "height"}
-				className="flex-1"
-			>
-				<ScrollView
-					contentContainerStyle={{
-						paddingHorizontal: isCompact ? 16 : 24,
-						paddingTop: 24,
-						paddingBottom: 40,
-					}}
-				>
-					<View className="w-full max-w-xl self-center">
-						{isCompact ? (
-							formContent
-						) : (
-							<Card mode="elevated">
-								<Card.Content>{formContent}</Card.Content>
-							</Card>
-						)}
-					</View>
-				</ScrollView>
-			</KeyboardAvoidingView>
-
-			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
-		</View>
+			{formContent}
+		</FormScaffold>
 	);
 }

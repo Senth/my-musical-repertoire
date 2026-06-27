@@ -1,22 +1,19 @@
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { ScrollView, useWindowDimensions, View } from "react-native";
+import { View } from "react-native";
 import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
+import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveSession } from "@/hooks/use-active-session";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
 import { clearActiveSession } from "@/utils/session-storage";
-
-const MD3_MEDIUM_BREAKPOINT = 600;
 
 export default function SessionSummaryScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
 	const { user } = useAuth();
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 	const { session, loaded } = useActiveSession(user);
 
 	const handleDone = async () => {
@@ -64,53 +61,46 @@ export default function SessionSummaryScreen() {
 			<Appbar.Header>
 				<Appbar.Content title={t("screen.session.summary.title")} />
 			</Appbar.Header>
-			<ScrollView
-				contentContainerStyle={{
-					paddingHorizontal: isCompact ? 16 : 24,
-					paddingVertical: 24,
-				}}
-			>
-				<View className="w-full max-w-xl self-center gap-4">
-					<Text variant="bodyLarge">
-						{t("screen.session.summary.totalPracticed", {
-							practiced: practicedMinutes,
-							total: totalMinutes,
-						})}
-					</Text>
-					<Text variant="bodyLarge">
-						{t("screen.session.summary.blocksDone", {
-							done: blocksDone,
-							total: totalBlocks,
-						})}
-						{blocksSkipped > 0
-							? t("screen.session.summary.blocksSkipped", {
-									skipped: blocksSkipped,
-								})
-							: ""}
-					</Text>
-
-					<Divider />
-
-					<Text variant="titleSmall">
-						{t("screen.session.summary.whatYouPracticed")}
-					</Text>
-
-					{session.plan.blocks.map((block, idx) => {
-						const k = `${block.kind}:${block.pieceId ?? ""}:${block.sectionId ?? ""}:${block.techniqueId ?? ""}:${block.allocatedMinutes}`;
-						return (
-							<SummaryRow
-								key={k}
-								block={block}
-								state={session.blockStates[idx]}
-							/>
-						);
+			<ScreenContent gap={4} paddingBottom={24}>
+				<Text variant="bodyLarge">
+					{t("screen.session.summary.totalPracticed", {
+						practiced: practicedMinutes,
+						total: totalMinutes,
 					})}
+				</Text>
+				<Text variant="bodyLarge">
+					{t("screen.session.summary.blocksDone", {
+						done: blocksDone,
+						total: totalBlocks,
+					})}
+					{blocksSkipped > 0
+						? t("screen.session.summary.blocksSkipped", {
+								skipped: blocksSkipped,
+							})
+						: ""}
+				</Text>
 
-					<Button mode="contained" onPress={handleDone}>
-						{t("screen.session.summary.done")}
-					</Button>
-				</View>
-			</ScrollView>
+				<Divider />
+
+				<Text variant="titleSmall">
+					{t("screen.session.summary.whatYouPracticed")}
+				</Text>
+
+				{session.plan.blocks.map((block, idx) => {
+					const k = `${block.kind}:${block.pieceId ?? ""}:${block.sectionId ?? ""}:${block.techniqueId ?? ""}:${block.allocatedMinutes}`;
+					return (
+						<SummaryRow
+							key={k}
+							block={block}
+							state={session.blockStates[idx]}
+						/>
+					);
+				})}
+
+				<Button mode="contained" onPress={handleDone}>
+					{t("screen.session.summary.done")}
+				</Button>
+			</ScreenContent>
 		</View>
 	);
 }

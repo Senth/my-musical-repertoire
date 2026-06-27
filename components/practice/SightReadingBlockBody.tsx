@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
+import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
 import {
 	readSightReadingBpm,
@@ -53,24 +53,20 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 	}, []);
 
 	return (
-		<ScrollView>
-			<View className="gap-6" style={{ paddingHorizontal: 24, paddingTop: 24 }}>
-				<View className="w-full max-w-xl self-center gap-4">
-					<Text
-						variant="bodyLarge"
-						style={{ color: theme.colors.onSurfaceVariant }}
-					>
-						{t("screen.session.coach.sightReadingBody")}
-					</Text>
-					<BpmControl
-						value={bpm}
-						onChangeText={handleChange}
-						error={bpmError}
-						onBlur={() => setBpmError(validateBpm(bpm, t))}
-						stopRef={stopRef}
-					/>
-				</View>
-			</View>
-		</ScrollView>
+		<ScreenContent gap={4}>
+			<Text
+				variant="bodyLarge"
+				style={{ color: theme.colors.onSurfaceVariant }}
+			>
+				{t("screen.session.coach.sightReadingBody")}
+			</Text>
+			<BpmControl
+				value={bpm}
+				onChangeText={handleChange}
+				error={bpmError}
+				onBlur={() => setBpmError(validateBpm(bpm, t))}
+				stopRef={stopRef}
+			/>
+		</ScreenContent>
 	);
 }

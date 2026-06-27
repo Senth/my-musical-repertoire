@@ -2,7 +2,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
+import { Pressable, View } from "react-native";
 import {
 	Button,
 	Card,
@@ -18,6 +18,7 @@ import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
+import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
@@ -32,8 +33,6 @@ import {
 import { suggestPieces, suggestTechniques } from "@/utils/overview-suggestions";
 import { clearActiveSession, readActiveSession } from "@/utils/session-storage";
 
-const MD3_MEDIUM_BREAKPOINT = 600;
-
 export default function OverviewScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -42,8 +41,6 @@ export default function OverviewScreen() {
 	const { pieces, loading: piecesLoading } = usePieces();
 	const { techniques, loading: techniquesLoading } = useTechniques();
 	const { sections, loading: sectionsLoading } = useAllSections();
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
 	const tabBarHeight = useBottomTabBarHeight();
 	const fabStyle = useFabStyleTabs();
 	const fabVisible = useFabVisible();
@@ -96,164 +93,155 @@ export default function OverviewScreen() {
 			className="flex-1"
 			style={{ backgroundColor: theme.colors.background }}
 		>
-			<ScrollView
+			<ScreenContent
+				gap={4}
+				paddingBottom={tabBarHeight + 96}
 				style={{ flex: 1 }}
-				contentContainerStyle={{
-					paddingHorizontal: isCompact ? 16 : 24,
-					paddingTop: 24,
-					paddingBottom: tabBarHeight + 96,
-				}}
 			>
-				<View className="w-full max-w-xl self-center gap-4">
-					<SessionEntryBlock
-						activeSession={activeSession}
-						onEnd={handleEndSession}
-						onResume={() => router.push("/session/coach")}
-						onStart={(em) =>
-							router.push(`/session/setup?emphasis=${em}` as const)
-						}
-					/>
+				<SessionEntryBlock
+					activeSession={activeSession}
+					onEnd={handleEndSession}
+					onResume={() => router.push("/session/coach")}
+					onStart={(em) =>
+						router.push(`/session/setup?emphasis=${em}` as const)
+					}
+				/>
 
-					<Text variant="titleMedium">
-						{t("screen.overview.practiceToday")}
+				<Text variant="titleMedium">{t("screen.overview.practiceToday")}</Text>
+
+				{pieceSuggestions.emptyStateKey && (
+					<Text
+						variant="bodyLarge"
+						style={{
+							color: theme.colors.onSurfaceVariant,
+							textAlign: "center",
+						}}
+					>
+						{t(pieceSuggestions.emptyStateKey as Parameters<typeof t>[0])}
 					</Text>
+				)}
 
-					{pieceSuggestions.emptyStateKey && (
-						<Text
-							variant="bodyLarge"
-							style={{
-								color: theme.colors.onSurfaceVariant,
-								textAlign: "center",
-							}}
-						>
-							{t(pieceSuggestions.emptyStateKey as Parameters<typeof t>[0])}
-						</Text>
-					)}
-
-					{pieceSuggestions.suggestions.map((s) => (
-						<Card
-							key={s.piece.id}
-							mode="elevated"
-							onPress={() => router.push(`/piece/${s.piece.id}`)}
-						>
-							<Card.Title title={s.piece.title} subtitle={s.piece.composer} />
-							<Card.Content>
-								<View className="gap-2">
-									<View className="flex-row items-center gap-2 flex-wrap">
-										<PieceStateChip state={s.piece.state} />
-										{(s.piece.sectionCount ?? 0) > 0 && (
-											<Text
-												variant="bodySmall"
-												style={{ color: theme.colors.onSurfaceVariant }}
-											>
-												{t("piece.sectionCount", {
-													count: s.piece.sectionCount,
-												})}
-											</Text>
-										)}
-									</View>
-									<PieceProgressBar
-										technicalMistakes={s.piece.lastTechnicalMistakes}
-										memoryMistakes={s.piece.lastMemoryMistakes}
-									/>
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{t(s.reasonKey as Parameters<typeof t>[0], s.reasonParams)}
-									</Text>
-									<Button
-										mode="contained-tonal"
-										compact
-										onPress={() =>
-											router.push(`/piece/${s.piece.id}/practice?from=overview`)
-										}
-									>
-										{t("screen.overview.practice")}
-									</Button>
+				{pieceSuggestions.suggestions.map((s) => (
+					<Card
+						key={s.piece.id}
+						mode="elevated"
+						onPress={() => router.push(`/piece/${s.piece.id}`)}
+					>
+						<Card.Title title={s.piece.title} subtitle={s.piece.composer} />
+						<Card.Content>
+							<View className="gap-2">
+								<View className="flex-row items-center gap-2 flex-wrap">
+									<PieceStateChip state={s.piece.state} />
+									{(s.piece.sectionCount ?? 0) > 0 && (
+										<Text
+											variant="bodySmall"
+											style={{ color: theme.colors.onSurfaceVariant }}
+										>
+											{t("piece.sectionCount", {
+												count: s.piece.sectionCount,
+											})}
+										</Text>
+									)}
 								</View>
-							</Card.Content>
-						</Card>
-					))}
+								<PieceProgressBar
+									technicalMistakes={s.piece.lastTechnicalMistakes}
+									memoryMistakes={s.piece.lastMemoryMistakes}
+								/>
+								<Text
+									variant="bodySmall"
+									style={{ color: theme.colors.onSurfaceVariant }}
+								>
+									{t(s.reasonKey as Parameters<typeof t>[0], s.reasonParams)}
+								</Text>
+								<Button
+									mode="contained-tonal"
+									compact
+									onPress={() =>
+										router.push(`/piece/${s.piece.id}/practice?from=overview`)
+									}
+								>
+									{t("screen.overview.practice")}
+								</Button>
+							</View>
+						</Card.Content>
+					</Card>
+				))}
 
-					{pieces.length > 0 && (
-						<Button
-							mode="text"
-							onPress={() => router.push("/(app)/(tabs)/piece")}
-							icon="format-list-bulleted"
-						>
-							{t("screen.overview.seeAllPieces")}
-						</Button>
-					)}
-
-					<Text variant="titleMedium">
-						{t("screen.overview.techniqueToday")}
-					</Text>
-
-					{techniqueSuggestions.emptyStateKey && (
-						<Text
-							variant="bodyLarge"
-							style={{
-								color: theme.colors.onSurfaceVariant,
-								textAlign: "center",
-							}}
-						>
-							{t(techniqueSuggestions.emptyStateKey as Parameters<typeof t>[0])}
-						</Text>
-					)}
-
-					{techniqueSuggestions.suggestions.map((s) => (
-						<Card
-							key={s.tech.id}
-							mode="elevated"
-							onPress={() => router.push(`/technique/${s.tech.id}`)}
-						>
-							<Card.Title title={s.tech.title} />
-							<Card.Content>
-								<View className="gap-2">
-									<View className="flex-row items-center gap-2 flex-wrap">
-										<TechniqueStateChip state={s.tech.state} />
-										{s.tech.type && (
-											<Chip compact textStyle={{ fontSize: 11 }}>
-												{t(
-													`technique.type.${s.tech.type}` as Parameters<
-														typeof t
-													>[0],
-												)}
-											</Chip>
-										)}
-									</View>
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{t(s.reasonKey as Parameters<typeof t>[0], s.reasonParams)}
-									</Text>
-									<Button
-										mode="contained-tonal"
-										compact
-										onPress={() =>
-											router.push(
-												`/technique/${s.tech.id}/practice?from=overview`,
-											)
-										}
-									>
-										{t("screen.overview.practice")}
-									</Button>
-								</View>
-							</Card.Content>
-						</Card>
-					))}
-
+				{pieces.length > 0 && (
 					<Button
 						mode="text"
-						onPress={() => router.push("/(app)/(tabs)/technique")}
+						onPress={() => router.push("/(app)/(tabs)/piece")}
 						icon="format-list-bulleted"
 					>
-						{t("screen.overview.seeAllTechniques")}
+						{t("screen.overview.seeAllPieces")}
 					</Button>
-				</View>
-			</ScrollView>
+				)}
+
+				<Text variant="titleMedium">{t("screen.overview.techniqueToday")}</Text>
+
+				{techniqueSuggestions.emptyStateKey && (
+					<Text
+						variant="bodyLarge"
+						style={{
+							color: theme.colors.onSurfaceVariant,
+							textAlign: "center",
+						}}
+					>
+						{t(techniqueSuggestions.emptyStateKey as Parameters<typeof t>[0])}
+					</Text>
+				)}
+
+				{techniqueSuggestions.suggestions.map((s) => (
+					<Card
+						key={s.tech.id}
+						mode="elevated"
+						onPress={() => router.push(`/technique/${s.tech.id}`)}
+					>
+						<Card.Title title={s.tech.title} />
+						<Card.Content>
+							<View className="gap-2">
+								<View className="flex-row items-center gap-2 flex-wrap">
+									<TechniqueStateChip state={s.tech.state} />
+									{s.tech.type && (
+										<Chip compact textStyle={{ fontSize: 11 }}>
+											{t(
+												`technique.type.${s.tech.type}` as Parameters<
+													typeof t
+												>[0],
+											)}
+										</Chip>
+									)}
+								</View>
+								<Text
+									variant="bodySmall"
+									style={{ color: theme.colors.onSurfaceVariant }}
+								>
+									{t(s.reasonKey as Parameters<typeof t>[0], s.reasonParams)}
+								</Text>
+								<Button
+									mode="contained-tonal"
+									compact
+									onPress={() =>
+										router.push(
+											`/technique/${s.tech.id}/practice?from=overview`,
+										)
+									}
+								>
+									{t("screen.overview.practice")}
+								</Button>
+							</View>
+						</Card.Content>
+					</Card>
+				))}
+
+				<Button
+					mode="text"
+					onPress={() => router.push("/(app)/(tabs)/technique")}
+					icon="format-list-bulleted"
+				>
+					{t("screen.overview.seeAllTechniques")}
+				</Button>
+			</ScreenContent>
 
 			{fabVisible && (
 				<Portal>

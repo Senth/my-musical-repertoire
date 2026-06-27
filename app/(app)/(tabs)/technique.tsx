@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FlatList, ScrollView, useWindowDimensions, View } from "react-native";
+import { FlatList, View } from "react-native";
 import {
 	ActivityIndicator,
 	Button,
@@ -20,9 +20,11 @@ import {
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
+import { ScreenContent } from "@/components/ui/ScreenContent";
 import { StateFilterDropdown } from "@/components/ui/StateFilterDropdown";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
+import { useIsCompact } from "@/hooks/use-is-compact";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
 import {
 	TECHNIQUE_STATES,
@@ -31,7 +33,6 @@ import {
 } from "@/models/technique";
 import { formatDaysAgo } from "@/utils/date";
 
-const MD3_MEDIUM_BREAKPOINT = 600;
 type StateFilter = TechniqueState | "all";
 type ContextMenu = { techniqueId: string; x: number; y: number };
 
@@ -50,8 +51,7 @@ export default function TechniquesScreen() {
 	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [stateFilter, setStateFilter] = useState<StateFilter>("all");
-	const { width } = useWindowDimensions();
-	const isCompact = width < MD3_MEDIUM_BREAKPOINT;
+	const isCompact = useIsCompact();
 
 	const visibleTechniques = useMemo(() => {
 		let result = techniques;
@@ -222,43 +222,43 @@ export default function TechniquesScreen() {
 					style={{ flex: 1 }}
 				/>
 			) : (
-				<ScrollView style={{ flex: 1 }}>
-					<View
-						className="w-full max-w-xl self-center gap-3"
-						style={{ paddingHorizontal: 24, paddingBottom: 100 }}
-					>
-						{visibleTechniques.map((item) => (
-							<Card
-								key={item.id}
-								mode="elevated"
-								onPress={() => router.push(`/technique/${item.id}`)}
-							>
-								<Card.Title
-									title={item.title}
-									right={() => renderCardMenu(item)}
-								/>
-								<Card.Content>
-									<View className="gap-2">
-										<View className="flex-row items-center gap-2 flex-wrap">
-											<TechniqueStateChip state={item.state} />
-											{item.type && (
-												<Chip compact textStyle={{ fontSize: 11 }}>
-													{t(`technique.type.${item.type}`)}
-												</Chip>
-											)}
-										</View>
-										<Text
-											variant="bodySmall"
-											style={{ color: theme.colors.onSurfaceVariant }}
-										>
-											{formatDaysAgo(item.lastPracticedAt, t)}
-										</Text>
+				<ScreenContent
+					gap={3}
+					paddingTop={0}
+					paddingBottom={100}
+					style={{ flex: 1 }}
+				>
+					{visibleTechniques.map((item) => (
+						<Card
+							key={item.id}
+							mode="elevated"
+							onPress={() => router.push(`/technique/${item.id}`)}
+						>
+							<Card.Title
+								title={item.title}
+								right={() => renderCardMenu(item)}
+							/>
+							<Card.Content>
+								<View className="gap-2">
+									<View className="flex-row items-center gap-2 flex-wrap">
+										<TechniqueStateChip state={item.state} />
+										{item.type && (
+											<Chip compact textStyle={{ fontSize: 11 }}>
+												{t(`technique.type.${item.type}`)}
+											</Chip>
+										)}
 									</View>
-								</Card.Content>
-							</Card>
-						))}
-					</View>
-				</ScrollView>
+									<Text
+										variant="bodySmall"
+										style={{ color: theme.colors.onSurfaceVariant }}
+									>
+										{formatDaysAgo(item.lastPracticedAt, t)}
+									</Text>
+								</View>
+							</Card.Content>
+						</Card>
+					))}
+				</ScreenContent>
 			)}
 
 			{/* Long-press context menu for compact list items */}
