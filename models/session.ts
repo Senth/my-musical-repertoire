@@ -72,4 +72,6 @@ export interface ActiveSession {
 	blockStates: BlockExecutionState[];
 	sessionElapsedSeconds: number;
 	currentBlockStartedAt?: string | null;
+	/** ISO timestamp set when the user leaves the coach, cleared on resume. */
+	pausedAt?: string | null;
 }
