@@ -52,7 +52,25 @@ export interface SessionInputs {
 	emphasis: SessionEmphasis;
 	techniqueEnabled: boolean;
 	sightReadingEnabled: boolean;
+	repertoireEnabled: boolean;
 }
+
+/**
+ * The category each emphasis is focused on. That category is always included
+ * (its toggle is hidden in setup and forced on); the other two stay toggleable.
+ * `balanced` focuses on nothing in particular, so all three remain toggleable.
+ */
+export type SessionFocusCategory = "technique" | "sightReading" | "repertoire";
+
+export const FOCUS_BY_EMPHASIS: Record<
+	SessionEmphasis,
+	SessionFocusCategory | null
+> = {
+	balanced: null,
+	"technique-heavy": "technique",
+	"reading-heavy": "sightReading",
+	"repertoire-only": "repertoire",
+};
 
 export type BlockStatus = "pending" | "in-progress" | "completed" | "skipped";
 

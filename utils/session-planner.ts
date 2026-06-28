@@ -51,10 +51,10 @@ const REF_ROWS: Record<SessionEmphasis, number[][]> = {
 		[60, 8, 17, 30, 5],
 	],
 	"repertoire-only": [
-		[15, 0, 0, 15, 0],
-		[30, 0, 0, 30, 0],
-		[45, 0, 0, 45, 0],
-		[60, 0, 0, 55, 5],
+		[15, 2, 1, 12, 0],
+		[30, 4, 2, 24, 0],
+		[45, 5, 3, 37, 0],
+		[60, 6, 4, 45, 5],
 	],
 };
 
@@ -85,6 +85,8 @@ const ORDER_BY_EMPHASIS: Record<SessionEmphasis, BlockKind[]> = {
 	],
 	"repertoire-only": [
 		"warmup",
+		"technique",
+		"sight-reading",
 		"repertoire-learning",
 		"repertoire-stabilizing",
 		"repertoire-maintenance",
@@ -157,25 +159,45 @@ function splitRepertoire(repTotal: number): {
 export function allocateTime(inputs: SessionInputs): AllocationResult {
 	const clamped = clamp(inputs.totalMinutes, 15, 90);
 	const raw = interpolateRow(inputs.emphasis, clamped);
-
-	let tech = Math.round(raw.tech);
-	let read = Math.round(raw.read);
-	let rep = Math.round(raw.rep);
 	const warmup = raw.warmup;
 
-	if (!inputs.techniqueEnabled) {
-		rep += tech;
-		tech = 0;
-	}
-	if (!inputs.sightReadingEnabled) {
-		rep += read;
-		read = 0;
-	}
+	// Disabled categories contribute zero minutes.
+	let tech = inputs.techniqueEnabled ? Math.round(raw.tech) : 0;
+	let read = inputs.sightReadingEnabled ? Math.round(raw.read) : 0;
+	let rep = inputs.repertoireEnabled ? Math.round(raw.rep) : 0;
 
-	const sum = tech + read + rep + warmup;
-	const slack = clamped - sum;
-	rep += slack;
-	if (rep < 0) rep = 0;
+	// Whatever is left over after warmup + the kept categories (minutes freed by
+	// disabled toggles plus rounding slack) is poured back into the enabled
+	// categories so the session always fills the requested minutes. Repertoire is
+	// the preferred sink; when it is disabled the leftover is split across the
+	// enabled non-repertoire categories in proportion to their current share
+	// (even split when they are both zero). The focused category is always
+	// enabled, so something is always available to receive it.
+	const leftover = clamped - warmup - tech - read - rep;
+	if (leftover !== 0) {
+		if (inputs.repertoireEnabled) {
+			rep = Math.max(0, rep + leftover);
+		} else {
+			const recipients: ("tech" | "read")[] = [];
+			if (inputs.techniqueEnabled) recipients.push("tech");
+			if (inputs.sightReadingEnabled) recipients.push("read");
+			const base: Record<"tech" | "read", number> = { tech, read };
+			const totalShare = recipients.reduce((acc, k) => acc + base[k], 0);
+			let used = 0;
+			recipients.forEach((k, i) => {
+				const isLast = i === recipients.length - 1;
+				const portion = isLast
+					? leftover - used
+					: totalShare > 0
+						? Math.round((leftover * base[k]) / totalShare)
+						: Math.round(leftover / recipients.length);
+				base[k] = Math.max(0, base[k] + portion);
+				used += portion;
+			});
+			tech = base.tech;
+			read = base.read;
+		}
+	}
 
 	const sub = splitRepertoire(rep);
 

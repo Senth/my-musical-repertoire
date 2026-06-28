@@ -14,6 +14,7 @@ function baseSession(overrides: Partial<ActiveSession> = {}): ActiveSession {
 			totalMinutes: 30,
 			techniqueEnabled: true,
 			sightReadingEnabled: true,
+			repertoireEnabled: true,
 		},
 		startedAt: "2026-06-27T10:00:00.000Z",
 		sessionId: "test-session-id",
