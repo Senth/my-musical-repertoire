@@ -58,8 +58,8 @@ export function ComposerAutocompleteInput({
 	const showDropdown = open && suggestions.length > 0;
 
 	return (
-		<View>
-			<View style={{ position: "relative", zIndex: showDropdown ? 10 : 0 }}>
+		<View style={{ zIndex: showDropdown ? 10 : 0, position: "relative" }}>
+			<View style={{ position: "relative" }}>
 				<TextInput
 					label={label}
 					value={value}
