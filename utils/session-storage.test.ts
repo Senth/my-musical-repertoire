@@ -48,6 +48,7 @@ describe("session-storage", () => {
 			totalMinutes: 30,
 			techniqueEnabled: true,
 			sightReadingEnabled: false,
+			repertoireEnabled: true,
 		};
 		await writeSessionInputs("u1", inputs);
 		expect(await readSessionInputs("u1", "balanced")).toEqual(inputs);
@@ -73,6 +74,7 @@ describe("session-storage", () => {
 				totalMinutes: 30,
 				techniqueEnabled: true,
 				sightReadingEnabled: true,
+				repertoireEnabled: true,
 			},
 			startedAt: "2026-05-27T00:00:00.000Z",
 			sessionId: "test-session-id",

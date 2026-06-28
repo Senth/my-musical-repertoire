@@ -24,6 +24,7 @@ import { useUpNavigation } from "@/hooks/use-up-navigation";
 import {
 	type ActiveSession,
 	type BlockExecutionState,
+	FOCUS_BY_EMPHASIS,
 	type OmittedSlot,
 	type PlannedBlock,
 	SESSION_EMPHASES,
@@ -62,9 +63,12 @@ export default function SessionSetupScreen() {
 	const { sections, loading: sectionsLoading } = useAllSections();
 	const { techniques, loading: techniquesLoading } = useTechniques();
 
+	const focus = FOCUS_BY_EMPHASIS[emphasis];
+
 	const [totalMinutes, setTotalMinutes] = useState<number>(30);
 	const [techniqueEnabled, setTechniqueEnabled] = useState<boolean>(true);
 	const [sightReadingEnabled, setSightReadingEnabled] = useState<boolean>(true);
+	const [repertoireEnabled, setRepertoireEnabled] = useState<boolean>(true);
 	const [restored, setRestored] = useState<boolean>(false);
 	const [starting, setStarting] = useState<boolean>(false);
 
@@ -81,6 +85,8 @@ export default function SessionSetupScreen() {
 				setTotalMinutes(stored.totalMinutes);
 				setTechniqueEnabled(stored.techniqueEnabled);
 				setSightReadingEnabled(stored.sightReadingEnabled);
+				// Older stored inputs predate the repertoire toggle → default on.
+				setRepertoireEnabled(stored.repertoireEnabled ?? true);
 			}
 			setRestored(true);
 		})();
@@ -89,14 +95,24 @@ export default function SessionSetupScreen() {
 		};
 	}, [user, emphasis]);
 
+	// The focused category is always included regardless of the stored toggle.
 	const inputs: SessionInputs = useMemo(
 		() => ({
 			emphasis,
 			totalMinutes,
+			techniqueEnabled: focus === "technique" ? true : techniqueEnabled,
+			sightReadingEnabled:
+				focus === "sightReading" ? true : sightReadingEnabled,
+			repertoireEnabled: focus === "repertoire" ? true : repertoireEnabled,
+		}),
+		[
+			emphasis,
+			focus,
+			totalMinutes,
 			techniqueEnabled,
 			sightReadingEnabled,
-		}),
-		[emphasis, totalMinutes, techniqueEnabled, sightReadingEnabled],
+			repertoireEnabled,
+		],
 	);
 
 	const plan = useMemo(() => {
@@ -195,25 +211,41 @@ export default function SessionSetupScreen() {
 						/>
 					</View>
 
-					<View className="flex-row items-center justify-between">
-						<Text variant="titleSmall">
-							{t("screen.session.setup.techniqueLabel")}
-						</Text>
-						<Switch
-							value={techniqueEnabled}
-							onValueChange={setTechniqueEnabled}
-						/>
-					</View>
+					{focus !== "technique" && (
+						<View className="flex-row items-center justify-between">
+							<Text variant="titleSmall">
+								{t("screen.session.setup.techniqueLabel")}
+							</Text>
+							<Switch
+								value={techniqueEnabled}
+								onValueChange={setTechniqueEnabled}
+							/>
+						</View>
+					)}
 
-					<View className="flex-row items-center justify-between">
-						<Text variant="titleSmall">
-							{t("screen.session.setup.sightReadingLabel")}
-						</Text>
-						<Switch
-							value={sightReadingEnabled}
-							onValueChange={setSightReadingEnabled}
-						/>
-					</View>
+					{focus !== "sightReading" && (
+						<View className="flex-row items-center justify-between">
+							<Text variant="titleSmall">
+								{t("screen.session.setup.sightReadingLabel")}
+							</Text>
+							<Switch
+								value={sightReadingEnabled}
+								onValueChange={setSightReadingEnabled}
+							/>
+						</View>
+					)}
+
+					{focus !== "repertoire" && (
+						<View className="flex-row items-center justify-between">
+							<Text variant="titleSmall">
+								{t("screen.session.setup.repertoireLabel")}
+							</Text>
+							<Switch
+								value={repertoireEnabled}
+								onValueChange={setRepertoireEnabled}
+							/>
+						</View>
+					)}
 
 					<Divider />
 

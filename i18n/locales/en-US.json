@@ -398,6 +398,7 @@
 				"minutesValue": "{{minutes}} min",
 				"techniqueLabel": "Include technique",
 				"sightReadingLabel": "Include sight-reading",
+				"repertoireLabel": "Include repertoire",
 				"emphasisLabel": "Emphasis",
 				"preview": "Estimated plan",
 				"noEligibleContent": "No content available — added to repertoire",

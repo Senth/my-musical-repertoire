@@ -21,6 +21,7 @@ function inputs(overrides: Partial<SessionInputs> = {}): SessionInputs {
 		totalMinutes: 30,
 		techniqueEnabled: true,
 		sightReadingEnabled: true,
+		repertoireEnabled: true,
 		...overrides,
 	};
 }
@@ -32,19 +33,19 @@ describe("allocateTime", () => {
 		[15, "balanced", 3, 2, 10, 0],
 		[15, "technique-heavy", 6, 0, 9, 0],
 		[15, "reading-heavy", 2, 4, 9, 0],
-		[15, "repertoire-only", 0, 0, 15, 0],
+		[15, "repertoire-only", 2, 1, 12, 0],
 		[30, "balanced", 7, 4, 19, 0],
 		[30, "technique-heavy", 14, 2, 14, 0],
 		[30, "reading-heavy", 5, 9, 16, 0],
-		[30, "repertoire-only", 0, 0, 30, 0],
+		[30, "repertoire-only", 4, 2, 24, 0],
 		[45, "balanced", 10, 6, 29, 0],
 		[45, "technique-heavy", 20, 3, 22, 0],
 		[45, "reading-heavy", 7, 13, 25, 0],
-		[45, "repertoire-only", 0, 0, 45, 0],
+		[45, "repertoire-only", 5, 3, 37, 0],
 		[60, "balanced", 12, 8, 35, 5],
 		[60, "technique-heavy", 23, 4, 28, 5],
 		[60, "reading-heavy", 8, 17, 30, 5],
-		[60, "repertoire-only", 0, 0, 55, 5],
+		[60, "repertoire-only", 6, 4, 45, 5],
 	];
 
 	it.each(
@@ -767,17 +768,70 @@ describe("buildPlan", () => {
 		);
 	});
 
-	it("repertoire-only emphasis has no technique or sight-reading blocks", () => {
+	it("repertoire-only emphasis still includes technique and sight-reading", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
 		const plan = buildPlan(
 			inputs({ totalMinutes: 30, emphasis: "repertoire-only" }),
 			pieces,
 			[],
-			[],
+			ts,
 			NOW,
 		);
-		expect(plan.blocks.find((b) => b.kind === "technique")).toBeUndefined();
-		expect(plan.blocks.find((b) => b.kind === "sight-reading")).toBeUndefined();
+		expect(plan.blocks.find((b) => b.kind === "technique")).toBeDefined();
+		expect(plan.blocks.find((b) => b.kind === "sight-reading")).toBeDefined();
+		// Repertoire still dominates the plan.
+		const repMinutes = plan.blocks
+			.filter((b) => b.kind.startsWith("repertoire"))
+			.reduce((acc, b) => acc + b.allocatedMinutes, 0);
+		expect(repMinutes).toBeGreaterThan(15);
+	});
+
+	it("repertoire-only with repertoire forced on shifts disabled toggles into repertoire", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const a = allocateTime(
+			inputs({
+				totalMinutes: 30,
+				emphasis: "repertoire-only",
+				techniqueEnabled: false,
+				sightReadingEnabled: false,
+			}),
+		);
+		expect(a.technique).toBe(0);
+		expect(a.sightReading).toBe(0);
+		expect(a.repertoireTotal).toBe(30);
+		expect(pieces.length).toBe(1);
+	});
+
+	it("disabling repertoire redistributes its minutes to technique and sight-reading", () => {
+		// Balanced 30: tech 7, read 4, rep 19. Repertoire off → its 19 min split
+		// across the two enabled categories in proportion (7:4), conserving total.
+		const a = allocateTime(
+			inputs({ totalMinutes: 30, repertoireEnabled: false }),
+		);
+		expect(a.repertoireTotal).toBe(0);
+		expect(a.technique + a.sightReading).toBe(30);
+		expect(a.technique).toBeGreaterThan(a.sightReading);
+	});
+
+	it("repertoire disabled produces no repertoire blocks", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning" }),
+			makePiece({ id: "p2", state: "maintenance" }),
+		];
+		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
+		const plan = buildPlan(
+			inputs({ totalMinutes: 30, repertoireEnabled: false }),
+			pieces,
+			[],
+			ts,
+			NOW,
+		);
+		expect(plan.blocks.some((b) => b.kind.startsWith("repertoire"))).toBe(
+			false,
+		);
+		expect(plan.blocks.find((b) => b.kind === "technique")).toBeDefined();
+		expect(plan.blocks.find((b) => b.kind === "sight-reading")).toBeDefined();
 	});
 
 	it("reading-heavy puts sight-reading before technique", () => {
