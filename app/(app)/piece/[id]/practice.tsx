@@ -28,7 +28,7 @@ import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { usePracticeSave } from "@/hooks/use-practice-save";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
-import { useSections } from "@/hooks/use-sections";
+import { useSections, useUpdateSection } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { PracticeMistakes, type PracticeTrigger } from "@/models/practice";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
@@ -79,6 +79,7 @@ export function PiecePracticeContent({
 	const { savePractice } = useSavePractice();
 	const { saveSectionPractice } = useSaveSectionPractice();
 	const { deletePiece } = useDeletePiece();
+	const { updateSection } = useUpdateSection();
 	const standaloneSessionId = useRef(randomUUID());
 
 	const piece = pieces.find((p) => p.id === pieceId);
@@ -486,6 +487,9 @@ export function PiecePracticeContent({
 							flaggedIds={flaggedSectionIds}
 							onToggleFlag={handleToggleFlag}
 							onPractice={handlePracticeSection}
+							onChangePhase={(sectionId, phase) =>
+								updateSection(pieceId, sectionId, { phase })
+							}
 						/>
 					)}
 

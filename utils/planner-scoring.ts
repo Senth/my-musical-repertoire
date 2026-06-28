@@ -5,7 +5,7 @@ import { isPracticedToday } from "./day-boundary";
 
 export const PHASE_SCORE: Record<SectionPhase, number> = {
 	learning: 10,
-	stabilizing: 3,
+	stabilizing: 2.5,
 	maintenance: 1,
 };
 
@@ -28,6 +28,8 @@ export interface SectionCandidate {
 	phase: SectionPhase;
 	lastPracticed: Date | null;
 	currentBpm: number | null;
+	lastQuality: number | null;
+	lastEffort: number | null;
 	score: number;
 }
 
@@ -37,9 +39,18 @@ export function scoreSectionCandidate(
 	lastPracticed: Date | null,
 	currentBpm: number | null,
 	now: Date,
+	lastQuality?: number | null,
+	lastEffort?: number | null,
 ): number {
-	const phaseScore = PHASE_SCORE[phase];
 	const days = daysSince(lastPracticed, now);
+
+	if (phase === "maintenance") {
+		const effort = lastEffort ?? 1;
+		const quality = lastQuality ?? 5;
+		return 1 * days + (effort - 1) + (5 - quality);
+	}
+
+	const phaseScore = PHASE_SCORE[phase];
 	let bpmTerm = 0;
 	if (piece.targetTempoBpm != null && currentBpm != null) {
 		bpmTerm = Math.max(0, piece.targetTempoBpm - currentBpm);
@@ -50,11 +61,9 @@ export function scoreSectionCandidate(
 export function scoreMaintenancePiece(piece: Piece, now: Date): number {
 	const stateWeight = piece.state === "performance" ? 3 : 1;
 	const days = daysSince(piece.lastPracticed ?? null, now);
-	let bpmTerm = 0;
-	if (piece.targetTempoBpm != null && piece.lastAchievedTempoBpm != null) {
-		bpmTerm = Math.max(0, piece.targetTempoBpm - piece.lastAchievedTempoBpm);
-	}
-	return days * stateWeight + bpmTerm;
+	const techMistakes = piece.lastTechnicalMistakes ?? 0;
+	const memMistakes = piece.lastMemoryMistakes ?? 0;
+	return days * stateWeight + 2 * (techMistakes + memMistakes);
 }
 
 export interface TechniqueScored {
@@ -117,6 +126,8 @@ export function buildSectionCandidates(
 				phase,
 				lastPracticed: piece.lastPracticed ?? null,
 				currentBpm: piece.lastAchievedTempoBpm ?? null,
+				lastQuality: null,
+				lastEffort: null,
 				score,
 			});
 		} else {
@@ -127,6 +138,8 @@ export function buildSectionCandidates(
 					section.lastPracticed ?? null,
 					section.currentBpm ?? null,
 					now,
+					section.lastQuality ?? null,
+					section.lastEffort ?? null,
 				);
 				candidates.push({
 					piece,
@@ -134,6 +147,8 @@ export function buildSectionCandidates(
 					phase: section.phase,
 					lastPracticed: section.lastPracticed ?? null,
 					currentBpm: section.currentBpm ?? null,
+					lastQuality: section.lastQuality ?? null,
+					lastEffort: section.lastEffort ?? null,
 					score,
 				});
 			}
