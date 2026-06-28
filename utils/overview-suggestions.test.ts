@@ -157,21 +157,62 @@ describe("suggestPieces", () => {
 			);
 		});
 
-		it("bpmGap reason when gap dominates", () => {
+		it("bpmGap reason when gap dominates for learning piece", () => {
+			const pieces = [
+				makePiece({
+					id: "p1",
+					state: "learning",
+					lastPracticed: new Date(NOW.getTime() - 1 * 86_400_000),
+					targetTempoBpm: 120,
+				}),
+			];
+			const sections = [
+				makeSection({
+					id: "s1",
+					pieceId: "p1",
+					lastPracticed: new Date(NOW.getTime() - 1 * 86_400_000),
+					currentBpm: 10, // gap = 110, phaseScore*days = 10
+				}),
+			];
+			const result = suggestPieces(pieces, sections, NOW);
+			expect(result.suggestions[0].reasonKey).toBe(
+				"screen.overview.pieceReason.bpmGap",
+			);
+			expect(result.suggestions[0].reasonParams.gap).toBe(110);
+		});
+
+		it("mistakes reason when mistakes dominate for maintenance piece", () => {
 			const pieces = [
 				makePiece({
 					id: "p1",
 					state: "maintenance",
 					lastPracticed: new Date(NOW.getTime() - 1 * 86_400_000),
-					targetTempoBpm: 120,
-					lastAchievedTempoBpm: 10, // gap = 110, stateWeight*days = 1
+					lastTechnicalMistakes: 3, // many
+					lastMemoryMistakes: 3, // many → 2*(3+3)=12 > 1*1=1
 				}),
 			];
 			const result = suggestPieces(pieces, [], NOW);
 			expect(result.suggestions[0].reasonKey).toBe(
-				"screen.overview.pieceReason.bpmGap",
+				"screen.overview.pieceReason.mistakes",
 			);
-			expect(result.suggestions[0].reasonParams.gap).toBe(110);
+		});
+
+		it("lastResultPoor reason when quality/effort bonus dominates for maintenance section", () => {
+			const pieces = [makePiece({ id: "p1", state: "learning" })];
+			const sections = [
+				makeSection({
+					id: "s1",
+					pieceId: "p1",
+					phase: "maintenance",
+					lastPracticed: new Date(NOW.getTime() - 1 * 86_400_000),
+					lastEffort: 5, // bonus = (5-1)+(5-1)=8 > 1*1=1
+					lastQuality: 1,
+				}),
+			];
+			const result = suggestPieces(pieces, sections, NOW);
+			expect(result.suggestions[0].reasonKey).toBe(
+				"screen.overview.pieceReason.lastResultPoor",
+			);
 		});
 
 		it("daysSince reason as default", () => {

@@ -25,7 +25,11 @@ import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { useFabStyleStack } from "@/hooks/use-fab-style";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
-import { useReorderSections, useSections } from "@/hooks/use-sections";
+import {
+	useReorderSections,
+	useSections,
+	useUpdateSection,
+} from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { Section } from "@/models/section";
 import { formatDaysAgo } from "@/utils/date";
@@ -43,6 +47,7 @@ export default function PieceDetailScreen() {
 	const { deletePiece } = useDeletePiece();
 	const { updatePiece } = useUpdatePiece();
 	const { reorderSections } = useReorderSections();
+	const { updateSection } = useUpdateSection();
 
 	const piece = pieces.find((p) => p.id === id);
 
@@ -386,6 +391,9 @@ export default function PieceDetailScreen() {
 										router.push(
 											`/piece/${id}/practice?sectionId=${s.id}&from=piece-detail`,
 										)
+									}
+									onChangePhase={(phase) =>
+										id && s.id ? updateSection(id, s.id, { phase }) : undefined
 									}
 								/>
 							))}

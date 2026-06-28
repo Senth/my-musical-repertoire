@@ -45,8 +45,25 @@ function reasonForCandidate(
 			reasonParams: {},
 		};
 	}
-	const phaseScore = PHASE_SCORE[candidate.phase];
 	const days = daysSince(candidate.lastPracticed, now);
+
+	if (candidate.phase === "maintenance") {
+		const effort = candidate.lastEffort ?? 1;
+		const quality = candidate.lastQuality ?? 5;
+		const bonus = effort - 1 + (5 - quality);
+		if (bonus > 1 * days) {
+			return {
+				reasonKey: "screen.overview.pieceReason.lastResultPoor",
+				reasonParams: {},
+			};
+		}
+		return {
+			reasonKey: "screen.overview.pieceReason.daysSince",
+			reasonParams: { days },
+		};
+	}
+
+	const phaseScore = PHASE_SCORE[candidate.phase];
 	let bpmTerm = 0;
 	if (candidate.piece.targetTempoBpm != null && candidate.currentBpm != null) {
 		bpmTerm = Math.max(
@@ -78,14 +95,13 @@ function reasonForMaintenancePiece(
 	}
 	const stateWeight = piece.state === "performance" ? 3 : 1;
 	const days = daysSince(piece.lastPracticed, now);
-	let bpmTerm = 0;
-	if (piece.targetTempoBpm != null && piece.lastAchievedTempoBpm != null) {
-		bpmTerm = Math.max(0, piece.targetTempoBpm - piece.lastAchievedTempoBpm);
-	}
-	if (bpmTerm > stateWeight * days) {
+	const techMistakes = piece.lastTechnicalMistakes ?? 0;
+	const memMistakes = piece.lastMemoryMistakes ?? 0;
+	const mistakesTerm = 2 * (techMistakes + memMistakes);
+	if (mistakesTerm > stateWeight * days) {
 		return {
-			reasonKey: "screen.overview.pieceReason.bpmGap",
-			reasonParams: { gap: bpmTerm },
+			reasonKey: "screen.overview.pieceReason.mistakes",
+			reasonParams: {},
 		};
 	}
 	return {

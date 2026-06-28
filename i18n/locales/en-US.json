@@ -195,7 +195,9 @@
 			"pieceReason": {
 				"neverPracticed": "New piece — start your first session",
 				"bpmGap": "{{gap}} BPM below target",
-				"daysSince": "{{days}} day(s) since last practice"
+				"daysSince": "{{days}} day(s) since last practice",
+				"lastResultPoor": "Last session needs cleanup",
+				"mistakes": "Mistakes to clean up"
 			},
 			"emptyState": {
 				"noActivePieces": "Start by adding a piece to your repertoire.",

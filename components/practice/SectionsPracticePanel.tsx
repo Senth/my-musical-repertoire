@@ -10,7 +10,7 @@ import {
 } from "react-native-paper";
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import type { Piece } from "@/models/piece";
-import type { Section } from "@/models/section";
+import type { Section, SectionPhase } from "@/models/section";
 
 interface SectionsPracticePanelProps {
 	sections: Section[];
@@ -19,6 +19,7 @@ interface SectionsPracticePanelProps {
 	flaggedIds: string[];
 	onToggleFlag: (sectionId: string) => void;
 	onPractice: (sectionId: string) => void;
+	onChangePhase?: (sectionId: string, phase: SectionPhase) => void;
 }
 
 export function SectionsPracticePanel({
@@ -28,6 +29,7 @@ export function SectionsPracticePanel({
 	flaggedIds,
 	onToggleFlag,
 	onPractice,
+	onChangePhase,
 }: SectionsPracticePanelProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -75,7 +77,12 @@ export function SectionsPracticePanel({
 								}}
 							>
 								<Text variant="bodyLarge">{section.label}</Text>
-								<SectionPhaseChip phase={section.phase} />
+								<SectionPhaseChip
+									phase={section.phase}
+									onChangePhase={
+										onChangePhase ? (p) => onChangePhase(sid, p) : undefined
+									}
+								/>
 								{showBpm && (
 									<Text
 										variant="bodySmall"

@@ -8,7 +8,7 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
-import type { Section } from "@/models/section";
+import type { Section, SectionPhase } from "@/models/section";
 import { formatDaysAgo } from "@/utils/date";
 
 type AppTheme = MD3Theme & {
@@ -23,6 +23,7 @@ interface SectionDetailRowProps {
 	pieceTargetBpm?: number | null;
 	onPress: () => void;
 	onPracticePress: () => void;
+	onChangePhase?: (phase: SectionPhase) => void;
 }
 
 const NOTES_MAX = 40;
@@ -32,6 +33,7 @@ export function SectionDetailRow({
 	pieceTargetBpm,
 	onPress,
 	onPracticePress,
+	onChangePhase,
 }: SectionDetailRowProps) {
 	const { t } = useTranslation();
 	const theme = useTheme<AppTheme>();
@@ -116,7 +118,10 @@ export function SectionDetailRow({
 							)}
 						</View>
 						<View className="flex-row items-center gap-2 flex-wrap">
-							<SectionPhaseChip phase={section.phase} />
+							<SectionPhaseChip
+								phase={section.phase}
+								onChangePhase={onChangePhase}
+							/>
 							{metaInline.length > 0 && (
 								<Text
 									variant="bodySmall"

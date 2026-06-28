@@ -40,17 +40,47 @@ describe("scoreSectionCandidate", () => {
 		expect(score).toBe(PHASE_SCORE.learning * 3);
 	});
 
-	it("adds BPM gap term", () => {
+	it("adds BPM gap term for learning", () => {
 		const piece = makePiece({ id: "p1", targetTempoBpm: 120 });
 		const past = new Date(NOW.getTime() - 1 * 86_400_000);
 		const score = scoreSectionCandidate(piece, "learning", past, 80, NOW);
 		expect(score).toBe(PHASE_SCORE.learning * 1 + 40);
 	});
 
+	it("adds BPM gap term for stabilizing", () => {
+		const piece = makePiece({ id: "p1", targetTempoBpm: 120 });
+		const past = new Date(NOW.getTime() - 2 * 86_400_000);
+		const score = scoreSectionCandidate(piece, "stabilizing", past, 100, NOW);
+		expect(score).toBe(PHASE_SCORE.stabilizing * 2 + 20);
+	});
+
 	it("never-practiced returns 999 days × phaseScore", () => {
 		const piece = makePiece({ id: "p1" });
 		const score = scoreSectionCandidate(piece, "stabilizing", null, null, NOW);
 		expect(score).toBe(PHASE_SCORE.stabilizing * 999);
+	});
+
+	it("maintenance: uses days + effort/quality bonus, no bpmGap", () => {
+		const piece = makePiece({ id: "p1", targetTempoBpm: 120 });
+		const past = new Date(NOW.getTime() - 3 * 86_400_000);
+		const score = scoreSectionCandidate(
+			piece,
+			"maintenance",
+			past,
+			80,
+			NOW,
+			3,
+			4,
+		);
+		// days=3, effort=4 → +3, quality=3 → +2; bpmGap ignored
+		expect(score).toBe(3 + 3 + 2);
+	});
+
+	it("maintenance: defaults effort/quality give 0 bonus", () => {
+		const piece = makePiece({ id: "p1" });
+		const past = new Date(NOW.getTime() - 5 * 86_400_000);
+		const score = scoreSectionCandidate(piece, "maintenance", past, null, NOW);
+		expect(score).toBe(5);
 	});
 });
 
@@ -73,20 +103,30 @@ describe("scoreMaintenancePiece", () => {
 		expect(scoreMaintenancePiece(piece, NOW)).toBe(12);
 	});
 
-	it("adds BPM gap", () => {
+	it("adds mistakes term at weight 2", () => {
 		const piece = makePiece({
 			id: "p1",
 			state: "maintenance",
 			lastPracticed: new Date(NOW.getTime() - 2 * 86_400_000),
-			targetTempoBpm: 120,
-			lastAchievedTempoBpm: 80,
+			lastTechnicalMistakes: 2, // some
+			lastMemoryMistakes: 1, // few
 		});
-		expect(scoreMaintenancePiece(piece, NOW)).toBe(2 + 40);
+		// days=2, 2*(2+1)=6
+		expect(scoreMaintenancePiece(piece, NOW)).toBe(2 + 6);
 	});
 
 	it("returns 999 for never-practiced", () => {
 		const piece = makePiece({ id: "p1", state: "maintenance" });
 		expect(scoreMaintenancePiece(piece, NOW)).toBe(999);
+	});
+
+	it("defaults missing mistakes to 0", () => {
+		const piece = makePiece({
+			id: "p1",
+			state: "maintenance",
+			lastPracticed: new Date(NOW.getTime() - 3 * 86_400_000),
+		});
+		expect(scoreMaintenancePiece(piece, NOW)).toBe(3);
 	});
 });
 
