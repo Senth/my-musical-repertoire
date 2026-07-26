@@ -290,20 +290,6 @@ export function TechniquePracticeContent({
 						targetBpm={targetForMode(modes.hands, effectiveTarget)}
 					/>
 
-					<RatingField
-						label={t("screen.practiceTechnique.qualityLabel")}
-						value={modes.draft.quality}
-						onChange={modes.setQuality}
-						buttons={ratingButtons}
-					/>
-
-					<RatingField
-						label={t("screen.practiceTechnique.effortLabel")}
-						value={modes.draft.effort}
-						onChange={modes.setEffort}
-						buttons={ratingButtons}
-					/>
-
 					<View className="gap-2">
 						<Text variant="titleSmall">
 							{t("screen.practiceTechnique.tempoAchievedLabel")}
@@ -349,6 +335,20 @@ export function TechniquePracticeContent({
 							placeholder="e.g. 80"
 						/>
 					</View>
+
+					<RatingField
+						label={t("screen.practiceTechnique.qualityLabel")}
+						value={modes.draft.quality}
+						onChange={modes.setQuality}
+						buttons={ratingButtons}
+					/>
+
+					<RatingField
+						label={t("screen.practiceTechnique.effortLabel")}
+						value={modes.draft.effort}
+						onChange={modes.setEffort}
+						buttons={ratingButtons}
+					/>
 
 					{!inCoach && (
 						<Button
