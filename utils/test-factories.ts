@@ -34,6 +34,7 @@ export function makeSection(
 		notes: null,
 		createdAt: null,
 		lastPracticed: null,
+		byMode: {},
 		...over,
 	};
 }
@@ -53,6 +54,9 @@ export function makeTechnique(
 		lastQuality: null,
 		lastEffort: null,
 		lastAchievedTempoBpm: null,
+		byMode: {},
+		handsMode: "separate",
+		activeDrills: [],
 		...over,
 	};
 }

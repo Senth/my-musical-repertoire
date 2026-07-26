@@ -2,12 +2,14 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, TextInput } from "react-native-paper";
+import { TechniqueModeFields } from "@/components/technique/TechniqueModeFields";
 import { DropdownField } from "@/components/ui/DropdownField";
 import { FormScaffold } from "@/components/ui/FormScaffold";
 import { FormTextField } from "@/components/ui/FormTextField";
 import { useAutoFocusOnMount } from "@/hooks/use-auto-focus-on-mount";
 import { useAddTechnique } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
+import type { PracticeDrill, TechniqueHandsMode } from "@/models/practice";
 import {
 	TECHNIQUE_STATES,
 	TECHNIQUE_TYPES,
@@ -24,6 +26,9 @@ export default function AddTechniqueScreen() {
 	const [title, setTitle] = useState("");
 	const [state, setState] = useState<TechniqueState>("active");
 	const [type, setType] = useState<TechniqueType | null>(null);
+	// Most techniques the user practises are hands-separate only.
+	const [handsMode, setHandsMode] = useState<TechniqueHandsMode>("separate");
+	const [activeDrills, setActiveDrills] = useState<PracticeDrill[]>([]);
 	const [targetTempoBpmText, setTargetTempoBpmText] = useState("");
 	const [notes, setNotes] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -77,6 +82,8 @@ export default function AddTechniqueScreen() {
 				type,
 				targetTempoBpm,
 				notes: notes.trim() || null,
+				handsMode,
+				activeDrills,
 			});
 			goBack();
 		} catch {
@@ -114,6 +121,14 @@ export default function AddTechniqueScreen() {
 				value={type}
 				options={typeOptions}
 				onChange={(v) => setType((v as TechniqueType) ?? null)}
+			/>
+
+			<TechniqueModeFields
+				screen="screen.addTechnique"
+				handsMode={handsMode}
+				onChangeHandsMode={setHandsMode}
+				activeDrills={activeDrills}
+				onChangeActiveDrills={setActiveDrills}
 			/>
 
 			<FormTextField

@@ -2,7 +2,13 @@ import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import type { PracticeMistakes } from "@/models/practice";
+import type {
+	HandsMode,
+	ModeKey,
+	PracticeDrill,
+	PracticeMistakes,
+} from "@/models/practice";
+import { modeKey } from "@/utils/practice-modes";
 
 export interface NormalizedLastLog {
 	date: Date;
@@ -11,12 +17,25 @@ export interface NormalizedLastLog {
 	quality?: 1 | 2 | 3 | 4 | 5 | null;
 	effort?: 1 | 2 | 3 | 4 | 5 | null;
 	achievedBpm?: number | null;
+	hands?: HandsMode | null;
+	drill?: PracticeDrill | null;
 }
 
 type PieceScope = { type: "piece"; pieceId: string };
 type SectionScope = { type: "section"; pieceId: string; sectionId: string };
 type TechniqueScope = { type: "technique"; techniqueId: string };
 export type LastLogScope = PieceScope | SectionScope | TechniqueScope;
+
+/**
+ * How many logs to pull for mode-aware scopes. Filtering client-side keeps the
+ * per-mode lookup on the existing `date` index — no composite index needed.
+ */
+const MODE_LOG_LIMIT = 25;
+
+/** Logs written before the hands axis existed are hands-together by convention. */
+export function logModeKey(log: NormalizedLastLog): ModeKey {
+	return modeKey(log.hands ?? "HT", log.drill ?? null);
+}
 
 export function normalizeLastLog(
 	data: Record<string, unknown>,
@@ -42,15 +61,33 @@ export function normalizeLastLog(
 		quality: (data.quality as 1 | 2 | 3 | 4 | 5) ?? null,
 		effort: (data.effort as 1 | 2 | 3 | 4 | 5) ?? null,
 		achievedBpm: (data.achievedBpm as number) ?? null,
+		hands: (data.hands as HandsMode) ?? null,
+		drill: (data.drill as PracticeDrill) ?? null,
 	};
+}
+
+/** Bucket logs (newest first) by mode key, keeping the newest per mode. */
+export function groupLogsByMode(
+	logs: NormalizedLastLog[],
+): Record<ModeKey, NormalizedLastLog> {
+	const out: Record<ModeKey, NormalizedLastLog> = {};
+	for (const log of logs) {
+		const key = logModeKey(log);
+		if (!out[key]) out[key] = log;
+	}
+	return out;
 }
 
 export function useLastPracticeLog(scope: LastLogScope): {
 	lastLog: NormalizedLastLog | null;
+	logsByMode: Record<ModeKey, NormalizedLastLog>;
 	loading: boolean;
 } {
 	const { user } = useAuth();
 	const [lastLog, setLastLog] = useState<NormalizedLastLog | null>(null);
+	const [logsByMode, setLogsByMode] = useState<
+		Record<ModeKey, NormalizedLastLog>
+	>({});
 	const [loading, setLoading] = useState(true);
 
 	// Extract primitives so the effect deps are stable strings, not the scope object
@@ -63,6 +100,7 @@ export function useLastPracticeLog(scope: LastLogScope): {
 	useEffect(() => {
 		if (!user) {
 			setLastLog(null);
+			setLogsByMode({});
 			setLoading(false);
 			return;
 		}
@@ -101,31 +139,29 @@ export function useLastPracticeLog(scope: LastLogScope): {
 			);
 		} else {
 			setLastLog(null);
+			setLogsByMode({});
 			setLoading(false);
 			return;
 		}
 
-		const q = query(ref, orderBy("date", "desc"), limit(1));
+		const count = scopeType === "piece" ? 1 : MODE_LOG_LIMIT;
+		const q = query(ref, orderBy("date", "desc"), limit(count));
 
 		getDocs(q)
 			.then((snap) => {
-				if (snap.empty) {
-					setLastLog(null);
-				} else {
-					setLastLog(
-						normalizeLastLog(
-							snap.docs[0].data() as Record<string, unknown>,
-							scopeType,
-						),
-					);
-				}
+				const logs = snap.docs.map((d) =>
+					normalizeLastLog(d.data() as Record<string, unknown>, scopeType),
+				);
+				setLastLog(logs[0] ?? null);
+				setLogsByMode(scopeType === "piece" ? {} : groupLogsByMode(logs));
 				setLoading(false);
 			})
 			.catch(() => {
 				setLastLog(null);
+				setLogsByMode({});
 				setLoading(false);
 			});
 	}, [user, scopeType, pieceId, sectionId, techniqueId]);
 
-	return { lastLog, loading };
+	return { lastLog, logsByMode, loading };
 }

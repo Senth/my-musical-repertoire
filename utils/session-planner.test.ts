@@ -1087,6 +1087,74 @@ describe("same-day exclusion", () => {
 		expect(block?.sectionId).toBe("s2");
 	});
 
+	it("keeps a section whose other hand is still unpractised today", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", title: "A", state: "learning" }),
+		];
+		const sections: Section[] = [
+			makeSection({
+				id: "s1",
+				pieceId: "p1",
+				phase: "learning",
+				lastPracticed: oneHourAgo(),
+				byMode: {
+					LH: { bpm: 100, lastPracticed: oneHourAgo() },
+					RH: { bpm: 100, lastPracticed: twoDaysAgo() },
+				},
+			}),
+		];
+		const block = pickRepertoireSection(
+			"learning",
+			pieces,
+			sections,
+			10,
+			NOW_LOCAL,
+		);
+		expect(block?.sectionId).toBe("s1");
+	});
+
+	it("excludes a section whose every mode was practiced today", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", title: "A", state: "learning" }),
+		];
+		const sections: Section[] = [
+			makeSection({
+				id: "s1",
+				pieceId: "p1",
+				phase: "learning",
+				lastPracticed: oneHourAgo(),
+				byMode: {
+					LH: { bpm: 100, lastPracticed: oneHourAgo() },
+					RH: { bpm: 100, lastPracticed: oneHourAgo() },
+				},
+			}),
+		];
+		const block = pickRepertoireSection(
+			"learning",
+			pieces,
+			sections,
+			10,
+			NOW_LOCAL,
+		);
+		expect(block).toBeNull();
+	});
+
+	it("keeps a technique whose other hand is still unpractised today", () => {
+		const techniques: TechniqueItem[] = [
+			makeTechnique({
+				id: "t1",
+				state: "active",
+				lastPracticedAt: oneHourAgo(),
+				byMode: {
+					LH: { lastPracticed: oneHourAgo() },
+					RH: { lastPracticed: twoDaysAgo() },
+				},
+			}),
+		];
+		const blocks = pickTechnique(10, techniques, NOW_LOCAL);
+		expect(blocks[0]?.techniqueId).toBe("t1");
+	});
+
 	it("excludes piece practiced earlier today from maintenance slot", () => {
 		const pieces: Piece[] = [
 			makePiece({

@@ -11,13 +11,6 @@
 			"on_hold": "On Hold",
 			"shelved": "Shelved"
 		},
-		"learningPhase": {
-			"notTracking": "Not tracking",
-			"hands_separate": "Hands Separate",
-			"hands_together_slow": "Hands Together (Slow)",
-			"hands_together_building": "Hands Together (Building)",
-			"continuity": "Continuity"
-		},
 		"difficulty": {
 			"notSet": "Not set",
 			"1": "1 – Easy",
@@ -106,6 +99,11 @@
 			"3": "3 – Moderate",
 			"4": "4 – Hard",
 			"5": "5 – Very hard"
+		},
+		"handsMode": {
+			"together": "Together",
+			"separate": "Separate",
+			"both": "Both"
 		}
 	},
 	"error": {
@@ -248,6 +246,35 @@
 				"a11yPractice": "Practice section {{label}}",
 				"a11yToggleFlag": "Flag section {{label}} as problematic"
 			},
+			"modes": {
+				"handsLabel": "Hands",
+				"drillLabel": "Drill",
+				"hands": {
+					"LH": "LH",
+					"RH": "RH",
+					"HT": "HT"
+				},
+				"handsLong": {
+					"LH": "Left hand",
+					"RH": "Right hand",
+					"HT": "Hands together"
+				},
+				"drill": {
+					"normal": "Normal",
+					"staccato": "Staccato"
+				},
+				"summarySeparator": " · ",
+				"summaryEntry": "{{mode}} {{bpm}}",
+				"summaryTargetBoth": "(target {{separate}}/{{together}})",
+				"summaryTargetOne": "(target {{bpm}})",
+				"targetHandsSeparate": "Target {{bpm}} BPM (hands separate)",
+				"targetHandsTogether": "{{bpm}} BPM (hands together)",
+				"targetSingle": "Target {{bpm}} BPM",
+				"htReadyHint": "Both hands reached {{bpm}} BPM — try hands together",
+				"a11ySelectHands": "Practice {{mode}}",
+				"a11ySelectDrill": "Drill: {{drill}}",
+				"incompleteMode": "{{mode}} needs quality and effort"
+			},
 			"mistakeLevel": {
 				"none": "None",
 				"few": "Few",
@@ -273,7 +300,6 @@
 			"titleLabel": "Title",
 			"composerLabel": "Composer",
 			"stateLabel": "Lifecycle State",
-			"learningPhaseLabel": "Learning Phase",
 			"targetTempoBpmLabel": "Target Tempo (BPM)",
 			"durationLabel": "Duration (minutes)",
 			"difficultyLabel": "Difficulty",
@@ -340,6 +366,9 @@
 			"typeLabel": "Type (optional)",
 			"typeNone": "None",
 			"stateLabel": "Lifecycle State",
+			"handsLabel": "Hands",
+			"handsHelp": "Which hands this technique is practised with",
+			"drillsLabel": "Drills",
 			"targetTempoBpmLabel": "Target Tempo BPM (optional)",
 			"notesLabel": "Notes (optional)",
 			"save": "Save",
@@ -353,6 +382,9 @@
 			"typeLabel": "Type (optional)",
 			"typeNone": "None",
 			"stateLabel": "Lifecycle State",
+			"handsLabel": "Hands",
+			"handsHelp": "Which hands this technique is practised with",
+			"drillsLabel": "Drills",
 			"targetTempoBpmLabel": "Target Tempo BPM (optional)",
 			"notesLabel": "Notes (optional)",
 			"save": "Save",
@@ -370,6 +402,8 @@
 			"save": "Save",
 			"comparison": {
 				"title": "Practice Results",
+				"savedModes_one": "Saved {{count}} mode",
+				"savedModes_other": "Saved {{count}} modes",
 				"qualityLabel": "Quality",
 				"effortLabel": "Effort",
 				"tempoAchievedLabel": "Tempo Achieved",

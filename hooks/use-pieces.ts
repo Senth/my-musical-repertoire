@@ -12,14 +12,13 @@ import {
 import { useEffect, useState } from "react";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import type { LearningPhase, Piece, PieceState } from "@/models/piece";
+import type { Piece, PieceState } from "@/models/piece";
 import type { PracticeMistakes } from "@/models/practice";
 
 interface FirestorePiece {
 	title: string;
 	composer: string;
 	state?: PieceState;
-	learningPhase?: LearningPhase | null;
 	targetTempoBpm?: number | null;
 	difficulty?: 1 | 2 | 3 | 4 | 5 | null;
 	lastPracticed?: Timestamp | null;
@@ -42,7 +41,6 @@ export function fromFirestore(
 		title: data.title,
 		composer: data.composer,
 		state: data.state ?? "maintenance",
-		learningPhase: data.learningPhase ?? null,
 		targetTempoBpm: data.targetTempoBpm ?? null,
 		difficulty: data.difficulty ?? null,
 		lastPracticed: data.lastPracticed?.toDate() ?? null,
@@ -121,7 +119,6 @@ export function useUpdatePiece() {
 				| "title"
 				| "composer"
 				| "state"
-				| "learningPhase"
 				| "targetTempoBpm"
 				| "difficulty"
 				| "lastPracticed"

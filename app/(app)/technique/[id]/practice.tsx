@@ -1,11 +1,12 @@
 import { randomUUID } from "expo-crypto";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Appbar, Button, Menu, Text, useTheme } from "react-native-paper";
 import { BpmControl } from "@/components/practice/BpmControl";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
+import { ModeSelector } from "@/components/practice/ModeSelector";
 import { RatingField } from "@/components/practice/RatingField";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
@@ -14,6 +15,7 @@ import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useCoach } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
+import { useModeDrafts } from "@/hooks/use-mode-drafts";
 import { usePracticeSave } from "@/hooks/use-practice-save";
 import {
 	useDeleteTechnique,
@@ -21,6 +23,15 @@ import {
 	useTechniques,
 } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
+import {
+	availableHandsModes,
+	hsTarget,
+	isHtReady,
+	type ModeEntry,
+	modeKey,
+	parseModeKey,
+	targetForMode,
+} from "@/utils/practice-modes";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
 
 export interface TechniquePracticeContentProps {
@@ -44,10 +55,30 @@ export function TechniquePracticeContent({
 	const standaloneSessionId = useRef(randomUUID());
 	const technique = techniques.find((tn) => tn.id === techniqueId);
 
-	const { lastLog, loading: lastLogLoading } = useLastPracticeLog({
+	const { logsByMode, loading: lastLogLoading } = useLastPracticeLog({
 		type: "technique",
 		techniqueId,
 	});
+
+	const effectiveTarget = technique?.targetTempoBpm ?? null;
+	const available = useMemo(
+		() => availableHandsModes(technique?.handsMode),
+		[technique?.handsMode],
+	);
+	const drills = useMemo(
+		() => technique?.activeDrills ?? [],
+		[technique?.activeDrills],
+	);
+
+	const modes = useModeDrafts({
+		byMode: technique?.byMode,
+		available,
+		drills,
+		effectiveTarget,
+		ready: !!technique,
+	});
+	const htReady =
+		available.includes("HT") && isHtReady(technique?.byMode, effectiveTarget);
 
 	const getBackDestination = (): string => {
 		if (from === "overview") return "/(app)/(tabs)/overview";
@@ -75,23 +106,12 @@ export function TechniquePracticeContent({
 		getBackDestination() as Parameters<typeof router.replace>[0],
 	);
 
-	const seededRef = useRef(false);
-
-	const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
-	const [effort, setEffort] = useState<1 | 2 | 3 | 4 | 5>(3);
-	const [tempoBpm, setTempoBpm] = useState<string>("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
+	const [savedEntries, setSavedEntries] = useState<ModeEntry[]>([]);
 	const metronomeStopRef = useRef<(() => void) | null>(null);
-
-	useEffect(() => {
-		if (technique && !seededRef.current) {
-			seededRef.current = true;
-			setTempoBpm(technique.lastAchievedTempoBpm?.toString() ?? "");
-		}
-	}, [technique]);
 
 	const validateBpm = useCallback(
 		(text: string) => validateBpmRange(text, t),
@@ -99,7 +119,7 @@ export function TechniquePracticeContent({
 	);
 
 	const handleBpmBlur = () => {
-		setBpmError(validateBpm(tempoBpm));
+		setBpmError(validateBpm(modes.draft.bpm));
 	};
 	const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
@@ -107,20 +127,36 @@ export function TechniquePracticeContent({
 
 	const performSave = useCallback(async (): Promise<{ ok: boolean }> => {
 		if (!techniqueId) return { ok: false };
-		const bpmErr = validateBpm(tempoBpm);
-		setBpmError(bpmErr);
-		if (bpmErr) return { ok: false };
+
+		// Show the offending mode's BPM error on its own chip, not the current one.
+		for (const [key, draft] of Object.entries(modes.drafts)) {
+			const err = validateBpm(draft.bpm);
+			if (err) {
+				modes.selectMode(key);
+				setBpmError(err);
+				return { ok: false };
+			}
+		}
+		setBpmError(null);
+		if (modes.blockingKey) {
+			modes.selectMode(modes.blockingKey);
+			setError(
+				t("screen.practice.modes.incompleteMode", {
+					mode: t(
+						`screen.practice.modes.handsLong.${parseModeKey(modes.blockingKey).hands}`,
+					),
+				}),
+			);
+			return { ok: false };
+		}
+
 		metronomeStopRef.current?.();
 		setLoading(true);
 		setError(null);
 		try {
 			const sessionId = coach.sessionId ?? standaloneSessionId.current;
-			await saveTechniqueLog(techniqueId, {
-				quality,
-				effort,
-				achievedTempoBpm: Number.parseInt(tempoBpm.trim(), 10) || null,
-				sessionId,
-			});
+			await saveTechniqueLog(techniqueId, modes.entries, { sessionId });
+			setSavedEntries(modes.entries);
 			return { ok: true };
 		} catch {
 			setError(t("error.firebase"));
@@ -131,10 +167,11 @@ export function TechniquePracticeContent({
 	}, [
 		techniqueId,
 		validateBpm,
-		tempoBpm,
 		saveTechniqueLog,
-		quality,
-		effort,
+		modes.drafts,
+		modes.entries,
+		modes.blockingKey,
+		modes.selectMode,
 		t,
 		coach.sessionId,
 	]);
@@ -213,13 +250,20 @@ export function TechniquePracticeContent({
 			{saved && !inCoach ? (
 				<TechniqueLogComparison
 					techniqueName={technique.title}
-					currentQuality={quality}
-					currentEffort={effort}
-					currentTempoBpm={Number.parseInt(tempoBpm.trim(), 10) || null}
-					previousQuality={lastLog?.quality ?? undefined}
-					previousEffort={lastLog?.effort ?? undefined}
-					previousTempoBpm={lastLog?.achievedBpm ?? undefined}
-					targetTempoBpm={technique.targetTempoBpm}
+					modes={savedEntries.map((entry) => {
+						const key = modeKey(entry.hands, entry.drill);
+						const previous = logsByMode[key];
+						return {
+							modeKey: key,
+							currentQuality: entry.quality,
+							currentEffort: entry.effort,
+							currentTempoBpm: entry.bpm,
+							previousQuality: previous?.quality ?? undefined,
+							previousEffort: previous?.effort ?? undefined,
+							previousTempoBpm: previous?.achievedBpm ?? undefined,
+							targetTempoBpm: targetForMode(entry.hands, effectiveTarget),
+						};
+					})}
 					onDone={handleDone}
 					backLabel={getBackLabel()}
 				/>
@@ -227,24 +271,36 @@ export function TechniquePracticeContent({
 				<ScreenContent>
 					<Text variant="headlineSmall">{technique.title}</Text>
 
+					<ModeSelector
+						available={available}
+						hands={modes.hands}
+						onChangeHands={modes.setHands}
+						drills={drills}
+						drill={modes.drill}
+						onChangeDrill={modes.setDrill}
+						byMode={technique.byMode ?? {}}
+						effectiveTarget={effectiveTarget}
+						htReady={htReady}
+					/>
+
 					<LastSessionCard
-						lastLog={lastLog}
+						lastLog={logsByMode[modes.currentKey] ?? null}
 						loading={lastLogLoading}
 						scope="technique"
-						targetBpm={technique.targetTempoBpm ?? null}
+						targetBpm={targetForMode(modes.hands, effectiveTarget)}
 					/>
 
 					<RatingField
 						label={t("screen.practiceTechnique.qualityLabel")}
-						value={quality}
-						onChange={setQuality}
+						value={modes.draft.quality}
+						onChange={modes.setQuality}
 						buttons={ratingButtons}
 					/>
 
 					<RatingField
 						label={t("screen.practiceTechnique.effortLabel")}
-						value={effort}
-						onChange={setEffort}
+						value={modes.draft.effort}
+						onChange={modes.setEffort}
 						buttons={ratingButtons}
 					/>
 
@@ -252,19 +308,41 @@ export function TechniquePracticeContent({
 						<Text variant="titleSmall">
 							{t("screen.practiceTechnique.tempoAchievedLabel")}
 						</Text>
-						{technique.targetTempoBpm != null && (
-							<Text
-								variant="bodySmall"
-								style={{ color: theme.colors.onSurfaceVariant }}
-							>
-								{t("screen.practiceTechnique.targetBpm", {
-									bpm: technique.targetTempoBpm,
-								})}
-							</Text>
-						)}
+						{effectiveTarget != null &&
+							(available.length > 1 ? (
+								<>
+									<Text
+										variant="bodySmall"
+										style={{ color: theme.colors.onSurfaceVariant }}
+									>
+										{t("screen.practice.modes.targetHandsSeparate", {
+											bpm: hsTarget(effectiveTarget),
+										})}
+									</Text>
+									{available.includes("HT") && (
+										<Text
+											variant="bodySmall"
+											style={{ color: theme.colors.onSurfaceVariant }}
+										>
+											{t("screen.practice.modes.targetHandsTogether", {
+												bpm: effectiveTarget,
+											})}
+										</Text>
+									)}
+								</>
+							) : (
+								<Text
+									variant="bodySmall"
+									style={{ color: theme.colors.onSurfaceVariant }}
+								>
+									{t("screen.practiceTechnique.targetBpm", {
+										bpm: targetForMode(modes.hands, effectiveTarget),
+									})}
+								</Text>
+							))}
 						<BpmControl
-							value={tempoBpm}
-							onChangeText={setTempoBpm}
+							value={modes.draft.bpm}
+							onChangeText={modes.setBpm}
 							error={bpmError}
 							onBlur={handleBpmBlur}
 							stopRef={metronomeStopRef}
@@ -285,9 +363,9 @@ export function TechniquePracticeContent({
 				</ScreenContent>
 			)}
 
-			{!inCoach && (
-				<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
-			)}
+			{/* Shown in the coach too: the save gate blocks the block from advancing,
+			    and the student needs to be told which mode is missing a rating. */}
+			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
 
 			{!inCoach && (
 				<DeleteTechniqueDialog
