@@ -3,9 +3,12 @@ import { View } from "react-native";
 import { Button, Divider, Text, useTheme } from "react-native-paper";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { TrendIcon } from "@/components/ui/TrendIcon";
+import type { ModeKey } from "@/models/practice";
+import { modeLabelLong } from "@/utils/mode-label";
 
-interface TechniqueLogComparisonProps {
-	techniqueName: string;
+/** One saved mode, with the values its own previous log had. */
+export interface ModeComparison {
+	modeKey: ModeKey;
 	currentQuality: 1 | 2 | 3 | 4 | 5;
 	currentEffort: 1 | 2 | 3 | 4 | 5;
 	currentTempoBpm?: number | null;
@@ -13,6 +16,12 @@ interface TechniqueLogComparisonProps {
 	previousEffort?: 1 | 2 | 3 | 4 | 5 | null;
 	previousTempoBpm?: number | null;
 	targetTempoBpm?: number | null;
+}
+
+interface TechniqueLogComparisonProps {
+	techniqueName: string;
+	/** One block is rendered per entry; a single entry looks unchanged. */
+	modes: ModeComparison[];
 	onDone: () => void;
 	backLabel: string;
 }
@@ -145,56 +154,47 @@ function TempoRow({
 
 type Verdict = "firstPractice" | "improved" | "regressed" | "same";
 
-function computeVerdict(
-	currentQuality: number,
-	previousQuality: number | null | undefined,
-	currentEffort: number,
-	previousEffort: number | null | undefined,
-	currentTempo: number | null | undefined,
-	previousTempo: number | null | undefined,
-): Verdict {
-	if (previousQuality == null) return "firstPractice";
+/** Positive = better than last time. `null` when there is nothing to compare. */
+function modeScore(mode: ModeComparison): number | null {
+	if (mode.previousQuality == null) return null;
 
-	const qualityDelta = currentQuality - previousQuality;
+	const qualityDelta = mode.currentQuality - mode.previousQuality;
 	const tempoBonus =
-		previousTempo != null &&
-		currentTempo != null &&
-		currentTempo > previousTempo
+		mode.previousTempoBpm != null &&
+		mode.currentTempoBpm != null &&
+		mode.currentTempoBpm > mode.previousTempoBpm
 			? 1
 			: 0;
 	const effortPenalty =
-		previousEffort != null && currentEffort > previousEffort ? 1 : 0;
+		mode.previousEffort != null && mode.currentEffort > mode.previousEffort
+			? 1
+			: 0;
 
-	const score = qualityDelta * 2 + tempoBonus - effortPenalty;
+	return qualityDelta * 2 + tempoBonus - effortPenalty;
+}
 
-	if (score > 0) return "improved";
-	if (score < 0) return "regressed";
+/** Across every saved mode: first practice unless at least one has a history. */
+function computeVerdict(modes: ModeComparison[]): Verdict {
+	const scores = modes.map(modeScore).filter((s): s is number => s !== null);
+	if (scores.length === 0) return "firstPractice";
+
+	const total = scores.reduce((sum, s) => sum + s, 0);
+	if (total > 0) return "improved";
+	if (total < 0) return "regressed";
 	return "same";
 }
 
 export function TechniqueLogComparison({
 	techniqueName,
-	currentQuality,
-	currentEffort,
-	currentTempoBpm,
-	previousQuality,
-	previousEffort,
-	previousTempoBpm,
-	targetTempoBpm,
+	modes,
 	onDone,
 	backLabel,
 }: TechniqueLogComparisonProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
 
-	const verdict = computeVerdict(
-		currentQuality,
-		previousQuality,
-		currentEffort,
-		previousEffort,
-		currentTempoBpm,
-		previousTempoBpm,
-	);
+	const verdict = computeVerdict(modes);
+	const showModeHeadings = modes.length > 1;
 
 	const summaryKey = `screen.practiceTechnique.comparison.${verdict}`;
 	const summaryColor =
@@ -205,7 +205,7 @@ export function TechniqueLogComparison({
 				: theme.colors.onSurface;
 
 	return (
-		<ScreenContent scroll={false}>
+		<ScreenContent scroll={showModeHeadings}>
 			<View className="gap-1">
 				<Text variant="headlineSmall">
 					{t("screen.practiceTechnique.comparison.title")}
@@ -216,6 +216,16 @@ export function TechniqueLogComparison({
 				>
 					{techniqueName}
 				</Text>
+				{showModeHeadings && (
+					<Text
+						variant="bodyMedium"
+						style={{ color: theme.colors.onSurfaceVariant }}
+					>
+						{t("screen.practiceTechnique.comparison.savedModes", {
+							count: modes.length,
+						})}
+					</Text>
+				)}
 			</View>
 
 			<Text variant="titleMedium" style={{ color: summaryColor }}>
@@ -224,26 +234,36 @@ export function TechniqueLogComparison({
 
 			<Divider />
 
-			<QualityRow
-				label={t("screen.practiceTechnique.comparison.qualityLabel")}
-				current={currentQuality}
-				previous={previousQuality}
-			/>
+			{modes.map((mode) => (
+				<View key={mode.modeKey} className="gap-3">
+					{showModeHeadings && (
+						<Text variant="titleSmall">{modeLabelLong(mode.modeKey, t)}</Text>
+					)}
 
-			<EffortRow
-				label={t("screen.practiceTechnique.comparison.effortLabel")}
-				current={currentEffort}
-				previous={previousEffort}
-			/>
+					<QualityRow
+						label={t("screen.practiceTechnique.comparison.qualityLabel")}
+						current={mode.currentQuality}
+						previous={mode.previousQuality}
+					/>
 
-			{targetTempoBpm != null && (
-				<TempoRow
-					label={t("screen.practiceTechnique.comparison.tempoAchievedLabel")}
-					current={currentTempoBpm}
-					previous={previousTempoBpm}
-					target={targetTempoBpm}
-				/>
-			)}
+					<EffortRow
+						label={t("screen.practiceTechnique.comparison.effortLabel")}
+						current={mode.currentEffort}
+						previous={mode.previousEffort}
+					/>
+
+					{mode.targetTempoBpm != null && (
+						<TempoRow
+							label={t(
+								"screen.practiceTechnique.comparison.tempoAchievedLabel",
+							)}
+							current={mode.currentTempoBpm}
+							previous={mode.previousTempoBpm}
+							target={mode.targetTempoBpm}
+						/>
+					)}
+				</View>
+			))}
 
 			<View className="mt-4">
 				<Button mode="contained" onPress={onDone}>

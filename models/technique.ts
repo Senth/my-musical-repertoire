@@ -1,3 +1,5 @@
+import type { ByMode, PracticeDrill, TechniqueHandsMode } from "./practice";
+
 export type TechniqueState = "active" | "maintenance" | "retired";
 
 export type TechniqueType =
@@ -38,4 +40,10 @@ export interface TechniqueItem {
 	lastQuality?: 1 | 2 | 3 | 4 | 5 | null;
 	lastEffort?: 1 | 2 | 3 | 4 | 5 | null;
 	lastAchievedTempoBpm?: number | null;
+	/** Per-mode stats, keyed by `modeKey(hands, drill)`. */
+	byMode?: ByMode;
+	/** Defaults to `"separate"` when absent. */
+	handsMode?: TechniqueHandsMode;
+	/** Defaults to `[]` when absent. */
+	activeDrills?: PracticeDrill[];
 }

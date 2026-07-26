@@ -3,6 +3,7 @@ import {
 	collection,
 	deleteDoc,
 	doc,
+	getDoc,
 	onSnapshot,
 	query,
 	Timestamp,
@@ -11,11 +12,18 @@ import {
 import { useEffect, useState } from "react";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import type { PracticeDrill, TechniqueHandsMode } from "@/models/practice";
 import type {
 	TechniqueItem,
 	TechniqueState,
 	TechniqueType,
 } from "@/models/technique";
+import {
+	byModeFromFirestore,
+	deriveFromByMode,
+	type ModeEntry,
+	mergeByMode,
+} from "@/utils/practice-modes";
 
 interface FirestoreTechnique {
 	title: string;
@@ -28,6 +36,9 @@ interface FirestoreTechnique {
 	lastQuality?: 1 | 2 | 3 | 4 | 5 | null;
 	lastEffort?: 1 | 2 | 3 | 4 | 5 | null;
 	lastAchievedTempoBpm?: number | null;
+	byMode?: unknown;
+	handsMode?: TechniqueHandsMode | null;
+	activeDrills?: PracticeDrill[] | null;
 }
 
 function fromFirestore(
@@ -48,6 +59,9 @@ function fromFirestore(
 		lastQuality: data.lastQuality ?? null,
 		lastEffort: data.lastEffort ?? null,
 		lastAchievedTempoBpm: data.lastAchievedTempoBpm ?? null,
+		byMode: byModeFromFirestore(data.byMode),
+		handsMode: data.handsMode ?? "separate",
+		activeDrills: data.activeDrills ?? [],
 	};
 }
 
@@ -109,6 +123,8 @@ export function useAddTechnique() {
 			targetTempoBpm?: number | null;
 			notes?: string | null;
 			state?: TechniqueState;
+			handsMode?: TechniqueHandsMode;
+			activeDrills?: PracticeDrill[];
 		} = {},
 	) => {
 		if (!user) throw new Error("Not authenticated");
@@ -122,6 +138,8 @@ export function useAddTechnique() {
 			notes: options.notes ?? null,
 			dateIntroduced: new Date(),
 			lastPracticedAt: null,
+			handsMode: options.handsMode ?? "separate",
+			activeDrills: options.activeDrills ?? [],
 		});
 	};
 
@@ -145,6 +163,9 @@ export function useUpdateTechnique() {
 				| "lastQuality"
 				| "lastEffort"
 				| "lastAchievedTempoBpm"
+				| "byMode"
+				| "handsMode"
+				| "activeDrills"
 			>
 		>,
 	) => {
@@ -173,40 +194,47 @@ export function useDeleteTechnique() {
 export function useSaveTechniqueLog() {
 	const { user } = useAuth();
 
+	/** Writes one practice log per mode, then folds them all into `byMode`. */
 	const saveTechniqueLog = async (
 		techniqueId: string,
-		data: {
-			quality: 1 | 2 | 3 | 4 | 5;
-			effort: 1 | 2 | 3 | 4 | 5;
-			achievedTempoBpm?: number | null;
-			sessionId?: string | null;
-		},
+		entries: ModeEntry[],
+		options: { sessionId?: string | null } = {},
 	) => {
 		if (!user) throw new Error("Not authenticated");
+		if (entries.length === 0) return;
 
 		const now = new Date();
-		const practiceLogsRef = collection(
-			db,
-			"users",
-			user.uid,
-			"techniques",
-			techniqueId,
-			"practiceLogs",
-		);
-		await addDoc(practiceLogsRef, {
-			date: Timestamp.fromDate(now),
-			quality: data.quality,
-			effort: data.effort,
-			achievedBpm: data.achievedTempoBpm ?? null,
-			sessionId: data.sessionId ?? null,
-		});
-
 		const techniqueRef = doc(db, "users", user.uid, "techniques", techniqueId);
+		const practiceLogsRef = collection(techniqueRef, "practiceLogs");
+
+		await Promise.all(
+			entries.map((entry) =>
+				addDoc(practiceLogsRef, {
+					date: Timestamp.fromDate(now),
+					quality: entry.quality,
+					effort: entry.effort,
+					achievedBpm: entry.bpm ?? null,
+					hands: entry.hands,
+					drill: entry.drill ?? null,
+					sessionId: options.sessionId ?? null,
+				}),
+			),
+		);
+
+		const snap = await getDoc(techniqueRef);
+		const byMode = mergeByMode(
+			byModeFromFirestore(snap.data()?.byMode),
+			entries,
+			now,
+		);
+		const derived = deriveFromByMode(byMode);
+
 		await updateDoc(techniqueRef, {
-			lastPracticedAt: now,
-			lastQuality: data.quality,
-			lastEffort: data.effort,
-			lastAchievedTempoBpm: data.achievedTempoBpm ?? null,
+			byMode,
+			lastPracticedAt: derived.lastPracticed ?? now,
+			lastQuality: derived.quality,
+			lastEffort: derived.effort,
+			lastAchievedTempoBpm: derived.bpm,
 		});
 	};
 

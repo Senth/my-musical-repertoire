@@ -16,6 +16,7 @@ import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePieces } from "@/hooks/use-pieces";
 import type { Section, SectionPhase } from "@/models/section";
+import { byModeFromFirestore } from "@/utils/practice-modes";
 
 interface FirestoreSection {
 	label: string;
@@ -31,6 +32,7 @@ interface FirestoreSection {
 	lastPracticed?: { toDate: () => Date } | null;
 	lastQuality?: 1 | 2 | 3 | 4 | 5 | null;
 	lastEffort?: 1 | 2 | 3 | 4 | 5 | null;
+	byMode?: unknown;
 }
 
 function fromFirestore(
@@ -56,6 +58,7 @@ function fromFirestore(
 		lastPracticed: data.lastPracticed?.toDate() ?? null,
 		lastQuality: data.lastQuality ?? null,
 		lastEffort: data.lastEffort ?? null,
+		byMode: byModeFromFirestore(data.byMode),
 	};
 }
 
@@ -195,6 +198,7 @@ export function useUpdateSection() {
 				| "lastPracticed"
 				| "lastQuality"
 				| "lastEffort"
+				| "byMode"
 			>
 		>,
 	) => {

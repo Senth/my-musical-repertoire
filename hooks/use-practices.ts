@@ -2,6 +2,7 @@ import {
 	addDoc,
 	collection,
 	doc,
+	getDoc,
 	serverTimestamp,
 	Timestamp,
 	updateDoc,
@@ -9,6 +10,12 @@ import {
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { PracticeMistakes, PracticeTrigger } from "@/models/practice";
+import {
+	byModeFromFirestore,
+	deriveFromByMode,
+	type ModeEntry,
+	mergeByMode,
+} from "@/utils/practice-modes";
 import { useUpdatePiece } from "./use-pieces";
 
 export function useSavePractice() {
@@ -71,37 +78,17 @@ export function useSaveSectionPractice() {
 	const { user } = useAuth();
 	const { updatePiece } = useUpdatePiece();
 
+	/** Writes one practice log per mode, then folds them all into `byMode`. */
 	const saveSectionPractice = async (
 		pieceId: string,
 		sectionId: string,
 		date: Date,
-		quality: 1 | 2 | 3 | 4 | 5,
-		effort: 1 | 2 | 3 | 4 | 5,
-		achievedBpm?: number | null,
+		entries: ModeEntry[],
 		triggeredFrom?: PracticeTrigger,
 		sessionId?: string | null,
 	) => {
 		if (!user) throw new Error("Not authenticated");
-
-		const practiceLogsRef = collection(
-			db,
-			"users",
-			user.uid,
-			"pieces",
-			pieceId,
-			"sections",
-			sectionId,
-			"practiceLogs",
-		);
-
-		await addDoc(practiceLogsRef, {
-			date: Timestamp.fromDate(date),
-			quality,
-			effort,
-			achievedBpm: achievedBpm ?? null,
-			triggeredFrom: triggeredFrom ?? null,
-			sessionId: sessionId ?? null,
-		});
+		if (entries.length === 0) return;
 
 		const sectionRef = doc(
 			db,
@@ -112,16 +99,42 @@ export function useSaveSectionPractice() {
 			"sections",
 			sectionId,
 		);
+		const practiceLogsRef = collection(sectionRef, "practiceLogs");
+
+		await Promise.all(
+			entries.map((entry) =>
+				addDoc(practiceLogsRef, {
+					date: Timestamp.fromDate(date),
+					quality: entry.quality,
+					effort: entry.effort,
+					achievedBpm: entry.bpm ?? null,
+					hands: entry.hands,
+					drill: entry.drill ?? null,
+					triggeredFrom: triggeredFrom ?? null,
+					sessionId: sessionId ?? null,
+				}),
+			),
+		);
+
+		const snap = await getDoc(sectionRef);
+		const byMode = mergeByMode(
+			byModeFromFirestore(snap.data()?.byMode),
+			entries,
+			date,
+		);
+		const derived = deriveFromByMode(byMode);
+
 		await updateDoc(sectionRef, {
-			lastPracticed: serverTimestamp(),
-			lastQuality: quality,
-			lastEffort: effort,
-			...(achievedBpm != null ? { currentBpm: achievedBpm } : {}),
+			byMode,
+			lastPracticed: derived.lastPracticed ?? date,
+			lastQuality: derived.quality,
+			lastEffort: derived.effort,
+			...(derived.bpm != null ? { currentBpm: derived.bpm } : {}),
 		});
 
 		await updatePiece(pieceId, {
 			lastPracticed: date,
-			...(achievedBpm != null ? { lastAchievedTempoBpm: achievedBpm } : {}),
+			...(derived.bpm != null ? { lastAchievedTempoBpm: derived.bpm } : {}),
 		});
 	};
 

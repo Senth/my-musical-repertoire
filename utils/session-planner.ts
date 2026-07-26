@@ -10,7 +10,6 @@ import type {
 	SessionPlan,
 } from "@/models/session";
 import type { TechniqueItem } from "@/models/technique";
-import { isPracticedToday } from "./day-boundary";
 import {
 	buildSectionCandidates,
 	daysSince,
@@ -226,7 +225,8 @@ function eligibleSectionCandidates(
 	const filteredPieces = pieces.filter((p) => p.state === slot);
 	const candidates = buildSectionCandidates(filteredPieces, sections, now);
 	return candidates.filter((c) => {
-		if (isPracticedToday(c.lastPracticed, now)) return false;
+		// Per-mode: a section drilled left hand this morning can return for right.
+		if (c.practicedToday) return false;
 		if (usedSectionIds && c.section?.id && usedSectionIds.has(c.section.id))
 			return false;
 		return true;

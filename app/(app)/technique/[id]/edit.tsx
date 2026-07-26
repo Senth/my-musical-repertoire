@@ -3,10 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, TextInput } from "react-native-paper";
+import { TechniqueModeFields } from "@/components/technique/TechniqueModeFields";
 import { DropdownField } from "@/components/ui/DropdownField";
 import { FormScaffold } from "@/components/ui/FormScaffold";
 import { useTechniques, useUpdateTechnique } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
+import type { PracticeDrill, TechniqueHandsMode } from "@/models/practice";
 import {
 	TECHNIQUE_STATES,
 	TECHNIQUE_TYPES,
@@ -26,6 +28,12 @@ export default function EditTechniqueScreen() {
 	const [title, setTitle] = useState(item?.title ?? "");
 	const [state, setState] = useState<TechniqueState>(item?.state ?? "active");
 	const [type, setType] = useState<TechniqueType | null>(item?.type ?? null);
+	const [handsMode, setHandsMode] = useState<TechniqueHandsMode>(
+		item?.handsMode ?? "separate",
+	);
+	const [activeDrills, setActiveDrills] = useState<PracticeDrill[]>(
+		item?.activeDrills ?? [],
+	);
 	const [targetTempoBpmText, setTargetTempoBpmText] = useState(
 		item?.targetTempoBpm?.toString() ?? "",
 	);
@@ -40,6 +48,8 @@ export default function EditTechniqueScreen() {
 			setTitle(item.title);
 			setState(item.state);
 			setType(item.type ?? null);
+			setHandsMode(item.handsMode ?? "separate");
+			setActiveDrills(item.activeDrills ?? []);
 			setTargetTempoBpmText(item.targetTempoBpm?.toString() ?? "");
 			setNotes(item.notes ?? "");
 			hasSeeded.current = true;
@@ -80,6 +90,8 @@ export default function EditTechniqueScreen() {
 				type,
 				targetTempoBpm,
 				notes: notes.trim() || null,
+				handsMode,
+				activeDrills,
 			});
 			goBack();
 		} catch {
@@ -111,6 +123,14 @@ export default function EditTechniqueScreen() {
 				value={type}
 				options={typeOptions}
 				onChange={(v) => setType((v as TechniqueType) ?? null)}
+			/>
+
+			<TechniqueModeFields
+				screen="screen.editTechnique"
+				handsMode={handsMode}
+				onChangeHandsMode={setHandsMode}
+				activeDrills={activeDrills}
+				onChangeActiveDrills={setActiveDrills}
 			/>
 
 			<TextInput

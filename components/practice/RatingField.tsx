@@ -6,7 +6,8 @@ type Rating = 1 | 2 | 3 | 4 | 5;
 
 interface RatingFieldProps {
 	label: string;
-	value: Rating;
+	/** `null` renders with nothing selected — the student has not rated yet. */
+	value: Rating | null;
 	onChange: (value: Rating) => void;
 	buttons: ComponentProps<typeof SegmentedButtons>["buttons"];
 }
@@ -22,7 +23,7 @@ export function RatingField({
 		<View className="gap-2">
 			<Text variant="titleSmall">{label}</Text>
 			<SegmentedButtons
-				value={value.toString()}
+				value={value?.toString() ?? ""}
 				onValueChange={(v) => onChange(Number(v) as Rating)}
 				buttons={buttons}
 			/>

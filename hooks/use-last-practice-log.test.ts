@@ -11,7 +11,11 @@ jest.mock("@/contexts/AuthContext", () => ({
 }));
 
 import { PracticeMistakes } from "@/models/practice";
-import { normalizeLastLog } from "./use-last-practice-log";
+import {
+	groupLogsByMode,
+	logModeKey,
+	normalizeLastLog,
+} from "./use-last-practice-log";
 
 const makeTs = (isoDate: string) => ({ toDate: () => new Date(isoDate) });
 
@@ -94,5 +98,59 @@ describe("normalizeLastLog", () => {
 			expect(log.effort).toBeNull();
 			expect(log.achievedBpm).toBeNull();
 		});
+
+		it("reads the hands and drill tags", () => {
+			const log = normalizeLastLog(
+				{ date: ts, hands: "LH", drill: "staccato" },
+				"technique",
+			);
+			expect(log.hands).toBe("LH");
+			expect(log.drill).toBe("staccato");
+		});
+	});
+});
+
+describe("logModeKey", () => {
+	const date = new Date("2024-01-15T00:00:00.000Z");
+
+	it("builds the composite key from hands and drill", () => {
+		expect(logModeKey({ date, hands: "LH", drill: "staccato" })).toBe(
+			"LH.staccato",
+		);
+		expect(logModeKey({ date, hands: "RH", drill: null })).toBe("RH");
+	});
+
+	it("treats an untagged legacy log as hands together", () => {
+		expect(logModeKey({ date })).toBe("HT");
+	});
+});
+
+describe("groupLogsByMode", () => {
+	const at = (iso: string) => new Date(iso);
+
+	it("keeps the newest log per mode", () => {
+		const logs = [
+			{ date: at("2024-03-01"), hands: "LH" as const, achievedBpm: 111 },
+			{ date: at("2024-02-01"), hands: "RH" as const, achievedBpm: 104 },
+			{ date: at("2024-01-01"), hands: "LH" as const, achievedBpm: 90 },
+		];
+		const grouped = groupLogsByMode(logs);
+		expect(grouped.LH.achievedBpm).toBe(111);
+		expect(grouped.RH.achievedBpm).toBe(104);
+	});
+
+	it("separates a drill from its plain hands mode", () => {
+		const logs = [
+			{ date: at("2024-03-01"), hands: "LH" as const, drill: null },
+			{
+				date: at("2024-02-01"),
+				hands: "LH" as const,
+				drill: "staccato" as const,
+			},
+		];
+		expect(Object.keys(groupLogsByMode(logs)).sort()).toEqual([
+			"LH",
+			"LH.staccato",
+		]);
 	});
 });

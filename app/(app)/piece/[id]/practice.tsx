@@ -14,6 +14,7 @@ import {
 } from "react-native-paper";
 import { BpmControl } from "@/components/practice/BpmControl";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
+import { ModeSelector } from "@/components/practice/ModeSelector";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { RatingField } from "@/components/practice/RatingField";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
@@ -25,13 +26,29 @@ import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useCoach } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
+import { parseBpm, useModeDrafts } from "@/hooks/use-mode-drafts";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { usePracticeSave } from "@/hooks/use-practice-save";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
 import { useSections, useUpdateSection } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
-import { PracticeMistakes, type PracticeTrigger } from "@/models/practice";
+import {
+	HANDS_MODES,
+	PracticeMistakes,
+	type PracticeTrigger,
+} from "@/models/practice";
+import {
+	hsTarget,
+	isHtReady,
+	type ModeEntry,
+	modeKey,
+	parseModeKey,
+	targetForMode,
+} from "@/utils/practice-modes";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
+
+/** Sections always have all three hand modes and never have drills. */
+const NO_DRILLS: never[] = [];
 
 const MISTAKE_BUTTONS = [
 	{
@@ -87,7 +104,11 @@ export function PiecePracticeContent({
 	const lastLogScope = sectionIdProp
 		? { type: "section" as const, pieceId, sectionId: sectionIdProp }
 		: { type: "piece" as const, pieceId };
-	const { lastLog, loading: lastLogLoading } = useLastPracticeLog(lastLogScope);
+	const {
+		lastLog,
+		logsByMode,
+		loading: lastLogLoading,
+	} = useLastPracticeLog(lastLogScope);
 
 	const getBackDestination = (): string => {
 		if (from === "pieces") return "/(app)/(tabs)/piece";
@@ -121,14 +142,13 @@ export function PiecePracticeContent({
 	const [memoryMistakes, setMemoryMistakes] = useState<PracticeMistakes>(
 		PracticeMistakes.none,
 	);
-	const [quality, setQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
-	const [effort, setEffort] = useState<1 | 2 | 3 | 4 | 5>(3);
 	const [flaggedSectionIds, setFlaggedSectionIds] = useState<string[]>([]);
 	const [achievedBpm, setAchievedBpm] = useState<string>("");
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
+	const [savedEntries, setSavedEntries] = useState<ModeEntry[]>([]);
 	const metronomeStopRef = useRef<(() => void) | null>(null);
 
 	const validateBpm = useCallback(
@@ -136,9 +156,6 @@ export function PiecePracticeContent({
 		[t],
 	);
 
-	const handleBpmBlur = () => {
-		setBpmError(validateBpm(achievedBpm));
-	};
 	const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
@@ -152,10 +169,26 @@ export function PiecePracticeContent({
 		? (sections.find((s) => s.id === sectionIdProp) ?? null)
 		: null;
 
+	const effectiveTarget = scopedSection
+		? (scopedSection.targetBpmOverride ?? piece?.targetTempoBpm ?? null)
+		: (piece?.targetTempoBpm ?? null);
+
+	const modes = useModeDrafts({
+		byMode: scopedSection?.byMode,
+		available: HANDS_MODES,
+		drills: NO_DRILLS,
+		effectiveTarget,
+		ready: !!scopedSection,
+	});
+	const htReady = isHtReady(scopedSection?.byMode, effectiveTarget);
+
+	const handleBpmBlur = () => {
+		setBpmError(validateBpm(scopedSection ? modes.draft.bpm : achievedBpm));
+	};
+
+	// The whole-piece screen keeps its single BPM field; sections use per-mode drafts.
 	useEffect(() => {
-		if (scopedSection) {
-			setAchievedBpm(scopedSection.currentBpm?.toString() ?? "");
-		} else {
+		if (!scopedSection) {
 			setAchievedBpm(piece?.lastAchievedTempoBpm?.toString() ?? "");
 		}
 	}, [scopedSection, piece]);
@@ -180,18 +213,41 @@ export function PiecePracticeContent({
 
 	const performSave = useCallback(async (): Promise<{ ok: boolean }> => {
 		if (!pieceId) return { ok: false };
-		const bpmErr = validateBpm(achievedBpm);
-		setBpmError(bpmErr);
-		if (bpmErr) return { ok: false };
+
+		if (scopedSection) {
+			// Show the offending mode's BPM error on its own chip, not the current one.
+			for (const [key, draft] of Object.entries(modes.drafts)) {
+				const err = validateBpm(draft.bpm);
+				if (err) {
+					modes.selectMode(key);
+					setBpmError(err);
+					return { ok: false };
+				}
+			}
+			setBpmError(null);
+			if (modes.blockingKey) {
+				modes.selectMode(modes.blockingKey);
+				setError(
+					t("screen.practice.modes.incompleteMode", {
+						mode: t(
+							`screen.practice.modes.handsLong.${parseModeKey(modes.blockingKey).hands}`,
+						),
+					}),
+				);
+				return { ok: false };
+			}
+		} else {
+			const bpmErr = validateBpm(achievedBpm);
+			setBpmError(bpmErr);
+			if (bpmErr) return { ok: false };
+		}
+
 		metronomeStopRef.current?.();
 		setLoading(true);
 		setError(null);
 		const sessionId = coach.sessionId ?? standaloneSessionId.current;
 		try {
 			const practiceDate = new Date();
-			const bpm = achievedBpm.trim()
-				? Number.parseInt(achievedBpm.trim(), 10) || null
-				: null;
 			const triggeredFrom: PracticeTrigger =
 				triggerOverride ?? (scopedSection ? "section-panel" : "full-piece");
 			if (scopedSection) {
@@ -200,19 +256,18 @@ export function PiecePracticeContent({
 					pieceId,
 					scopedSection.id,
 					practiceDate,
-					quality,
-					effort,
-					bpm,
+					modes.entries,
 					triggeredFrom,
 					sessionId,
 				);
+				setSavedEntries(modes.entries);
 			} else {
 				await savePractice(
 					pieceId,
 					practiceDate,
 					technicalMistakes,
 					memoryMistakes,
-					bpm,
+					parseBpm(achievedBpm),
 					flaggedSectionIds,
 					triggeredFrom,
 					sessionId,
@@ -237,8 +292,10 @@ export function PiecePracticeContent({
 		saveSectionPractice,
 		technicalMistakes,
 		memoryMistakes,
-		quality,
-		effort,
+		modes.drafts,
+		modes.entries,
+		modes.blockingKey,
+		modes.selectMode,
 		t,
 	]);
 
@@ -330,19 +387,20 @@ export function PiecePracticeContent({
 			{saved && !inCoach && scopedSection ? (
 				<TechniqueLogComparison
 					techniqueName={`${piece.title} — ${scopedSection.label}`}
-					currentQuality={quality}
-					currentEffort={effort}
-					currentTempoBpm={
-						achievedBpm.trim()
-							? Number.parseInt(achievedBpm.trim(), 10) || null
-							: null
-					}
-					previousQuality={lastLog?.quality ?? undefined}
-					previousEffort={lastLog?.effort ?? undefined}
-					previousTempoBpm={lastLog?.achievedBpm ?? undefined}
-					targetTempoBpm={
-						scopedSection.targetBpmOverride ?? piece.targetTempoBpm ?? null
-					}
+					modes={savedEntries.map((entry) => {
+						const key = modeKey(entry.hands, entry.drill);
+						const previous = logsByMode[key];
+						return {
+							modeKey: key,
+							currentQuality: entry.quality,
+							currentEffort: entry.effort,
+							currentTempoBpm: entry.bpm,
+							previousQuality: previous?.quality ?? undefined,
+							previousEffort: previous?.effort ?? undefined,
+							previousTempoBpm: previous?.achievedBpm ?? undefined,
+							targetTempoBpm: targetForMode(entry.hands, effectiveTarget),
+						};
+					})}
 					onDone={handleDone}
 					backLabel={getBackLabel()}
 				/>
@@ -372,16 +430,30 @@ export function PiecePracticeContent({
 						{scopedSection && <SectionPhaseChip phase={scopedSection.phase} />}
 					</View>
 
+					{scopedSection && (
+						<ModeSelector
+							available={HANDS_MODES}
+							hands={modes.hands}
+							onChangeHands={modes.setHands}
+							drills={NO_DRILLS}
+							drill={modes.drill}
+							onChangeDrill={modes.setDrill}
+							byMode={scopedSection.byMode ?? {}}
+							effectiveTarget={effectiveTarget}
+							htReady={htReady}
+						/>
+					)}
+
 					<LastSessionCard
-						lastLog={lastLog}
+						lastLog={
+							scopedSection ? (logsByMode[modes.currentKey] ?? null) : lastLog
+						}
 						loading={lastLogLoading}
 						scope={scopedSection ? "section" : "piece"}
 						targetBpm={
 							scopedSection
-								? (scopedSection.targetBpmOverride ??
-									piece.targetTempoBpm ??
-									null)
-								: (piece.targetTempoBpm ?? null)
+								? targetForMode(modes.hands, effectiveTarget)
+								: effectiveTarget
 						}
 					/>
 
@@ -407,13 +479,27 @@ export function PiecePracticeContent({
 						<Text variant="titleSmall">
 							{t("screen.practice.achievedBpmLabel")}
 						</Text>
-						{(() => {
-							const effectiveTarget = scopedSection
-								? (scopedSection.targetBpmOverride ??
-									piece.targetTempoBpm ??
-									null)
-								: (piece.targetTempoBpm ?? null);
-							return effectiveTarget != null ? (
+						{effectiveTarget != null &&
+							(scopedSection ? (
+								<>
+									<Text
+										variant="bodySmall"
+										style={{ color: theme.colors.onSurfaceVariant }}
+									>
+										{t("screen.practice.modes.targetHandsSeparate", {
+											bpm: hsTarget(effectiveTarget),
+										})}
+									</Text>
+									<Text
+										variant="bodySmall"
+										style={{ color: theme.colors.onSurfaceVariant }}
+									>
+										{t("screen.practice.modes.targetHandsTogether", {
+											bpm: effectiveTarget,
+										})}
+									</Text>
+								</>
+							) : (
 								<Text
 									variant="bodySmall"
 									style={{ color: theme.colors.onSurfaceVariant }}
@@ -422,11 +508,10 @@ export function PiecePracticeContent({
 										bpm: effectiveTarget,
 									})}
 								</Text>
-							) : null;
-						})()}
+							))}
 						<BpmControl
-							value={achievedBpm}
-							onChangeText={setAchievedBpm}
+							value={scopedSection ? modes.draft.bpm : achievedBpm}
+							onChangeText={scopedSection ? modes.setBpm : setAchievedBpm}
 							error={bpmError}
 							onBlur={handleBpmBlur}
 							stopRef={metronomeStopRef}
@@ -439,14 +524,14 @@ export function PiecePracticeContent({
 						<>
 							<RatingField
 								label={t("screen.practiceTechnique.qualityLabel")}
-								value={quality}
-								onChange={setQuality}
+								value={modes.draft.quality}
+								onChange={modes.setQuality}
 								buttons={ratingButtons}
 							/>
 							<RatingField
 								label={t("screen.practiceTechnique.effortLabel")}
-								value={effort}
-								onChange={setEffort}
+								value={modes.draft.effort}
+								onChange={modes.setEffort}
 								buttons={ratingButtons}
 							/>
 						</>

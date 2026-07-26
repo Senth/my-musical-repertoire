@@ -1,3 +1,5 @@
+import type { ByMode } from "./practice";
+
 export type SectionPhase = "learning" | "stabilizing" | "maintenance";
 
 export const SECTION_PHASES: SectionPhase[] = [
@@ -23,4 +25,6 @@ export interface Section {
 	lastPracticed?: Date | null;
 	lastQuality?: 1 | 2 | 3 | 4 | 5 | null;
 	lastEffort?: 1 | 2 | 3 | 4 | 5 | null;
+	/** Per-hands stats. Sections have no drill axis — keys are `LH`/`RH`/`HT`. */
+	byMode?: ByMode;
 }

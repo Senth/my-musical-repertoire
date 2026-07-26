@@ -9,12 +9,7 @@ import { FormScaffold } from "@/components/ui/FormScaffold";
 import { FormTextField } from "@/components/ui/FormTextField";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
-import {
-	LEARNING_PHASES,
-	type LearningPhase,
-	PIECE_STATES,
-	type PieceState,
-} from "@/models/piece";
+import { PIECE_STATES, type PieceState } from "@/models/piece";
 import { validateBpm, validateDuration } from "@/utils/validation";
 
 export default function EditPieceScreen() {
@@ -29,9 +24,6 @@ export default function EditPieceScreen() {
 	const [title, setTitle] = useState(piece?.title ?? "");
 	const [composer, setComposer] = useState(piece?.composer ?? "");
 	const [state, setState] = useState<PieceState>(piece?.state ?? "learning");
-	const [learningPhase, setLearningPhase] = useState<LearningPhase | null>(
-		piece?.learningPhase ?? null,
-	);
 	const [targetTempoBpmText, setTargetTempoBpmText] = useState(
 		piece?.targetTempoBpm?.toString() ?? "",
 	);
@@ -82,7 +74,6 @@ export default function EditPieceScreen() {
 			setTitle(piece.title);
 			setComposer(piece.composer);
 			setState(piece.state);
-			setLearningPhase(piece.learningPhase ?? null);
 			setTargetTempoBpmText(piece.targetTempoBpm?.toString() ?? "");
 			setDurationMinutesText(
 				piece.durationSeconds != null
@@ -99,14 +90,6 @@ export default function EditPieceScreen() {
 		value: s,
 		label: t(`piece.state.${s}`),
 	}));
-
-	const learningPhaseOptions = [
-		{ value: null, label: t("piece.learningPhase.notTracking") },
-		...LEARNING_PHASES.map((p) => ({
-			value: p,
-			label: t(`piece.learningPhase.${p}`),
-		})),
-	];
 
 	const difficultyOptions = [
 		{ value: null, label: t("piece.difficulty.notSet") },
@@ -146,7 +129,6 @@ export default function EditPieceScreen() {
 				title: title.trim(),
 				composer: composer.trim(),
 				state,
-				learningPhase: state === "learning" ? learningPhase : null,
 				targetTempoBpm,
 				durationSeconds,
 				difficulty: parsedDifficulty,
@@ -187,21 +169,8 @@ export default function EditPieceScreen() {
 				label={t("screen.editPiece.stateLabel")}
 				value={state}
 				options={stateOptions}
-				onChange={(v) => {
-					const next = (v as PieceState) ?? "learning";
-					setState(next);
-					if (next !== "learning") setLearningPhase(null);
-				}}
+				onChange={(v) => setState((v as PieceState) ?? "learning")}
 			/>
-
-			{state === "learning" && (
-				<DropdownField
-					label={t("screen.editPiece.learningPhaseLabel")}
-					value={learningPhase}
-					options={learningPhaseOptions}
-					onChange={(v) => setLearningPhase((v as LearningPhase) ?? null)}
-				/>
-			)}
 
 			<FormTextField
 				label={t("screen.editPiece.targetTempoBpmLabel")}
