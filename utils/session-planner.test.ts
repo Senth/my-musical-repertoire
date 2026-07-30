@@ -9,6 +9,7 @@ import {
 	pickRepertoireSection,
 	pickTechnique,
 	pickWarmup,
+	planTotalMinutes,
 	redistributeForAvailability,
 	type SlotAvailability,
 	type SlotMinutes,
@@ -125,17 +126,17 @@ describe("allocateTime", () => {
 
 	it("repertoire sub-split 55/30/15 at 30 balanced rep=19", () => {
 		const a = allocateTime(inputs({ totalMinutes: 30, emphasis: "balanced" }));
-		expect(a.repertoireTotal).toBe(19);
-		expect(a.repertoireLearning).toBe(10);
-		expect(a.repertoireStabilizing).toBe(6);
-		expect(a.repertoireMaintenance).toBe(3);
+		expect(a.repertoireTotal).toBeCloseTo(19);
+		expect(a.repertoireLearning).toBeCloseTo(19 * 0.55);
+		expect(a.repertoireStabilizing).toBeCloseTo(19 * 0.3);
+		expect(a.repertoireMaintenance).toBeCloseTo(19 * 0.15);
 	});
 
 	it("drops maintenance when rep < 12", () => {
 		const a = allocateTime(inputs({ totalMinutes: 15, emphasis: "balanced" }));
-		expect(a.repertoireTotal).toBe(10);
-		expect(a.repertoireLearning).toBe(7);
-		expect(a.repertoireStabilizing).toBe(3);
+		expect(a.repertoireTotal).toBeCloseTo(10);
+		expect(a.repertoireLearning).toBeCloseTo(6.5);
+		expect(a.repertoireStabilizing).toBeCloseTo(3.5);
 		expect(a.repertoireMaintenance).toBe(0);
 	});
 
@@ -143,9 +144,36 @@ describe("allocateTime", () => {
 		const a = allocateTime(
 			inputs({ totalMinutes: 15, emphasis: "technique-heavy" }),
 		);
-		expect(a.repertoireTotal).toBe(9);
-		expect(a.repertoireLearning).toBe(6);
-		expect(a.repertoireStabilizing).toBe(3);
+		expect(a.repertoireTotal).toBeCloseTo(9);
+		expect(a.repertoireLearning).toBeCloseTo(9 * 0.65);
+		expect(a.repertoireStabilizing).toBeCloseTo(9 * 0.35);
+	});
+
+	it("sub-split always sums back to the repertoire total", () => {
+		for (const total of [15, 20, 25, 30, 37, 45, 50, 60, 75, 90]) {
+			const a = allocateTime(inputs({ totalMinutes: total }));
+			expect(
+				a.repertoireLearning +
+					a.repertoireStabilizing +
+					a.repertoireMaintenance,
+			).toBeCloseTo(a.repertoireTotal);
+		}
+	});
+
+	it("every allocation sums exactly to the requested total", () => {
+		for (const total of [15, 20, 25, 30, 37, 45, 50, 60, 75, 90]) {
+			for (const emphasis of [
+				"balanced",
+				"technique-heavy",
+				"reading-heavy",
+				"repertoire-only",
+			] as SessionEmphasis[]) {
+				const a = allocateTime(inputs({ totalMinutes: total, emphasis }));
+				expect(
+					a.technique + a.sightReading + a.repertoireTotal + a.warmup,
+				).toBeCloseTo(total);
+			}
+		}
 	});
 });
 
@@ -341,40 +369,37 @@ describe("pickRepertoireMaintenanceBlocks", () => {
 
 	it("packs many pieces using duration × 1.2 cost", () => {
 		const days = new Date(NOW.getTime() - 5 * 86400000);
-		const pieces: Piece[] = [
-			// 5 min play-through → cost round(5 × 1.2) = 6
+		// Three 5-min play-throughs → cost 6 each. Budget 13, allowance 16:
+		// 6 fits, 12 fits, 18 does not.
+		const pieces: Piece[] = ["A", "B", "C"].map((title, i) =>
 			makePiece({
-				id: "p1",
+				id: `p${i + 1}`,
 				state: "maintenance",
-				title: "A",
+				title,
 				lastPracticed: days,
 				durationSeconds: 300,
 			}),
-			// 5 min play-through → cost 6
-			makePiece({
-				id: "p2",
-				state: "maintenance",
-				title: "B",
-				lastPracticed: days,
-				durationSeconds: 300,
-			}),
-			// 5 min play-through → cost 6 (won't fit: 6 + 6 = 12 > 13? fits; third 6 > 1 → stop)
-			makePiece({
-				id: "p3",
-				state: "maintenance",
-				title: "C",
-				lastPracticed: days,
-				durationSeconds: 300,
-			}),
-		];
-		const { blocks, leftoverMinutes } = pickRepertoireMaintenanceBlocks(
-			pieces,
-			13,
-			NOW,
 		);
+		const { blocks, leftoverMinutes, inflationMinutes } =
+			pickRepertoireMaintenanceBlocks(pieces, 13, NOW);
 		expect(blocks).toHaveLength(2);
 		expect(blocks.every((b) => b.allocatedMinutes === 6)).toBe(true);
 		expect(leftoverMinutes).toBe(1);
+		expect(inflationMinutes).toBe(0);
+	});
+
+	it("keeps the cost fractional", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({
+				id: "p1",
+				state: "maintenance",
+				lastPracticed: days,
+				durationSeconds: 210, // 3.5 min → cost 4.2
+			}),
+		];
+		const { blocks } = pickRepertoireMaintenanceBlocks(pieces, 10, NOW);
+		expect(blocks[0].allocatedMinutes).toBeCloseTo(4.2);
 	});
 
 	it("uses default 5-min cost when duration unknown", () => {
@@ -393,30 +418,194 @@ describe("pickRepertoireMaintenanceBlocks", () => {
 		expect(leftoverMinutes).toBe(2);
 	});
 
-	it("always takes the first piece even when it overruns the budget", () => {
+	it("skips the oversized best piece, takes the next-best that fits", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({
+				id: "big",
+				title: "A",
+				state: "performance", // ×3 weight → highest score
+				lastPracticed: days,
+				durationSeconds: 1800, // 30 min → cost 36
+			}),
+			makePiece({
+				id: "small",
+				title: "B",
+				state: "maintenance",
+				lastPracticed: days,
+				durationSeconds: 300, // cost 6
+			}),
+		];
+		// Budget 5, allowance 8: 36 can never fit, 6 can (1 min of inflation).
+		const { blocks, leftoverMinutes, inflationMinutes, optIn } =
+			pickRepertoireMaintenanceBlocks(pieces, 5, NOW);
+		expect(blocks.map((b) => b.pieceId)).toEqual(["small"]);
+		expect(leftoverMinutes).toBe(0);
+		expect(inflationMinutes).toBeCloseTo(1);
+		expect(optIn?.pieceId).toBe("big");
+		expect(optIn?.costMinutes).toBeCloseTo(36);
+		expect(optIn?.extraMinutes).toBeCloseTo(31);
+		expect(optIn?.daysSinceLastPracticed).toBe(5);
+	});
+
+	it("takes a piece landing exactly on the allowance", () => {
 		const days = new Date(NOW.getTime() - 5 * 86400000);
 		const pieces: Piece[] = [
 			makePiece({
 				id: "p1",
 				state: "maintenance",
 				lastPracticed: days,
-				durationSeconds: 1800, // 30 min → cost round(30 × 1.2) = 36
-			}),
-			makePiece({
-				id: "p2",
-				state: "maintenance",
-				lastPracticed: days,
-				durationSeconds: 300,
+				durationSeconds: 400, // cost exactly 8 = budget 5 + cap 3
 			}),
 		];
-		const { blocks, leftoverMinutes } = pickRepertoireMaintenanceBlocks(
+		const { blocks, inflationMinutes, optIn } = pickRepertoireMaintenanceBlocks(
 			pieces,
 			5,
 			NOW,
 		);
 		expect(blocks).toHaveLength(1);
-		expect(blocks[0].allocatedMinutes).toBe(36);
+		expect(inflationMinutes).toBeCloseTo(3);
+		expect(optIn).toBeNull();
+	});
+
+	it("caps the whole group, not each piece", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		// Four 5-min pieces (cost 5 each) against budget 8, allowance 11 → only
+		// two fit. Per-piece capping would have let all four in.
+		const pieces: Piece[] = ["A", "B", "C", "D"].map((title, i) =>
+			makePiece({
+				id: `p${i + 1}`,
+				title,
+				state: "maintenance",
+				lastPracticed: days,
+			}),
+		);
+		const { blocks, inflationMinutes, optIn } = pickRepertoireMaintenanceBlocks(
+			pieces,
+			8,
+			NOW,
+		);
+		expect(blocks).toHaveLength(2);
+		expect(inflationMinutes).toBeCloseTo(2);
+		// Each piece would fit on its own — merely crowded out is not an offer.
+		expect(optIn).toBeNull();
+	});
+
+	it("offers an opt-in and stays empty when nothing fits", () => {
+		const days = new Date(NOW.getTime() - 30 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({
+				id: "p1",
+				title: "Sonata in G",
+				composer: "Someone",
+				state: "maintenance",
+				lastPracticed: days,
+				durationSeconds: 900, // cost 18
+			}),
+		];
+		const { blocks, leftoverMinutes, inflationMinutes, optIn } =
+			pickRepertoireMaintenanceBlocks(pieces, 4, NOW);
+		expect(blocks).toEqual([]);
+		expect(leftoverMinutes).toBe(4);
+		expect(inflationMinutes).toBe(0);
+		expect(optIn).toEqual({
+			pieceId: "p1",
+			title: "Sonata in G",
+			subtitle: "Someone",
+			costMinutes: 18,
+			extraMinutes: 14,
+			daysSinceLastPracticed: 30,
+		});
+	});
+
+	it("offers no opt-in when there is no maintenance budget", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({
+				id: "p1",
+				state: "maintenance",
+				lastPracticed: days,
+				durationSeconds: 900,
+			}),
+		];
+		const r = pickRepertoireMaintenanceBlocks(pieces, 0, NOW);
+		expect(r.blocks).toEqual([]);
+		expect(r.optIn).toBeNull();
+		expect(r.leftoverMinutes).toBe(0);
+		expect(r.inflationMinutes).toBe(0);
+	});
+
+	it("forced pick swaps the whole group and zeroes the leftover", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({
+				id: "big",
+				title: "A",
+				state: "maintenance",
+				lastPracticed: days,
+				durationSeconds: 900, // cost 18
+			}),
+			makePiece({
+				id: "small",
+				title: "B",
+				state: "maintenance",
+				lastPracticed: days,
+				durationSeconds: 150, // cost 3
+			}),
+		];
+		const { blocks, leftoverMinutes, inflationMinutes, optIn } =
+			pickRepertoireMaintenanceBlocks(pieces, 4, NOW, undefined, {
+				forcedMaintenancePieceId: "big",
+			});
+		expect(blocks.map((b) => b.pieceId)).toEqual(["big"]);
+		expect(blocks[0].allocatedMinutes).toBeCloseTo(18);
 		expect(leftoverMinutes).toBe(0);
+		expect(inflationMinutes).toBeCloseTo(14);
+		expect(optIn).toBeNull();
+	});
+
+	it("ignores a forced pick that is no longer eligible", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({
+				id: "gone",
+				state: "learning", // wrong state → not in the pool
+				lastPracticed: days,
+			}),
+			makePiece({
+				id: "p2",
+				state: "maintenance",
+				lastPracticed: days,
+			}),
+		];
+		const { blocks } = pickRepertoireMaintenanceBlocks(
+			pieces,
+			10,
+			NOW,
+			undefined,
+			{ forcedMaintenancePieceId: "gone" },
+		);
+		expect(blocks.map((b) => b.pieceId)).toEqual(["p2"]);
+	});
+
+	it("packs deterministically for the same inputs", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		const pieces: Piece[] = ["C", "A", "B"].map((title, i) =>
+			makePiece({
+				id: `p${i + 1}`,
+				title,
+				state: "maintenance",
+				lastPracticed: days,
+			}),
+		);
+		// Budget 10, allowance 13 → two of the three 5-min pieces fit.
+		const a = pickRepertoireMaintenanceBlocks(pieces, 10, NOW);
+		const b = pickRepertoireMaintenanceBlocks(pieces, 10, NOW);
+		expect(a.blocks.map((x) => x.pieceId)).toEqual(
+			b.blocks.map((x) => x.pieceId),
+		);
+		// Equal scores → title ASC.
+		expect(a.blocks.map((x) => x.title)).toEqual(["A", "B"]);
 	});
 
 	it("respects usedPieceIds (no double-pick)", () => {
@@ -468,7 +657,7 @@ describe("redistributeForAvailability", () => {
 		};
 	}
 
-	it("worked example: tech10/read5/rep15, 5 freed → 12/6/17, sum conserved", () => {
+	it("worked example: tech10/read5/rep15, 5 freed proportionally, sum conserved", () => {
 		const a = alloc({
 			technique: 10,
 			sightReading: 5,
@@ -477,9 +666,10 @@ describe("redistributeForAvailability", () => {
 		});
 		const v = avail({ repertoireMaintenance: false });
 		const r = redistributeForAvailability(a, v);
-		expect(r.technique).toBe(12);
-		expect(r.sightReading).toBe(6);
-		expect(r.repertoireLearning).toBe(17);
+		// 5 freed over a 30-min base → exact 1/3 : 1/6 : 1/2 shares.
+		expect(r.technique).toBeCloseTo(10 + 5 / 3);
+		expect(r.sightReading).toBeCloseTo(5 + 5 / 6);
+		expect(r.repertoireLearning).toBeCloseTo(15 + 2.5);
 		expect(r.repertoireMaintenance).toBe(0);
 		const total =
 			r.technique +
@@ -487,7 +677,7 @@ describe("redistributeForAvailability", () => {
 			r.repertoireLearning +
 			r.repertoireStabilizing +
 			r.repertoireMaintenance;
-		expect(total).toBe(35);
+		expect(total).toBeCloseTo(35);
 	});
 
 	it("single empty slot spreads across the rest", () => {
@@ -521,8 +711,8 @@ describe("redistributeForAvailability", () => {
 		const r = redistributeForAvailability(a, v);
 		expect(r.technique).toBe(0);
 		// 6 freed split proportionally across read(6)+learning(6): 3 + 3
-		expect(r.sightReading).toBe(9);
-		expect(r.repertoireLearning).toBe(9);
+		expect(r.sightReading).toBeCloseTo(9);
+		expect(r.repertoireLearning).toBeCloseTo(9);
 	});
 
 	it("all repertoire empty → minutes go to technique + reading", () => {
@@ -539,7 +729,7 @@ describe("redistributeForAvailability", () => {
 		const r = redistributeForAvailability(a, v);
 		expect(r.repertoireLearning).toBe(0);
 		expect(r.repertoireStabilizing).toBe(0);
-		expect(r.technique + r.sightReading).toBe(20);
+		expect(r.technique + r.sightReading).toBeCloseTo(20);
 	});
 
 	it("no recipients → freed minutes dropped", () => {
@@ -916,7 +1106,7 @@ describe("buildPlan", () => {
 			inputs({ totalMinutes: 30, repertoireEnabled: false }),
 		);
 		expect(a.repertoireTotal).toBe(0);
-		expect(a.technique + a.sightReading).toBe(30);
+		expect(a.technique + a.sightReading).toBeCloseTo(30);
 		expect(a.technique).toBeGreaterThan(a.sightReading);
 	});
 
@@ -1077,7 +1267,7 @@ describe("buildPlan", () => {
 					title: id.toUpperCase(),
 					state: "maintenance",
 					lastPracticed: days,
-					durationSeconds: 60, // cost round(1 × 1.2) = 1
+					durationSeconds: 60, // cost 1 × 1.2 = 1.2
 				}),
 			),
 		];
@@ -1087,7 +1277,11 @@ describe("buildPlan", () => {
 			(b) => b.kind === "repertoire-maintenance",
 		);
 		expect(maint.length).toBeGreaterThanOrEqual(2);
-		expect(maint.every((b) => b.allocatedMinutes === 1)).toBe(true);
+		expect(maint.every((b) => Math.abs(b.allocatedMinutes - 1.2) < 1e-9)).toBe(
+			true,
+		);
+		expect(plan.inflationMinutes).toBe(0);
+		expect(plan.maintenanceOptIn).toBeNull();
 	});
 
 	it("maintenance leftover bumps learning + stabilizing blocks", () => {
@@ -1099,16 +1293,80 @@ describe("buildPlan", () => {
 				id: "pm",
 				state: "maintenance",
 				lastPracticed: days,
-				durationSeconds: 60, // cost 1 → leftover 4 of a 5-min maintenance budget
+				durationSeconds: 60, // cost 1.2 of a 5.25-min maintenance budget
 			}),
 		];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
 		const plan = buildPlan(inputs({ totalMinutes: 60 }), pieces, [], ts, NOW);
 		const learn = plan.blocks.find((b) => b.kind === "repertoire-learning");
 		const stab = plan.blocks.find((b) => b.kind === "repertoire-stabilizing");
-		// base 19/11 + leftover 4 split proportionally (3 to learning, 1 to stabilizing)
-		expect(learn?.allocatedMinutes).toBe(22);
-		expect(stab?.allocatedMinutes).toBe(12);
+		// 60 balanced: rep 35 → learning 19.25, stabilizing 10.5, maintenance 5.25.
+		// Leftover 5.25 − 1.2 = 4.05, split proportionally over 19.25 : 10.5.
+		const base = 19.25 + 10.5;
+		const leftover = 5.25 - 1.2;
+		expect(learn?.allocatedMinutes).toBeCloseTo(
+			19.25 + (leftover * 19.25) / base,
+		);
+		expect(stab?.allocatedMinutes).toBeCloseTo(10.5 + (leftover * 10.5) / base);
+		// Nothing overran → the plan still adds up to the requested 60.
+		const total = plan.blocks.reduce((acc, b) => acc + b.allocatedMinutes, 0);
+		expect(total).toBeCloseTo(60);
+		expect(plan.inflationMinutes).toBe(0);
+	});
+
+	it("inflates by at most the cap and reports it on the plan", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({ id: "pl", state: "learning" }),
+			makePiece({ id: "ps", state: "stabilizing" }),
+			makePiece({
+				id: "pm",
+				state: "maintenance",
+				lastPracticed: days,
+				durationSeconds: 300, // cost 6 against a 2.85-min budget
+			}),
+		];
+		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
+		// 30 balanced: rep 19 → maintenance 2.85, allowance 5.85. Cost 6 > 5.85.
+		const plan = buildPlan(inputs({ totalMinutes: 30 }), pieces, [], ts, NOW);
+		expect(
+			plan.blocks.find((b) => b.kind === "repertoire-maintenance"),
+		).toBeUndefined();
+		expect(plan.inflationMinutes).toBe(0);
+		expect(plan.maintenanceOptIn?.pieceId).toBe("pm");
+		// The unusable maintenance minutes went to learning/stabilizing instead.
+		const total = plan.blocks.reduce((acc, b) => acc + b.allocatedMinutes, 0);
+		expect(total).toBeCloseTo(30);
+		expect(planTotalMinutes(plan)).toBe(30);
+	});
+
+	it("forced opt-in rebuilds the plan and reclaims the leftover", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({ id: "pl", state: "learning" }),
+			makePiece({ id: "ps", state: "stabilizing" }),
+			makePiece({
+				id: "pm",
+				state: "maintenance",
+				lastPracticed: days,
+				durationSeconds: 300, // cost 6
+			}),
+		];
+		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
+		const plan = buildPlan(inputs({ totalMinutes: 30 }), pieces, [], ts, NOW, {
+			forcedMaintenancePieceId: "pm",
+		});
+		const maint = plan.blocks.filter(
+			(b) => b.kind === "repertoire-maintenance",
+		);
+		expect(maint.map((b) => b.pieceId)).toEqual(["pm"]);
+		expect(maint[0].allocatedMinutes).toBeCloseTo(6);
+		expect(plan.maintenanceOptIn).toBeNull();
+		// Maintenance budget was 2.85 → 6 costs 3.15 more than requested.
+		expect(plan.inflationMinutes).toBeCloseTo(3.15);
+		expect(planTotalMinutes(plan)).toBeCloseTo(33.15);
+		const total = plan.blocks.reduce((acc, b) => acc + b.allocatedMinutes, 0);
+		expect(total).toBeCloseTo(33.15);
 	});
 
 	it("drops maintenance leftover when no learning/stabilizing blocks exist", () => {

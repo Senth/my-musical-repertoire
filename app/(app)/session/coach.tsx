@@ -27,6 +27,7 @@ import type {
 	PlannedBlock,
 } from "@/models/session";
 import { playBlockEndCue } from "@/utils/session-cue";
+import { planTotalMinutes } from "@/utils/session-planner";
 import { writeActiveSession } from "@/utils/session-storage";
 
 const TICK_MS = 1000;
@@ -99,7 +100,7 @@ export default function CoachScreen() {
 	}, [session]);
 
 	const sessionElapsedSeconds = session ? diffSec(session.startedAt) : 0;
-	const sessionTotalSeconds = session ? session.plan.totalMinutes * 60 : 0;
+	const sessionTotalSeconds = session ? planTotalMinutes(session.plan) * 60 : 0;
 	const blockElapsedSeconds = session
 		? diffSec(session.currentBlockStartedAt)
 		: 0;

@@ -8,6 +8,7 @@ import {
 	Appbar,
 	Button,
 	Card,
+	Checkbox,
 	Chip,
 	Divider,
 	Switch,
@@ -25,13 +26,16 @@ import {
 	type ActiveSession,
 	type BlockExecutionState,
 	FOCUS_BY_EMPHASIS,
+	type MaintenanceOptIn,
 	type OmittedSlot,
 	type PlannedBlock,
 	SESSION_EMPHASES,
 	type SessionEmphasis,
 	type SessionInputs,
+	type SessionPlan,
 } from "@/models/session";
-import { buildPlan } from "@/utils/session-planner";
+import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
+import { buildPlan, planTotalMinutes } from "@/utils/session-planner";
 import {
 	readSessionInputs,
 	writeActiveSession,
@@ -71,6 +75,8 @@ export default function SessionSetupScreen() {
 	const [repertoireEnabled, setRepertoireEnabled] = useState<boolean>(true);
 	const [restored, setRestored] = useState<boolean>(false);
 	const [starting, setStarting] = useState<boolean>(false);
+	// Screen state only — deciding fresh each session is the point.
+	const [optInAccepted, setOptInAccepted] = useState<boolean>(false);
 
 	useEffect(() => {
 		let active = true;
@@ -115,7 +121,10 @@ export default function SessionSetupScreen() {
 		],
 	);
 
-	const plan = useMemo(() => {
+	// The plan built from the inputs alone. Its `maintenanceOptIn` is the offer
+	// shown below the preview; ticking it rebuilds the whole plan (the leftover
+	// minutes handed to learning/stabilizing have to be taken back).
+	const basePlan = useMemo(() => {
 		if (piecesLoading || techniquesLoading || sectionsLoading) return null;
 		return buildPlan(inputs, pieces, sections, techniques);
 	}, [
@@ -127,6 +136,23 @@ export default function SessionSetupScreen() {
 		techniquesLoading,
 		sectionsLoading,
 	]);
+
+	// Any change to minutes, emphasis or a toggle re-plans — the oversized piece
+	// may well be a different one, so the tick never carries over.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: resets on re-plan
+	useEffect(() => {
+		setOptInAccepted(false);
+	}, [inputs]);
+
+	const optIn = basePlan?.maintenanceOptIn ?? null;
+
+	const plan = useMemo(() => {
+		if (!basePlan) return null;
+		if (!optInAccepted || !optIn) return basePlan;
+		return buildPlan(inputs, pieces, sections, techniques, undefined, {
+			forcedMaintenancePieceId: optIn.pieceId,
+		});
+	}, [basePlan, optInAccepted, optIn, inputs, pieces, sections, techniques]);
 
 	const handleStart = async () => {
 		if (!user || !plan) return;
@@ -274,7 +300,16 @@ export default function SessionSetupScreen() {
 							.map((o) => (
 								<OmittedRow key={`omitted:${o.kind}`} slot={o} />
 							))}
+						{plan && plan.blocks.length > 0 ? <TotalRow plan={plan} /> : null}
 					</View>
+
+					{optIn ? (
+						<OptInRow
+							optIn={optIn}
+							checked={optInAccepted}
+							onToggle={() => setOptInAccepted((v) => !v)}
+						/>
+					) : null}
 
 					<Button
 						mode="contained"
@@ -300,9 +335,119 @@ function OmittedRow({ slot }: { slot: OmittedSlot }) {
 				style={{ color: theme.colors.onSurfaceVariant, fontStyle: "italic" }}
 			>
 				{t(`screen.session.setup.allPracticedToday.${slot.kind}` as const, {
-					minutes: slot.redistributedMinutes,
+					minutes: displayMinutes(slot.redistributedMinutes).minutes,
 				})}
 			</Text>
+		</View>
+	);
+}
+
+/**
+ * Closes the preview list so the plan reads as a receipt that adds up. Shows the
+ * real total — requested minutes plus whatever maintenance overran by — with a
+ * `(+N)` suffix whenever the two differ.
+ */
+function TotalRow({ plan }: { plan: SessionPlan }) {
+	const { t } = useTranslation();
+	const theme = useTheme();
+	const inflation = plan.inflationMinutes ?? 0;
+	const total = displayMinutes(planTotalMinutes(plan));
+	const label =
+		inflation > 0
+			? t("screen.session.setup.totalInflated", {
+					minutes: total.minutes,
+					extra: displayMinutes(inflation).minutes,
+				})
+			: t(minutesLabelKey(total.approx), { minutes: total.minutes });
+
+	return (
+		<View className="gap-2">
+			<Divider />
+			<View className="flex-row items-start justify-between gap-3">
+				<Text variant="bodyLarge" style={{ fontWeight: "600" }}>
+					{t("screen.session.setup.totalLabel")}
+				</Text>
+				<Text
+					variant="bodyLarge"
+					style={{
+						fontWeight: "600",
+						color:
+							inflation > 0 ? theme.colors.tertiary : theme.colors.onSurface,
+					}}
+				>
+					{label}
+				</Text>
+			</View>
+		</View>
+	);
+}
+
+/**
+ * The oversized-piece offer. A piece the planner can never fit is proposed as a
+ * swap for the auto-picked maintenance group; the user decides whether the extra
+ * minutes are worth it. Escalates visually once the piece goes stale.
+ */
+function OptInRow({
+	optIn,
+	checked,
+	onToggle,
+}: {
+	optIn: MaintenanceOptIn;
+	checked: boolean;
+	onToggle: () => void;
+}) {
+	const { t } = useTranslation();
+	const theme = useTheme();
+	const extra = displayMinutes(optIn.extraMinutes).minutes;
+	const days = optIn.daysSinceLastPracticed;
+	const staleLabel =
+		days >= 21
+			? t("screen.session.setup.optIn.staleWeeks")
+			: days >= 14
+				? t("screen.session.setup.optIn.staleDays", { days })
+				: null;
+
+	return (
+		<View className="gap-1">
+			<Checkbox.Item
+				mode="android"
+				position="leading"
+				status={checked ? "checked" : "unchecked"}
+				onPress={onToggle}
+				label={t("screen.session.setup.optIn.label", { piece: optIn.title })}
+				// Checkbox.Item takes no `accessibilityHint`, so the consequence of
+				// ticking it is spelled out in the label the screen reader announces.
+				accessibilityLabel={t("screen.session.setup.optIn.a11y", {
+					piece: optIn.title,
+					minutes: extra,
+				})}
+				style={{ paddingHorizontal: 0 }}
+			/>
+			<View className="flex-row items-center gap-2" style={{ paddingLeft: 48 }}>
+				<Text
+					variant="bodySmall"
+					style={{ color: theme.colors.onSurfaceVariant }}
+				>
+					{t("screen.session.setup.optIn.extra", { minutes: extra })}
+				</Text>
+				{staleLabel ? (
+					<View
+						style={{
+							backgroundColor: theme.colors.tertiaryContainer,
+							borderRadius: 8,
+							paddingHorizontal: 8,
+							paddingVertical: 2,
+						}}
+					>
+						<Text
+							variant="bodySmall"
+							style={{ color: theme.colors.onTertiaryContainer }}
+						>
+							{staleLabel}
+						</Text>
+					</View>
+				) : null}
+			</View>
 		</View>
 	);
 }
@@ -311,8 +456,9 @@ function PreviewRow({ block }: { block: PlannedBlock }) {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const kindLabel = t(`screen.session.block.${block.kind}` as const);
-	const minutesLabel = t("screen.session.block.minutes", {
-		minutes: block.allocatedMinutes,
+	const shown = displayMinutes(block.allocatedMinutes);
+	const minutesLabel = t(minutesLabelKey(shown.approx), {
+		minutes: shown.minutes,
 	});
 	const subtitleParts = [block.title, block.subtitle]
 		.filter((x): x is string => !!x)

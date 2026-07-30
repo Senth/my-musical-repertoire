@@ -30,7 +30,9 @@ import {
 	SESSION_EMPHASES,
 	type SessionEmphasis,
 } from "@/models/session";
+import { displayMinutes } from "@/utils/format-minutes";
 import { suggestPieces, suggestTechniques } from "@/utils/overview-suggestions";
+import { planTotalMinutes } from "@/utils/session-planner";
 import { clearActiveSession, readActiveSession } from "@/utils/session-storage";
 
 export default function OverviewScreen() {
@@ -362,7 +364,8 @@ function SessionEntryBlock({
 								emphasis: t(
 									`screen.session.emphasis.${activeSession.plan.emphasis}` as const,
 								),
-								minutes: activeSession.plan.totalMinutes,
+								minutes: displayMinutes(planTotalMinutes(activeSession.plan))
+									.minutes,
 							})}
 						</Text>
 						<Text variant="bodyMedium">

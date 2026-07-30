@@ -444,6 +444,15 @@
 					"repertoire-stabilizing": "All stabilizing pieces practiced today — added {{minutes}} min elsewhere",
 					"repertoire-maintenance": "All maintenance pieces practiced today — added {{minutes}} min elsewhere",
 					"warmup": "Warmup techniques already practiced today — picking your own"
+				},
+				"totalLabel": "Total",
+				"totalInflated": "{{minutes}} min (+{{extra}})",
+				"optIn": {
+					"label": "Practice {{piece}} instead",
+					"extra": "+{{minutes}} min",
+					"a11y": "Practice {{piece}} instead, replacing the scheduled maintenance piece and adding {{minutes}} minutes to the session",
+					"staleDays": "{{days}} days",
+					"staleWeeks": "3 weeks — consider scheduling it"
 				}
 			},
 			"block": {
@@ -454,6 +463,7 @@
 				"repertoire-stabilizing": "Stabilizing",
 				"repertoire-maintenance": "Maintenance",
 				"minutes": "{{minutes}} min",
+				"minutesApprox": "~{{minutes}} min",
 				"unspecified": "Your choice"
 			},
 			"coach": {

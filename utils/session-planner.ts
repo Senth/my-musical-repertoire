@@ -2,6 +2,7 @@ import type { Piece } from "@/models/piece";
 import type { Section } from "@/models/section";
 import type {
 	BlockKind,
+	MaintenanceOptIn,
 	OmittedReason,
 	OmittedSlot,
 	PlannedBlock,
@@ -141,12 +142,12 @@ function splitRepertoire(repTotal: number): {
 		s = 0;
 		m = 0;
 	} else if (repTotal < 12) {
-		l = Math.round(repTotal * 0.65);
+		l = repTotal * 0.65;
 		s = repTotal - l;
 		m = 0;
 	} else {
-		l = Math.round(repTotal * 0.55);
-		s = Math.round(repTotal * 0.3);
+		l = repTotal * 0.55;
+		s = repTotal * 0.3;
 		m = repTotal - l - s;
 		if (m < 0) {
 			s += m;
@@ -161,18 +162,19 @@ export function allocateTime(inputs: SessionInputs): AllocationResult {
 	const raw = interpolateRow(inputs.emphasis, clamped);
 	const warmup = raw.warmup;
 
-	// Disabled categories contribute zero minutes.
-	let tech = inputs.techniqueEnabled ? Math.round(raw.tech) : 0;
-	let read = inputs.sightReadingEnabled ? Math.round(raw.read) : 0;
-	let rep = inputs.repertoireEnabled ? Math.round(raw.rep) : 0;
+	// Disabled categories contribute zero minutes. Allocations stay fractional —
+	// rounding happens only at display time (`utils/format-minutes.ts`).
+	let tech = inputs.techniqueEnabled ? raw.tech : 0;
+	let read = inputs.sightReadingEnabled ? raw.read : 0;
+	let rep = inputs.repertoireEnabled ? raw.rep : 0;
 
 	// Whatever is left over after warmup + the kept categories (minutes freed by
-	// disabled toggles plus rounding slack) is poured back into the enabled
-	// categories so the session always fills the requested minutes. Repertoire is
-	// the preferred sink; when it is disabled the leftover is split across the
-	// enabled non-repertoire categories in proportion to their current share
-	// (even split when they are both zero). The focused category is always
-	// enabled, so something is always available to receive it.
+	// disabled toggles plus the reference rows not summing above 60) is poured
+	// back into the enabled categories so the session always fills the requested
+	// minutes. Repertoire is the preferred sink; when it is disabled the leftover
+	// is split across the enabled non-repertoire categories in proportion to their
+	// current share (even split when they are both zero). The focused category is
+	// always enabled, so something is always available to receive it.
 	const leftover = clamped - warmup - tech - read - rep;
 	if (leftover !== 0) {
 		if (inputs.repertoireEnabled) {
@@ -183,17 +185,13 @@ export function allocateTime(inputs: SessionInputs): AllocationResult {
 			if (inputs.sightReadingEnabled) recipients.push("read");
 			const base: Record<"tech" | "read", number> = { tech, read };
 			const totalShare = recipients.reduce((acc, k) => acc + base[k], 0);
-			let used = 0;
-			recipients.forEach((k, i) => {
-				const isLast = i === recipients.length - 1;
-				const portion = isLast
-					? leftover - used
-					: totalShare > 0
-						? Math.round((leftover * base[k]) / totalShare)
-						: Math.round(leftover / recipients.length);
+			for (const k of recipients) {
+				const portion =
+					totalShare > 0
+						? (leftover * base[k]) / totalShare
+						: leftover / recipients.length;
 				base[k] = Math.max(0, base[k] + portion);
-				used += portion;
-			});
+			}
 			tech = base.tech;
 			read = base.read;
 		}
@@ -280,34 +278,86 @@ export function pickRepertoireSection(
 }
 
 // Per-piece maintenance cost in minutes: a full play-through + 20% buffer when
-// a duration is known, otherwise a flat 5-minute guess (no buffer).
+// a duration is known, otherwise a flat 5-minute guess (no buffer). Fractional —
+// display rounding is the caller's job.
 function maintenanceCost(piece: Piece): number {
 	if (piece.durationSeconds != null) {
-		return Math.max(1, Math.round((piece.durationSeconds / 60) * 1.2));
+		return Math.max(1, (piece.durationSeconds / 60) * 1.2);
 	}
 	return 5;
+}
+
+/**
+ * How far past its budget the maintenance group may run, in minutes. The cap is
+ * on the whole group, not per piece — three packed pieces each overrunning by 3
+ * would put the session 9 minutes long, which is the bug this exists to fix.
+ */
+export const MAINTENANCE_INFLATION_CAP_MINUTES = 3;
+
+// Float slack so a piece landing exactly on the allowance is taken.
+const FIT_EPSILON = 1e-9;
+
+export interface MaintenancePackOptions {
+	/**
+	 * The user opted into an oversized piece: it becomes the only maintenance
+	 * block, at full cost. A swap, not an addition. Ignored when the piece is not
+	 * in the eligible pool.
+	 */
+	forcedMaintenancePieceId?: string | null;
 }
 
 export interface MaintenancePackResult {
 	blocks: PlannedBlock[];
 	leftoverMinutes: number;
+	/** Maintenance minutes beyond the budget. 0 when nothing overran. */
+	inflationMinutes: number;
+	/** Best-scored eligible piece that can never fit, offered as an opt-in. */
+	optIn: MaintenanceOptIn | null;
+}
+
+function maintenanceBlock(piece: Piece, score: number): PlannedBlock {
+	return {
+		kind: "repertoire-maintenance",
+		allocatedMinutes: maintenanceCost(piece),
+		pieceId: piece.id ?? null,
+		sectionId: null,
+		title: piece.title,
+		subtitle: piece.composer,
+		score,
+	};
 }
 
 /**
- * Packs as many maintenance pieces as fit into the budget, best-score-first,
- * one block per piece. The best piece is always taken (even if it overruns the
- * budget) so maintenance is never empty when eligible pieces exist; subsequent
- * pieces are taken only while they fully fit, stopping at the first that does not.
+ * Packs maintenance pieces best-score-first, one block per piece, allowing the
+ * group to run at most `MAINTENANCE_INFLATION_CAP_MINUTES` past its budget. A
+ * piece that does not fit is skipped and scanning continues, so the next-best
+ * piece that *does* fit is scheduled instead of the session silently inflating.
+ *
+ * The best-scored piece whose own cost can never fit the allowance is returned
+ * as `optIn` — the setup screen offers it as an explicit checkbox, and ticking
+ * it re-plans with `options.forcedMaintenancePieceId`.
  */
 export function pickRepertoireMaintenanceBlocks(
 	pieces: Piece[],
 	budgetMinutes: number,
 	now: Date = new Date(),
 	usedPieceIds?: Set<string>,
+	options?: MaintenancePackOptions,
 ): MaintenancePackResult {
+	// No maintenance budget → no maintenance block and nothing to offer. A
+	// 15-minute session is not the place to propose a 14-minute piece.
+	if (budgetMinutes <= 0) {
+		return { blocks: [], leftoverMinutes: 0, inflationMinutes: 0, optIn: null };
+	}
+
 	const pool = eligibleMaintenancePieces(pieces, now, usedPieceIds);
 	if (pool.length === 0) {
-		return { blocks: [], leftoverMinutes: Math.max(0, budgetMinutes) };
+		return {
+			blocks: [],
+			leftoverMinutes: budgetMinutes,
+			inflationMinutes: 0,
+			optIn: null,
+		};
 	}
 	const scored = pool.map((piece) => ({
 		piece,
@@ -318,26 +368,53 @@ export function pickRepertoireMaintenanceBlocks(
 		return compareTitle(a.piece.title, b.piece.title);
 	});
 
-	const blocks: PlannedBlock[] = [];
-	let remaining = budgetMinutes;
-	for (let i = 0; i < scored.length; i++) {
-		const { piece, score } = scored[i];
-		const cost = maintenanceCost(piece);
-		// First (best) piece is always taken at full cost, even if it overruns.
-		// Any later piece is taken only if it fully fits; otherwise stop.
-		if (i > 0 && cost > remaining) break;
-		blocks.push({
-			kind: "repertoire-maintenance",
-			allocatedMinutes: cost,
-			pieceId: piece.id ?? null,
-			sectionId: null,
-			title: piece.title,
-			subtitle: piece.composer,
-			score,
-		});
-		remaining -= cost;
+	const forcedId = options?.forcedMaintenancePieceId;
+	if (forcedId) {
+		const forced = scored.find((s) => s.piece.id === forcedId);
+		if (forced) {
+			const cost = maintenanceCost(forced.piece);
+			return {
+				blocks: [maintenanceBlock(forced.piece, forced.score)],
+				leftoverMinutes: 0,
+				inflationMinutes: Math.max(0, cost - budgetMinutes),
+				optIn: null,
+			};
+		}
+		// Not eligible any more (practiced today, restated, taken by another slot)
+		// → fall through to normal packing.
 	}
-	return { blocks, leftoverMinutes: Math.max(0, remaining) };
+
+	const allowance = budgetMinutes + MAINTENANCE_INFLATION_CAP_MINUTES;
+	const blocks: PlannedBlock[] = [];
+	let used = 0;
+	let optIn: MaintenanceOptIn | null = null;
+	for (const { piece, score } of scored) {
+		const cost = maintenanceCost(piece);
+		if (used + cost <= allowance + FIT_EPSILON) {
+			blocks.push(maintenanceBlock(piece, score));
+			used += cost;
+			continue;
+		}
+		// Offer the best-scored piece that can never fit — one that is merely
+		// crowded out by earlier picks would fit on its own and is not a choice.
+		if (!optIn && piece.id && cost > allowance + FIT_EPSILON) {
+			optIn = {
+				pieceId: piece.id,
+				title: piece.title,
+				subtitle: piece.composer,
+				costMinutes: cost,
+				extraMinutes: Math.max(0, cost - budgetMinutes),
+				daysSinceLastPracticed: daysSince(piece.lastPracticed ?? null, now),
+			};
+		}
+	}
+
+	return {
+		blocks,
+		leftoverMinutes: Math.max(0, budgetMinutes - used),
+		inflationMinutes: Math.max(0, used - budgetMinutes),
+		optIn,
+	};
 }
 
 function computeTechniqueSplit(
@@ -412,13 +489,14 @@ export function pickTechnique(
 	const sortedActive = sortTechniques(active, now).slice(0, activeCount);
 	const sortedMaint = sortTechniques(maintenance, now).slice(0, maintCount);
 
-	const perTech = Math.floor(slotMin / count);
-	const remainderMin = slotMin - perTech * count;
+	// Exact split — the count heuristics above still use whole-minute floors, but
+	// the minutes handed to each technique no longer need remainder patching.
+	const perTech = slotMin / count;
 
 	const picks = [...sortedActive, ...sortedMaint];
-	const blocks: PlannedBlock[] = picks.map((p, idx) => ({
+	const blocks: PlannedBlock[] = picks.map((p) => ({
 		kind: "technique" as const,
-		allocatedMinutes: perTech + (idx === 0 ? remainderMin : 0),
+		allocatedMinutes: perTech,
 		techniqueId: p.tech.id ?? null,
 		title: p.tech.title,
 		subtitle: null,
@@ -487,9 +565,9 @@ export type SlotAvailability = Record<RedistributableSlot, boolean>;
 /**
  * Build-time, empty-content redistribution. Every slot that has minutes but no
  * eligible content is zeroed and its minutes pooled, then spread across the
- * surviving (available) slots in proportion to their current allocation.
- * Integer split via last-gets-remainder so the total is conserved. Warmup is
- * never part of this and is handled separately.
+ * surviving (available) slots in proportion to their current allocation. The
+ * shares are exact, so the total is conserved without integer patching. Warmup
+ * is never part of this and is handled separately.
  */
 export function redistributeForAvailability(
 	alloc: SlotMinutes,
@@ -511,23 +589,17 @@ export function redistributeForAvailability(
 	if (recipients.length === 0) return result; // nothing to receive → dropped
 
 	const totalAlloc = recipients.reduce((acc, slot) => acc + result[slot], 0);
-	let used = 0;
-	for (let i = 0; i < recipients.length; i++) {
-		const slot = recipients[i];
-		const isLast = i === recipients.length - 1;
-		const portion = isLast
-			? freed - used
-			: Math.round((freed * result[slot]) / totalAlloc);
-		result[slot] += portion;
-		used += portion;
-	}
+	const shares = recipients.map((slot) => (freed * result[slot]) / totalAlloc);
+	recipients.forEach((slot, i) => {
+		result[slot] += shares[i];
+	});
 	return result;
 }
 
 /**
- * Add maintenance leftover minutes to the learning/stabilizing blocks in
- * proportion to their current allocation (last-gets-remainder). Mutates blocks
- * in place. Dropped if neither block exists.
+ * Add maintenance leftover minutes to the learning/stabilizing blocks in exact
+ * proportion to their current allocation. Mutates blocks in place. Dropped if
+ * neither block exists.
  */
 function applyMaintenanceLeftover(
 	leftoverMinutes: number,
@@ -540,19 +612,14 @@ function applyMaintenanceLeftover(
 	);
 	if (recipients.length === 0) return;
 	const totalAlloc = recipients.reduce((acc, b) => acc + b.allocatedMinutes, 0);
-	let used = 0;
-	for (let i = 0; i < recipients.length; i++) {
-		const isLast = i === recipients.length - 1;
-		const portion = isLast
-			? leftoverMinutes - used
-			: totalAlloc > 0
-				? Math.round(
-						(leftoverMinutes * recipients[i].allocatedMinutes) / totalAlloc,
-					)
-				: Math.round(leftoverMinutes / recipients.length);
-		recipients[i].allocatedMinutes += portion;
-		used += portion;
-	}
+	const shares = recipients.map((b) =>
+		totalAlloc > 0
+			? (leftoverMinutes * b.allocatedMinutes) / totalAlloc
+			: leftoverMinutes / recipients.length,
+	);
+	recipients.forEach((b, i) => {
+		b.allocatedMinutes += shares[i];
+	});
 }
 
 function hasEligibleTechnique(techniques: TechniqueItem[], now: Date): boolean {
@@ -576,12 +643,27 @@ function omittedReason(rawExists: boolean): OmittedReason {
 	return rawExists ? "practiced-today" : "no-content";
 }
 
+export interface BuildPlanOptions {
+	/** The user ticked the oversized-maintenance opt-in for this piece. */
+	forcedMaintenancePieceId?: string | null;
+}
+
+/**
+ * The session's real length: the requested minutes plus whatever maintenance
+ * overran by. `plan.totalMinutes` stays the *requested* value, so every screen
+ * showing a real total goes through here rather than re-deriving it.
+ */
+export function planTotalMinutes(plan: SessionPlan): number {
+	return plan.totalMinutes + (plan.inflationMinutes ?? 0);
+}
+
 export function buildPlan(
 	inputs: SessionInputs,
 	pieces: Piece[],
 	sections: Section[],
 	techniques: TechniqueItem[],
 	now: Date = new Date(),
+	options?: BuildPlanOptions,
 ): SessionPlan {
 	const alloc = allocateTime(inputs);
 	const omitted: OmittedSlot[] = [];
@@ -692,15 +774,18 @@ export function buildPlan(
 		usedSectionIds.add(stabilizingBlock.sectionId);
 	if (stabilizingBlock?.pieceId) usedPieceIds.add(stabilizingBlock.pieceId);
 
-	const { blocks: maintenanceBlocks, leftoverMinutes } =
-		updated.repertoireMaintenance > 0
-			? pickRepertoireMaintenanceBlocks(
-					pieces,
-					updated.repertoireMaintenance,
-					now,
-					usedPieceIds,
-				)
-			: { blocks: [] as PlannedBlock[], leftoverMinutes: 0 };
+	const {
+		blocks: maintenanceBlocks,
+		leftoverMinutes,
+		inflationMinutes,
+		optIn: maintenanceOptIn,
+	} = pickRepertoireMaintenanceBlocks(
+		pieces,
+		updated.repertoireMaintenance,
+		now,
+		usedPieceIds,
+		{ forcedMaintenancePieceId: options?.forcedMaintenancePieceId },
+	);
 	for (const mb of maintenanceBlocks) {
 		if (mb.pieceId) usedPieceIds.add(mb.pieceId);
 	}
@@ -745,5 +830,7 @@ export function buildPlan(
 		blocks,
 		generatedAt: now.toISOString(),
 		omitted,
+		inflationMinutes,
+		maintenanceOptIn,
 	};
 }
