@@ -3,9 +3,10 @@
 	"extends": ["config:recommended"],
 	"timezone": "Europe/Stockholm",
 	"schedule": ["after 3pm on friday"],
-	"dependencyDashboard": false,
+	"dependencyDashboard": true,
 	"minimumReleaseAge": "3 days",
 	"labels": ["dependencies"],
+	"platformAutomerge": false,
 	"packageRules": [
 		{
 			"matchUpdateTypes": ["minor", "patch"],
@@ -14,7 +15,7 @@
 			"automergeType": "pr"
 		},
 		{
-			"matchPackagePatterns": ["^expo", "^@expo/"],
+			"matchPackageNames": ["/^expo/", "/^@expo\\//"],
 			"matchUpdateTypes": ["major"],
 			"groupName": "Expo major updates"
 		},
