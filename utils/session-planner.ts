@@ -17,6 +17,7 @@ import {
 	eligibleTechniquesInState,
 	type SectionCandidate,
 	scoreMaintenancePiece,
+	scoreTechniqueModes,
 	sortTechniques,
 } from "./planner-scoring";
 
@@ -274,6 +275,7 @@ export function pickRepertoireSection(
 		title: best.piece.title,
 		subtitle: best.section?.label ?? null,
 		score: best.score,
+		modeKey: best.modeKey,
 	};
 }
 
@@ -421,6 +423,7 @@ export function pickTechnique(
 		title: p.tech.title,
 		subtitle: null,
 		score: p.score,
+		modeKey: p.modeKey,
 	}));
 	return blocks;
 }
@@ -462,6 +465,9 @@ export function pickWarmup(
 		techniqueId: pick.id ?? null,
 		title: pick.title,
 		subtitle: null,
+		// Warmup is picked by staleness alone, but the student still deserves to
+		// land on the mode that needs work most within it.
+		modeKey: scoreTechniqueModes(pick, now).modeKey,
 	};
 }
 

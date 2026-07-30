@@ -1,3 +1,5 @@
+import type { ModeKey } from "@/models/practice";
+
 export type SessionEmphasis =
 	| "balanced"
 	| "technique-heavy"
@@ -29,6 +31,12 @@ export interface PlannedBlock {
 	subtitle?: string | null;
 	score?: number | null;
 	rationale?: string | null;
+	/**
+	 * The mode that made this block worth planning — the coach preselects it so
+	 * the student lands on the hand/drill that drove the pick. `null` when the
+	 * block was scored from legacy fields or has no modes at all.
+	 */
+	modeKey?: ModeKey | null;
 }
 
 export type OmittedReason = "practiced-today" | "no-content";

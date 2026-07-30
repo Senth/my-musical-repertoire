@@ -5,8 +5,9 @@
 - **Tasks live in GitHub Issues + the Kanban Project board** — not in markdown. There is no
   PLAN.md. Use `gh issue list/view/create/close` and `gh project` (board: Backlog / Next Up /
   In Progress). Labels: `bug`, `feature`, `idea`, `cleanup`.
+- When starting work on an issue, move it to "In Progress".
 - [`TODO.md`](../TODO.md) is a **generated mirror** of the board (`## Working On / Next Up /
-  Backlog`). Never hand-edit it; regenerate with `scripts/sync-todo.sh` after creating or
+Backlog`). Never hand-edit it; regenerate with `scripts/sync-todo.sh` after creating or
   closing issues. It also auto-runs on branch checkout.
 - Close issues from PRs with `Closes #NN` in the PR/commit body.
 - Vision, requirements, decisions, and architecture: [`docs/PROJECT.md`](../docs/PROJECT.md).

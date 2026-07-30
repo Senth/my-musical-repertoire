@@ -23,6 +23,7 @@ import {
 	useTechniques,
 } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
+import type { ModeKey } from "@/models/practice";
 import {
 	availableHandsModes,
 	hsTarget,
@@ -37,11 +38,14 @@ import { validateBpm as validateBpmRange } from "@/utils/validation";
 export interface TechniquePracticeContentProps {
 	techniqueId: string;
 	from?: string;
+	/** Mode to open on — the session coach passes the block's planned mode. */
+	preselectMode?: ModeKey | null;
 }
 
 export function TechniquePracticeContent({
 	techniqueId,
 	from,
+	preselectMode,
 }: TechniquePracticeContentProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -75,6 +79,7 @@ export function TechniquePracticeContent({
 		available,
 		drills,
 		effectiveTarget,
+		preselect: preselectMode,
 		ready: !!technique,
 	});
 	const htReady =
