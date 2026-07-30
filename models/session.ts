@@ -47,12 +47,38 @@ export interface OmittedSlot {
 	redistributedMinutes: number;
 }
 
+/**
+ * An eligible maintenance piece too long to ever fit its slot, offered in the
+ * setup preview as an explicit opt-in — the user decides whether the extra
+ * minutes are worth it. Never persisted: the choice is made fresh each session.
+ */
+export interface MaintenanceOptIn {
+	pieceId: string;
+	title: string;
+	/** Composer. */
+	subtitle?: string | null;
+	/** Full cost of the piece, fractional. */
+	costMinutes: number;
+	/** Minutes the session would run past the requested total. */
+	extraMinutes: number;
+	/** 999 when the piece was never practiced. */
+	daysSinceLastPracticed: number;
+}
+
 export interface SessionPlan {
 	emphasis: SessionEmphasis;
+	/** The *requested* minutes, clamped 15–90. Real length adds inflation. */
 	totalMinutes: number;
 	blocks: PlannedBlock[];
 	generatedAt: string;
 	omitted?: OmittedSlot[];
+	/**
+	 * Maintenance minutes beyond the maintenance budget. 0 when nothing overran.
+	 * Optional so sessions stored before this field keep deserializing.
+	 */
+	inflationMinutes?: number;
+	/** The best-scored eligible maintenance piece that cannot fit. */
+	maintenanceOptIn?: MaintenanceOptIn | null;
 }
 
 export interface SessionInputs {

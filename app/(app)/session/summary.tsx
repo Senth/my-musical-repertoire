@@ -7,6 +7,8 @@ import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveSession } from "@/hooks/use-active-session";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
+import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
+import { planTotalMinutes } from "@/utils/session-planner";
 import { clearActiveSession } from "@/utils/session-storage";
 
 export default function SessionSummaryScreen() {
@@ -40,7 +42,8 @@ export default function SessionSummaryScreen() {
 		);
 	}
 
-	const totalMinutes = session.plan.totalMinutes;
+	// The real length, so an inflated session reads "33 of 33" and not "33 of 30".
+	const totalMinutes = displayMinutes(planTotalMinutes(session.plan)).minutes;
 	const practicedSeconds = session.blockStates
 		.filter((b) => b.status === "completed")
 		.reduce((acc, b) => acc + b.elapsedSeconds, 0);
@@ -116,7 +119,7 @@ function SummaryRow({
 	const theme = useTheme();
 	const skipped = state?.status === "skipped";
 	const completed = state?.status === "completed";
-	const actualMinutes = state ? Math.round(state.elapsedSeconds / 60) : 0;
+	const actual = displayMinutes(state ? state.elapsedSeconds / 60 : 0);
 	const kindLabel = t(`screen.session.block.${block.kind}` as const);
 	const subtitle = [block.title, block.subtitle]
 		.filter((x): x is string => !!x)
@@ -128,8 +131,8 @@ function SummaryRow({
 			<View className="flex-1">
 				<Text variant="bodyLarge">
 					{kindLabel}
-					{!skipped && actualMinutes > 0
-						? `  ${t("screen.session.block.minutes", { minutes: actualMinutes })}`
+					{!skipped && actual.minutes > 0
+						? `  ${t(minutesLabelKey(actual.approx), { minutes: actual.minutes })}`
 						: ""}
 					{skipped ? `  ${t("screen.session.summary.skipped")}` : ""}
 				</Text>
