@@ -2,10 +2,11 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { FirebaseError } from "firebase/app";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { View } from "react-native";
-import { Appbar, Button, HelperText, useTheme } from "react-native-paper";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
+import { Appbar, Button, Card, HelperText, useTheme } from "react-native-paper";
 import { FormTextField } from "@/components/ui/FormTextField";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsCompact } from "@/hooks/use-is-compact";
 
 export default function ResetPasswordScreen() {
 	const { t } = useTranslation();
@@ -13,6 +14,7 @@ export default function ResetPasswordScreen() {
 	const { confirmPasswordReset } = useAuth();
 	const router = useRouter();
 	const theme = useTheme();
+	const isCompact = useIsCompact();
 
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
@@ -26,8 +28,11 @@ export default function ResetPasswordScreen() {
 	if (!oobCode) {
 		return (
 			<View
-				className="flex-1 justify-center items-center px-4"
-				style={{ backgroundColor: theme.colors.background }}
+				className="flex-1 justify-center items-center"
+				style={{
+					backgroundColor: theme.colors.background,
+					paddingHorizontal: 16,
+				}}
 			>
 				<HelperText type="error" visible>
 					{t("screen.resetPassword.invalidLink")}
@@ -75,6 +80,49 @@ export default function ResetPasswordScreen() {
 		}
 	};
 
+	const formContent = (
+		<View className="gap-2">
+			<FormTextField
+				label={t("screen.resetPassword.newPasswordLabel")}
+				value={password}
+				onChangeText={(text) => {
+					setPassword(text);
+					setPasswordError(null);
+				}}
+				secureTextEntry
+				autoComplete="new-password"
+				error={passwordError}
+			/>
+
+			<FormTextField
+				label={t("screen.login.confirmPasswordLabel")}
+				value={confirmPassword}
+				onChangeText={(text) => {
+					setConfirmPassword(text);
+					setConfirmPasswordError(null);
+				}}
+				secureTextEntry
+				autoComplete="new-password"
+				error={confirmPasswordError}
+			/>
+
+			{serverError && (
+				<HelperText type="error" visible>
+					{serverError}
+				</HelperText>
+			)}
+
+			<Button
+				mode="contained"
+				onPress={handleSubmit}
+				loading={loading}
+				disabled={loading}
+			>
+				{t("screen.resetPassword.submit")}
+			</Button>
+		</View>
+	);
+
 	return (
 		<View
 			className="flex-1"
@@ -87,48 +135,21 @@ export default function ResetPasswordScreen() {
 				/>
 			</Appbar.Header>
 
-			<View className="flex-1 justify-center items-center px-4">
-				<View className="w-full max-w-md gap-2">
-					<FormTextField
-						label={t("screen.resetPassword.newPasswordLabel")}
-						value={password}
-						onChangeText={(text) => {
-							setPassword(text);
-							setPasswordError(null);
-						}}
-						secureTextEntry
-						autoComplete="new-password"
-						error={passwordError}
-					/>
-
-					<FormTextField
-						label={t("screen.login.confirmPasswordLabel")}
-						value={confirmPassword}
-						onChangeText={(text) => {
-							setConfirmPassword(text);
-							setConfirmPasswordError(null);
-						}}
-						secureTextEntry
-						autoComplete="new-password"
-						error={confirmPasswordError}
-					/>
-
-					{serverError && (
-						<HelperText type="error" visible>
-							{serverError}
-						</HelperText>
+			<KeyboardAvoidingView
+				behavior={Platform.OS === "ios" ? "padding" : "height"}
+				className="flex-1 justify-center items-center"
+				style={{ paddingHorizontal: 16 }}
+			>
+				<View className="w-full max-w-md self-center">
+					{isCompact ? (
+						formContent
+					) : (
+						<Card mode="elevated">
+							<Card.Content>{formContent}</Card.Content>
+						</Card>
 					)}
-
-					<Button
-						mode="contained"
-						onPress={handleSubmit}
-						loading={loading}
-						disabled={loading}
-					>
-						{t("screen.resetPassword.submit")}
-					</Button>
 				</View>
-			</View>
+			</KeyboardAvoidingView>
 		</View>
 	);
 }
