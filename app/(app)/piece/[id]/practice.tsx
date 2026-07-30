@@ -34,6 +34,7 @@ import { useSections, useUpdateSection } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import {
 	HANDS_MODES,
+	type ModeKey,
 	PracticeMistakes,
 	type PracticeTrigger,
 } from "@/models/practice";
@@ -78,6 +79,8 @@ export interface PiecePracticeContentProps {
 	sectionId?: string | null;
 	from?: string;
 	triggerOverride?: PracticeTrigger;
+	/** Mode to open on — the session coach passes the block's planned mode. */
+	preselectMode?: ModeKey | null;
 }
 
 export function PiecePracticeContent({
@@ -85,6 +88,7 @@ export function PiecePracticeContent({
 	sectionId: sectionIdProp,
 	from,
 	triggerOverride,
+	preselectMode,
 }: PiecePracticeContentProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -178,6 +182,7 @@ export function PiecePracticeContent({
 		available: HANDS_MODES,
 		drills: NO_DRILLS,
 		effectiveTarget,
+		preselect: preselectMode,
 		ready: !!scopedSection,
 	});
 	const htReady = isHtReady(scopedSection?.byMode, effectiveTarget);

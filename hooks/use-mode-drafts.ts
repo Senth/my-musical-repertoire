@@ -27,8 +27,27 @@ interface UseModeDraftsArgs {
 	available: HandsMode[];
 	drills: PracticeDrill[];
 	effectiveTarget: number | null;
+	/**
+	 * Mode to open on, overriding the built-in preselect. The session coach passes
+	 * the mode that made the block worth planning, so the student lands on the
+	 * hand and drill that earned the slot. Ignored when unreachable.
+	 */
+	preselect?: ModeKey | null;
 	/** Seed once the item has loaded — seeding runs a single time. */
 	ready: boolean;
+}
+
+/** A preselect only wins when the chips can actually reach it. */
+function reachablePreselect(
+	preselect: ModeKey | null | undefined,
+	available: HandsMode[],
+	drills: PracticeDrill[],
+): { hands: HandsMode; drill: PracticeDrill | null } | null {
+	if (!preselect) return null;
+	const { hands, drill } = parseModeKey(preselect);
+	if (!available.includes(hands)) return null;
+	if (drill && !drills.includes(drill)) return null;
+	return { hands, drill };
 }
 
 function seedDrafts(
@@ -71,6 +90,7 @@ export function useModeDrafts({
 	available,
 	drills,
 	effectiveTarget,
+	preselect,
 	ready,
 }: UseModeDraftsArgs) {
 	const [drafts, setDrafts] = useState<Record<ModeKey, ModeDraft>>({});
@@ -82,9 +102,16 @@ export function useModeDrafts({
 	useEffect(() => {
 		if (!ready || seeded.current) return;
 		setDrafts(seedDrafts(byMode, available, drills));
-		setHands(pickPreselectedHands(byMode, available, effectiveTarget));
+		const forced = reachablePreselect(preselect, available, drills);
+		if (forced) {
+			setHands(forced.hands);
+			setDrill(forced.drill);
+		} else {
+			setHands(pickPreselectedHands(byMode, available, effectiveTarget));
+			setDrill(null);
+		}
 		seeded.current = true;
-	}, [ready, byMode, available, drills, effectiveTarget]);
+	}, [ready, byMode, available, drills, effectiveTarget, preselect]);
 
 	const currentKey = modeKey(hands, drill);
 	const draft = drafts[currentKey] ?? EMPTY_DRAFT;

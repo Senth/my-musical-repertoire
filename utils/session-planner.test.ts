@@ -695,6 +695,112 @@ describe("pickWarmup", () => {
 	});
 });
 
+describe("planned block modeKey", () => {
+	it("carries the technique mode that earned the block", () => {
+		const ts: TechniqueItem[] = [
+			makeTechnique({
+				id: "t1",
+				state: "active",
+				handsMode: "separate",
+				activeDrills: ["staccato"],
+				byMode: {
+					LH: { bpm: 90, quality: 5, effort: 1, lastPracticed: NOW },
+					"LH.staccato": {
+						bpm: 40,
+						quality: 2,
+						effort: 5,
+						lastPracticed: new Date(NOW.getTime() - 10 * 86400000),
+					},
+				},
+			}),
+		];
+		const blocks = pickTechnique(7, ts, NOW);
+		expect(blocks[0].modeKey).toBe("LH.staccato");
+	});
+
+	it("is null for a technique with no mode history", () => {
+		const ts: TechniqueItem[] = [makeTechnique({ id: "t1", state: "active" })];
+		expect(pickTechnique(7, ts, NOW)[0].modeKey).toBeNull();
+	});
+
+	it("drops a mode the technique can no longer reach", () => {
+		const ts: TechniqueItem[] = [
+			makeTechnique({
+				id: "t1",
+				state: "active",
+				handsMode: "separate",
+				// Drill turned off — its stale stats must not drive the preselect.
+				activeDrills: [],
+				byMode: {
+					LH: {
+						bpm: 90,
+						quality: 5,
+						effort: 1,
+						lastPracticed: new Date(NOW.getTime() - 1 * 86400000),
+					},
+					"LH.staccato": {
+						bpm: 40,
+						quality: 2,
+						effort: 5,
+						lastPracticed: new Date(NOW.getTime() - 10 * 86400000),
+					},
+				},
+			}),
+		];
+		expect(pickTechnique(7, ts, NOW)[0].modeKey).toBe("LH");
+	});
+
+	it("carries the section mode that earned the block", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning", targetTempoBpm: 100 }),
+		];
+		const sections: Section[] = [
+			makeSection({
+				id: "s1",
+				pieceId: "p1",
+				phase: "learning",
+				byMode: {
+					LH: {
+						bpm: 30,
+						quality: 2,
+						effort: 5,
+						lastPracticed: new Date(NOW.getTime() - 1 * 86400000),
+					},
+					RH: {
+						bpm: 110,
+						quality: 5,
+						effort: 1,
+						lastPracticed: new Date(NOW.getTime() - 1 * 86400000),
+					},
+				},
+			}),
+		];
+		const b = pickRepertoireSection("learning", pieces, sections, 10, NOW);
+		expect(b?.modeKey).toBe("LH");
+	});
+
+	it("carries the warmup technique's neediest mode", () => {
+		const ts: TechniqueItem[] = [
+			makeTechnique({
+				id: "m1",
+				state: "maintenance" as TechniqueState,
+				lastPracticedAt: new Date(NOW.getTime() - 30 * 86400000),
+				handsMode: "both",
+				byMode: {
+					HT: { bpm: 90, quality: 5, effort: 1, lastPracticed: NOW },
+					LH: {
+						bpm: 50,
+						quality: 2,
+						effort: 5,
+						lastPracticed: new Date(NOW.getTime() - 30 * 86400000),
+					},
+				},
+			}),
+		];
+		expect(pickWarmup(ts, 5, NOW).modeKey).toBe("LH");
+	});
+});
+
 describe("buildPlan", () => {
 	it("orders blocks per balanced emphasis", () => {
 		const pieces: Piece[] = [

@@ -275,6 +275,7 @@ export default function CoachScreen() {
 					<TechniquePracticeContent
 						key={session.currentBlockIndex}
 						techniqueId={currentBlock.techniqueId}
+						preselectMode={currentBlock.modeKey ?? null}
 					/>
 				);
 			} else {
@@ -289,6 +290,7 @@ export default function CoachScreen() {
 					<TechniquePracticeContent
 						key={session.currentBlockIndex}
 						techniqueId={currentBlock.techniqueId}
+						preselectMode={currentBlock.modeKey ?? null}
 					/>
 				);
 			} else {
@@ -314,6 +316,7 @@ export default function CoachScreen() {
 						key={session.currentBlockIndex}
 						pieceId={currentBlock.pieceId}
 						sectionId={currentBlock.sectionId ?? null}
+						preselectMode={currentBlock.modeKey ?? null}
 						triggerOverride="session-coach"
 					/>
 				);
