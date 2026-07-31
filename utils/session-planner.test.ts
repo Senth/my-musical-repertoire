@@ -1,10 +1,10 @@
 import type { Piece, PieceState } from "@/models/piece";
 import type { Section } from "@/models/section";
-import type { SessionEmphasis, SessionInputs } from "@/models/session";
+import type { SessionAllocation } from "@/models/session";
 import type { TechniqueItem, TechniqueState } from "@/models/technique";
 import {
-	allocateTime,
 	buildPlan,
+	CANONICAL_BLOCK_ORDER,
 	pickRepertoireMaintenanceBlocks,
 	pickRepertoireSection,
 	pickTechnique,
@@ -16,164 +16,45 @@ import {
 } from "./session-planner";
 import { makePiece, makeSection, makeTechnique } from "./test-factories";
 
-function inputs(overrides: Partial<SessionInputs> = {}): SessionInputs {
+/**
+ * The old balanced 30-minute reference row, resolved: technique 7, reading 4,
+ * repertoire 19 split 55/30/15. Keeping the numbers means every downstream
+ * assertion still exercises the same arithmetic the planner used to derive.
+ */
+function alloc(overrides: Partial<SessionAllocation> = {}): SessionAllocation {
 	return {
-		emphasis: "balanced",
-		totalMinutes: 30,
-		techniqueEnabled: true,
-		sightReadingEnabled: true,
-		repertoireEnabled: true,
+		warmup: 0,
+		sightReading: 4,
+		technique: 7,
+		repertoireLearning: 10.45,
+		repertoireStabilizing: 5.7,
+		repertoireMaintenance: 2.85,
 		...overrides,
 	};
 }
 
+/** The old balanced 60-minute row: warmup 5, tech 12, reading 8, rep 35. */
+const BALANCED_60: SessionAllocation = {
+	warmup: 5,
+	sightReading: 8,
+	technique: 12,
+	repertoireLearning: 19.25,
+	repertoireStabilizing: 10.5,
+	repertoireMaintenance: 5.25,
+};
+
 const NOW = new Date("2026-05-27T12:00:00Z");
 
-describe("allocateTime", () => {
-	const cells: [number, SessionEmphasis, number, number, number, number][] = [
-		[15, "balanced", 3, 2, 10, 0],
-		[15, "technique-heavy", 6, 0, 9, 0],
-		[15, "reading-heavy", 2, 4, 9, 0],
-		[15, "repertoire-only", 2, 1, 12, 0],
-		[30, "balanced", 7, 4, 19, 0],
-		[30, "technique-heavy", 14, 2, 14, 0],
-		[30, "reading-heavy", 5, 9, 16, 0],
-		[30, "repertoire-only", 4, 2, 24, 0],
-		[45, "balanced", 10, 6, 29, 0],
-		[45, "technique-heavy", 20, 3, 22, 0],
-		[45, "reading-heavy", 7, 13, 25, 0],
-		[45, "repertoire-only", 5, 3, 37, 0],
-		[60, "balanced", 12, 8, 35, 5],
-		[60, "technique-heavy", 23, 4, 28, 5],
-		[60, "reading-heavy", 8, 17, 30, 5],
-		[60, "repertoire-only", 6, 4, 45, 5],
-	];
-
-	it.each(
-		cells,
-	)("matches reference %i %s", (total, emphasis, tech, read, rep, warmup) => {
-		const a = allocateTime(inputs({ totalMinutes: total, emphasis }));
-		expect(a.technique).toBe(tech);
-		expect(a.sightReading).toBe(read);
-		expect(a.repertoireTotal).toBe(rep);
-		expect(a.warmup).toBe(warmup);
-	});
-
-	it("clamps below 15 to 15", () => {
-		const a = allocateTime(inputs({ totalMinutes: 5 }));
-		expect(a.technique + a.sightReading + a.repertoireTotal + a.warmup).toBe(
-			15,
-		);
-	});
-
-	it("clamps above 90 to 90", () => {
-		const a = allocateTime(inputs({ totalMinutes: 999 }));
-		expect(a.technique + a.sightReading + a.repertoireTotal + a.warmup).toBe(
-			90,
-		);
-	});
-
-	it("interpolates 20 min balanced and sums to 20", () => {
-		const a = allocateTime(inputs({ totalMinutes: 20 }));
-		expect(a.technique + a.sightReading + a.repertoireTotal + a.warmup).toBe(
-			20,
-		);
-	});
-
-	it("interpolates 50 min balanced and sums to 50", () => {
-		const a = allocateTime(inputs({ totalMinutes: 50 }));
-		expect(a.technique + a.sightReading + a.repertoireTotal + a.warmup).toBe(
-			50,
-		);
-	});
-
-	it("extrapolates 75 min and sums to 75 with warmup 5", () => {
-		const a = allocateTime(inputs({ totalMinutes: 75 }));
-		expect(a.warmup).toBe(5);
-		expect(a.technique + a.sightReading + a.repertoireTotal + a.warmup).toBe(
-			75,
-		);
-	});
-
-	it("redistributes technique into repertoire when disabled", () => {
-		const a = allocateTime(
-			inputs({ totalMinutes: 30, techniqueEnabled: false }),
-		);
-		expect(a.technique).toBe(0);
-		expect(a.repertoireTotal).toBe(19 + 7);
-		expect(a.sightReading).toBe(4);
-	});
-
-	it("redistributes sight-reading into repertoire when disabled", () => {
-		const a = allocateTime(
-			inputs({ totalMinutes: 30, sightReadingEnabled: false }),
-		);
-		expect(a.sightReading).toBe(0);
-		expect(a.repertoireTotal).toBe(19 + 4);
-		expect(a.technique).toBe(7);
-	});
-
-	it("both disabled → all into repertoire", () => {
-		const a = allocateTime(
-			inputs({
-				totalMinutes: 30,
-				techniqueEnabled: false,
-				sightReadingEnabled: false,
-			}),
-		);
-		expect(a.repertoireTotal).toBe(30);
-	});
-
-	it("repertoire sub-split 55/30/15 at 30 balanced rep=19", () => {
-		const a = allocateTime(inputs({ totalMinutes: 30, emphasis: "balanced" }));
-		expect(a.repertoireTotal).toBeCloseTo(19);
-		expect(a.repertoireLearning).toBeCloseTo(19 * 0.55);
-		expect(a.repertoireStabilizing).toBeCloseTo(19 * 0.3);
-		expect(a.repertoireMaintenance).toBeCloseTo(19 * 0.15);
-	});
-
-	it("drops maintenance when rep < 12", () => {
-		const a = allocateTime(inputs({ totalMinutes: 15, emphasis: "balanced" }));
-		expect(a.repertoireTotal).toBeCloseTo(10);
-		expect(a.repertoireLearning).toBeCloseTo(6.5);
-		expect(a.repertoireStabilizing).toBeCloseTo(3.5);
-		expect(a.repertoireMaintenance).toBe(0);
-	});
-
-	it("collapses to learning only when rep < 7", () => {
-		const a = allocateTime(
-			inputs({ totalMinutes: 15, emphasis: "technique-heavy" }),
-		);
-		expect(a.repertoireTotal).toBeCloseTo(9);
-		expect(a.repertoireLearning).toBeCloseTo(9 * 0.65);
-		expect(a.repertoireStabilizing).toBeCloseTo(9 * 0.35);
-	});
-
-	it("sub-split always sums back to the repertoire total", () => {
-		for (const total of [15, 20, 25, 30, 37, 45, 50, 60, 75, 90]) {
-			const a = allocateTime(inputs({ totalMinutes: total }));
-			expect(
-				a.repertoireLearning +
-					a.repertoireStabilizing +
-					a.repertoireMaintenance,
-			).toBeCloseTo(a.repertoireTotal);
-		}
-	});
-
-	it("every allocation sums exactly to the requested total", () => {
-		for (const total of [15, 20, 25, 30, 37, 45, 50, 60, 75, 90]) {
-			for (const emphasis of [
-				"balanced",
-				"technique-heavy",
-				"reading-heavy",
-				"repertoire-only",
-			] as SessionEmphasis[]) {
-				const a = allocateTime(inputs({ totalMinutes: total, emphasis }));
-				expect(
-					a.technique + a.sightReading + a.repertoireTotal + a.warmup,
-				).toBeCloseTo(total);
-			}
-		}
+describe("CANONICAL_BLOCK_ORDER", () => {
+	it("puts reading directly after warmup and never last", () => {
+		expect(CANONICAL_BLOCK_ORDER).toEqual([
+			"warmup",
+			"sight-reading",
+			"technique",
+			"repertoire-learning",
+			"repertoire-stabilizing",
+			"repertoire-maintenance",
+		]);
 	});
 });
 
@@ -992,23 +873,23 @@ describe("planned block modeKey", () => {
 });
 
 describe("buildPlan", () => {
-	it("orders blocks per balanced emphasis", () => {
+	it("orders blocks canonically — reading directly after warmup", () => {
 		const pieces: Piece[] = [
 			makePiece({ id: "p1", state: "learning" }),
 			makePiece({ id: "p2", state: "stabilizing" }),
 			makePiece({ id: "p3", state: "maintenance" }),
 		];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
-		const plan = buildPlan(inputs({ totalMinutes: 30 }), pieces, [], ts, NOW);
+		const plan = buildPlan(alloc(), pieces, [], ts, NOW);
 		const kinds = plan.blocks.map((b) => b.kind);
-		expect(kinds[0]).toBe("technique");
-		expect(kinds[1]).toBe("sight-reading");
+		expect(kinds[0]).toBe("sight-reading");
+		expect(kinds[1]).toBe("technique");
 		expect(kinds[2]).toBe("repertoire-learning");
 		expect(kinds[3]).toBe("repertoire-stabilizing");
 		expect(kinds[4]).toBe("repertoire-maintenance");
 	});
 
-	it("includes warmup for 60+ min", () => {
+	it("includes warmup when the allocation funds it", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const ts: TechniqueItem[] = [
 			makeTechnique({ id: "a1", state: "active" }),
@@ -1017,25 +898,19 @@ describe("buildPlan", () => {
 				state: "maintenance" as TechniqueState,
 			}),
 		];
-		const plan = buildPlan(inputs({ totalMinutes: 60 }), pieces, [], ts, NOW);
+		const plan = buildPlan(BALANCED_60, pieces, [], ts, NOW);
 		expect(plan.blocks[0].kind).toBe("warmup");
 	});
 
 	it("omits sight-reading block when allocation is 0", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
-		const plan = buildPlan(
-			inputs({ totalMinutes: 30, sightReadingEnabled: false }),
-			pieces,
-			[],
-			[],
-			NOW,
-		);
+		const plan = buildPlan(alloc({ sightReading: 0 }), pieces, [], [], NOW);
 		expect(plan.blocks.find((b) => b.kind === "sight-reading")).toBeUndefined();
 	});
 
 	it("drops technique block when no techniques available", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
-		const plan = buildPlan(inputs({ totalMinutes: 30 }), pieces, [], [], NOW);
+		const plan = buildPlan(alloc(), pieces, [], [], NOW);
 		expect(plan.blocks.find((b) => b.kind === "technique")).toBeUndefined();
 	});
 
@@ -1044,7 +919,7 @@ describe("buildPlan", () => {
 			makePiece({ id: "p2", state: "stabilizing" }),
 			makePiece({ id: "p3", state: "maintenance" }),
 		];
-		const plan = buildPlan(inputs({ totalMinutes: 30 }), pieces, [], [], NOW);
+		const plan = buildPlan(alloc(), pieces, [], [], NOW);
 		expect(
 			plan.blocks.find((b) => b.kind === "repertoire-learning"),
 		).toBeUndefined();
@@ -1053,22 +928,60 @@ describe("buildPlan", () => {
 		).toBeDefined();
 	});
 
-	it("deterministic: same inputs → same plan", () => {
+	it("deterministic: same allocation → same plan", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
-		const p1 = buildPlan(inputs({ totalMinutes: 30 }), pieces, [], ts, NOW);
-		const p2 = buildPlan(inputs({ totalMinutes: 30 }), pieces, [], ts, NOW);
+		const p1 = buildPlan(alloc(), pieces, [], ts, NOW);
+		const p2 = buildPlan(alloc(), pieces, [], ts, NOW);
 		expect(p2.blocks.map((b) => b.kind)).toEqual(p1.blocks.map((b) => b.kind));
 		expect(p2.blocks.map((b) => b.pieceId)).toEqual(
 			p1.blocks.map((b) => b.pieceId),
 		);
 	});
 
-	it("repertoire-only emphasis still includes technique and sight-reading", () => {
+	it("derives totalMinutes from the allocation", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
 		const plan = buildPlan(
-			inputs({ totalMinutes: 30, emphasis: "repertoire-only" }),
+			alloc({ warmup: 3, sightReading: 5, technique: 6 }),
+			pieces,
+			[],
+			ts,
+			NOW,
+		);
+		expect(plan.totalMinutes).toBeCloseTo(3 + 5 + 6 + 10.45 + 5.7 + 2.85);
+	});
+
+	it("carries the preset identity onto the plan", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const plan = buildPlan(alloc(), pieces, [], [], NOW, {
+			presetId: "preset-1",
+			presetName: "Weekday quick",
+		});
+		expect(plan.presetId).toBe("preset-1");
+		expect(plan.presetName).toBe("Weekday quick");
+	});
+
+	it("marks a Custom session with a null presetId", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const plan = buildPlan(alloc(), pieces, [], [], NOW, {
+			presetName: "Custom",
+		});
+		expect(plan.presetId).toBeNull();
+		expect(plan.presetName).toBe("Custom");
+	});
+
+	it("a repertoire-heavy allocation still schedules its technique and reading minutes", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
+		const plan = buildPlan(
+			alloc({
+				sightReading: 5,
+				technique: 5,
+				repertoireLearning: 12,
+				repertoireStabilizing: 5,
+				repertoireMaintenance: 3,
+			}),
 			pieces,
 			[],
 			ts,
@@ -1083,41 +996,20 @@ describe("buildPlan", () => {
 		expect(repMinutes).toBeGreaterThan(15);
 	});
 
-	it("repertoire-only with repertoire forced on shifts disabled toggles into repertoire", () => {
-		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
-		const a = allocateTime(
-			inputs({
-				totalMinutes: 30,
-				emphasis: "repertoire-only",
-				techniqueEnabled: false,
-				sightReadingEnabled: false,
-			}),
-		);
-		expect(a.technique).toBe(0);
-		expect(a.sightReading).toBe(0);
-		expect(a.repertoireTotal).toBe(30);
-		expect(pieces.length).toBe(1);
-	});
-
-	it("disabling repertoire redistributes its minutes to technique and sight-reading", () => {
-		// Balanced 30: tech 7, read 4, rep 19. Repertoire off → its 19 min split
-		// across the two enabled categories in proportion (7:4), conserving total.
-		const a = allocateTime(
-			inputs({ totalMinutes: 30, repertoireEnabled: false }),
-		);
-		expect(a.repertoireTotal).toBe(0);
-		expect(a.technique + a.sightReading).toBeCloseTo(30);
-		expect(a.technique).toBeGreaterThan(a.sightReading);
-	});
-
-	it("repertoire disabled produces no repertoire blocks", () => {
+	it("an allocation with no repertoire minutes produces no repertoire blocks", () => {
 		const pieces: Piece[] = [
 			makePiece({ id: "p1", state: "learning" }),
 			makePiece({ id: "p2", state: "maintenance" }),
 		];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
 		const plan = buildPlan(
-			inputs({ totalMinutes: 30, repertoireEnabled: false }),
+			alloc({
+				sightReading: 11,
+				technique: 19,
+				repertoireLearning: 0,
+				repertoireStabilizing: 0,
+				repertoireMaintenance: 0,
+			}),
 			pieces,
 			[],
 			ts,
@@ -1130,35 +1022,23 @@ describe("buildPlan", () => {
 		expect(plan.blocks.find((b) => b.kind === "sight-reading")).toBeDefined();
 	});
 
-	it("reading-heavy puts sight-reading before technique", () => {
+	it("keeps reading before technique even when technique dominates", () => {
+		// Reading is never last: tired reading is guessing, and guessing is the
+		// reflex it trains. The order does not follow the minutes.
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
 		const plan = buildPlan(
-			inputs({ totalMinutes: 30, emphasis: "reading-heavy" }),
+			alloc({ warmup: 3, sightReading: 5, technique: 13 }),
 			pieces,
 			[],
 			ts,
 			NOW,
 		);
-		const sIdx = plan.blocks.findIndex((b) => b.kind === "sight-reading");
-		const tIdx = plan.blocks.findIndex((b) => b.kind === "technique");
-		expect(sIdx).toBeGreaterThanOrEqual(0);
-		expect(tIdx).toBeGreaterThan(sIdx);
-	});
-
-	it("technique-heavy puts technique before sight-reading", () => {
-		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
-		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
-		const plan = buildPlan(
-			inputs({ totalMinutes: 30, emphasis: "technique-heavy" }),
-			pieces,
-			[],
-			ts,
-			NOW,
+		const kinds = plan.blocks.map((b) => b.kind);
+		expect(kinds[0]).toBe("warmup");
+		expect(kinds.indexOf("sight-reading")).toBeLessThan(
+			kinds.indexOf("technique"),
 		);
-		const sIdx = plan.blocks.findIndex((b) => b.kind === "sight-reading");
-		const tIdx = plan.blocks.findIndex((b) => b.kind === "technique");
-		expect(tIdx).toBeLessThan(sIdx);
 	});
 
 	it("after practicing, next session picks stalest content (regression: same picks across sessions)", () => {
@@ -1198,7 +1078,7 @@ describe("buildPlan", () => {
 
 		// Session 1: picks p1 (never practiced, higher score) and t1 (never practiced)
 		const plan1 = buildPlan(
-			inputs({ totalMinutes: 30, sightReadingEnabled: false }),
+			alloc({ sightReading: 0 }),
 			pieces,
 			[],
 			ts,
@@ -1243,7 +1123,7 @@ describe("buildPlan", () => {
 
 		// Session 2 (next day): p2 and t2 should now score higher
 		const plan2 = buildPlan(
-			inputs({ totalMinutes: 30, sightReadingEnabled: false }),
+			alloc({ sightReading: 0 }),
 			afterSession1Pieces,
 			[],
 			afterSession1Techniques,
@@ -1272,7 +1152,7 @@ describe("buildPlan", () => {
 			),
 		];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
-		const plan = buildPlan(inputs({ totalMinutes: 60 }), pieces, [], ts, NOW);
+		const plan = buildPlan(BALANCED_60, pieces, [], ts, NOW);
 		const maint = plan.blocks.filter(
 			(b) => b.kind === "repertoire-maintenance",
 		);
@@ -1297,7 +1177,7 @@ describe("buildPlan", () => {
 			}),
 		];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
-		const plan = buildPlan(inputs({ totalMinutes: 60 }), pieces, [], ts, NOW);
+		const plan = buildPlan(BALANCED_60, pieces, [], ts, NOW);
 		const learn = plan.blocks.find((b) => b.kind === "repertoire-learning");
 		const stab = plan.blocks.find((b) => b.kind === "repertoire-stabilizing");
 		// 60 balanced: rep 35 → learning 19.25, stabilizing 10.5, maintenance 5.25.
@@ -1328,7 +1208,7 @@ describe("buildPlan", () => {
 		];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
 		// 30 balanced: rep 19 → maintenance 2.85, allowance 5.85. Cost 6 > 5.85.
-		const plan = buildPlan(inputs({ totalMinutes: 30 }), pieces, [], ts, NOW);
+		const plan = buildPlan(alloc(), pieces, [], ts, NOW);
 		expect(
 			plan.blocks.find((b) => b.kind === "repertoire-maintenance"),
 		).toBeUndefined();
@@ -1353,7 +1233,7 @@ describe("buildPlan", () => {
 			}),
 		];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
-		const plan = buildPlan(inputs({ totalMinutes: 30 }), pieces, [], ts, NOW, {
+		const plan = buildPlan(alloc(), pieces, [], ts, NOW, {
 			forcedMaintenancePieceId: "pm",
 		});
 		const maint = plan.blocks.filter(
@@ -1386,7 +1266,13 @@ describe("buildPlan", () => {
 			}),
 		];
 		const plan = buildPlan(
-			inputs({ totalMinutes: 30, emphasis: "repertoire-only" }),
+			alloc({
+				sightReading: 0,
+				technique: 0,
+				repertoireLearning: 16.5,
+				repertoireStabilizing: 9,
+				repertoireMaintenance: 4.5,
+			}),
 			pieces,
 			[],
 			[],
@@ -1604,13 +1490,7 @@ describe("same-day exclusion", () => {
 				lastPracticedAt: twoDaysAgo(),
 			}),
 		];
-		const plan = buildPlan(
-			inputs({ totalMinutes: 60 }),
-			pieces,
-			[],
-			ts,
-			NOW_LOCAL,
-		);
+		const plan = buildPlan(BALANCED_60, pieces, [], ts, NOW_LOCAL);
 		const warmup = plan.blocks.find((b) => b.kind === "warmup");
 		const techBlocks = plan.blocks.filter((b) => b.kind === "technique");
 		const warmupId = warmup?.techniqueId;
@@ -1629,13 +1509,7 @@ describe("same-day exclusion", () => {
 				lastPracticedAt: oneHourAgo(),
 			}),
 		];
-		const plan = buildPlan(
-			inputs({ totalMinutes: 30 }),
-			pieces,
-			[],
-			ts,
-			NOW_LOCAL,
-		);
+		const plan = buildPlan(alloc(), pieces, [], ts, NOW_LOCAL);
 		expect(plan.blocks.find((b) => b.kind === "technique")).toBeUndefined();
 		const om = plan.omitted?.find((o) => o.kind === "technique");
 		expect(om?.reason).toBe("practiced-today");
@@ -1644,13 +1518,7 @@ describe("same-day exclusion", () => {
 
 	it("buildPlan: omitted reason=no-content when pool has no techniques at all", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
-		const plan = buildPlan(
-			inputs({ totalMinutes: 30 }),
-			pieces,
-			[],
-			[],
-			NOW_LOCAL,
-		);
+		const plan = buildPlan(alloc(), pieces, [], [], NOW_LOCAL);
 		const om = plan.omitted?.find((o) => o.kind === "technique");
 		expect(om?.reason).toBe("no-content");
 	});
@@ -1668,13 +1536,7 @@ describe("same-day exclusion", () => {
 				lastPracticed: twoDaysAgo(),
 			}),
 		];
-		const plan = buildPlan(
-			inputs({ totalMinutes: 30 }),
-			pieces,
-			[],
-			[],
-			NOW_LOCAL,
-		);
+		const plan = buildPlan(alloc(), pieces, [], [], NOW_LOCAL);
 		expect(
 			plan.blocks.find((b) => b.kind === "repertoire-learning"),
 		).toBeUndefined();

@@ -1,12 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { ActiveSession, SessionInputs } from "@/models/session";
+import type { ActiveSession } from "@/models/session";
+import { planPresetName } from "@/models/session";
 import {
 	clearActiveSession,
 	readActiveSession,
-	readSessionInputs,
 	readSightReadingBpm,
 	writeActiveSession,
-	writeSessionInputs,
 	writeSightReadingBpm,
 } from "./session-storage";
 
@@ -42,39 +41,14 @@ describe("session-storage", () => {
 		mocked.removeItem.mockClear();
 	});
 
-	it("round trips session inputs per emphasis", async () => {
-		const inputs: SessionInputs = {
-			emphasis: "balanced",
-			totalMinutes: 30,
-			techniqueEnabled: true,
-			sightReadingEnabled: false,
-			repertoireEnabled: true,
-		};
-		await writeSessionInputs("u1", inputs);
-		expect(await readSessionInputs("u1", "balanced")).toEqual(inputs);
-		expect(await readSessionInputs("u1", "technique-heavy")).toBeNull();
-		expect(await readSessionInputs("u2", "balanced")).toBeNull();
-	});
-
-	it("returns null for malformed inputs", async () => {
-		mocked.__store.set("session-inputs:u1:balanced", "{not json");
-		expect(await readSessionInputs("u1", "balanced")).toBeNull();
-	});
-
 	it("round trips active session and clears it", async () => {
 		const session: ActiveSession = {
 			plan: {
-				emphasis: "balanced",
+				presetId: "p1",
+				presetName: "Weekday quick",
 				totalMinutes: 30,
 				blocks: [],
 				generatedAt: "2026-05-27T00:00:00.000Z",
-			},
-			inputs: {
-				emphasis: "balanced",
-				totalMinutes: 30,
-				techniqueEnabled: true,
-				sightReadingEnabled: true,
-				repertoireEnabled: true,
 			},
 			startedAt: "2026-05-27T00:00:00.000Z",
 			sessionId: "test-session-id",
@@ -86,6 +60,35 @@ describe("session-storage", () => {
 		expect(await readActiveSession("u1")).toEqual(session);
 		await clearActiveSession("u1");
 		expect(await readActiveSession("u1")).toBeNull();
+	});
+
+	it("keeps a session stored before presets existed, with a fallback label", async () => {
+		// Plans persisted by an older build carry `emphasis` and no `presetName`.
+		// Someone mid-session during an update should not lose it.
+		mocked.__store.set(
+			"active-session:u1",
+			JSON.stringify({
+				plan: {
+					emphasis: "balanced",
+					totalMinutes: 30,
+					blocks: [],
+					generatedAt: "2026-05-27T00:00:00.000Z",
+				},
+				inputs: { emphasis: "balanced", totalMinutes: 30 },
+				startedAt: "2026-05-27T00:00:00.000Z",
+				sessionId: "legacy",
+				currentBlockIndex: 0,
+				blockStates: [],
+				sessionElapsedSeconds: 0,
+			}),
+		);
+		const restored = await readActiveSession("u1");
+		if (!restored) throw new Error("legacy session was discarded");
+		expect(restored.sessionId).toBe("legacy");
+		expect(restored.plan.totalMinutes).toBe(30);
+		expect(planPresetName(restored.plan, "Practice session")).toBe(
+			"Practice session",
+		);
 	});
 
 	it("returns null for malformed active session", async () => {

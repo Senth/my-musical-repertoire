@@ -7,8 +7,11 @@ import {
 	Button,
 	Card,
 	Chip,
+	Dialog,
+	Divider,
 	FAB,
 	IconButton,
+	Menu,
 	Portal,
 	Surface,
 	Text,
@@ -24,16 +27,26 @@ import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
 import { usePieces } from "@/hooks/use-pieces";
 import { useAllSections } from "@/hooks/use-sections";
-import { useTechniques } from "@/hooks/use-techniques";
 import {
-	type ActiveSession,
-	SESSION_EMPHASES,
-	type SessionEmphasis,
-} from "@/models/session";
+	useSessionPresetActions,
+	useSessionPresets,
+} from "@/hooks/use-session-presets";
+import { useTechniques } from "@/hooks/use-techniques";
+import { type ActiveSession, planPresetName } from "@/models/session";
+import {
+	presetTotalMinutes,
+	SCRATCH_PRESET_ID,
+	type SessionPreset,
+} from "@/models/session-preset";
 import { displayMinutes } from "@/utils/format-minutes";
 import { suggestPieces, suggestTechniques } from "@/utils/overview-suggestions";
 import { planTotalMinutes } from "@/utils/session-planner";
 import { clearActiveSession, readActiveSession } from "@/utils/session-storage";
+
+/** MD3 one-line list item with supporting trailing text. */
+const SESSION_ROW_HEIGHT = 56;
+/** Width of an `IconButton`, so rows without one still line up. */
+const OVERFLOW_SLOT_WIDTH = 48;
 
 export default function OverviewScreen() {
 	const { t } = useTranslation();
@@ -104,9 +117,6 @@ export default function OverviewScreen() {
 					activeSession={activeSession}
 					onEnd={handleEndSession}
 					onResume={() => router.push("/session/coach")}
-					onStart={(em) =>
-						router.push(`/session/setup?emphasis=${em}` as const)
-					}
 				/>
 
 				<Text variant="titleMedium">{t("screen.overview.practiceToday")}</Text>
@@ -335,17 +345,27 @@ export default function OverviewScreen() {
 
 function SessionEntryBlock({
 	activeSession,
-	onStart,
 	onResume,
 	onEnd,
 }: {
 	activeSession: ActiveSession | null;
-	onStart: (emphasis: SessionEmphasis) => void;
 	onResume: () => void;
 	onEnd: () => void;
 }) {
 	const { t } = useTranslation();
 	const theme = useTheme();
+	const router = useRouter();
+	const { presets, scratch, loading } = useSessionPresets();
+	const { addPreset, deletePreset } = useSessionPresetActions();
+	// Anchored by press coordinates so the Menu can stay unmounted until opened:
+	// a mounted-but-closed Paper Menu steals focus on web.
+	const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(
+		null,
+	);
+	const [pendingDelete, setPendingDelete] = useState<SessionPreset | null>(
+		null,
+	);
+
 	if (activeSession) {
 		const current =
 			activeSession.plan.blocks[activeSession.currentBlockIndex] ?? null;
@@ -361,8 +381,11 @@ function SessionEntryBlock({
 					<View className="gap-2">
 						<Text variant="titleMedium">
 							{t("screen.session.resume.banner", {
-								emphasis: t(
-									`screen.session.emphasis.${activeSession.plan.emphasis}` as const,
+								// Sessions started before presets existed have no name — a
+								// generic label beats losing the session mid-practice.
+								preset: planPresetName(
+									activeSession.plan,
+									t("screen.session.legacyPresetName"),
 								),
 								minutes: displayMinutes(planTotalMinutes(activeSession.plan))
 									.minutes,
@@ -388,23 +411,185 @@ function SessionEntryBlock({
 			</Card>
 		);
 	}
+
+	const duplicate = async (preset: SessionPreset) => {
+		setMenu(null);
+		await addPreset(
+			t("screen.session.preset.copyName", { name: preset.name }),
+			preset.lines,
+			preset.order + 1,
+		);
+	};
+
 	return (
 		<View className="gap-2">
 			<Text variant="titleMedium">{t("screen.session.newSession")}</Text>
-			{SESSION_EMPHASES.map((em) => (
-				<Card key={em} mode="contained" onPress={() => onStart(em)}>
-					<View className="flex-row items-center justify-between pl-4 pr-1 py-1">
-						<Text variant="bodyLarge">
-							{t(`screen.session.emphasis.${em}` as const)}
-						</Text>
+
+			{!loading && presets.length === 0 && (
+				<Text
+					variant="bodyMedium"
+					style={{ color: theme.colors.onSurfaceVariant }}
+				>
+					{t("screen.session.preset.empty")}
+				</Text>
+			)}
+
+			{presets.map((preset) => (
+				<Card
+					key={preset.id}
+					mode="contained"
+					onPress={() =>
+						router.push(`/session/setup?presetId=${preset.id}` as const)
+					}
+				>
+					<View
+						className="flex-row items-center"
+						style={{
+							minHeight: SESSION_ROW_HEIGHT,
+							paddingLeft: 16,
+							paddingRight: 4,
+						}}
+					>
+						<View className="flex-1 flex-row items-center gap-3">
+							<Text variant="bodyLarge" className="flex-1">
+								{preset.name}
+							</Text>
+							<Text
+								variant="bodyMedium"
+								style={{ color: theme.colors.onSurfaceVariant }}
+							>
+								{t("screen.session.preset.minutes", {
+									minutes: presetTotalMinutes(preset.lines),
+								})}
+							</Text>
+						</View>
 						<IconButton
-							icon="play"
-							onPress={() => onStart(em)}
-							accessibilityLabel={t(`screen.session.emphasis.${em}` as const)}
+							icon="dots-vertical"
+							accessibilityLabel={t("screen.session.preset.rowActions", {
+								name: preset.name,
+							})}
+							onPress={(e) =>
+								setMenu({
+									id: preset.id ?? "",
+									x: e.nativeEvent.pageX,
+									y: e.nativeEvent.pageY,
+								})
+							}
 						/>
+						{menu !== null && menu.id === preset.id && (
+							<Menu
+								visible
+								onDismiss={() => setMenu(null)}
+								anchor={{ x: menu.x, y: menu.y }}
+							>
+								<Menu.Item
+									leadingIcon="pencil"
+									title={t("screen.session.preset.edit")}
+									onPress={() => {
+										setMenu(null);
+										router.push(
+											`/session/preset-editor?presetId=${preset.id}` as const,
+										);
+									}}
+								/>
+								<Menu.Item
+									leadingIcon="content-copy"
+									title={t("screen.session.preset.duplicate")}
+									onPress={() => duplicate(preset)}
+								/>
+								<Menu.Item
+									leadingIcon="delete"
+									title={t("screen.session.preset.delete")}
+									onPress={() => {
+										setMenu(null);
+										setPendingDelete(preset);
+									}}
+								/>
+							</Menu>
+						)}
 					</View>
 				</Card>
 			))}
+
+			<Divider />
+
+			{/* Always present, so deleting every preset is never a dead end. */}
+			<Card
+				mode="contained"
+				onPress={() =>
+					router.push(
+						`/session/preset-editor?presetId=${SCRATCH_PRESET_ID}` as const,
+					)
+				}
+			>
+				<View
+					className="flex-row items-center"
+					style={{
+						minHeight: SESSION_ROW_HEIGHT,
+						paddingLeft: 16,
+						paddingRight: 4,
+					}}
+				>
+					<View className="flex-1 flex-row items-center gap-3">
+						<Text variant="bodyLarge" className="flex-1">
+							{t("screen.session.preset.customRow")}
+						</Text>
+						{scratch ? (
+							<Text
+								variant="bodyMedium"
+								style={{ color: theme.colors.onSurfaceVariant }}
+							>
+								{t("screen.session.preset.minutes", {
+									minutes: presetTotalMinutes(scratch.lines),
+								})}
+							</Text>
+						) : null}
+					</View>
+					{/* Keeps the minutes column aligned with the preset rows, whose
+					    trailing overflow button occupies the same width. */}
+					<View style={{ width: OVERFLOW_SLOT_WIDTH }} />
+				</View>
+			</Card>
+
+			<Button
+				mode="text"
+				icon="tune"
+				onPress={() => router.push("/session/manage-presets")}
+			>
+				{t("screen.session.preset.manage")}
+			</Button>
+
+			<Portal>
+				<Dialog
+					visible={pendingDelete != null}
+					onDismiss={() => setPendingDelete(null)}
+				>
+					<Dialog.Title>
+						{t("screen.session.manage.deleteTitle", {
+							name: pendingDelete?.name ?? "",
+						})}
+					</Dialog.Title>
+					<Dialog.Content>
+						<Text variant="bodyMedium">
+							{t("screen.session.manage.deleteMessage")}
+						</Text>
+					</Dialog.Content>
+					<Dialog.Actions>
+						<Button onPress={() => setPendingDelete(null)}>
+							{t("screen.session.manage.cancel")}
+						</Button>
+						<Button
+							onPress={async () => {
+								const target = pendingDelete;
+								setPendingDelete(null);
+								if (target?.id) await deletePreset(target.id);
+							}}
+						>
+							{t("screen.session.manage.confirmDelete")}
+						</Button>
+					</Dialog.Actions>
+				</Dialog>
+			</Portal>
 		</View>
 	);
 }

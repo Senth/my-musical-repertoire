@@ -420,20 +420,27 @@
 		},
 		"session": {
 			"newSession": "New Practice Session",
-			"emphasis": {
-				"balanced": "Balanced focus",
-				"technique-heavy": "Technique focused",
-				"reading-heavy": "Reading focused",
-				"repertoire-only": "Repertoire focused"
+			"preset": {
+				"default": {
+					"balanced": "Balanced",
+					"reading-focused": "Reading focused",
+					"technique-focused": "Technique focused",
+					"repertoire-focused": "Repertoire focused"
+				},
+				"customName": "Custom",
+				"customRow": "Custom…",
+				"manage": "Manage presets",
+				"rowActions": "Options for {{name}}",
+				"minutes": "{{minutes}} min",
+				"edit": "Edit",
+				"duplicate": "Duplicate",
+				"delete": "Delete",
+				"copyName": "{{name}} (copy)",
+				"empty": "No presets — start a Custom session or restore the defaults",
+				"start": "Start {{name}}"
 			},
 			"setup": {
 				"title": "Set up session",
-				"minutesLabel": "Total minutes",
-				"minutesValue": "{{minutes}} min",
-				"techniqueLabel": "Include technique",
-				"sightReadingLabel": "Include sight-reading",
-				"repertoireLabel": "Include repertoire",
-				"emphasisLabel": "Emphasis",
 				"preview": "Estimated plan",
 				"noEligibleContent": "No content available — added to repertoire",
 				"start": "Start session",
@@ -453,7 +460,8 @@
 					"a11y": "Practice {{piece}} instead, replacing the scheduled maintenance piece and adding {{minutes}} minutes to the session",
 					"staleDays": "{{days}} days",
 					"staleWeeks": "3 weeks — consider scheduling it"
-				}
+				},
+				"edit": "Edit preset"
 			},
 			"block": {
 				"warmup": "Warmup",
@@ -488,7 +496,7 @@
 				}
 			},
 			"resume": {
-				"banner": "Session in progress — {{emphasis}}, {{minutes}} min",
+				"banner": "Session in progress — {{preset}}, {{minutes}} min",
 				"blockOf": "Block {{current}} of {{total}}: {{title}}",
 				"resume": "Resume",
 				"end": "End"
@@ -501,6 +509,59 @@
 				"whatYouPracticed": "What you practiced",
 				"skipped": "(skipped)",
 				"done": "Done"
+			},
+			"legacyPresetName": "Practice session",
+			"editor": {
+				"titleEdit": "Edit preset",
+				"titleNew": "New preset",
+				"titleCustom": "Custom session",
+				"nameLabel": "Name",
+				"nameRequired": "Give the preset a name",
+				"total": "Total",
+				"minutes": "{{minutes}} min",
+				"off": "—",
+				"save": "Save",
+				"saveAsNew": "Save as new",
+				"saveAsPreset": "Save as preset",
+				"start": "Start",
+				"empty": "Switch on at least one line",
+				"savedAsNew": "Preset saved",
+				"line": {
+					"warmup": "Warmup",
+					"sightReading": "Sight-reading",
+					"technique": "Technique",
+					"repertoireLearning": "Learning",
+					"repertoireStabilizing": "Stabilizing",
+					"repertoireMaintenance": "Maintenance"
+				},
+				"info": {
+					"warmup": "Easy playing that wakes the hands up before any real work — it matters most in a short session, not least.",
+					"sightReading": "New material played at first sight: two or three short items, keeping going rather than correcting.",
+					"technique": "Scales, arpeggios and drills worked one at a time — slow, correct, repeated.",
+					"repertoireLearning": "Pieces you cannot play yet: slow, hands separate, one small section at a time.",
+					"repertoireStabilizing": "Pieces you can play but not reliably — joining sections up and stepping the tempo.",
+					"repertoireMaintenance": "Pieces you already own, played as whole run-throughs so they do not rot."
+				},
+				"infoA11y": "What is {{line}}?",
+				"lineA11y": "{{line}}, {{minutes}} minutes",
+				"toggleA11y": "Include {{line}}"
+			},
+			"manage": {
+				"title": "Manage presets",
+				"restore": "Restore default presets",
+				"restored_one": "Restored {{count}} default preset",
+				"restored_other": "Restored {{count}} default presets",
+				"nothingToRestore": "All default presets are already here",
+				"moveUp": "Move up",
+				"moveDown": "Move down",
+				"rename": "Rename",
+				"renameTitle": "Rename preset",
+				"deleteTitle": "Delete {{name}}?",
+				"deleteMessage": "This preset will be removed. Default presets can be restored later.",
+				"cancel": "Cancel",
+				"confirmDelete": "Delete",
+				"newPreset": "New preset",
+				"empty": "No presets yet"
 			}
 		},
 		"pieceSections": {

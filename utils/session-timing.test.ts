@@ -4,17 +4,11 @@ import { pauseSession, resumeSession } from "./session-timing";
 function baseSession(overrides: Partial<ActiveSession> = {}): ActiveSession {
 	return {
 		plan: {
-			emphasis: "balanced",
+			presetId: "p1",
+			presetName: "Balanced",
 			totalMinutes: 30,
 			blocks: [],
 			generatedAt: "2026-06-27T10:00:00.000Z",
-		},
-		inputs: {
-			emphasis: "balanced",
-			totalMinutes: 30,
-			techniqueEnabled: true,
-			sightReadingEnabled: true,
-			repertoireEnabled: true,
 		},
 		startedAt: "2026-06-27T10:00:00.000Z",
 		sessionId: "test-session-id",
