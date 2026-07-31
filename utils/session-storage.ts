@@ -1,40 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { randomUUID } from "expo-crypto";
-import type {
-	ActiveSession,
-	SessionEmphasis,
-	SessionInputs,
-} from "@/models/session";
-
-function sessionInputsKey(uid: string, emphasis: SessionEmphasis): string {
-	return `session-inputs:${uid}:${emphasis}`;
-}
+import type { ActiveSession } from "@/models/session";
 
 function activeSessionKey(uid: string): string {
 	return `active-session:${uid}`;
-}
-
-export async function readSessionInputs(
-	uid: string,
-	emphasis: SessionEmphasis,
-): Promise<SessionInputs | null> {
-	const raw = await AsyncStorage.getItem(sessionInputsKey(uid, emphasis));
-	if (!raw) return null;
-	try {
-		return JSON.parse(raw) as SessionInputs;
-	} catch {
-		return null;
-	}
-}
-
-export async function writeSessionInputs(
-	uid: string,
-	inputs: SessionInputs,
-): Promise<void> {
-	await AsyncStorage.setItem(
-		sessionInputsKey(uid, inputs.emphasis),
-		JSON.stringify(inputs),
-	);
 }
 
 export async function readActiveSession(

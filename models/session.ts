@@ -1,17 +1,37 @@
 import type { ModeKey } from "@/models/practice";
 
-export type SessionEmphasis =
-	| "balanced"
-	| "technique-heavy"
-	| "reading-heavy"
-	| "repertoire-only";
+/**
+ * Resolved minutes per block kind, handed to the planner. The planner no longer
+ * decides how much; only what. A zero line is simply not scheduled.
+ */
+export interface SessionAllocation {
+	warmup: number;
+	sightReading: number;
+	technique: number;
+	repertoireLearning: number;
+	repertoireStabilizing: number;
+	repertoireMaintenance: number;
+}
 
-export const SESSION_EMPHASES: SessionEmphasis[] = [
-	"balanced",
-	"technique-heavy",
-	"reading-heavy",
-	"repertoire-only",
-];
+export const EMPTY_ALLOCATION: SessionAllocation = {
+	warmup: 0,
+	sightReading: 0,
+	technique: 0,
+	repertoireLearning: 0,
+	repertoireStabilizing: 0,
+	repertoireMaintenance: 0,
+};
+
+export function allocationTotalMinutes(alloc: SessionAllocation): number {
+	return (
+		alloc.warmup +
+		alloc.sightReading +
+		alloc.technique +
+		alloc.repertoireLearning +
+		alloc.repertoireStabilizing +
+		alloc.repertoireMaintenance
+	);
+}
 
 export type BlockKind =
 	| "warmup"
@@ -66,8 +86,11 @@ export interface MaintenanceOptIn {
 }
 
 export interface SessionPlan {
-	emphasis: SessionEmphasis;
-	/** The *requested* minutes, clamped 15–90. Real length adds inflation. */
+	/** `null` for a Custom (unsaved) session. */
+	presetId?: string | null;
+	/** Absent on plans stored before presets existed — see `planPresetName`. */
+	presetName?: string;
+	/** The *allocated* minutes. Real length adds inflation. */
 	totalMinutes: number;
 	blocks: PlannedBlock[];
 	generatedAt: string;
@@ -81,30 +104,14 @@ export interface SessionPlan {
 	maintenanceOptIn?: MaintenanceOptIn | null;
 }
 
-export interface SessionInputs {
-	totalMinutes: number;
-	emphasis: SessionEmphasis;
-	techniqueEnabled: boolean;
-	sightReadingEnabled: boolean;
-	repertoireEnabled: boolean;
-}
-
 /**
- * The category each emphasis is focused on. That category is always included
- * (its toggle is hidden in setup and forced on); the other two stay toggleable.
- * `balanced` focuses on nothing in particular, so all three remain toggleable.
+ * The preset a plan was built from. Plans persisted before presets existed
+ * carry an `emphasis` string and no name — someone mid-session during an update
+ * should not lose it, so they fall back to a generic label instead.
  */
-export type SessionFocusCategory = "technique" | "sightReading" | "repertoire";
-
-export const FOCUS_BY_EMPHASIS: Record<
-	SessionEmphasis,
-	SessionFocusCategory | null
-> = {
-	balanced: null,
-	"technique-heavy": "technique",
-	"reading-heavy": "sightReading",
-	"repertoire-only": "repertoire",
-};
+export function planPresetName(plan: SessionPlan, fallback: string): string {
+	return plan.presetName?.trim() || fallback;
+}
 
 export type BlockStatus = "pending" | "in-progress" | "completed" | "skipped";
 
@@ -117,7 +124,6 @@ export interface BlockExecutionState {
 
 export interface ActiveSession {
 	plan: SessionPlan;
-	inputs: SessionInputs;
 	startedAt: string;
 	sessionId: string;
 	currentBlockIndex: number;

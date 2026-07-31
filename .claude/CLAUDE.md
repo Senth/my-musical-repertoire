@@ -28,5 +28,5 @@ Backlog`). Never hand-edit it; regenerate with `scripts/sync-todo.sh` after crea
 ## Firebase
 
 - This project uses a real Firebase dev project. No emulators are running.
-- When `firestore.rules` are changed, these need to be deployed using `yarn deploy:web` to have an effect.
+- When `firestore.rules` are changed, these need to be deployed using `yarn deploy:dev` to have an effect.
 - When a Firestore write fails with "Missing or insufficient permissions", check whether the relevant rule was deployed, not just written to `firestore.rules`.

@@ -1,4 +1,3 @@
-import Slider from "@react-native-community/slider";
 import { randomUUID } from "expo-crypto";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -9,9 +8,7 @@ import {
 	Button,
 	Card,
 	Checkbox,
-	Chip,
 	Divider,
-	Switch,
 	Text,
 	useTheme,
 } from "react-native-paper";
@@ -20,145 +17,120 @@ import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePieces } from "@/hooks/use-pieces";
 import { useAllSections } from "@/hooks/use-sections";
+import { useSessionPresets } from "@/hooks/use-session-presets";
 import { useTechniques } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
-import {
-	type ActiveSession,
-	type BlockExecutionState,
-	FOCUS_BY_EMPHASIS,
-	type MaintenanceOptIn,
-	type OmittedSlot,
-	type PlannedBlock,
-	SESSION_EMPHASES,
-	type SessionEmphasis,
-	type SessionInputs,
-	type SessionPlan,
+import type {
+	ActiveSession,
+	BlockExecutionState,
+	MaintenanceOptIn,
+	OmittedSlot,
+	PlannedBlock,
+	SessionPlan,
 } from "@/models/session";
+import {
+	allocationFromLines,
+	type PresetLines,
+	SCRATCH_PRESET_ID,
+} from "@/models/session-preset";
 import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
 import { buildPlan, planTotalMinutes } from "@/utils/session-planner";
-import {
-	readSessionInputs,
-	writeActiveSession,
-	writeSessionInputs,
-} from "@/utils/session-storage";
+import { writeActiveSession } from "@/utils/session-storage";
 
-const MIN_MINUTES = 15;
-const MAX_MINUTES = 90;
-const STEP_MINUTES = 5;
-
-function isEmphasis(value: unknown): value is SessionEmphasis {
-	return (
-		typeof value === "string" && (SESSION_EMPHASES as string[]).includes(value)
-	);
-}
-
+/**
+ * Preview and Start. The preset decides the minutes — this screen only resolves
+ * it into an allocation, shows what the engine picked, and starts the session.
+ */
 export default function SessionSetupScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
 	const goBack = useUpNavigation("/(app)/(tabs)/overview");
 	const { user } = useAuth();
-	const params = useLocalSearchParams<{ emphasis?: string }>();
-	const emphasis: SessionEmphasis = isEmphasis(params.emphasis)
-		? params.emphasis
-		: "balanced";
+	const params = useLocalSearchParams<{ presetId?: string }>();
+	const presetId = params.presetId ?? SCRATCH_PRESET_ID;
+	const isCustom = presetId === SCRATCH_PRESET_ID;
 
 	const { pieces, loading: piecesLoading } = usePieces();
 	const { sections, loading: sectionsLoading } = useAllSections();
 	const { techniques, loading: techniquesLoading } = useTechniques();
+	const { presets, scratch, loading: presetsLoading } = useSessionPresets();
 
-	const focus = FOCUS_BY_EMPHASIS[emphasis];
-
-	const [totalMinutes, setTotalMinutes] = useState<number>(30);
-	const [techniqueEnabled, setTechniqueEnabled] = useState<boolean>(true);
-	const [sightReadingEnabled, setSightReadingEnabled] = useState<boolean>(true);
-	const [repertoireEnabled, setRepertoireEnabled] = useState<boolean>(true);
-	const [restored, setRestored] = useState<boolean>(false);
 	const [starting, setStarting] = useState<boolean>(false);
 	// Screen state only — deciding fresh each session is the point.
 	const [optInAccepted, setOptInAccepted] = useState<boolean>(false);
 
-	useEffect(() => {
-		let active = true;
-		(async () => {
-			if (!user) {
-				setRestored(true);
-				return;
-			}
-			const stored = await readSessionInputs(user.uid, emphasis);
-			if (!active) return;
-			if (stored) {
-				setTotalMinutes(stored.totalMinutes);
-				setTechniqueEnabled(stored.techniqueEnabled);
-				setSightReadingEnabled(stored.sightReadingEnabled);
-				// Older stored inputs predate the repertoire toggle → default on.
-				setRepertoireEnabled(stored.repertoireEnabled ?? true);
-			}
-			setRestored(true);
-		})();
-		return () => {
-			active = false;
-		};
-	}, [user, emphasis]);
-
-	// The focused category is always included regardless of the stored toggle.
-	const inputs: SessionInputs = useMemo(
-		() => ({
-			emphasis,
-			totalMinutes,
-			techniqueEnabled: focus === "technique" ? true : techniqueEnabled,
-			sightReadingEnabled:
-				focus === "sightReading" ? true : sightReadingEnabled,
-			repertoireEnabled: focus === "repertoire" ? true : repertoireEnabled,
-		}),
-		[
-			emphasis,
-			focus,
-			totalMinutes,
-			techniqueEnabled,
-			sightReadingEnabled,
-			repertoireEnabled,
-		],
+	const preset = useMemo(
+		() =>
+			isCustom ? scratch : (presets.find((p) => p.id === presetId) ?? null),
+		[isCustom, scratch, presets, presetId],
 	);
 
-	// The plan built from the inputs alone. Its `maintenanceOptIn` is the offer
-	// shown below the preview; ticking it rebuilds the whole plan (the leftover
-	// minutes handed to learning/stabilizing have to be taken back).
+	const lines: PresetLines = useMemo(() => preset?.lines ?? {}, [preset]);
+	const presetName = isCustom
+		? t("screen.session.preset.customName")
+		: (preset?.name ?? "");
+
+	const allocation = useMemo(() => allocationFromLines(lines), [lines]);
+
+	// The plan built from the allocation alone. Its `maintenanceOptIn` is the
+	// offer shown below the preview; ticking it rebuilds the whole plan (the
+	// leftover minutes handed to learning/stabilizing have to be taken back).
 	const basePlan = useMemo(() => {
-		if (piecesLoading || techniquesLoading || sectionsLoading) return null;
-		return buildPlan(inputs, pieces, sections, techniques);
+		if (piecesLoading || techniquesLoading || sectionsLoading || presetsLoading)
+			return null;
+		return buildPlan(allocation, pieces, sections, techniques, undefined, {
+			presetId: isCustom ? null : presetId,
+			presetName,
+		});
 	}, [
-		inputs,
+		allocation,
 		pieces,
 		sections,
 		techniques,
 		piecesLoading,
 		techniquesLoading,
 		sectionsLoading,
+		presetsLoading,
+		isCustom,
+		presetId,
+		presetName,
 	]);
 
-	// Any change to minutes, emphasis or a toggle re-plans — the oversized piece
-	// may well be a different one, so the tick never carries over.
+	// Any change to the allocation re-plans — the oversized piece may well be a
+	// different one, so the tick never carries over.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: resets on re-plan
 	useEffect(() => {
 		setOptInAccepted(false);
-	}, [inputs]);
+	}, [allocation]);
 
 	const optIn = basePlan?.maintenanceOptIn ?? null;
 
 	const plan = useMemo(() => {
 		if (!basePlan) return null;
 		if (!optInAccepted || !optIn) return basePlan;
-		return buildPlan(inputs, pieces, sections, techniques, undefined, {
+		return buildPlan(allocation, pieces, sections, techniques, undefined, {
 			forcedMaintenancePieceId: optIn.pieceId,
+			presetId: isCustom ? null : presetId,
+			presetName,
 		});
-	}, [basePlan, optInAccepted, optIn, inputs, pieces, sections, techniques]);
+	}, [
+		basePlan,
+		optInAccepted,
+		optIn,
+		allocation,
+		pieces,
+		sections,
+		techniques,
+		isCustom,
+		presetId,
+		presetName,
+	]);
 
 	const handleStart = async () => {
 		if (!user || !plan) return;
 		setStarting(true);
 		try {
-			await writeSessionInputs(user.uid, inputs);
 			const blockStates: BlockExecutionState[] = plan.blocks.map((_, idx) => ({
 				index: idx,
 				status: idx === 0 ? "in-progress" : "pending",
@@ -167,7 +139,6 @@ export default function SessionSetupScreen() {
 			}));
 			const active: ActiveSession = {
 				plan,
-				inputs,
 				startedAt: new Date().toISOString(),
 				sessionId: randomUUID(),
 				currentBlockIndex: 0,
@@ -183,7 +154,7 @@ export default function SessionSetupScreen() {
 	};
 
 	const loading =
-		piecesLoading || sectionsLoading || techniquesLoading || !restored;
+		piecesLoading || sectionsLoading || techniquesLoading || presetsLoading;
 
 	return (
 		<View
@@ -192,89 +163,19 @@ export default function SessionSetupScreen() {
 		>
 			<Appbar.Header>
 				<Appbar.BackAction onPress={goBack} />
-				<Appbar.Content title={t("screen.session.setup.title")} />
+				<Appbar.Content title={presetName || t("screen.session.setup.title")} />
+				<Appbar.Action
+					icon="pencil"
+					accessibilityLabel={t("screen.session.setup.edit")}
+					onPress={() =>
+						router.push(`/session/preset-editor?presetId=${presetId}` as const)
+					}
+				/>
 			</Appbar.Header>
 			{loading ? (
 				<LoadingScreen />
 			) : (
 				<ScreenContent gap={6} paddingBottom={24}>
-					<View className="gap-2">
-						<Text variant="titleSmall">
-							{t("screen.session.setup.emphasisLabel")}
-						</Text>
-						<Chip
-							icon="tune"
-							style={{ alignSelf: "flex-start" }}
-							onPress={goBack}
-							accessibilityLabel={t(
-								`screen.session.emphasis.${emphasis}` as const,
-							)}
-						>
-							{t(`screen.session.emphasis.${emphasis}` as const)}
-						</Chip>
-					</View>
-
-					<View className="gap-2">
-						<View className="flex-row items-center justify-between">
-							<Text variant="titleSmall">
-								{t("screen.session.setup.minutesLabel")}
-							</Text>
-							<Text variant="titleMedium">
-								{t("screen.session.setup.minutesValue", {
-									minutes: totalMinutes,
-								})}
-							</Text>
-						</View>
-						<Slider
-							minimumValue={MIN_MINUTES}
-							maximumValue={MAX_MINUTES}
-							step={STEP_MINUTES}
-							value={totalMinutes}
-							onValueChange={(v) => setTotalMinutes(Math.round(v))}
-							minimumTrackTintColor={theme.colors.primary}
-							maximumTrackTintColor={theme.colors.surfaceVariant}
-							thumbTintColor={theme.colors.primary}
-						/>
-					</View>
-
-					{focus !== "technique" && (
-						<View className="flex-row items-center justify-between">
-							<Text variant="titleSmall">
-								{t("screen.session.setup.techniqueLabel")}
-							</Text>
-							<Switch
-								value={techniqueEnabled}
-								onValueChange={setTechniqueEnabled}
-							/>
-						</View>
-					)}
-
-					{focus !== "sightReading" && (
-						<View className="flex-row items-center justify-between">
-							<Text variant="titleSmall">
-								{t("screen.session.setup.sightReadingLabel")}
-							</Text>
-							<Switch
-								value={sightReadingEnabled}
-								onValueChange={setSightReadingEnabled}
-							/>
-						</View>
-					)}
-
-					{focus !== "repertoire" && (
-						<View className="flex-row items-center justify-between">
-							<Text variant="titleSmall">
-								{t("screen.session.setup.repertoireLabel")}
-							</Text>
-							<Switch
-								value={repertoireEnabled}
-								onValueChange={setRepertoireEnabled}
-							/>
-						</View>
-					)}
-
-					<Divider />
-
 					<View className="gap-2">
 						<Text variant="titleSmall">
 							{t("screen.session.setup.preview")}
@@ -344,7 +245,7 @@ function OmittedRow({ slot }: { slot: OmittedSlot }) {
 
 /**
  * Closes the preview list so the plan reads as a receipt that adds up. Shows the
- * real total — requested minutes plus whatever maintenance overran by — with a
+ * real total — allocated minutes plus whatever maintenance overran by — with a
  * `(+N)` suffix whenever the two differ.
  */
 function TotalRow({ plan }: { plan: SessionPlan }) {

@@ -1,14 +1,14 @@
 import type { Piece } from "@/models/piece";
 import type { Section } from "@/models/section";
-import type {
-	BlockKind,
-	MaintenanceOptIn,
-	OmittedReason,
-	OmittedSlot,
-	PlannedBlock,
-	SessionEmphasis,
-	SessionInputs,
-	SessionPlan,
+import {
+	allocationTotalMinutes,
+	type BlockKind,
+	type MaintenanceOptIn,
+	type OmittedReason,
+	type OmittedSlot,
+	type PlannedBlock,
+	type SessionAllocation,
+	type SessionPlan,
 } from "@/models/session";
 import type { TechniqueItem } from "@/models/technique";
 import {
@@ -22,192 +22,23 @@ import {
 	sortTechniques,
 } from "./planner-scoring";
 
-export interface AllocationResult {
-	warmup: number;
-	technique: number;
-	sightReading: number;
-	repertoireLearning: number;
-	repertoireStabilizing: number;
-	repertoireMaintenance: number;
-	repertoireTotal: number;
-}
-
-const REF_ROWS: Record<SessionEmphasis, number[][]> = {
-	balanced: [
-		[15, 3, 2, 10, 0],
-		[30, 7, 4, 19, 0],
-		[45, 10, 6, 29, 0],
-		[60, 12, 8, 35, 5],
-	],
-	"technique-heavy": [
-		[15, 6, 0, 9, 0],
-		[30, 14, 2, 14, 0],
-		[45, 20, 3, 22, 0],
-		[60, 23, 4, 28, 5],
-	],
-	"reading-heavy": [
-		[15, 2, 4, 9, 0],
-		[30, 5, 9, 16, 0],
-		[45, 7, 13, 25, 0],
-		[60, 8, 17, 30, 5],
-	],
-	"repertoire-only": [
-		[15, 2, 1, 12, 0],
-		[30, 4, 2, 24, 0],
-		[45, 5, 3, 37, 0],
-		[60, 6, 4, 45, 5],
-	],
-};
-
-const ORDER_BY_EMPHASIS: Record<SessionEmphasis, BlockKind[]> = {
-	balanced: [
-		"warmup",
-		"technique",
-		"sight-reading",
-		"repertoire-learning",
-		"repertoire-stabilizing",
-		"repertoire-maintenance",
-	],
-	"technique-heavy": [
-		"warmup",
-		"technique",
-		"repertoire-learning",
-		"repertoire-stabilizing",
-		"sight-reading",
-		"repertoire-maintenance",
-	],
-	"reading-heavy": [
-		"warmup",
-		"sight-reading",
-		"technique",
-		"repertoire-learning",
-		"repertoire-stabilizing",
-		"repertoire-maintenance",
-	],
-	"repertoire-only": [
-		"warmup",
-		"technique",
-		"sight-reading",
-		"repertoire-learning",
-		"repertoire-stabilizing",
-		"repertoire-maintenance",
-	],
-};
+/**
+ * One canonical order for every preset. Reading sits directly after warmup: it
+ * is demanding on the brain but light on the hands, so it extends the warmup
+ * rather than competing with technique — and reading last only trains guessing.
+ * Disabled lines simply vanish from the sequence.
+ */
+export const CANONICAL_BLOCK_ORDER: BlockKind[] = [
+	"warmup",
+	"sight-reading",
+	"technique",
+	"repertoire-learning",
+	"repertoire-stabilizing",
+	"repertoire-maintenance",
+];
 
 function clamp(n: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, n));
-}
-
-function interpolateRow(
-	emphasis: SessionEmphasis,
-	total: number,
-): { tech: number; read: number; rep: number; warmup: number } {
-	const rows = REF_ROWS[emphasis];
-	const clamped = clamp(total, 15, 90);
-	let lo = rows[0];
-	let hi = rows[rows.length - 1];
-	for (let i = 0; i < rows.length - 1; i++) {
-		if (clamped >= rows[i][0] && clamped <= rows[i + 1][0]) {
-			lo = rows[i];
-			hi = rows[i + 1];
-			break;
-		}
-	}
-	if (clamped > 60) {
-		lo = rows[2];
-		hi = rows[3];
-	}
-	const span = hi[0] - lo[0];
-	const t = span === 0 ? 0 : (clamped - lo[0]) / span;
-	const tech = lo[1] + (hi[1] - lo[1]) * t;
-	const read = lo[2] + (hi[2] - lo[2]) * t;
-	const rep = lo[3] + (hi[3] - lo[3]) * t;
-	const warmup = clamped >= 60 ? 5 : 0;
-	return { tech, read, rep, warmup };
-}
-
-function splitRepertoire(repTotal: number): {
-	learning: number;
-	stabilizing: number;
-	maintenance: number;
-} {
-	if (repTotal <= 0) {
-		return { learning: 0, stabilizing: 0, maintenance: 0 };
-	}
-	let l: number;
-	let s: number;
-	let m: number;
-	if (repTotal < 7) {
-		l = repTotal;
-		s = 0;
-		m = 0;
-	} else if (repTotal < 12) {
-		l = repTotal * 0.65;
-		s = repTotal - l;
-		m = 0;
-	} else {
-		l = repTotal * 0.55;
-		s = repTotal * 0.3;
-		m = repTotal - l - s;
-		if (m < 0) {
-			s += m;
-			m = 0;
-		}
-	}
-	return { learning: l, stabilizing: s, maintenance: m };
-}
-
-export function allocateTime(inputs: SessionInputs): AllocationResult {
-	const clamped = clamp(inputs.totalMinutes, 15, 90);
-	const raw = interpolateRow(inputs.emphasis, clamped);
-	const warmup = raw.warmup;
-
-	// Disabled categories contribute zero minutes. Allocations stay fractional —
-	// rounding happens only at display time (`utils/format-minutes.ts`).
-	let tech = inputs.techniqueEnabled ? raw.tech : 0;
-	let read = inputs.sightReadingEnabled ? raw.read : 0;
-	let rep = inputs.repertoireEnabled ? raw.rep : 0;
-
-	// Whatever is left over after warmup + the kept categories (minutes freed by
-	// disabled toggles plus the reference rows not summing above 60) is poured
-	// back into the enabled categories so the session always fills the requested
-	// minutes. Repertoire is the preferred sink; when it is disabled the leftover
-	// is split across the enabled non-repertoire categories in proportion to their
-	// current share (even split when they are both zero). The focused category is
-	// always enabled, so something is always available to receive it.
-	const leftover = clamped - warmup - tech - read - rep;
-	if (leftover !== 0) {
-		if (inputs.repertoireEnabled) {
-			rep = Math.max(0, rep + leftover);
-		} else {
-			const recipients: ("tech" | "read")[] = [];
-			if (inputs.techniqueEnabled) recipients.push("tech");
-			if (inputs.sightReadingEnabled) recipients.push("read");
-			const base: Record<"tech" | "read", number> = { tech, read };
-			const totalShare = recipients.reduce((acc, k) => acc + base[k], 0);
-			for (const k of recipients) {
-				const portion =
-					totalShare > 0
-						? (leftover * base[k]) / totalShare
-						: leftover / recipients.length;
-				base[k] = Math.max(0, base[k] + portion);
-			}
-			tech = base.tech;
-			read = base.read;
-		}
-	}
-
-	const sub = splitRepertoire(rep);
-
-	return {
-		warmup,
-		technique: tech,
-		sightReading: read,
-		repertoireLearning: sub.learning,
-		repertoireStabilizing: sub.stabilizing,
-		repertoireMaintenance: sub.maintenance,
-		repertoireTotal: rep,
-	};
 }
 
 function compareTitle(a: string, b: string): number {
@@ -646,11 +477,14 @@ function omittedReason(rawExists: boolean): OmittedReason {
 export interface BuildPlanOptions {
 	/** The user ticked the oversized-maintenance opt-in for this piece. */
 	forcedMaintenancePieceId?: string | null;
+	/** The preset this session came from. `null`/absent for a Custom session. */
+	presetId?: string | null;
+	presetName?: string;
 }
 
 /**
- * The session's real length: the requested minutes plus whatever maintenance
- * overran by. `plan.totalMinutes` stays the *requested* value, so every screen
+ * The session's real length: the allocated minutes plus whatever maintenance
+ * overran by. `plan.totalMinutes` stays the *allocated* value, so every screen
  * showing a real total goes through here rather than re-deriving it.
  */
 export function planTotalMinutes(plan: SessionPlan): number {
@@ -658,14 +492,13 @@ export function planTotalMinutes(plan: SessionPlan): number {
 }
 
 export function buildPlan(
-	inputs: SessionInputs,
+	alloc: SessionAllocation,
 	pieces: Piece[],
 	sections: Section[],
 	techniques: TechniqueItem[],
 	now: Date = new Date(),
 	options?: BuildPlanOptions,
 ): SessionPlan {
-	const alloc = allocateTime(inputs);
 	const omitted: OmittedSlot[] = [];
 
 	// Availability flags (warmup excluded — it has its own freeform fallback).
@@ -812,9 +645,8 @@ export function buildPlan(
 			maintenanceBlocks.length > 0 ? maintenanceBlocks : undefined,
 	};
 
-	const order = ORDER_BY_EMPHASIS[inputs.emphasis];
 	const blocks: PlannedBlock[] = [];
-	for (const kind of order) {
+	for (const kind of CANONICAL_BLOCK_ORDER) {
 		const entry = byKind[kind];
 		if (!entry) continue;
 		if (Array.isArray(entry)) {
@@ -825,8 +657,9 @@ export function buildPlan(
 	}
 
 	return {
-		emphasis: inputs.emphasis,
-		totalMinutes: clamp(inputs.totalMinutes, 15, 90),
+		presetId: options?.presetId ?? null,
+		presetName: options?.presetName ?? "",
+		totalMinutes: allocationTotalMinutes(alloc),
 		blocks,
 		generatedAt: now.toISOString(),
 		omitted,
