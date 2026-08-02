@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Appbar, Button, Menu, Text, useTheme } from "react-native-paper";
 import { BpmControl } from "@/components/practice/BpmControl";
+import { EstimationField } from "@/components/practice/EstimationField";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import { ModeSelector } from "@/components/practice/ModeSelector";
-import { RatingField } from "@/components/practice/RatingField";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
@@ -24,6 +24,7 @@ import {
 } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { ModeKey } from "@/models/practice";
+import { effortOptions, qualityOptions } from "@/utils/estimation-options";
 import {
 	availableHandsModes,
 	hsTarget,
@@ -205,11 +206,6 @@ export function TechniquePracticeContent({
 		return <MessageScreen message={t("screen.practiceTechnique.notFound")} />;
 	}
 
-	const ratingButtons = (["1", "2", "3", "4", "5"] as const).map((v) => ({
-		value: v,
-		label: v,
-	}));
-
 	return (
 		<View
 			className="flex-1"
@@ -341,18 +337,18 @@ export function TechniquePracticeContent({
 						/>
 					</View>
 
-					<RatingField
+					<EstimationField
 						label={t("screen.practiceTechnique.qualityLabel")}
 						value={modes.draft.quality}
 						onChange={modes.setQuality}
-						buttons={ratingButtons}
+						options={qualityOptions(t)}
 					/>
 
-					<RatingField
+					<EstimationField
 						label={t("screen.practiceTechnique.effortLabel")}
 						value={modes.draft.effort}
 						onChange={modes.setEffort}
-						buttons={ratingButtons}
+						options={effortOptions(t)}
 					/>
 
 					{!inCoach && (

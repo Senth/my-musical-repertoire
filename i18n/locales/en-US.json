@@ -110,18 +110,32 @@
 			"other": "Other"
 		},
 		"quality": {
-			"1": "1 – Fell apart",
-			"2": "2 – Many errors",
-			"3": "3 – Shaky but OK",
-			"4": "4 – Minor slips",
-			"5": "5 – Clean"
+			"1": "Fell apart",
+			"2": "Many errors",
+			"3": "Shaky but OK",
+			"4": "Minor slips",
+			"5": "Clean and secure"
+		},
+		"qualityShort": {
+			"1": "Lost it",
+			"2": "Rough",
+			"3": "OK",
+			"4": "Good",
+			"5": "Clean"
 		},
 		"effort": {
-			"1": "1 – Very easy",
-			"2": "2 – Easy",
-			"3": "3 – Moderate",
-			"4": "4 – Hard",
-			"5": "5 – Very hard"
+			"1": "Effortless",
+			"2": "Comfortable",
+			"3": "Moderate",
+			"4": "Demanding",
+			"5": "At my limit"
+		},
+		"effortShort": {
+			"1": "V. easy",
+			"2": "Easy",
+			"3": "Med",
+			"4": "Hard",
+			"5": "V. hard"
 		},
 		"handsMode": {
 			"together": "Together",
@@ -300,11 +314,18 @@
 				"incompleteMode": "{{mode}} needs quality and effort"
 			},
 			"mistakeLevel": {
+				"none": "Clean run",
+				"few": "A slip or two",
+				"some": "Noticeable slips",
+				"many": "Frequent slips",
+				"everywhere": "Breaking down throughout"
+			},
+			"mistakeLevelShort": {
 				"none": "None",
 				"few": "Few",
 				"some": "Some",
 				"many": "Many",
-				"everywhere": "Everywhere"
+				"everywhere": "All"
 			},
 			"comparison": {
 				"title": "Practice Results",

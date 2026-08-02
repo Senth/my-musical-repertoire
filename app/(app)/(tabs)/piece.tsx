@@ -17,6 +17,10 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
+import {
+	accentBorderStyle,
+	CARD_TITLE_STYLE,
+} from "@/components/ui/card-style";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { FilterPillRow } from "@/components/ui/FilterPillRow";
 import {
@@ -62,6 +66,7 @@ import {
 	readPieceListPrefs,
 	writePieceListPrefs,
 } from "@/utils/session-storage";
+import { pieceStateVisual } from "@/utils/state-colors";
 
 type ContextMenu = { pieceId: string; x: number; y: number };
 
@@ -482,13 +487,18 @@ export default function PiecesScreen() {
 							key={item.id}
 							mode="elevated"
 							onPress={() => router.push(`/piece/${item.id}`)}
+							style={accentBorderStyle(
+								pieceStateVisual(item.state, theme.dark),
+							)}
 						>
 							<Card.Title
 								title={item.title}
+								titleStyle={CARD_TITLE_STYLE}
 								subtitle={formatComposerLine(
 									item.composer,
 									item.collectionName,
 								)}
+								subtitleStyle={{ color: theme.colors.onSurfaceVariant }}
 								right={() => renderCardMenu(item)}
 							/>
 							<Card.Content>

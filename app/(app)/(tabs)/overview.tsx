@@ -6,7 +6,6 @@ import { Pressable, View } from "react-native";
 import {
 	Button,
 	Card,
-	Chip,
 	Dialog,
 	Divider,
 	FAB,
@@ -20,8 +19,14 @@ import {
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
+import {
+	accentBorderStyle,
+	CARD_TITLE_STYLE,
+	TITLE_ONLY_CARD_STYLE,
+} from "@/components/ui/card-style";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
+import { MetaChip } from "@/components/ui/StateChip";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
@@ -42,6 +47,7 @@ import { displayMinutes } from "@/utils/format-minutes";
 import { suggestPieces, suggestTechniques } from "@/utils/overview-suggestions";
 import { planTotalMinutes } from "@/utils/session-planner";
 import { clearActiveSession, readActiveSession } from "@/utils/session-storage";
+import { pieceStateVisual, techniqueStateVisual } from "@/utils/state-colors";
 
 /** MD3 one-line list item with supporting trailing text. */
 const SESSION_ROW_HEIGHT = 56;
@@ -138,8 +144,16 @@ export default function OverviewScreen() {
 						key={s.piece.id}
 						mode="elevated"
 						onPress={() => router.push(`/piece/${s.piece.id}`)}
+						style={accentBorderStyle(
+							pieceStateVisual(s.piece.state, theme.dark),
+						)}
 					>
-						<Card.Title title={s.piece.title} subtitle={s.piece.composer} />
+						<Card.Title
+							title={s.piece.title}
+							titleStyle={CARD_TITLE_STYLE}
+							subtitle={s.piece.composer}
+							subtitleStyle={{ color: theme.colors.onSurfaceVariant }}
+						/>
 						<Card.Content>
 							<View className="gap-2">
 								<View className="flex-row items-center gap-2 flex-wrap">
@@ -208,20 +222,27 @@ export default function OverviewScreen() {
 						key={s.tech.id}
 						mode="elevated"
 						onPress={() => router.push(`/technique/${s.tech.id}`)}
+						style={accentBorderStyle(
+							techniqueStateVisual(s.tech.state, theme.dark),
+						)}
 					>
-						<Card.Title title={s.tech.title} />
+						<Card.Title
+							title={s.tech.title}
+							titleStyle={CARD_TITLE_STYLE}
+							style={TITLE_ONLY_CARD_STYLE}
+						/>
 						<Card.Content>
 							<View className="gap-2">
 								<View className="flex-row items-center gap-2 flex-wrap">
 									<TechniqueStateChip state={s.tech.state} />
 									{s.tech.type && (
-										<Chip compact textStyle={{ fontSize: 11 }}>
-											{t(
+										<MetaChip
+											label={t(
 												`technique.type.${s.tech.type}` as Parameters<
 													typeof t
 												>[0],
 											)}
-										</Chip>
+										/>
 									)}
 								</View>
 								<Text
