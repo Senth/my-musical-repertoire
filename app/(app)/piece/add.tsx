@@ -1,8 +1,8 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button } from "react-native-paper";
-import { ComposerAutocompleteInput } from "@/components/piece/ComposerAutocompleteInput";
+import { HistoryAutocompleteInput } from "@/components/piece/HistoryAutocompleteInput";
 import { DropdownField } from "@/components/ui/DropdownField";
 import { FormScaffold } from "@/components/ui/FormScaffold";
 import { FormTextField } from "@/components/ui/FormTextField";
@@ -10,6 +10,10 @@ import { useAutoFocusOnMount } from "@/hooks/use-auto-focus-on-mount";
 import { useAddPiece, usePieces } from "@/hooks/use-pieces";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { PIECE_STATES, type PieceState } from "@/models/piece";
+import {
+	collectionSuggestions,
+	composerSuggestions,
+} from "@/utils/suggestions";
 import { validateBpm, validateDuration } from "@/utils/validation";
 
 export default function AddPieceScreen() {
@@ -20,6 +24,7 @@ export default function AddPieceScreen() {
 
 	const [title, setTitle] = useState("");
 	const [composer, setComposer] = useState("");
+	const [collectionName, setCollectionName] = useState("");
 	const [state, setState] = useState<PieceState>("learning");
 	const [targetTempoBpmText, setTargetTempoBpmText] = useState("");
 	const [durationMinutesText, setDurationMinutesText] = useState("");
@@ -59,6 +64,16 @@ export default function AddPieceScreen() {
 		label: t(`piece.state.${s}`),
 	}));
 
+	const composerOptions = useMemo(
+		() => composerSuggestions(pieces, composer),
+		[pieces, composer],
+	);
+
+	const collectionOptions = useMemo(
+		() => collectionSuggestions(pieces, composer, collectionName),
+		[pieces, composer, collectionName],
+	);
+
 	const handleSave = async () => {
 		const titleErr = validateTitle();
 		const composerErr = validateComposer();
@@ -80,13 +95,14 @@ export default function AddPieceScreen() {
 		setError(null);
 
 		try {
-			await addPiece(
-				title.trim(),
-				composer.trim(),
+			await addPiece({
+				title: title.trim(),
+				composer: composer.trim(),
+				collectionName: collectionName.trim() || null,
 				state,
 				targetTempoBpm,
 				durationSeconds,
-			);
+			});
 			goBack();
 		} catch {
 			setError(t("error.firebase"));
@@ -111,7 +127,7 @@ export default function AddPieceScreen() {
 				}}
 			/>
 
-			<ComposerAutocompleteInput
+			<HistoryAutocompleteInput
 				label={t("screen.addPiece.composerLabel")}
 				value={composer}
 				onChangeText={(text) => {
@@ -120,7 +136,14 @@ export default function AddPieceScreen() {
 				}}
 				error={!!composerError}
 				helperText={composerError ?? undefined}
-				pieces={pieces}
+				suggestions={composerOptions}
+			/>
+
+			<HistoryAutocompleteInput
+				label={t("screen.addPiece.collectionLabel")}
+				value={collectionName}
+				onChangeText={setCollectionName}
+				suggestions={collectionOptions}
 			/>
 
 			<DropdownField

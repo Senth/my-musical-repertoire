@@ -18,6 +18,7 @@ import type { PracticeMistakes } from "@/models/practice";
 interface FirestorePiece {
 	title: string;
 	composer: string;
+	collectionName?: string | null;
 	state?: PieceState;
 	targetTempoBpm?: number | null;
 	difficulty?: 1 | 2 | 3 | 4 | 5 | null;
@@ -40,6 +41,7 @@ export function fromFirestore(
 		userId,
 		title: data.title,
 		composer: data.composer,
+		collectionName: data.collectionName ?? null,
 		state: data.state ?? "maintenance",
 		targetTempoBpm: data.targetTempoBpm ?? null,
 		difficulty: data.difficulty ?? null,
@@ -85,19 +87,28 @@ export function usePieces() {
 export function useAddPiece() {
 	const { user } = useAuth();
 
-	const addPiece = async (
-		title: string,
-		composer: string,
-		state: PieceState = "learning",
-		targetTempoBpm: number | null = null,
-		durationSeconds: number | null = null,
-	) => {
+	const addPiece = async ({
+		title,
+		composer,
+		collectionName = null,
+		state = "learning",
+		targetTempoBpm = null,
+		durationSeconds = null,
+	}: {
+		title: string;
+		composer: string;
+		collectionName?: string | null;
+		state?: PieceState;
+		targetTempoBpm?: number | null;
+		durationSeconds?: number | null;
+	}) => {
 		if (!user) throw new Error("Not authenticated");
 
 		const piecesRef = collection(db, "users", user.uid, "pieces");
 		await addDoc(piecesRef, {
 			title,
 			composer,
+			collectionName,
 			state,
 			targetTempoBpm,
 			durationSeconds,
@@ -118,6 +129,7 @@ export function useUpdatePiece() {
 				Piece,
 				| "title"
 				| "composer"
+				| "collectionName"
 				| "state"
 				| "targetTempoBpm"
 				| "difficulty"

@@ -27,6 +27,7 @@ import { useIsCompact } from "@/hooks/use-is-compact";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { PIECE_STATES, type Piece, type PieceState } from "@/models/piece";
 import { formatDaysAgo } from "@/utils/date";
+import { formatComposerLine } from "@/utils/piece-display";
 
 type StateFilter = PieceState | "all";
 type ContextMenu = { pieceId: string; x: number; y: number };
@@ -55,7 +56,8 @@ export default function PiecesScreen() {
 			result = result.filter(
 				(p) =>
 					p.title.toLowerCase().includes(query) ||
-					p.composer.toLowerCase().includes(query),
+					p.composer.toLowerCase().includes(query) ||
+					(p.collectionName?.toLowerCase().includes(query) ?? false),
 			);
 		}
 		if (stateFilter !== "all") {
@@ -121,7 +123,7 @@ export default function PiecesScreen() {
 						variant="bodyMedium"
 						style={{ color: theme.colors.onSurfaceVariant }}
 					>
-						{item.composer}
+						{formatComposerLine(item.composer, item.collectionName)}
 					</Text>
 					<View className="flex-row items-center gap-2 flex-wrap">
 						<PieceStateChip state={item.state} />
@@ -222,7 +224,10 @@ export default function PiecesScreen() {
 						>
 							<Card.Title
 								title={item.title}
-								subtitle={item.composer}
+								subtitle={formatComposerLine(
+									item.composer,
+									item.collectionName,
+								)}
 								right={() => renderCardMenu(item)}
 							/>
 							<Card.Content>
