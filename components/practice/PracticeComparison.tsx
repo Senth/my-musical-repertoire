@@ -9,12 +9,13 @@ import { ScreenContent } from "@/components/ui/ScreenContent";
 import { TrendIcon } from "@/components/ui/TrendIcon";
 import { PracticeMistakes } from "@/models/practice";
 
+/** Short wording — the row already carries a trend icon and a "Previous: …" column. */
 const MISTAKE_LABELS: Record<PracticeMistakes, string> = {
-	[PracticeMistakes.none]: "screen.practice.mistakeLevel.none",
-	[PracticeMistakes.few]: "screen.practice.mistakeLevel.few",
-	[PracticeMistakes.some]: "screen.practice.mistakeLevel.some",
-	[PracticeMistakes.many]: "screen.practice.mistakeLevel.many",
-	[PracticeMistakes.everywhere]: "screen.practice.mistakeLevel.everywhere",
+	[PracticeMistakes.none]: "screen.practice.mistakeLevelShort.none",
+	[PracticeMistakes.few]: "screen.practice.mistakeLevelShort.few",
+	[PracticeMistakes.some]: "screen.practice.mistakeLevelShort.some",
+	[PracticeMistakes.many]: "screen.practice.mistakeLevelShort.many",
+	[PracticeMistakes.everywhere]: "screen.practice.mistakeLevelShort.everywhere",
 };
 
 interface PracticeComparisonProps {

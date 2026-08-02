@@ -7,12 +7,17 @@ import { formatDaysAgo } from "@/utils/date";
 
 const AFTER_BREAK_DAYS = 10;
 
+/**
+ * History rows use the short wording. The descriptive phrasing belongs to the
+ * helper line under the input, where a whole line is free; here it would push
+ * the "Previous: …" column off a phone screen.
+ */
 const MISTAKE_LEVEL_KEYS: Record<PracticeMistakes, string> = {
-	[PracticeMistakes.none]: "screen.practice.mistakeLevel.none",
-	[PracticeMistakes.few]: "screen.practice.mistakeLevel.few",
-	[PracticeMistakes.some]: "screen.practice.mistakeLevel.some",
-	[PracticeMistakes.many]: "screen.practice.mistakeLevel.many",
-	[PracticeMistakes.everywhere]: "screen.practice.mistakeLevel.everywhere",
+	[PracticeMistakes.none]: "screen.practice.mistakeLevelShort.none",
+	[PracticeMistakes.few]: "screen.practice.mistakeLevelShort.few",
+	[PracticeMistakes.some]: "screen.practice.mistakeLevelShort.some",
+	[PracticeMistakes.many]: "screen.practice.mistakeLevelShort.many",
+	[PracticeMistakes.everywhere]: "screen.practice.mistakeLevelShort.everywhere",
 };
 
 interface LastSessionCardProps {
@@ -118,7 +123,7 @@ export function LastSessionCard({
 					>
 						{t("screen.practice.lastSession.quality")}:{" "}
 						{lastLog.quality != null
-							? t(`technique.quality.${lastLog.quality}`)
+							? t(`technique.qualityShort.${lastLog.quality}`)
 							: "—"}
 					</Text>
 					<Text
@@ -127,7 +132,7 @@ export function LastSessionCard({
 					>
 						{t("screen.practice.lastSession.effort")}:{" "}
 						{lastLog.effort != null
-							? t(`technique.effort.${lastLog.effort}`)
+							? t(`technique.effortShort.${lastLog.effort}`)
 							: "—"}
 					</Text>
 				</>

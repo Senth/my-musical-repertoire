@@ -2,18 +2,12 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
-import {
-	Appbar,
-	Button,
-	Chip,
-	Divider,
-	Text,
-	useTheme,
-} from "react-native-paper";
+import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
+import { MetaChip } from "@/components/ui/StateChip";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { formatDaysAgo } from "@/utils/date";
@@ -82,9 +76,11 @@ export default function TechniqueDetailScreen() {
 					<View className="flex-row items-center gap-2 flex-wrap">
 						<TechniqueStateChip state={item.state} />
 						{item.type && (
-							<Chip compact textStyle={{ fontSize: 11 }}>
-								{t(`technique.type.${item.type}` as Parameters<typeof t>[0])}
-							</Chip>
+							<MetaChip
+								label={t(
+									`technique.type.${item.type}` as Parameters<typeof t>[0],
+								)}
+							/>
 						)}
 					</View>
 					<Text

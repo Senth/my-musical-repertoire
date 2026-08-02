@@ -6,7 +6,6 @@ import {
 	ActivityIndicator,
 	Button,
 	Card,
-	Chip,
 	Divider,
 	FAB,
 	IconButton,
@@ -19,6 +18,11 @@ import {
 } from "react-native-paper";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
+import {
+	accentBorderStyle,
+	CARD_TITLE_STYLE,
+	TITLE_ONLY_CARD_STYLE,
+} from "@/components/ui/card-style";
 import { FilterPillRow } from "@/components/ui/FilterPillRow";
 import {
 	FilterSheet,
@@ -28,6 +32,7 @@ import { ListHeaderActions } from "@/components/ui/ListHeaderActions";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { SortMenu } from "@/components/ui/SortMenu";
+import { MetaChip } from "@/components/ui/StateChip";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
 import { useIsCompact } from "@/hooks/use-is-compact";
@@ -61,6 +66,7 @@ import {
 	readTechniqueListPrefs,
 	writeTechniqueListPrefs,
 } from "@/utils/session-storage";
+import { techniqueStateVisual } from "@/utils/state-colors";
 
 type ContextMenu = { techniqueId: string; x: number; y: number };
 
@@ -293,14 +299,13 @@ export default function TechniquesScreen() {
 		<List.Item
 			title={item.title}
 			description={() => (
-				<View className="gap-1 mt-1">
+				// Techniques have no composer line to separate the title from the
+				// chips, so the gap is explicit here. `mt-*` does not survive
+				// List.Item's description wrapper.
+				<View className="gap-1" style={{ marginTop: 8 }}>
 					<View className="flex-row items-center gap-2 flex-wrap">
 						<TechniqueStateChip state={item.state} />
-						{item.type && (
-							<Chip compact textStyle={{ fontSize: 11 }}>
-								{t(`technique.type.${item.type}`)}
-							</Chip>
-						)}
+						{item.type && <MetaChip label={t(`technique.type.${item.type}`)} />}
 						<Text
 							variant="bodySmall"
 							style={{ color: theme.colors.onSurfaceVariant }}
@@ -403,9 +408,14 @@ export default function TechniquesScreen() {
 							key={item.id}
 							mode="elevated"
 							onPress={() => router.push(`/technique/${item.id}`)}
+							style={accentBorderStyle(
+								techniqueStateVisual(item.state, theme.dark),
+							)}
 						>
 							<Card.Title
 								title={item.title}
+								titleStyle={CARD_TITLE_STYLE}
+								style={TITLE_ONLY_CARD_STYLE}
 								right={() => renderCardMenu(item)}
 							/>
 							<Card.Content>
@@ -413,9 +423,7 @@ export default function TechniquesScreen() {
 									<View className="flex-row items-center gap-2 flex-wrap">
 										<TechniqueStateChip state={item.state} />
 										{item.type && (
-											<Chip compact textStyle={{ fontSize: 11 }}>
-												{t(`technique.type.${item.type}`)}
-											</Chip>
+											<MetaChip label={t(`technique.type.${item.type}`)} />
 										)}
 									</View>
 									<Text

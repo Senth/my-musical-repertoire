@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Chip, Menu, useTheme } from "react-native-paper";
+import { Menu, useTheme } from "react-native-paper";
+import { StateChip } from "@/components/ui/StateChip";
 import { SECTION_PHASES, type SectionPhase } from "@/models/section";
+import { sectionPhaseVisual } from "@/utils/state-colors";
 
 interface SectionPhaseChipProps {
 	phase: SectionPhase;
@@ -16,27 +18,12 @@ export function SectionPhaseChip({
 	const theme = useTheme();
 	const [menuOpen, setMenuOpen] = useState(false);
 
-	const bgColor: Record<SectionPhase, string> = {
-		learning: theme.colors.secondaryContainer,
-		stabilizing: theme.colors.tertiaryContainer,
-		maintenance: theme.colors.primaryContainer,
-	};
-
-	const textColor: Record<SectionPhase, string> = {
-		learning: theme.colors.onSecondaryContainer,
-		stabilizing: theme.colors.onTertiaryContainer,
-		maintenance: theme.colors.onPrimaryContainer,
-	};
-
 	const chip = (
-		<Chip
-			compact
-			style={{ backgroundColor: bgColor[phase], alignSelf: "flex-start" }}
-			textStyle={{ color: textColor[phase], fontSize: 11 }}
+		<StateChip
+			label={t(`section.phase.${phase}`)}
+			visual={sectionPhaseVisual(phase, theme.dark)}
 			onPress={onChangePhase ? () => setMenuOpen(true) : undefined}
-		>
-			{t(`section.phase.${phase}`)}
-		</Chip>
+		/>
 	);
 
 	if (!onChangePhase || !menuOpen) return chip;

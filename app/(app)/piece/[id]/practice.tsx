@@ -8,15 +8,14 @@ import {
 	Button,
 	Divider,
 	Menu,
-	SegmentedButtons,
 	Text,
 	useTheme,
 } from "react-native-paper";
 import { BpmControl } from "@/components/practice/BpmControl";
+import { EstimationField } from "@/components/practice/EstimationField";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import { ModeSelector } from "@/components/practice/ModeSelector";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
-import { RatingField } from "@/components/practice/RatingField";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
@@ -39,6 +38,11 @@ import {
 	type PracticeTrigger,
 } from "@/models/practice";
 import {
+	effortOptions,
+	mistakeOptions,
+	qualityOptions,
+} from "@/utils/estimation-options";
+import {
 	hsTarget,
 	isHtReady,
 	type ModeEntry,
@@ -50,29 +54,6 @@ import { validateBpm as validateBpmRange } from "@/utils/validation";
 
 /** Sections always have all three hand modes and never have drills. */
 const NO_DRILLS: never[] = [];
-
-const MISTAKE_BUTTONS = [
-	{
-		value: String(PracticeMistakes.none),
-		labelKey: "screen.practice.mistakeLevel.none",
-	},
-	{
-		value: String(PracticeMistakes.few),
-		labelKey: "screen.practice.mistakeLevel.few",
-	},
-	{
-		value: String(PracticeMistakes.some),
-		labelKey: "screen.practice.mistakeLevel.some",
-	},
-	{
-		value: String(PracticeMistakes.many),
-		labelKey: "screen.practice.mistakeLevel.many",
-	},
-	{
-		value: String(PracticeMistakes.everywhere),
-		labelKey: "screen.practice.mistakeLevel.everywhere",
-	},
-] as const;
 
 export interface PiecePracticeContentProps {
 	pieceId: string;
@@ -332,14 +313,7 @@ export function PiecePracticeContent({
 		return <LoadingScreen />;
 	}
 
-	const mistakeButtons = MISTAKE_BUTTONS.map((b) => ({
-		value: b.value,
-		label: t(b.labelKey),
-	}));
-	const ratingButtons = (["1", "2", "3", "4", "5"] as const).map((v) => ({
-		value: v,
-		label: v,
-	}));
+	const mistakes = mistakeOptions(t);
 
 	const titleSuffix = scopedSection ? ` — ${scopedSection.label}` : "";
 
@@ -527,45 +501,33 @@ export function PiecePracticeContent({
 
 					{scopedSection ? (
 						<>
-							<RatingField
+							<EstimationField
 								label={t("screen.practiceTechnique.qualityLabel")}
 								value={modes.draft.quality}
 								onChange={modes.setQuality}
-								buttons={ratingButtons}
+								options={qualityOptions(t)}
 							/>
-							<RatingField
+							<EstimationField
 								label={t("screen.practiceTechnique.effortLabel")}
 								value={modes.draft.effort}
 								onChange={modes.setEffort}
-								buttons={ratingButtons}
+								options={effortOptions(t)}
 							/>
 						</>
 					) : (
 						<>
-							<View className="gap-2">
-								<Text variant="titleSmall">
-									{t("screen.practice.technicalMistakes")}
-								</Text>
-								<SegmentedButtons
-									value={String(technicalMistakes)}
-									onValueChange={(v) =>
-										setTechnicalMistakes(Number(v) as PracticeMistakes)
-									}
-									buttons={mistakeButtons}
-								/>
-							</View>
-							<View className="gap-2">
-								<Text variant="titleSmall">
-									{t("screen.practice.memoryMistakes")}
-								</Text>
-								<SegmentedButtons
-									value={String(memoryMistakes)}
-									onValueChange={(v) =>
-										setMemoryMistakes(Number(v) as PracticeMistakes)
-									}
-									buttons={mistakeButtons}
-								/>
-							</View>
+							<EstimationField
+								label={t("screen.practice.technicalMistakes")}
+								value={technicalMistakes}
+								onChange={setTechnicalMistakes}
+								options={mistakes}
+							/>
+							<EstimationField
+								label={t("screen.practice.memoryMistakes")}
+								value={memoryMistakes}
+								onChange={setMemoryMistakes}
+								options={mistakes}
+							/>
 						</>
 					)}
 

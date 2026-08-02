@@ -47,7 +47,7 @@ function QualityRow({
 			<View className="flex-row items-center justify-between">
 				<View className="flex-row items-center gap-2">
 					<Text variant="bodyLarge">
-						{t(`technique.quality.${current}` as Parameters<typeof t>[0])}
+						{t(`technique.qualityShort.${current}` as Parameters<typeof t>[0])}
 					</Text>
 					<TrendIcon diff={diff} visible={hasPrevious} />
 				</View>
@@ -57,7 +57,7 @@ function QualityRow({
 						style={{ color: theme.colors.onSurfaceVariant }}
 					>
 						{t("screen.practice.comparison.previous")}:{" "}
-						{t(`technique.quality.${previous}` as Parameters<typeof t>[0])}
+						{t(`technique.qualityShort.${previous}` as Parameters<typeof t>[0])}
 					</Text>
 				)}
 			</View>
@@ -84,7 +84,7 @@ function EffortRow({
 			<Text variant="labelLarge">{label}</Text>
 			<View className="flex-row items-center justify-between">
 				<Text variant="bodyLarge">
-					{t(`technique.effort.${current}` as Parameters<typeof t>[0])}
+					{t(`technique.effortShort.${current}` as Parameters<typeof t>[0])}
 				</Text>
 				{hasPrevious && (
 					<Text
@@ -92,7 +92,7 @@ function EffortRow({
 						style={{ color: theme.colors.onSurfaceVariant }}
 					>
 						{t("screen.practice.comparison.previous")}:{" "}
-						{t(`technique.effort.${previous}` as Parameters<typeof t>[0])}
+						{t(`technique.effortShort.${previous}` as Parameters<typeof t>[0])}
 					</Text>
 				)}
 			</View>
