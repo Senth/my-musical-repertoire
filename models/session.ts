@@ -37,6 +37,12 @@ export type BlockKind =
 	| "warmup"
 	| "technique"
 	| "sight-reading"
+	/**
+	 * Already-learned sections of the pieces you are currently learning. Ordered
+	 * before `repertoire-learning`: retention is tested before working memory is
+	 * loaded with new acquisition, otherwise the reading is worthless.
+	 */
+	| "repertoire-review"
 	| "repertoire-learning"
 	| "repertoire-stabilizing"
 	| "repertoire-maintenance";

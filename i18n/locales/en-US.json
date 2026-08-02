@@ -488,6 +488,7 @@
 				"noContent": "No pieces or techniques yet — add some first",
 				"allPracticedToday": {
 					"technique": "All techniques practiced today — added {{minutes}} min to repertoire",
+					"repertoire-review": "Nothing learned left to review today — added {{minutes}} min elsewhere",
 					"repertoire-learning": "All learning pieces practiced today — added {{minutes}} min elsewhere",
 					"repertoire-stabilizing": "All stabilizing pieces practiced today — added {{minutes}} min elsewhere",
 					"repertoire-maintenance": "All maintenance pieces practiced today — added {{minutes}} min elsewhere",
@@ -508,6 +509,7 @@
 				"warmup": "Warmup",
 				"technique": "Technique",
 				"sight-reading": "Sight-reading",
+				"repertoire-review": "Review",
 				"repertoire-learning": "Learning",
 				"repertoire-stabilizing": "Stabilizing",
 				"repertoire-maintenance": "Maintenance",

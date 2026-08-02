@@ -308,6 +308,7 @@ export default function CoachScreen() {
 				/>
 			);
 			break;
+		case "repertoire-review":
 		case "repertoire-learning":
 		case "repertoire-stabilizing":
 		case "repertoire-maintenance": {
