@@ -2,6 +2,7 @@ import type { Piece } from "@/models/piece";
 import type { Section } from "@/models/section";
 import type { TechniqueItem } from "@/models/technique";
 import { isPracticedToday } from "./day-boundary";
+import { bestCandidateByPiece } from "./piece-scoring";
 import {
 	buildSectionCandidates,
 	daysSince,
@@ -117,15 +118,7 @@ function sectionBasedSuggestions(
 ): SuggestedPiece[] {
 	if (pieces.length === 0) return [];
 	const candidates = buildSectionCandidates(pieces, sections, now);
-
-	const bestByPiece = new Map<string, SectionCandidate>();
-	for (const c of candidates) {
-		const id = c.piece.id ?? "";
-		const existing = bestByPiece.get(id);
-		if (!existing || c.score > existing.score) {
-			bestByPiece.set(id, c);
-		}
-	}
+	const bestByPiece = bestCandidateByPiece(candidates);
 
 	return Array.from(bestByPiece.values()).map((c) => ({
 		piece: c.piece,
