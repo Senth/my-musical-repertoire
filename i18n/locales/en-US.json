@@ -40,7 +40,30 @@
 		"score": "{{score}}/10",
 		"ok": "OK",
 		"done": "Done",
-		"filterStatus": "Status",
+		"sort": {
+			"open": "Sort"
+		},
+		"filter": {
+			"open": "Filter",
+			"title": "Filters",
+			"clearAll": "Clear all",
+			"clearAllFilters": "Clear all filters",
+			"remove": "Remove filter {{label}}",
+			"status": "Status",
+			"composer": "Composer",
+			"collection": "Collection",
+			"difficulty": "Difficulty",
+			"type": "Type",
+			"length": "Length (minutes)",
+			"lengthMin": "From",
+			"lengthMax": "To",
+			"pill": {
+				"difficulty": "Difficulty {{value}}",
+				"lengthRange": "{{min}}–{{max}} min",
+				"lengthFrom": "≥{{min}} min",
+				"lengthTo": "≤{{max}} min"
+			}
+		},
 		"metronome": {
 			"start": "Start Metronome",
 			"stop": "Stop Metronome",
@@ -316,7 +339,19 @@
 			"title": "Pieces",
 			"searchPlaceholder": "Search pieces...",
 			"noResults": "No pieces match your search",
-			"filterAll": "All",
+			"noPieces": "No pieces yet",
+			"addPiece": "Add piece",
+			"noMatchFilters": "No pieces match your filters",
+			"sort": {
+				"score": "Score",
+				"lastPracticed": "Last practiced",
+				"title": "Piece name",
+				"composer": "Composer",
+				"collection": "Collection",
+				"length": "Length",
+				"difficulty": "Difficulty",
+				"state": "Status"
+			},
 			"menu": {
 				"practice": "Practice",
 				"edit": "Edit",
@@ -344,11 +379,15 @@
 			"searchPlaceholder": "Search techniques...",
 			"noResults": "No technique items match your search",
 			"noTechniques": "No techniques yet",
-			"noTechniquesMatchFilter": "No techniques match your filter",
-			"showAll": "Show all",
+			"noMatchFilters": "No techniques match your filters",
+			"sort": {
+				"score": "Score",
+				"lastPracticed": "Last practiced",
+				"title": "Name",
+				"type": "Type",
+				"state": "Status"
+			},
 			"addTechnique": "Add technique",
-			"showRetired": "Show retired",
-			"hideRetired": "Hide retired",
 			"neverPracticed": "Never practiced",
 			"menu": {
 				"practice": "Practice",

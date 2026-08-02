@@ -2,11 +2,21 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { ActiveSession } from "@/models/session";
 import { planPresetName } from "@/models/session";
 import {
+	DEFAULT_PIECE_LIST_PREFS,
+	DEFAULT_TECHNIQUE_LIST_PREFS,
+} from "./list-prefs";
+import {
 	clearActiveSession,
 	readActiveSession,
+	readPieceListPrefs,
+	readPieceScores,
 	readSightReadingBpm,
+	readTechniqueListPrefs,
 	writeActiveSession,
+	writePieceListPrefs,
+	writePieceScores,
 	writeSightReadingBpm,
+	writeTechniqueListPrefs,
 } from "./session-storage";
 
 jest.mock("@react-native-async-storage/async-storage", () => {
@@ -103,5 +113,52 @@ describe("session-storage", () => {
 		expect(await readSightReadingBpm("u2")).toBeNull();
 		await writeSightReadingBpm("u1", "120");
 		expect(await readSightReadingBpm("u1")).toBe("120");
+	});
+
+	it("round trips cached piece scores per uid", async () => {
+		expect(await readPieceScores("u1")).toBeNull();
+		const cache = { scores: { p1: 42, p2: 0 }, computedAt: 1_700_000_000_000 };
+		await writePieceScores("u1", cache);
+		expect(await readPieceScores("u1")).toEqual(cache);
+		expect(await readPieceScores("u2")).toBeNull();
+	});
+
+	it("discards a piece score cache that is malformed or non-numeric", async () => {
+		mocked.__store.set("piece-scores:u1", "{broken");
+		expect(await readPieceScores("u1")).toBeNull();
+
+		mocked.__store.set(
+			"piece-scores:u1",
+			JSON.stringify({ scores: { p1: "high", p2: 3 }, computedAt: 5 }),
+		);
+		expect(await readPieceScores("u1")).toEqual({
+			scores: { p2: 3 },
+			computedAt: 5,
+		});
+
+		mocked.__store.set("piece-scores:u1", JSON.stringify({ scores: {} }));
+		expect(await readPieceScores("u1")).toBeNull();
+	});
+
+	it("round trips list prefs per uid and per list", async () => {
+		expect(await readPieceListPrefs("u1")).toBeNull();
+		await writePieceListPrefs("u1", DEFAULT_PIECE_LIST_PREFS);
+		expect(await readPieceListPrefs("u1")).toEqual(DEFAULT_PIECE_LIST_PREFS);
+		// Separate key: the technique list is untouched by a pieces write.
+		expect(await readTechniqueListPrefs("u1")).toBeNull();
+		expect(await readPieceListPrefs("u2")).toBeNull();
+
+		await writeTechniqueListPrefs("u1", DEFAULT_TECHNIQUE_LIST_PREFS);
+		expect(await readTechniqueListPrefs("u1")).toEqual(
+			DEFAULT_TECHNIQUE_LIST_PREFS,
+		);
+		expect(await readPieceListPrefs("u1")).toEqual(DEFAULT_PIECE_LIST_PREFS);
+	});
+
+	it("falls back to the defaults for unparseable list prefs", async () => {
+		mocked.__store.set("pieces-list-prefs:u1", "{broken");
+		expect(await readPieceListPrefs("u1")).toBeNull();
+		mocked.__store.set("technique-list-prefs:u1", JSON.stringify({ v: 0 }));
+		expect(await readTechniqueListPrefs("u1")).toBeNull();
 	});
 });
