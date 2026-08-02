@@ -39,3 +39,28 @@ describe("fromFirestore durationSeconds mapping", () => {
 		expect(piece.durationSeconds).toBeNull();
 	});
 });
+
+describe("fromFirestore collectionName mapping", () => {
+	it("maps a present collectionName through", () => {
+		const piece = fromFirestore(
+			"id1",
+			{ title: "A", composer: "C", collectionName: "Final Fantasy VII" },
+			"user1",
+		);
+		expect(piece.collectionName).toBe("Final Fantasy VII");
+	});
+
+	it("maps an explicit null collectionName to null", () => {
+		const piece = fromFirestore(
+			"id1",
+			{ title: "A", composer: "C", collectionName: null },
+			"user1",
+		);
+		expect(piece.collectionName).toBeNull();
+	});
+
+	it("defaults a missing collectionName to null", () => {
+		const piece = fromFirestore("id1", { title: "A", composer: "C" }, "user1");
+		expect(piece.collectionName).toBeNull();
+	});
+});

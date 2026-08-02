@@ -1,15 +1,19 @@
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, TextInput } from "react-native-paper";
-import { ComposerAutocompleteInput } from "@/components/piece/ComposerAutocompleteInput";
+import { HistoryAutocompleteInput } from "@/components/piece/HistoryAutocompleteInput";
 import { DropdownField } from "@/components/ui/DropdownField";
 import { FormScaffold } from "@/components/ui/FormScaffold";
 import { FormTextField } from "@/components/ui/FormTextField";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { PIECE_STATES, type PieceState } from "@/models/piece";
+import {
+	collectionSuggestions,
+	composerSuggestions,
+} from "@/utils/suggestions";
 import { validateBpm, validateDuration } from "@/utils/validation";
 
 export default function EditPieceScreen() {
@@ -23,6 +27,9 @@ export default function EditPieceScreen() {
 
 	const [title, setTitle] = useState(piece?.title ?? "");
 	const [composer, setComposer] = useState(piece?.composer ?? "");
+	const [collectionName, setCollectionName] = useState(
+		piece?.collectionName ?? "",
+	);
 	const [state, setState] = useState<PieceState>(piece?.state ?? "learning");
 	const [targetTempoBpmText, setTargetTempoBpmText] = useState(
 		piece?.targetTempoBpm?.toString() ?? "",
@@ -73,6 +80,7 @@ export default function EditPieceScreen() {
 		if (piece && !hasSeeded.current) {
 			setTitle(piece.title);
 			setComposer(piece.composer);
+			setCollectionName(piece.collectionName ?? "");
 			setState(piece.state);
 			setTargetTempoBpmText(piece.targetTempoBpm?.toString() ?? "");
 			setDurationMinutesText(
@@ -90,6 +98,16 @@ export default function EditPieceScreen() {
 		value: s,
 		label: t(`piece.state.${s}`),
 	}));
+
+	const composerOptions = useMemo(
+		() => composerSuggestions(pieces, composer),
+		[pieces, composer],
+	);
+
+	const collectionOptions = useMemo(
+		() => collectionSuggestions(pieces, composer, collectionName),
+		[pieces, composer, collectionName],
+	);
 
 	const difficultyOptions = [
 		{ value: null, label: t("piece.difficulty.notSet") },
@@ -128,6 +146,7 @@ export default function EditPieceScreen() {
 			await updatePiece(id, {
 				title: title.trim(),
 				composer: composer.trim(),
+				collectionName: collectionName.trim() || null,
 				state,
 				targetTempoBpm,
 				durationSeconds,
@@ -153,7 +172,7 @@ export default function EditPieceScreen() {
 				onBlur={() => validateTitle()}
 			/>
 
-			<ComposerAutocompleteInput
+			<HistoryAutocompleteInput
 				label={t("screen.editPiece.composerLabel")}
 				value={composer}
 				onChangeText={(text) => {
@@ -162,7 +181,14 @@ export default function EditPieceScreen() {
 				}}
 				error={!!composerError}
 				helperText={composerError ?? undefined}
-				pieces={pieces}
+				suggestions={composerOptions}
+			/>
+
+			<HistoryAutocompleteInput
+				label={t("screen.editPiece.collectionLabel")}
+				value={collectionName}
+				onChangeText={setCollectionName}
+				suggestions={collectionOptions}
 			/>
 
 			<DropdownField

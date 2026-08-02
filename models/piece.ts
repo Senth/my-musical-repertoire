@@ -22,6 +22,7 @@ export interface Piece {
 	userId: string;
 	title: string;
 	composer: string;
+	collectionName?: string | null;
 	state: PieceState;
 	targetTempoBpm?: number | null;
 	difficulty?: 1 | 2 | 3 | 4 | 5 | null;

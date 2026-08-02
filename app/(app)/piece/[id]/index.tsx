@@ -33,6 +33,7 @@ import {
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { Section } from "@/models/section";
 import { formatDaysAgo } from "@/utils/date";
+import { formatComposerLine } from "@/utils/piece-display";
 
 export default function PieceDetailScreen() {
 	const { t } = useTranslation();
@@ -220,7 +221,7 @@ export default function PieceDetailScreen() {
 								variant="titleMedium"
 								style={{ color: theme.colors.onSurfaceVariant }}
 							>
-								{piece.composer}
+								{formatComposerLine(piece.composer, piece.collectionName)}
 							</Text>
 							<PieceStateChip state={piece.state} />
 						</View>

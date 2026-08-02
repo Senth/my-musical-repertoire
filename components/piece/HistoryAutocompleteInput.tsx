@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { HelperText, Text, TextInput, useTheme } from "react-native-paper";
-import type { Piece } from "@/models/piece";
 
 interface Props {
 	value: string;
@@ -9,45 +8,25 @@ interface Props {
 	label: string;
 	error?: boolean;
 	helperText?: string;
-	pieces: Piece[];
+	/** Already filtered, ranked and capped by the caller. */
+	suggestions: string[];
 }
 
-export function ComposerAutocompleteInput({
+export function HistoryAutocompleteInput({
 	value,
 	onChangeText,
 	label,
 	error,
 	helperText,
-	pieces,
+	suggestions,
 }: Props) {
 	const theme = useTheme();
 	const [open, setOpen] = useState(false);
 	const [inputHeight, setInputHeight] = useState(56);
 
-	const composerHistory = useMemo(() => {
-		const seen = new Map<string, string>();
-		for (const piece of pieces) {
-			const key = piece.composer.toLowerCase().trim();
-			if (key && !seen.has(key)) {
-				seen.set(key, piece.composer.trim());
-			}
-		}
-		return Array.from(seen.values()).sort((a, b) =>
-			a.toLowerCase().localeCompare(b.toLowerCase()),
-		);
-	}, [pieces]);
-
-	const suggestions = useMemo(() => {
-		if (!value.trim()) return [];
-		const lower = value.toLowerCase();
-		return composerHistory
-			.filter((c) => c.toLowerCase().includes(lower))
-			.slice(0, 5);
-	}, [value, composerHistory]);
-
 	const handleChangeText = (text: string) => {
 		onChangeText(text);
-		setOpen(text.trim().length >= 1);
+		setOpen(true);
 	};
 
 	const handleSelect = (suggestion: string) => {
@@ -66,9 +45,7 @@ export function ComposerAutocompleteInput({
 					onChangeText={handleChangeText}
 					mode="outlined"
 					error={error}
-					onFocus={() => {
-						if (value.trim().length >= 1) setOpen(true);
-					}}
+					onFocus={() => setOpen(true)}
 					onBlur={() => {
 						setTimeout(() => setOpen(false), 150);
 					}}
