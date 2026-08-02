@@ -21,21 +21,37 @@ import {
 	scoreTechniqueModes,
 	sortTechniques,
 } from "./planner-scoring";
+import {
+	capLearningMinutes,
+	LEARNING_BLOCK_MAX,
+	REVIEW_BLOCK_MAX,
+	STABILIZING_BLOCK_MAX,
+	splitLearningLine,
+	splitReviewMinutes,
+	splitStabilizingLine,
+} from "./session-split";
 
 /**
  * One canonical order for every preset. Reading sits directly after warmup: it
  * is demanding on the brain but light on the hands, so it extends the warmup
  * rather than competing with technique — and reading last only trains guessing.
+ * Review sits before learning: retention of prior material has to be tested
+ * before working memory is loaded with new acquisition, and arriving at the new
+ * material through the measures that precede it is the practical warm-in.
  * Disabled lines simply vanish from the sequence.
  */
 export const CANONICAL_BLOCK_ORDER: BlockKind[] = [
 	"warmup",
 	"sight-reading",
 	"technique",
+	"repertoire-review",
 	"repertoire-learning",
 	"repertoire-stabilizing",
 	"repertoire-maintenance",
 ];
+
+/** Float slack, matching `session-split`. */
+const EPS = 1e-9;
 
 function clamp(n: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, n));
@@ -45,28 +61,32 @@ function compareTitle(a: string, b: string): number {
 	return a.localeCompare(b);
 }
 
-function eligibleSectionCandidates(
-	slot: "learning" | "stabilizing",
-	pieces: Piece[],
-	sections: Section[],
-	now: Date,
+/**
+ * Identity of a candidate for same-session dedup. A piece with no sections is
+ * planned as one virtual whole-piece candidate, so it is keyed by its piece.
+ */
+function candidateKey(c: SectionCandidate): string {
+	return c.section?.id ? `section:${c.section.id}` : `piece:${c.piece.id}`;
+}
+
+function stillAvailable(
+	candidates: SectionCandidate[],
 	usedSectionIds?: Set<string>,
+	usedPieceIds?: Set<string>,
 ): SectionCandidate[] {
-	const filteredPieces = pieces.filter((p) => p.state === slot);
-	const candidates = buildSectionCandidates(filteredPieces, sections, now);
 	return candidates.filter((c) => {
 		// Per-mode: a section drilled left hand this morning can return for right.
 		if (c.practicedToday) return false;
-		if (usedSectionIds && c.section?.id && usedSectionIds.has(c.section.id))
+		if (c.section?.id) {
+			if (usedSectionIds?.has(c.section.id)) return false;
+		} else if (c.piece.id && usedPieceIds?.has(c.piece.id)) {
 			return false;
+		}
 		return true;
 	});
 }
 
-function pickBestSection(
-	candidates: SectionCandidate[],
-): SectionCandidate | null {
-	if (candidates.length === 0) return null;
+function sortCandidates(candidates: SectionCandidate[]): SectionCandidate[] {
 	return candidates.slice().sort((a, b) => {
 		if (b.score !== a.score) return b.score - a.score;
 		const titleCmp = compareTitle(a.piece.title, b.piece.title);
@@ -74,9 +94,143 @@ function pickBestSection(
 		const aOrder = a.section?.order ?? -1;
 		const bOrder = b.section?.order ?? -1;
 		return aOrder - bOrder;
-	})[0];
+	});
 }
 
+export interface LearningLinePools {
+	/** New acquisition: learning-phase sections of learning-state pieces. */
+	learning: SectionCandidate[];
+	/** Already-learned sections of those same pieces. */
+	review: SectionCandidate[];
+}
+
+/**
+ * The learning line only ever looks at pieces whose *state* is `learning`. Its
+ * two pools never compete in one ranking, which is what stops a learning-phase
+ * section (`PHASE_SCORE` 10) from burying a stabilizing one (2.5) forever — no
+ * scoring formula had to change for that.
+ */
+export function learningLinePools(
+	pieces: Piece[],
+	sections: Section[],
+	now: Date,
+	usedSectionIds?: Set<string>,
+	usedPieceIds?: Set<string>,
+): LearningLinePools {
+	const learningPieces = pieces.filter((p) => p.state === "learning");
+	const all = stillAvailable(
+		buildSectionCandidates(learningPieces, sections, now),
+		usedSectionIds,
+		usedPieceIds,
+	);
+	return {
+		learning: all.filter((c) => c.phase === "learning"),
+		review: all.filter(
+			(c) => c.phase === "stabilizing" || c.phase === "maintenance",
+		),
+	};
+}
+
+/**
+ * Cross-piece consolidation: everything inside a piece promoted out of
+ * `learning`, plus the "problem section in an otherwise fine piece" case —
+ * a learning- or stabilizing-phase section inside a maintenance/performance
+ * piece. Those pieces' *whole-piece* candidates stay out: run-throughs are the
+ * maintenance line's job, and counting them twice would double-book the piece.
+ */
+export function stabilizingLinePool(
+	pieces: Piece[],
+	sections: Section[],
+	now: Date,
+	usedSectionIds?: Set<string>,
+	usedPieceIds?: Set<string>,
+): SectionCandidate[] {
+	const promoted = buildSectionCandidates(
+		pieces.filter((p) => p.state === "stabilizing"),
+		sections,
+		now,
+	);
+	const problemSections = buildSectionCandidates(
+		pieces.filter(
+			(p) => p.state === "maintenance" || p.state === "performance",
+		),
+		sections,
+		now,
+	).filter(
+		(c) =>
+			c.section != null &&
+			(c.phase === "stabilizing" || c.phase === "learning"),
+	);
+	return stillAvailable(
+		[...promoted, ...problemSections],
+		usedSectionIds,
+		usedPieceIds,
+	);
+}
+
+/**
+ * Review candidates ordered same-piece-first: reviewing what precedes the new
+ * material is the whole point, so sections of the pieces a learning block was
+ * picked from come before other learning-state pieces. Score orders within each
+ * group.
+ */
+function orderReviewPool(
+	candidates: SectionCandidate[],
+	learningPieceIds: Set<string>,
+): SectionCandidate[] {
+	const sorted = sortCandidates(candidates);
+	const sameP = sorted.filter(
+		(c) => c.piece.id && learningPieceIds.has(c.piece.id),
+	);
+	const others = sorted.filter(
+		(c) => !(c.piece.id && learningPieceIds.has(c.piece.id)),
+	);
+	return [...sameP, ...others];
+}
+
+/** Blocks must land on *different* sections — the same one twice with a pause
+ * in the middle is one long block, not interleaving. */
+function takeDistinct(
+	ordered: SectionCandidate[],
+	count: number,
+	taken: Set<string>,
+): SectionCandidate[] {
+	const picks: SectionCandidate[] = [];
+	for (const c of ordered) {
+		if (picks.length >= count) break;
+		const key = candidateKey(c);
+		if (taken.has(key)) continue;
+		taken.add(key);
+		picks.push(c);
+	}
+	return picks;
+}
+
+function sectionBlock(
+	kind: BlockKind,
+	candidate: SectionCandidate,
+	allocatedMinutes: number,
+): PlannedBlock {
+	return {
+		kind,
+		allocatedMinutes,
+		pieceId: candidate.piece.id ?? null,
+		sectionId: candidate.section?.id ?? null,
+		title: candidate.piece.title,
+		subtitle: candidate.section?.label ?? null,
+		score: candidate.score,
+		modeKey: candidate.modeKey,
+	};
+}
+
+function sum(values: number[]): number {
+	return values.reduce((acc, v) => acc + v, 0);
+}
+
+/**
+ * The single best section for a line, at the full allocation. Kept for callers
+ * that want one block; `buildPlan` uses the multi-block pickers below.
+ */
 export function pickRepertoireSection(
 	slot: "learning" | "stabilizing",
 	pieces: Piece[],
@@ -84,28 +238,221 @@ export function pickRepertoireSection(
 	allocatedMinutes: number,
 	now: Date = new Date(),
 	usedSectionIds?: Set<string>,
+	usedPieceIds?: Set<string>,
 ): PlannedBlock | null {
-	const candidates = eligibleSectionCandidates(
-		slot,
+	const pool =
+		slot === "learning"
+			? learningLinePools(pieces, sections, now, usedSectionIds, usedPieceIds)
+					.learning
+			: stabilizingLinePool(
+					pieces,
+					sections,
+					now,
+					usedSectionIds,
+					usedPieceIds,
+				);
+	const best = sortCandidates(pool)[0];
+	if (!best) return null;
+	const kind: BlockKind =
+		slot === "learning" ? "repertoire-learning" : "repertoire-stabilizing";
+	return sectionBlock(kind, best, allocatedMinutes);
+}
+
+export interface LearningLineResult {
+	learningBlocks: PlannedBlock[];
+	reviewBlocks: PlannedBlock[];
+	/** Minutes no block could take — the caller redistributes them. */
+	leftoverMinutes: number;
+}
+
+/**
+ * Splits the learning line into time-boxed learning blocks plus the reserved
+ * review blocks, then walks the degradation ladder when the pools are thinner
+ * than the split asked for:
+ *
+ * 1. fewer distinct learning sections than blocks → fewer blocks, each capped
+ *    at `LEARNING_BLOCK_MAX`, surplus minutes moved into the review budget (so
+ *    one eligible section and a 20-minute line gives 12 learning + 8 review,
+ *    never 20 minutes on one section);
+ * 2. no learning section at all → the whole line runs as review;
+ * 3. no review section either → review minutes go back to learning, still
+ *    capped, and whatever still cannot be placed comes back as `leftoverMinutes`.
+ */
+export function pickRepertoireLearningBlocks(
+	pieces: Piece[],
+	sections: Section[],
+	allocatedMinutes: number,
+	now: Date = new Date(),
+	usedSectionIds?: Set<string>,
+	usedPieceIds?: Set<string>,
+): LearningLineResult {
+	const empty: LearningLineResult = {
+		learningBlocks: [],
+		reviewBlocks: [],
+		leftoverMinutes: 0,
+	};
+	if (allocatedMinutes <= 0) return empty;
+
+	const pools = learningLinePools(
 		pieces,
 		sections,
 		now,
 		usedSectionIds,
+		usedPieceIds,
 	);
-	const best = pickBestSection(candidates);
-	if (!best) return null;
-	const kind: BlockKind =
-		slot === "learning" ? "repertoire-learning" : "repertoire-stabilizing";
+	if (pools.learning.length === 0 && pools.review.length === 0) {
+		return { ...empty, leftoverMinutes: allocatedMinutes };
+	}
+
+	const split = splitLearningLine(allocatedMinutes);
+	const taken = new Set<string>();
+	const learningPicks = takeDistinct(
+		sortCandidates(pools.learning),
+		split.learningMinutes.length,
+		taken,
+	);
+
+	let learningMinutes: number[];
+	let reviewBudget = sum(split.reviewMinutes);
+	if (learningPicks.length === split.learningMinutes.length) {
+		learningMinutes = split.learningMinutes;
+	} else {
+		const capped = capLearningMinutes(
+			sum(split.learningMinutes),
+			learningPicks.length,
+		);
+		learningMinutes = capped.minutes;
+		reviewBudget += capped.surplus;
+	}
+
+	const learningPieceIds = new Set(
+		learningPicks.map((c) => c.piece.id).filter((id): id is string => !!id),
+	);
+	// With no learning block the "review never outnumbers learning" rule has
+	// nothing to bound — the line is review, so it is sized on its own.
+	const wantedReviewBlocks =
+		learningMinutes.length > 0
+			? splitReviewMinutes(reviewBudget, learningMinutes.length).length
+			: splitReviewMinutes(reviewBudget, Number.MAX_SAFE_INTEGER).length;
+	const reviewPicks = takeDistinct(
+		orderReviewPool(pools.review, learningPieceIds),
+		wantedReviewBlocks,
+		taken,
+	);
+
+	let leftoverMinutes = 0;
+	if (reviewPicks.length === 0 && reviewBudget > EPS) {
+		// Nothing learned to review yet — hand the minutes back to learning, still
+		// capped, and report what even that cannot absorb.
+		const capacity = Math.max(
+			0,
+			learningMinutes.length * LEARNING_BLOCK_MAX - sum(learningMinutes),
+		);
+		const give = Math.min(reviewBudget, capacity);
+		if (give > 0) {
+			const per = give / learningMinutes.length;
+			learningMinutes = learningMinutes.map((m) => m + per);
+		}
+		leftoverMinutes = reviewBudget - give;
+		reviewBudget = 0;
+	}
+
+	const reviewMinutes =
+		reviewPicks.length > 0
+			? reviewPicks.map(() => reviewBudget / reviewPicks.length)
+			: [];
+
 	return {
-		kind,
-		allocatedMinutes,
-		pieceId: best.piece.id ?? null,
-		sectionId: best.section?.id ?? null,
-		title: best.piece.title,
-		subtitle: best.section?.label ?? null,
-		score: best.score,
-		modeKey: best.modeKey,
+		learningBlocks: learningPicks.map((c, i) =>
+			sectionBlock("repertoire-learning", c, learningMinutes[i]),
+		),
+		reviewBlocks: reviewPicks.map((c, i) =>
+			sectionBlock("repertoire-review", c, reviewMinutes[i]),
+		),
+		leftoverMinutes,
 	};
+}
+
+export interface StabilizingLineResult {
+	blocks: PlannedBlock[];
+	/** Minutes no block could take — the caller redistributes them. */
+	leftoverMinutes: number;
+}
+
+/**
+ * Splits the stabilizing line into time-boxed blocks on distinct sections. When
+ * the pool is thinner than the split asked for, the remaining blocks are capped
+ * at `STABILIZING_BLOCK_MAX` rather than absorbing the whole line.
+ */
+export function pickRepertoireStabilizingBlocks(
+	pieces: Piece[],
+	sections: Section[],
+	allocatedMinutes: number,
+	now: Date = new Date(),
+	usedSectionIds?: Set<string>,
+	usedPieceIds?: Set<string>,
+): StabilizingLineResult {
+	if (allocatedMinutes <= 0) return { blocks: [], leftoverMinutes: 0 };
+
+	const wanted = splitStabilizingLine(allocatedMinutes);
+	const pool = stabilizingLinePool(
+		pieces,
+		sections,
+		now,
+		usedSectionIds,
+		usedPieceIds,
+	);
+	const picks = takeDistinct(sortCandidates(pool), wanted.length, new Set());
+	if (picks.length === 0) {
+		return { blocks: [], leftoverMinutes: allocatedMinutes };
+	}
+
+	const per =
+		picks.length === wanted.length
+			? allocatedMinutes / wanted.length
+			: Math.min(STABILIZING_BLOCK_MAX, allocatedMinutes / picks.length);
+	return {
+		blocks: picks.map((c) => sectionBlock("repertoire-stabilizing", c, per)),
+		leftoverMinutes: Math.max(0, allocatedMinutes - per * picks.length),
+	};
+}
+
+const BLOCK_CAP: Partial<Record<BlockKind, number>> = {
+	"repertoire-learning": LEARNING_BLOCK_MAX,
+	"repertoire-review": REVIEW_BLOCK_MAX,
+	"repertoire-stabilizing": STABILIZING_BLOCK_MAX,
+};
+
+/**
+ * Spreads unplaceable minutes over section blocks in proportion to their current
+ * allocation, never past each block's cap — the caps are the reason those
+ * minutes had nowhere to go in the first place. Mutates the blocks and returns
+ * whatever still could not be placed.
+ */
+function distributeUpToCaps(minutes: number, blocks: PlannedBlock[]): number {
+	let remaining = minutes;
+	// Each round fills at least one block to its cap, so this terminates.
+	for (let round = 0; round <= blocks.length && remaining > EPS; round++) {
+		const open = blocks.filter(
+			(b) => b.allocatedMinutes < (BLOCK_CAP[b.kind] ?? 0) - EPS,
+		);
+		if (open.length === 0) break;
+		const total = sum(open.map((b) => b.allocatedMinutes));
+		let placed = 0;
+		for (const b of open) {
+			const share =
+				total > 0
+					? (remaining * b.allocatedMinutes) / total
+					: remaining / open.length;
+			const cap = BLOCK_CAP[b.kind] ?? 0;
+			const add = Math.min(share, cap - b.allocatedMinutes);
+			b.allocatedMinutes += add;
+			placed += add;
+		}
+		if (placed <= EPS) break;
+		remaining -= placed;
+	}
+	return Math.max(0, remaining);
 }
 
 // Per-piece maintenance cost in minutes: a full play-through + 20% buffer when
@@ -427,32 +774,6 @@ export function redistributeForAvailability(
 	return result;
 }
 
-/**
- * Add maintenance leftover minutes to the learning/stabilizing blocks in exact
- * proportion to their current allocation. Mutates blocks in place. Dropped if
- * neither block exists.
- */
-function applyMaintenanceLeftover(
-	leftoverMinutes: number,
-	learningBlock: PlannedBlock | null,
-	stabilizingBlock: PlannedBlock | null,
-): void {
-	if (leftoverMinutes <= 0) return;
-	const recipients = [learningBlock, stabilizingBlock].filter(
-		(b): b is PlannedBlock => b != null,
-	);
-	if (recipients.length === 0) return;
-	const totalAlloc = recipients.reduce((acc, b) => acc + b.allocatedMinutes, 0);
-	const shares = recipients.map((b) =>
-		totalAlloc > 0
-			? (leftoverMinutes * b.allocatedMinutes) / totalAlloc
-			: leftoverMinutes / recipients.length,
-	);
-	recipients.forEach((b, i) => {
-		b.allocatedMinutes += shares[i];
-	});
-}
-
 function hasEligibleTechnique(techniques: TechniqueItem[], now: Date): boolean {
 	return (
 		eligibleTechniquesInState(techniques, "active", now).length > 0 ||
@@ -462,6 +783,46 @@ function hasEligibleTechnique(techniques: TechniqueItem[], now: Date): boolean {
 
 function hasPiecesInState(pieces: Piece[], state: Piece["state"]): boolean {
 	return pieces.some((p) => p.state === state);
+}
+
+/**
+ * Whether the stabilizing line has *any* raw content, ignoring today's
+ * exclusions — a promoted piece, or a problem section inside an otherwise fine
+ * one. Decides between the "practiced today" and "nothing to practise" wording.
+ */
+function hasStabilizingLineContent(
+	pieces: Piece[],
+	sections: Section[],
+): boolean {
+	if (hasPiecesInState(pieces, "stabilizing")) return true;
+	const problemPieceIds = new Set(
+		pieces
+			.filter((p) => p.state === "maintenance" || p.state === "performance")
+			.map((p) => p.id)
+			.filter((id): id is string => !!id),
+	);
+	return sections.some(
+		(s) =>
+			!s.archived &&
+			problemPieceIds.has(s.pieceId) &&
+			(s.phase === "stabilizing" || s.phase === "learning"),
+	);
+}
+
+/** Whether any learning-state piece has an already-learned section to review. */
+function hasReviewContent(pieces: Piece[], sections: Section[]): boolean {
+	const learningPieceIds = new Set(
+		pieces
+			.filter((p) => p.state === "learning")
+			.map((p) => p.id)
+			.filter((id): id is string => !!id),
+	);
+	return sections.some(
+		(s) =>
+			!s.archived &&
+			learningPieceIds.has(s.pieceId) &&
+			(s.phase === "stabilizing" || s.phase === "maintenance"),
+	);
 }
 
 function hasAnyTechniqueInPool(techniques: TechniqueItem[]): boolean {
@@ -503,10 +864,12 @@ export function buildPlan(
 
 	// Availability flags (warmup excluded — it has its own freeform fallback).
 	const techniqueEligible = hasEligibleTechnique(techniques, now);
-	const learningEligible =
-		eligibleSectionCandidates("learning", pieces, sections, now).length > 0;
+	const pools = learningLinePools(pieces, sections, now);
+	// The line survives on review alone: with nothing new to acquire today, its
+	// minutes are better spent on that piece's learned sections than handed away.
+	const learningEligible = pools.learning.length > 0 || pools.review.length > 0;
 	const stabilizingEligible =
-		eligibleSectionCandidates("stabilizing", pieces, sections, now).length > 0;
+		stabilizingLinePool(pieces, sections, now).length > 0;
 	const maintenanceEligible = eligibleMaintenancePieces(pieces, now).length > 0;
 
 	const baseAlloc: SlotMinutes = {
@@ -543,7 +906,7 @@ export function buildPlan(
 	if (baseAlloc.repertoireStabilizing > 0 && !available.repertoireStabilizing) {
 		omitted.push({
 			kind: "repertoire-stabilizing",
-			reason: omittedReason(hasPiecesInState(pieces, "stabilizing")),
+			reason: omittedReason(hasStabilizingLineContent(pieces, sections)),
 			redistributedMinutes: baseAlloc.repertoireStabilizing,
 		});
 	}
@@ -578,34 +941,32 @@ export function buildPlan(
 	const usedSectionIds = new Set<string>();
 	const usedPieceIds = new Set<string>();
 
-	const learningBlock =
-		updated.repertoireLearning > 0
-			? pickRepertoireSection(
-					"learning",
-					pieces,
-					sections,
-					updated.repertoireLearning,
-					now,
-					usedSectionIds,
-				)
-			: null;
-	if (learningBlock?.sectionId) usedSectionIds.add(learningBlock.sectionId);
-	if (learningBlock?.pieceId) usedPieceIds.add(learningBlock.pieceId);
+	const markUsed = (blocks: PlannedBlock[]): void => {
+		for (const b of blocks) {
+			if (b.sectionId) usedSectionIds.add(b.sectionId);
+			if (b.pieceId) usedPieceIds.add(b.pieceId);
+		}
+	};
 
-	const stabilizingBlock =
-		updated.repertoireStabilizing > 0
-			? pickRepertoireSection(
-					"stabilizing",
-					pieces,
-					sections,
-					updated.repertoireStabilizing,
-					now,
-					usedSectionIds,
-				)
-			: null;
-	if (stabilizingBlock?.sectionId)
-		usedSectionIds.add(stabilizingBlock.sectionId);
-	if (stabilizingBlock?.pieceId) usedPieceIds.add(stabilizingBlock.pieceId);
+	const learning = pickRepertoireLearningBlocks(
+		pieces,
+		sections,
+		updated.repertoireLearning,
+		now,
+		usedSectionIds,
+		usedPieceIds,
+	);
+	markUsed([...learning.reviewBlocks, ...learning.learningBlocks]);
+
+	const stabilizing = pickRepertoireStabilizingBlocks(
+		pieces,
+		sections,
+		updated.repertoireStabilizing,
+		now,
+		usedSectionIds,
+		usedPieceIds,
+	);
+	markUsed(stabilizing.blocks);
 
 	const {
 		blocks: maintenanceBlocks,
@@ -619,11 +980,7 @@ export function buildPlan(
 		usedPieceIds,
 		{ forcedMaintenancePieceId: options?.forcedMaintenancePieceId },
 	);
-	for (const mb of maintenanceBlocks) {
-		if (mb.pieceId) usedPieceIds.add(mb.pieceId);
-	}
-
-	applyMaintenanceLeftover(leftoverMinutes, learningBlock, stabilizingBlock);
+	markUsed(maintenanceBlocks);
 
 	const sightBlock: PlannedBlock | null =
 		updated.sightReading > 0
@@ -635,12 +992,45 @@ export function buildPlan(
 				}
 			: null;
 
+	// Everything the section blocks could not take: maintenance pieces that did
+	// not fit their budget, plus learning/stabilizing minutes the block caps
+	// refused. Fill the section blocks up to their caps, then let the freeform
+	// reading timer absorb the rest; anything beyond that the session runs short.
+	let unplaced = distributeUpToCaps(
+		leftoverMinutes + learning.leftoverMinutes + stabilizing.leftoverMinutes,
+		[
+			...learning.reviewBlocks,
+			...learning.learningBlocks,
+			...stabilizing.blocks,
+		],
+	);
+	if (unplaced > EPS && sightBlock) {
+		sightBlock.allocatedMinutes += unplaced;
+		unplaced = 0;
+	}
+	if (learning.leftoverMinutes > EPS) {
+		// The learning line got its blocks but not all of its minutes: the block
+		// caps refused the rest and there was nothing to review. Filed under
+		// `repertoire-review` rather than `repertoire-learning` so the preview says
+		// which half of the line came up empty — and so it can never collide with
+		// the whole-line entry pushed above.
+		omitted.push({
+			kind: "repertoire-review",
+			reason: omittedReason(hasReviewContent(pieces, sections)),
+			redistributedMinutes: learning.leftoverMinutes,
+		});
+	}
+
 	const byKind: Partial<Record<BlockKind, PlannedBlock | PlannedBlock[]>> = {
 		warmup: warmupBlock ?? undefined,
 		technique: techBlocks.length > 0 ? techBlocks : undefined,
 		"sight-reading": sightBlock ?? undefined,
-		"repertoire-learning": learningBlock ?? undefined,
-		"repertoire-stabilizing": stabilizingBlock ?? undefined,
+		"repertoire-review":
+			learning.reviewBlocks.length > 0 ? learning.reviewBlocks : undefined,
+		"repertoire-learning":
+			learning.learningBlocks.length > 0 ? learning.learningBlocks : undefined,
+		"repertoire-stabilizing":
+			stabilizing.blocks.length > 0 ? stabilizing.blocks : undefined,
 		"repertoire-maintenance":
 			maintenanceBlocks.length > 0 ? maintenanceBlocks : undefined,
 	};

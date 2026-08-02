@@ -5,8 +5,10 @@ import type { TechniqueItem, TechniqueState } from "@/models/technique";
 import {
 	buildPlan,
 	CANONICAL_BLOCK_ORDER,
+	pickRepertoireLearningBlocks,
 	pickRepertoireMaintenanceBlocks,
 	pickRepertoireSection,
+	pickRepertoireStabilizingBlocks,
 	pickTechnique,
 	pickWarmup,
 	planTotalMinutes,
@@ -46,11 +48,12 @@ const BALANCED_60: SessionAllocation = {
 const NOW = new Date("2026-05-27T12:00:00Z");
 
 describe("CANONICAL_BLOCK_ORDER", () => {
-	it("puts reading directly after warmup and never last", () => {
+	it("puts reading directly after warmup and review before learning", () => {
 		expect(CANONICAL_BLOCK_ORDER).toEqual([
 			"warmup",
 			"sight-reading",
 			"technique",
+			"repertoire-review",
 			"repertoire-learning",
 			"repertoire-stabilizing",
 			"repertoire-maintenance",
@@ -185,6 +188,264 @@ describe("pickRepertoireSection", () => {
 		];
 		const b = pickRepertoireSection("learning", pieces, sections, 10, NOW);
 		expect(b?.sectionId).toBe("s1");
+	});
+});
+
+describe("pickRepertoireLearningBlocks", () => {
+	const days = (n: number) => new Date(NOW.getTime() - n * 86400000);
+
+	it("never spends the whole line on one section (the reported bug)", () => {
+		// One learning section and several already-learned ones, 20-minute line.
+		// Before the split this was 20 minutes on `s-learn` and nothing else.
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({
+				id: "r0",
+				pieceId: "p1",
+				phase: "stabilizing",
+				order: 0,
+				lastPracticed: days(9),
+			}),
+			makeSection({
+				id: "r1",
+				pieceId: "p1",
+				phase: "stabilizing",
+				order: 1,
+				lastPracticed: days(4),
+			}),
+			makeSection({
+				id: "r2",
+				pieceId: "p1",
+				phase: "maintenance",
+				order: 2,
+				lastPracticed: days(2),
+			}),
+			makeSection({
+				id: "s-learn",
+				pieceId: "p1",
+				phase: "learning",
+				order: 3,
+				lastPracticed: days(1),
+			}),
+		];
+		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
+		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["s-learn"]);
+		expect(r.learningBlocks[0].allocatedMinutes).toBeCloseTo(12);
+		expect(r.reviewBlocks).toHaveLength(1);
+		expect(r.reviewBlocks[0].allocatedMinutes).toBeCloseTo(8);
+		expect(r.reviewBlocks[0].sectionId).toBe("r0"); // stalest of the learned ones
+		expect(r.leftoverMinutes).toBe(0);
+	});
+
+	it("spreads a long line over distinct learning sections", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({
+				id: "a",
+				pieceId: "p1",
+				phase: "learning",
+				order: 0,
+				lastPracticed: days(3),
+			}),
+			makeSection({
+				id: "b",
+				pieceId: "p1",
+				phase: "learning",
+				order: 1,
+				lastPracticed: days(2),
+			}),
+			makeSection({
+				id: "c",
+				pieceId: "p1",
+				phase: "stabilizing",
+				order: 2,
+				lastPracticed: days(5),
+			}),
+		];
+		const r = pickRepertoireLearningBlocks(pieces, sections, 24, NOW);
+		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["a", "b"]);
+		expect(r.learningBlocks.every((b) => b.allocatedMinutes === 9)).toBe(true);
+		expect(r.reviewBlocks.map((b) => b.sectionId)).toEqual(["c"]);
+		expect(r.reviewBlocks[0].allocatedMinutes).toBeCloseTo(6);
+	});
+
+	it("reviews the piece it is learning first, even when another scores higher", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "pa", title: "A", state: "learning" }),
+			makePiece({ id: "pb", title: "B", state: "learning" }),
+		];
+		const sections: Section[] = [
+			makeSection({
+				id: "a-learn",
+				pieceId: "pa",
+				phase: "learning",
+				lastPracticed: days(10),
+			}),
+			makeSection({
+				id: "a-review",
+				pieceId: "pa",
+				phase: "stabilizing",
+				lastPracticed: days(1), // score 2.5
+			}),
+			makeSection({
+				id: "b-review",
+				pieceId: "pb",
+				phase: "stabilizing",
+				lastPracticed: days(30), // score 75 — but the wrong piece
+			}),
+		];
+		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
+		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["a-learn"]);
+		expect(r.reviewBlocks.map((b) => b.sectionId)).toEqual(["a-review"]);
+	});
+
+	it("runs the whole line as review when there is nothing new to acquire", () => {
+		// A learning-state piece whose sections are all learned already: before
+		// this feature the line idled and its minutes went to other slots.
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = ["r0", "r1", "r2"].map((id, i) =>
+			makeSection({
+				id,
+				pieceId: "p1",
+				phase: "stabilizing",
+				order: i,
+				lastPracticed: days(9 - i),
+			}),
+		);
+		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
+		expect(r.learningBlocks).toEqual([]);
+		expect(r.reviewBlocks.map((b) => b.sectionId)).toEqual(["r0", "r1", "r2"]);
+		expect(r.reviewBlocks.every((b) => b.allocatedMinutes === 20 / 3)).toBe(
+			true,
+		);
+		expect(r.leftoverMinutes).toBe(0);
+	});
+
+	it("hands review minutes back to learning, then reports what will not fit", () => {
+		// Brand-new piece: one section, nothing learned yet to review.
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({ id: "s1", pieceId: "p1", phase: "learning" }),
+		];
+		const under = pickRepertoireLearningBlocks(pieces, sections, 13, NOW);
+		// 9.75 learning + 3.25 review → the block absorbs 2.25 up to its cap.
+		expect(under.learningBlocks[0].allocatedMinutes).toBeCloseTo(12);
+		expect(under.reviewBlocks).toEqual([]);
+		expect(under.leftoverMinutes).toBeCloseTo(1);
+
+		const over = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
+		expect(over.learningBlocks[0].allocatedMinutes).toBeCloseTo(12);
+		expect(over.leftoverMinutes).toBeCloseTo(8);
+	});
+
+	it("ignores stabilizing- and maintenance-state pieces entirely", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "ps", state: "stabilizing" }),
+			makePiece({ id: "pm", state: "maintenance" }),
+		];
+		const sections: Section[] = [
+			makeSection({ id: "s1", pieceId: "ps", phase: "learning" }),
+			makeSection({ id: "s2", pieceId: "pm", phase: "stabilizing" }),
+		];
+		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
+		expect(r.learningBlocks).toEqual([]);
+		expect(r.reviewBlocks).toEqual([]);
+		expect(r.leftoverMinutes).toBe(20);
+	});
+
+	it("respects sections already taken by an earlier block", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({
+				id: "a",
+				pieceId: "p1",
+				phase: "learning",
+				order: 0,
+				lastPracticed: days(9),
+			}),
+			makeSection({
+				id: "b",
+				pieceId: "p1",
+				phase: "learning",
+				order: 1,
+				lastPracticed: days(3),
+			}),
+		];
+		const r = pickRepertoireLearningBlocks(
+			pieces,
+			sections,
+			10,
+			NOW,
+			new Set(["a"]),
+		);
+		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["b"]);
+	});
+});
+
+describe("pickRepertoireStabilizingBlocks", () => {
+	const days = (n: number) => new Date(NOW.getTime() - n * 86400000);
+
+	it("reaches problem sections inside otherwise-maintenance pieces", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "pm", state: "maintenance", lastPracticed: days(2) }),
+		];
+		const sections: Section[] = [
+			makeSection({
+				id: "problem",
+				pieceId: "pm",
+				phase: "stabilizing",
+				order: 0,
+				lastPracticed: days(6),
+			}),
+			// A settled section of the same piece belongs to whole-piece run-throughs.
+			makeSection({
+				id: "settled",
+				pieceId: "pm",
+				phase: "maintenance",
+				order: 1,
+				lastPracticed: days(20),
+			}),
+		];
+		const r = pickRepertoireStabilizingBlocks(pieces, sections, 10, NOW);
+		expect(r.blocks.map((b) => b.sectionId)).toEqual(["problem"]);
+	});
+
+	it("never touches a learning-state piece — that is the learning line's job", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({ id: "s1", pieceId: "p1", phase: "stabilizing" }),
+		];
+		const r = pickRepertoireStabilizingBlocks(pieces, sections, 10, NOW);
+		expect(r.blocks).toEqual([]);
+		expect(r.leftoverMinutes).toBe(10);
+	});
+
+	it("splits a long line over distinct sections", () => {
+		const pieces: Piece[] = [makePiece({ id: "ps", state: "stabilizing" })];
+		const sections: Section[] = ["a", "b"].map((id, i) =>
+			makeSection({
+				id,
+				pieceId: "ps",
+				phase: "stabilizing",
+				order: i,
+				lastPracticed: days(9 - i),
+			}),
+		);
+		const r = pickRepertoireStabilizingBlocks(pieces, sections, 20, NOW);
+		expect(r.blocks.map((b) => b.sectionId)).toEqual(["a", "b"]);
+		expect(r.blocks.every((b) => b.allocatedMinutes === 10)).toBe(true);
+		expect(r.leftoverMinutes).toBe(0);
+	});
+
+	it("caps the block instead of grinding one section for the whole line", () => {
+		const pieces: Piece[] = [makePiece({ id: "ps", state: "stabilizing" })];
+		const sections: Section[] = [
+			makeSection({ id: "only", pieceId: "ps", phase: "stabilizing" }),
+		];
+		const r = pickRepertoireStabilizingBlocks(pieces, sections, 20, NOW);
+		expect(r.blocks).toHaveLength(1);
+		expect(r.blocks[0].allocatedMinutes).toBeCloseTo(12);
+		expect(r.leftoverMinutes).toBeCloseTo(8);
 	});
 });
 
@@ -973,6 +1234,10 @@ describe("buildPlan", () => {
 
 	it("a repertoire-heavy allocation still schedules its technique and reading minutes", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({ id: "s1", pieceId: "p1", phase: "learning", order: 1 }),
+			makeSection({ id: "s0", pieceId: "p1", phase: "stabilizing", order: 0 }),
+		];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
 		const plan = buildPlan(
 			alloc({
@@ -983,7 +1248,7 @@ describe("buildPlan", () => {
 				repertoireMaintenance: 3,
 			}),
 			pieces,
-			[],
+			sections,
 			ts,
 			NOW,
 		);
@@ -1164,7 +1429,7 @@ describe("buildPlan", () => {
 		expect(plan.maintenanceOptIn).toBeNull();
 	});
 
-	it("maintenance leftover bumps learning + stabilizing blocks", () => {
+	it("maintenance leftover fills the section blocks up to their caps", () => {
 		const days = new Date(NOW.getTime() - 5 * 86400000);
 		const pieces: Piece[] = [
 			makePiece({ id: "pl", state: "learning" }),
@@ -1176,19 +1441,26 @@ describe("buildPlan", () => {
 				durationSeconds: 60, // cost 1.2 of a 5.25-min maintenance budget
 			}),
 		];
+		const sections: Section[] = [
+			makeSection({ id: "l1", pieceId: "pl", phase: "learning", order: 1 }),
+			makeSection({ id: "r1", pieceId: "pl", phase: "stabilizing", order: 0 }),
+		];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
-		const plan = buildPlan(BALANCED_60, pieces, [], ts, NOW);
-		const learn = plan.blocks.find((b) => b.kind === "repertoire-learning");
-		const stab = plan.blocks.find((b) => b.kind === "repertoire-stabilizing");
+		const plan = buildPlan(BALANCED_60, pieces, sections, ts, NOW);
 		// 60 balanced: rep 35 → learning 19.25, stabilizing 10.5, maintenance 5.25.
-		// Leftover 5.25 − 1.2 = 4.05, split proportionally over 19.25 : 10.5.
-		const base = 19.25 + 10.5;
-		const leftover = 5.25 - 1.2;
-		expect(learn?.allocatedMinutes).toBeCloseTo(
-			19.25 + (leftover * 19.25) / base,
-		);
-		expect(stab?.allocatedMinutes).toBeCloseTo(10.5 + (leftover * 10.5) / base);
-		// Nothing overran → the plan still adds up to the requested 60.
+		// The learning line wants 2 × 8 + 3.25 review but has one learning section,
+		// so it collapses to 12 learning + 7.25 review. Maintenance leaves 4.05
+		// over, which tops up review (→ 8) and stabilizing (→ 12) to their caps;
+		// the remaining 1.8 lands on the freeform reading timer.
+		const learn = plan.blocks.find((b) => b.kind === "repertoire-learning");
+		const review = plan.blocks.find((b) => b.kind === "repertoire-review");
+		const stab = plan.blocks.find((b) => b.kind === "repertoire-stabilizing");
+		const sight = plan.blocks.find((b) => b.kind === "sight-reading");
+		expect(learn?.allocatedMinutes).toBeCloseTo(12);
+		expect(review?.allocatedMinutes).toBeCloseTo(8);
+		expect(stab?.allocatedMinutes).toBeCloseTo(12);
+		expect(sight?.allocatedMinutes).toBeCloseTo(9.8);
+		// Nothing overran and nothing was dropped → still exactly 60.
 		const total = plan.blocks.reduce((acc, b) => acc + b.allocatedMinutes, 0);
 		expect(total).toBeCloseTo(60);
 		expect(plan.inflationMinutes).toBe(0);
@@ -1247,6 +1519,125 @@ describe("buildPlan", () => {
 		expect(planTotalMinutes(plan)).toBeCloseTo(33.15);
 		const total = plan.blocks.reduce((acc, b) => acc + b.allocatedMinutes, 0);
 		expect(total).toBeCloseTo(33.15);
+	});
+
+	it("puts the review block before the learning blocks it warms into", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({
+				id: "learn",
+				pieceId: "p1",
+				phase: "learning",
+				order: 1,
+				lastPracticed: days,
+			}),
+			makeSection({
+				id: "learned",
+				pieceId: "p1",
+				phase: "stabilizing",
+				order: 0,
+				lastPracticed: days,
+			}),
+		];
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const kinds = plan.blocks.map((b) => b.kind);
+		expect(kinds.indexOf("repertoire-review")).toBeGreaterThanOrEqual(0);
+		expect(kinds.indexOf("repertoire-review")).toBeLessThan(
+			kinds.indexOf("repertoire-learning"),
+		);
+		// The stabilizing-phase section inside a learning piece — previously
+		// unreachable by any line — is what the review block lands on.
+		const review = plan.blocks.find((b) => b.kind === "repertoire-review");
+		expect(review?.sectionId).toBe("learned");
+	});
+
+	it("does not schedule a piece twice when its problem section takes the stabilizing line", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({ id: "pl", state: "learning" }),
+			makePiece({
+				id: "pm",
+				state: "maintenance",
+				lastPracticed: days,
+				durationSeconds: 120,
+			}),
+		];
+		const sections: Section[] = [
+			makeSection({
+				id: "problem",
+				pieceId: "pm",
+				phase: "stabilizing",
+				lastPracticed: days,
+			}),
+		];
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		expect(
+			plan.blocks.find((b) => b.kind === "repertoire-stabilizing")?.sectionId,
+		).toBe("problem");
+		expect(
+			plan.blocks.filter((b) => b.pieceId === "pm").map((b) => b.kind),
+		).toEqual(["repertoire-stabilizing"]);
+	});
+
+	it("records the learning minutes no block could take", () => {
+		// One learning section, nothing learned yet to review, and no other line
+		// to absorb the surplus — the preview has to say where the minutes went.
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({ id: "s1", pieceId: "p1", phase: "learning" }),
+		];
+		const plan = buildPlan(
+			alloc({
+				sightReading: 0,
+				technique: 0,
+				repertoireLearning: 20,
+				repertoireStabilizing: 0,
+				repertoireMaintenance: 0,
+			}),
+			pieces,
+			sections,
+			[],
+			NOW,
+		);
+		const learning = plan.blocks.filter(
+			(b) => b.kind === "repertoire-learning",
+		);
+		expect(learning).toHaveLength(1);
+		expect(learning[0].allocatedMinutes).toBeCloseTo(12);
+		const om = plan.omitted?.find((o) => o.kind === "repertoire-review");
+		expect(om?.reason).toBe("no-content");
+		expect(om?.redistributedMinutes).toBeCloseTo(8);
+	});
+
+	it("says the review half came up empty when its sections were used today", () => {
+		const NOW_LOCAL = new Date(2026, 4, 27, 12, 0);
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({ id: "s1", pieceId: "p1", phase: "learning" }),
+			makeSection({
+				id: "r1",
+				pieceId: "p1",
+				phase: "stabilizing",
+				lastPracticed: new Date(NOW_LOCAL.getTime() - 60 * 60 * 1000),
+			}),
+		];
+		const plan = buildPlan(
+			alloc({
+				sightReading: 0,
+				technique: 0,
+				repertoireLearning: 20,
+				repertoireStabilizing: 0,
+				repertoireMaintenance: 0,
+			}),
+			pieces,
+			sections,
+			[],
+			NOW_LOCAL,
+		);
+		const om = plan.omitted?.find((o) => o.kind === "repertoire-review");
+		expect(om?.reason).toBe("practiced-today");
+		expect(om?.redistributedMinutes).toBeCloseTo(8);
 	});
 
 	it("drops maintenance leftover when no learning/stabilizing blocks exist", () => {
