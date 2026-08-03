@@ -1,5 +1,5 @@
 import { randomUUID } from "expo-crypto";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
@@ -23,6 +23,7 @@ import {
 	useTechniques,
 } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
+import { useWakeLock } from "@/hooks/use-wake-lock";
 import type { ModeKey } from "@/models/practice";
 import { effortOptions, qualityOptions } from "@/utils/estimation-options";
 import {
@@ -383,5 +384,8 @@ export function TechniquePracticeContent({
 
 export default function PracticeTechniqueScreen() {
 	const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+	// Standalone practice only: inside the coach the wake lock belongs to the
+	// coach screen, which knows whether the session is paused.
+	useWakeLock(useIsFocused());
 	return <TechniquePracticeContent techniqueId={id} from={from} />;
 }

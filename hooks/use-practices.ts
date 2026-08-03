@@ -10,6 +10,7 @@ import {
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { PracticeMistakes, PracticeTrigger } from "@/models/practice";
+import { awaitWrite } from "@/utils/firestore-write";
 import {
 	byModeFromFirestore,
 	deriveFromByMode,
@@ -43,15 +44,17 @@ export function useSavePractice() {
 			"practiceLogs",
 		);
 
-		await addDoc(practiceLogsRef, {
-			date: Timestamp.fromDate(date),
-			technicalMistakes,
-			memoryMistakes,
-			achievedBpm: achievedBpm ?? null,
-			flaggedSectionIds: flaggedSectionIds ?? null,
-			triggeredFrom: triggeredFrom ?? null,
-			sessionId: sessionId ?? null,
-		});
+		await awaitWrite(
+			addDoc(practiceLogsRef, {
+				date: Timestamp.fromDate(date),
+				technicalMistakes,
+				memoryMistakes,
+				achievedBpm: achievedBpm ?? null,
+				flaggedSectionIds: flaggedSectionIds ?? null,
+				triggeredFrom: triggeredFrom ?? null,
+				sessionId: sessionId ?? null,
+			}),
+		);
 
 		await updatePiece(pieceId, {
 			lastPracticed: date,
@@ -63,9 +66,11 @@ export function useSavePractice() {
 		if (flaggedSectionIds && flaggedSectionIds.length > 0) {
 			const sectionRef = (sId: string) =>
 				doc(db, "users", user.uid, "pieces", pieceId, "sections", sId);
-			await Promise.all(
-				flaggedSectionIds.map((sId) =>
-					updateDoc(sectionRef(sId), { lastPracticed: serverTimestamp() }),
+			await awaitWrite(
+				Promise.all(
+					flaggedSectionIds.map((sId) =>
+						updateDoc(sectionRef(sId), { lastPracticed: serverTimestamp() }),
+					),
 				),
 			);
 		}
@@ -101,18 +106,20 @@ export function useSaveSectionPractice() {
 		);
 		const practiceLogsRef = collection(sectionRef, "practiceLogs");
 
-		await Promise.all(
-			entries.map((entry) =>
-				addDoc(practiceLogsRef, {
-					date: Timestamp.fromDate(date),
-					quality: entry.quality,
-					effort: entry.effort,
-					achievedBpm: entry.bpm ?? null,
-					hands: entry.hands,
-					drill: entry.drill ?? null,
-					triggeredFrom: triggeredFrom ?? null,
-					sessionId: sessionId ?? null,
-				}),
+		await awaitWrite(
+			Promise.all(
+				entries.map((entry) =>
+					addDoc(practiceLogsRef, {
+						date: Timestamp.fromDate(date),
+						quality: entry.quality,
+						effort: entry.effort,
+						achievedBpm: entry.bpm ?? null,
+						hands: entry.hands,
+						drill: entry.drill ?? null,
+						triggeredFrom: triggeredFrom ?? null,
+						sessionId: sessionId ?? null,
+					}),
+				),
 			),
 		);
 
@@ -124,13 +131,15 @@ export function useSaveSectionPractice() {
 		);
 		const derived = deriveFromByMode(byMode);
 
-		await updateDoc(sectionRef, {
-			byMode,
-			lastPracticed: derived.lastPracticed ?? date,
-			lastQuality: derived.quality,
-			lastEffort: derived.effort,
-			...(derived.bpm != null ? { currentBpm: derived.bpm } : {}),
-		});
+		await awaitWrite(
+			updateDoc(sectionRef, {
+				byMode,
+				lastPracticed: derived.lastPracticed ?? date,
+				lastQuality: derived.quality,
+				lastEffort: derived.effort,
+				...(derived.bpm != null ? { currentBpm: derived.bpm } : {}),
+			}),
+		);
 
 		await updatePiece(pieceId, {
 			lastPracticed: date,

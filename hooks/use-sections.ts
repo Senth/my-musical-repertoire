@@ -16,6 +16,7 @@ import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePieces } from "@/hooks/use-pieces";
 import type { Section, SectionPhase } from "@/models/section";
+import { awaitWrite } from "@/utils/firestore-write";
 import { byModeFromFirestore } from "@/utils/practice-modes";
 
 interface FirestoreSection {
@@ -172,7 +173,7 @@ export function useAddSection() {
 		const pieceRef = doc(db, "users", user.uid, "pieces", pieceId);
 		batch.update(pieceRef, { sectionCount: increment(1) });
 
-		await batch.commit();
+		await awaitWrite(batch.commit());
 	};
 
 	return { addSection };
@@ -213,7 +214,7 @@ export function useUpdateSection() {
 			"sections",
 			sectionId,
 		);
-		await updateDoc(sectionRef, updates);
+		await awaitWrite(updateDoc(sectionRef, updates));
 	};
 
 	return { updateSection };
@@ -242,7 +243,7 @@ export function useArchiveSection() {
 		const pieceRef = doc(db, "users", user.uid, "pieces", pieceId);
 		batch.update(pieceRef, { sectionCount: increment(-1) });
 
-		await batch.commit();
+		await awaitWrite(batch.commit());
 	};
 
 	return { archiveSection };
@@ -270,7 +271,7 @@ export function useReorderSections() {
 			);
 			batch.update(sectionRef, { order: i });
 		}
-		await batch.commit();
+		await awaitWrite(batch.commit());
 	};
 
 	return { reorderSections };

@@ -1,11 +1,11 @@
 import {
-	addDoc,
 	collection,
 	deleteDoc,
 	doc,
 	onSnapshot,
 	query,
 	serverTimestamp,
+	setDoc,
 	updateDoc,
 	writeBatch,
 } from "firebase/firestore";
@@ -22,6 +22,7 @@ import {
 	SCRATCH_PRESET_ID,
 	type SessionPreset,
 } from "@/models/session-preset";
+import { awaitWrite } from "@/utils/firestore-write";
 
 interface FirestoreSessionPreset {
 	name?: string;
@@ -171,7 +172,7 @@ export async function seedDefaultPresets(
 		createdAt: serverTimestamp(),
 		updatedAt: serverTimestamp(),
 	});
-	await batch.commit();
+	await awaitWrite(batch.commit());
 }
 
 /**
@@ -204,7 +205,7 @@ export async function restoreDefaultPresets(
 			updatedAt: serverTimestamp(),
 		});
 	}
-	await batch.commit();
+	await awaitWrite(batch.commit());
 	return missing.length;
 }
 
@@ -221,16 +222,21 @@ export function useSessionPresetActions() {
 	const addPreset = useCallback(
 		async (name: string, lines: PresetLines, order?: number) => {
 			if (!user) throw new Error("Not authenticated");
-			const created = await addDoc(presetsCollection(user.uid), {
-				name,
-				// Callers that know the list pass an explicit order; the fallback
-				// just parks the preset at the end.
-				order: order ?? Date.now(),
-				lines: linesToFirestore(lines),
-				scratch: false,
-				createdAt: serverTimestamp(),
-				updatedAt: serverTimestamp(),
-			});
+			// The id is minted locally rather than taken from `addDoc`, whose
+			// promise only resolves on server acknowledgement — see `awaitWrite`.
+			const created = doc(presetsCollection(user.uid));
+			await awaitWrite(
+				setDoc(created, {
+					name,
+					// Callers that know the list pass an explicit order; the fallback
+					// just parks the preset at the end.
+					order: order ?? Date.now(),
+					lines: linesToFirestore(lines),
+					scratch: false,
+					createdAt: serverTimestamp(),
+					updatedAt: serverTimestamp(),
+				}),
+			);
 			return created.id;
 		},
 		[user],
@@ -247,7 +253,9 @@ export function useSessionPresetActions() {
 			if (updates.order !== undefined) payload.order = updates.order;
 			if (updates.lines !== undefined)
 				payload.lines = linesToFirestore(updates.lines);
-			await updateDoc(doc(presetsCollection(user.uid), presetId), payload);
+			await awaitWrite(
+				updateDoc(doc(presetsCollection(user.uid), presetId), payload),
+			);
 		},
 		[user],
 	);
@@ -255,7 +263,7 @@ export function useSessionPresetActions() {
 	const deletePreset = useCallback(
 		async (presetId: string) => {
 			if (!user) throw new Error("Not authenticated");
-			await deleteDoc(doc(presetsCollection(user.uid), presetId));
+			await awaitWrite(deleteDoc(doc(presetsCollection(user.uid), presetId)));
 		},
 		[user],
 	);
@@ -272,7 +280,7 @@ export function useSessionPresetActions() {
 					updatedAt: serverTimestamp(),
 				});
 			});
-			await batch.commit();
+			await awaitWrite(batch.commit());
 		},
 		[user],
 	);
@@ -322,5 +330,5 @@ async function setScratchDoc(
 		},
 		{ merge: true },
 	);
-	await batch.commit();
+	await awaitWrite(batch.commit());
 }

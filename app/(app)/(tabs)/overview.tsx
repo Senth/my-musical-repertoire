@@ -24,12 +24,14 @@ import {
 	CARD_TITLE_STYLE,
 	TITLE_ONLY_CARD_STYLE,
 } from "@/components/ui/card-style";
+import { InstallCard } from "@/components/ui/InstallCard";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { MetaChip } from "@/components/ui/StateChip";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { usePieces } from "@/hooks/use-pieces";
 import { useAllSections } from "@/hooks/use-sections";
 import {
@@ -44,9 +46,15 @@ import {
 	type SessionPreset,
 } from "@/models/session-preset";
 import { displayMinutes } from "@/utils/format-minutes";
+import { shouldOfferInstall } from "@/utils/install-gating";
 import { suggestPieces, suggestTechniques } from "@/utils/overview-suggestions";
 import { planTotalMinutes } from "@/utils/session-planner";
-import { clearActiveSession, readActiveSession } from "@/utils/session-storage";
+import {
+	clearActiveSession,
+	readActiveSession,
+	readInstallPromptDismissed,
+	writeInstallPromptDismissed,
+} from "@/utils/session-storage";
 import { pieceStateVisual, techniqueStateVisual } from "@/utils/state-colors";
 
 /** MD3 one-line list item with supporting trailing text. */
@@ -69,6 +77,8 @@ export default function OverviewScreen() {
 	const [activeSession, setActiveSession] = useState<ActiveSession | null>(
 		null,
 	);
+	const { promptAvailable, standalone, promptInstall } = useInstallPrompt();
+	const [installDismissed, setInstallDismissed] = useState(true);
 
 	const reloadActiveSession = useCallback(async () => {
 		if (!user) {
@@ -84,6 +94,24 @@ export default function OverviewScreen() {
 			reloadActiveSession();
 		}, [reloadActiveSession]),
 	);
+
+	// Starts dismissed so the card can never flash before the flag has loaded.
+	useEffect(() => {
+		if (!user) return;
+		let active = true;
+		(async () => {
+			const dismissed = await readInstallPromptDismissed(user.uid);
+			if (active) setInstallDismissed(dismissed);
+		})();
+		return () => {
+			active = false;
+		};
+	}, [user]);
+
+	const handleInstallDismiss = useCallback(async () => {
+		setInstallDismissed(true);
+		if (user) await writeInstallPromptDismissed(user.uid);
+	}, [user]);
 
 	const handleEndSession = useCallback(async () => {
 		if (!user) return;
@@ -105,6 +133,18 @@ export default function OverviewScreen() {
 		[techniques, now],
 	);
 
+	const offerInstall = shouldOfferInstall({
+		promptAvailable,
+		standalone,
+		hasActiveSession: activeSession !== null,
+		// Completed sessions are not recorded anywhere, so "has got value out of
+		// the app" is read off the repertoire's own practice timestamps.
+		hasPracticed:
+			pieces.some((p) => p.lastPracticed != null) ||
+			techniques.some((tn) => tn.lastPracticedAt != null),
+		dismissed: installDismissed,
+	});
+
 	if (piecesLoading || techniquesLoading || sectionsLoading) {
 		return <LoadingScreen />;
 	}
@@ -124,6 +164,13 @@ export default function OverviewScreen() {
 					onEnd={handleEndSession}
 					onResume={() => router.push("/session/coach")}
 				/>
+
+				{offerInstall && (
+					<InstallCard
+						onInstall={promptInstall}
+						onDismiss={handleInstallDismiss}
+					/>
+				)}
 
 				<Text variant="titleMedium">{t("screen.overview.practiceToday")}</Text>
 
