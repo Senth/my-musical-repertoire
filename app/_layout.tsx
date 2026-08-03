@@ -4,7 +4,10 @@ import "@/i18n";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { View } from "react-native";
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from "react-native-paper";
+import { OfflineBar } from "@/components/ui/OfflineBar";
+import { UpdateBanner } from "@/components/ui/UpdateBanner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
@@ -61,7 +64,15 @@ function AuthGate() {
 		}
 	}, [user, loading, segments, router.replace]);
 
-	return <Slot />;
+	// The offline bar sits above the router so every screen shows it, login and
+	// the coach included; the update banner is a Snackbar and floats on top.
+	return (
+		<View style={{ flex: 1 }}>
+			<OfflineBar />
+			<Slot />
+			<UpdateBanner />
+		</View>
+	);
 }
 
 export default function RootLayout() {

@@ -72,6 +72,13 @@
 		"bpm": {
 			"half": "½",
 			"double": "×2"
+		},
+		"offline": {
+			"banner": "Offline — changes will sync when you reconnect."
+		},
+		"update": {
+			"available": "New version available",
+			"reload": "Reload"
 		}
 	},
 	"a11y": {
@@ -239,6 +246,12 @@
 				"allPracticedToday": "Wow! You have practiced all your pieces today. Take a rest or add new pieces to practice!",
 				"allMaintenance": "All your pieces are in maintenance. Consider adding a new piece to learn!",
 				"allTechniquesPracticedToday": "You've practiced all your techniques today!"
+			},
+			"install": {
+				"title": "Install Repertoire",
+				"body": "Add the app to your home screen for a full-screen practice view that works offline.",
+				"install": "Install",
+				"notNow": "Not now"
 			}
 		},
 		"addPiece": {
@@ -626,6 +639,12 @@
 				"confirmDelete": "Delete",
 				"newPreset": "New preset",
 				"empty": "No presets yet"
+			},
+			"leave": {
+				"title": "Leave session?",
+				"body": "Your progress is saved.",
+				"keep": "Keep practicing",
+				"exit": "Pause & exit"
 			}
 		},
 		"pieceSections": {

@@ -1,5 +1,5 @@
 import { randomUUID } from "expo-crypto";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
@@ -31,6 +31,7 @@ import { usePracticeSave } from "@/hooks/use-practice-save";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
 import { useSections, useUpdateSection } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
+import { useWakeLock } from "@/hooks/use-wake-lock";
 import {
 	HANDS_MODES,
 	type ModeKey,
@@ -579,6 +580,9 @@ export default function PracticeScreen() {
 		from?: string;
 		sectionId?: string;
 	}>();
+	// Standalone practice only: inside the coach the wake lock belongs to the
+	// coach screen, which knows whether the session is paused.
+	useWakeLock(useIsFocused());
 	return (
 		<PiecePracticeContent
 			pieceId={id}

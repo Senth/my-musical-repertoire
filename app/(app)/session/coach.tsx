@@ -19,8 +19,10 @@ import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import { useAuth } from "@/contexts/AuthContext";
 import { type CoachContextValue, CoachProvider } from "@/contexts/CoachContext";
 import { useActiveSession } from "@/hooks/use-active-session";
+import { useCoachExitGuard } from "@/hooks/use-coach-exit-guard";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useSessionPause } from "@/hooks/use-session-pause";
+import { useWakeLock } from "@/hooks/use-wake-lock";
 import type {
 	ActiveSession,
 	BlockExecutionState,
@@ -88,6 +90,12 @@ export default function CoachScreen() {
 	// Pause the timers when the user leaves the coach and resume on return:
 	// total continues from where it left off, current block resets to 0:00.
 	useSessionPause({ session, setSession, persist, loaded });
+
+	// Hold the screen awake for as long as a block is actually running — not
+	// while paused, and not on the way to the summary.
+	useWakeLock(
+		!!session && !session.pausedAt && !!session.currentBlockStartedAt,
+	);
 
 	const currentBlock: PlannedBlock | null = useMemo(() => {
 		if (!session) return null;
@@ -245,9 +253,20 @@ export default function CoachScreen() {
 		await persist(next);
 	}, [session, currentBlockState, persist, setSession]);
 
+	// Leaving pauses by itself: `useSessionPause` pauses on blur, so both the
+	// toolbar Exit and the back guard's "Pause & exit" run through here.
 	const handleExit = useCallback(() => {
 		router.replace("/(app)/(tabs)/overview");
 	}, [router]);
+
+	const { confirmVisible, dismissConfirm } = useCoachExitGuard(
+		loaded && !!session,
+	);
+
+	const handleConfirmedExit = useCallback(() => {
+		dismissConfirm();
+		handleExit();
+	}, [dismissConfirm, handleExit]);
 
 	const coachValue: CoachContextValue = useMemo(
 		() => ({
@@ -359,6 +378,11 @@ export default function CoachScreen() {
 				onSave={handleDurationSave}
 				onSkip={handleDurationSkip}
 			/>
+			<LeaveSessionDialog
+				visible={confirmVisible}
+				onKeepPracticing={dismissConfirm}
+				onExit={handleConfirmedExit}
+			/>
 		</CoachProvider>
 	);
 }
@@ -430,6 +454,36 @@ function DurationPromptDialog({
 						)}
 					>
 						{t("screen.session.coach.durationPrompt.save")}
+					</Button>
+				</Dialog.Actions>
+			</Dialog>
+		</Portal>
+	);
+}
+
+/** Shown when the back gesture is intercepted mid-session. */
+function LeaveSessionDialog({
+	visible,
+	onKeepPracticing,
+	onExit,
+}: {
+	visible: boolean;
+	onKeepPracticing: () => void;
+	onExit: () => void;
+}) {
+	const { t } = useTranslation();
+
+	return (
+		<Portal>
+			<Dialog visible={visible} onDismiss={onKeepPracticing}>
+				<Dialog.Title>{t("screen.session.leave.title")}</Dialog.Title>
+				<Dialog.Content>
+					<Text variant="bodyMedium">{t("screen.session.leave.body")}</Text>
+				</Dialog.Content>
+				<Dialog.Actions>
+					<Button onPress={onExit}>{t("screen.session.leave.exit")}</Button>
+					<Button mode="contained" onPress={onKeepPracticing}>
+						{t("screen.session.leave.keep")}
 					</Button>
 				</Dialog.Actions>
 			</Dialog>

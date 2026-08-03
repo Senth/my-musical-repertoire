@@ -18,6 +18,7 @@ import type {
 	TechniqueState,
 	TechniqueType,
 } from "@/models/technique";
+import { awaitWrite } from "@/utils/firestore-write";
 import {
 	byModeFromFirestore,
 	deriveFromByMode,
@@ -130,17 +131,19 @@ export function useAddTechnique() {
 		if (!user) throw new Error("Not authenticated");
 
 		const ref = collection(db, "users", user.uid, "techniques");
-		await addDoc(ref, {
-			title,
-			state: options.state ?? "active",
-			type: options.type ?? null,
-			targetTempoBpm: options.targetTempoBpm ?? null,
-			notes: options.notes ?? null,
-			dateIntroduced: new Date(),
-			lastPracticedAt: null,
-			handsMode: options.handsMode ?? "separate",
-			activeDrills: options.activeDrills ?? [],
-		});
+		await awaitWrite(
+			addDoc(ref, {
+				title,
+				state: options.state ?? "active",
+				type: options.type ?? null,
+				targetTempoBpm: options.targetTempoBpm ?? null,
+				notes: options.notes ?? null,
+				dateIntroduced: new Date(),
+				lastPracticedAt: null,
+				handsMode: options.handsMode ?? "separate",
+				activeDrills: options.activeDrills ?? [],
+			}),
+		);
 	};
 
 	return { addTechnique };
@@ -172,7 +175,7 @@ export function useUpdateTechnique() {
 		if (!user) throw new Error("Not authenticated");
 
 		const ref = doc(db, "users", user.uid, "techniques", techniqueId);
-		await updateDoc(ref, updates);
+		await awaitWrite(updateDoc(ref, updates));
 	};
 
 	return { updateTechnique };
@@ -185,7 +188,7 @@ export function useDeleteTechnique() {
 		if (!user) throw new Error("Not authenticated");
 
 		const ref = doc(db, "users", user.uid, "techniques", techniqueId);
-		await deleteDoc(ref);
+		await awaitWrite(deleteDoc(ref));
 	};
 
 	return { deleteTechnique };
@@ -207,17 +210,19 @@ export function useSaveTechniqueLog() {
 		const techniqueRef = doc(db, "users", user.uid, "techniques", techniqueId);
 		const practiceLogsRef = collection(techniqueRef, "practiceLogs");
 
-		await Promise.all(
-			entries.map((entry) =>
-				addDoc(practiceLogsRef, {
-					date: Timestamp.fromDate(now),
-					quality: entry.quality,
-					effort: entry.effort,
-					achievedBpm: entry.bpm ?? null,
-					hands: entry.hands,
-					drill: entry.drill ?? null,
-					sessionId: options.sessionId ?? null,
-				}),
+		await awaitWrite(
+			Promise.all(
+				entries.map((entry) =>
+					addDoc(practiceLogsRef, {
+						date: Timestamp.fromDate(now),
+						quality: entry.quality,
+						effort: entry.effort,
+						achievedBpm: entry.bpm ?? null,
+						hands: entry.hands,
+						drill: entry.drill ?? null,
+						sessionId: options.sessionId ?? null,
+					}),
+				),
 			),
 		);
 
@@ -229,13 +234,15 @@ export function useSaveTechniqueLog() {
 		);
 		const derived = deriveFromByMode(byMode);
 
-		await updateDoc(techniqueRef, {
-			byMode,
-			lastPracticedAt: derived.lastPracticed ?? now,
-			lastQuality: derived.quality,
-			lastEffort: derived.effort,
-			lastAchievedTempoBpm: derived.bpm,
-		});
+		await awaitWrite(
+			updateDoc(techniqueRef, {
+				byMode,
+				lastPracticedAt: derived.lastPracticed ?? now,
+				lastQuality: derived.quality,
+				lastEffort: derived.effort,
+				lastAchievedTempoBpm: derived.bpm,
+			}),
+		);
 	};
 
 	return { saveTechniqueLog };

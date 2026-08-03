@@ -52,6 +52,21 @@ export async function writeSightReadingBpm(
 	await AsyncStorage.setItem(sightReadingBpmKey(uid), bpm);
 }
 
+function installPromptDismissedKey(uid: string): string {
+	return `installPromptDismissed:${uid}`;
+}
+
+export async function readInstallPromptDismissed(
+	uid: string,
+): Promise<boolean> {
+	return (await AsyncStorage.getItem(installPromptDismissedKey(uid))) === "1";
+}
+
+/** "Not now" is final — the install card is never offered to this user again. */
+export async function writeInstallPromptDismissed(uid: string): Promise<void> {
+	await AsyncStorage.setItem(installPromptDismissedKey(uid), "1");
+}
+
 /**
  * Cached derived piece scores, so a cold open can sort by score before the
  * per-piece section listeners have delivered anything.

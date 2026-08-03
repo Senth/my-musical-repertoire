@@ -17,6 +17,9 @@ web-build/
 # Metro
 .metro-health-check*
 
+# Scratch artifacts (builds, mockups, generated previews)
+.tmp/
+
 # Debug
 npm-debug.*
 yarn-debug.*

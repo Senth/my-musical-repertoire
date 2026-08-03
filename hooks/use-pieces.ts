@@ -14,6 +14,7 @@ import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Piece, PieceState } from "@/models/piece";
 import type { PracticeMistakes } from "@/models/practice";
+import { awaitWrite } from "@/utils/firestore-write";
 
 interface FirestorePiece {
 	title: string;
@@ -105,15 +106,17 @@ export function useAddPiece() {
 		if (!user) throw new Error("Not authenticated");
 
 		const piecesRef = collection(db, "users", user.uid, "pieces");
-		await addDoc(piecesRef, {
-			title,
-			composer,
-			collectionName,
-			state,
-			targetTempoBpm,
-			durationSeconds,
-			lastPracticed: null,
-		});
+		await awaitWrite(
+			addDoc(piecesRef, {
+				title,
+				composer,
+				collectionName,
+				state,
+				targetTempoBpm,
+				durationSeconds,
+				lastPracticed: null,
+			}),
+		);
 	};
 
 	return { addPiece };
@@ -145,7 +148,7 @@ export function useUpdatePiece() {
 		if (!user) throw new Error("Not authenticated");
 
 		const pieceRef = doc(db, "users", user.uid, "pieces", pieceId);
-		await updateDoc(pieceRef, updates);
+		await awaitWrite(updateDoc(pieceRef, updates));
 	};
 
 	return { updatePiece };
@@ -166,10 +169,12 @@ export function useDeletePiece() {
 			"practices",
 		);
 		const practicesSnapshot = await getDocs(practicesRef);
-		await Promise.all(practicesSnapshot.docs.map((d) => deleteDoc(d.ref)));
+		await awaitWrite(
+			Promise.all(practicesSnapshot.docs.map((d) => deleteDoc(d.ref))),
+		);
 
 		const pieceRef = doc(db, "users", user.uid, "pieces", pieceId);
-		await deleteDoc(pieceRef);
+		await awaitWrite(deleteDoc(pieceRef));
 	};
 
 	return { deletePiece };
