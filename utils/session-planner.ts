@@ -22,12 +22,11 @@ import {
 	sortTechniques,
 } from "./planner-scoring";
 import {
-	capLearningMinutes,
 	LEARNING_BLOCK_MAX,
+	LEARNING_BLOCK_MIN,
 	REVIEW_BLOCK_MAX,
+	REVIEW_BLOCK_MIN,
 	STABILIZING_BLOCK_MAX,
-	splitLearningLine,
-	splitReviewMinutes,
 	splitStabilizingLine,
 } from "./session-split";
 
@@ -97,38 +96,42 @@ function sortCandidates(candidates: SectionCandidate[]): SectionCandidate[] {
 	});
 }
 
-export interface LearningLinePools {
-	/** New acquisition: learning-phase sections of learning-state pieces. */
-	learning: SectionCandidate[];
-	/** Already-learned sections of those same pieces. */
-	review: SectionCandidate[];
-}
-
 /**
- * The learning line only ever looks at pieces whose *state* is `learning`. Its
- * two pools never compete in one ranking, which is what stops a learning-phase
- * section (`PHASE_SCORE` 10) from burying a stabilizing one (2.5) forever — no
- * scoring formula had to change for that.
+ * The learning line only ever looks at pieces whose *state* is `learning`, and
+ * ranks every phase in **one** pool — the score is comparable across phases now
+ * (`planner-scoring` §3.1), so a section neglected for a week can out-rank new
+ * acquisition without a reserved share forcing it.
+ *
+ * The order is piece-anchored: pieces are ranked by their best candidate, and
+ * *every* candidate of the top piece precedes every candidate of the second,
+ * regardless of score. That is what makes review pedagogically meaningful —
+ * you warm into the new bars through the ones that precede them, in the same
+ * piece, in the same session. Within a piece, score decides.
  */
-export function learningLinePools(
+export function learningLinePool(
 	pieces: Piece[],
 	sections: Section[],
 	now: Date,
 	usedSectionIds?: Set<string>,
 	usedPieceIds?: Set<string>,
-): LearningLinePools {
+): SectionCandidate[] {
 	const learningPieces = pieces.filter((p) => p.state === "learning");
-	const all = stillAvailable(
+	const available = stillAvailable(
 		buildSectionCandidates(learningPieces, sections, now),
 		usedSectionIds,
 		usedPieceIds,
 	);
-	return {
-		learning: all.filter((c) => c.phase === "learning"),
-		review: all.filter(
-			(c) => c.phase === "stabilizing" || c.phase === "maintenance",
-		),
-	};
+
+	// Score order first, so the first candidate seen for a piece is that piece's
+	// best — insertion order into the map is therefore the piece ranking.
+	const byPiece = new Map<string, SectionCandidate[]>();
+	for (const c of sortCandidates(available)) {
+		const key = c.piece.id ?? `title:${c.piece.title}`;
+		const group = byPiece.get(key);
+		if (group) group.push(c);
+		else byPiece.set(key, [c]);
+	}
+	return Array.from(byPiece.values()).flat();
 }
 
 /**
@@ -166,26 +169,6 @@ export function stabilizingLinePool(
 		usedSectionIds,
 		usedPieceIds,
 	);
-}
-
-/**
- * Review candidates ordered same-piece-first: reviewing what precedes the new
- * material is the whole point, so sections of the pieces a learning block was
- * picked from come before other learning-state pieces. Score orders within each
- * group.
- */
-function orderReviewPool(
-	candidates: SectionCandidate[],
-	learningPieceIds: Set<string>,
-): SectionCandidate[] {
-	const sorted = sortCandidates(candidates);
-	const sameP = sorted.filter(
-		(c) => c.piece.id && learningPieceIds.has(c.piece.id),
-	);
-	const others = sorted.filter(
-		(c) => !(c.piece.id && learningPieceIds.has(c.piece.id)),
-	);
-	return [...sameP, ...others];
 }
 
 /** Blocks must land on *different* sections — the same one twice with a pause
@@ -242,8 +225,7 @@ export function pickRepertoireSection(
 ): PlannedBlock | null {
 	const pool =
 		slot === "learning"
-			? learningLinePools(pieces, sections, now, usedSectionIds, usedPieceIds)
-					.learning
+			? learningLinePool(pieces, sections, now, usedSectionIds, usedPieceIds)
 			: stabilizingLinePool(
 					pieces,
 					sections,
@@ -266,17 +248,36 @@ export interface LearningLineResult {
 }
 
 /**
- * Splits the learning line into time-boxed learning blocks plus the reserved
- * review blocks, then walks the degradation ladder when the pools are thinner
- * than the split asked for:
+ * Block bounds are a property of the *phase the candidate landed on*, not of
+ * which half of a split it came from: new acquisition needs 8–12 minutes, a
+ * review of learned material 6–9.
+ */
+function blockBounds(candidate: SectionCandidate): {
+	min: number;
+	max: number;
+} {
+	return candidate.phase === "learning"
+		? { min: LEARNING_BLOCK_MIN, max: LEARNING_BLOCK_MAX }
+		: { min: REVIEW_BLOCK_MIN, max: REVIEW_BLOCK_MAX };
+}
+
+/**
+ * Fills the learning line greedily off one score-ranked, piece-anchored pool
+ * (`learningLinePool`): take the best candidate, size the block by the phase it
+ * landed on, and keep adding while the chosen set genuinely cannot absorb the
+ * minutes on its own.
  *
- * 1. fewer distinct learning sections than blocks → fewer blocks, each capped
- *    at `LEARNING_BLOCK_MAX`, surplus minutes moved into the review budget (so
- *    one eligible section and a 20-minute line gives 12 learning + 8 review,
- *    never 20 minutes on one section);
- * 2. no learning section at all → the whole line runs as review;
- * 3. no review section either → review minutes go back to learning, still
- *    capped, and whatever still cannot be placed comes back as `leftoverMinutes`.
+ * There is no reserved review share any more. Whether the session is all-new,
+ * all-review or mixed falls out of the scores, and the score has its own
+ * back-pressure — every section accrues `PHASE_SCORE·days` while it waits and
+ * resets to zero when picked, so the line can never lock into one mode. See
+ * `docs/specs/learning-line-greedy-selection.md` §4.
+ *
+ * Minutes: every block gets its floor, then the remainder is spread in
+ * proportion to each block's headroom so they all reach their maximum together.
+ * Blocks never exceed their maximum to absorb leftovers — the maximum is a
+ * pedagogical ceiling, not a rounding target — so whatever is left comes back
+ * as `leftoverMinutes` for the caller to redistribute.
  */
 export function pickRepertoireLearningBlocks(
 	pieces: Piece[],
@@ -293,84 +294,75 @@ export function pickRepertoireLearningBlocks(
 	};
 	if (allocatedMinutes <= 0) return empty;
 
-	const pools = learningLinePools(
+	const ordered = learningLinePool(
 		pieces,
 		sections,
 		now,
 		usedSectionIds,
 		usedPieceIds,
 	);
-	if (pools.learning.length === 0 && pools.review.length === 0) {
+	if (ordered.length === 0) {
 		return { ...empty, leftoverMinutes: allocatedMinutes };
 	}
 
-	const split = splitLearningLine(allocatedMinutes);
-	const taken = new Set<string>();
-	const learningPicks = takeDistinct(
-		sortCandidates(pools.learning),
-		split.learningMinutes.length,
-		taken,
-	);
+	const bounds = ordered.map(blockBounds);
+	const chosen = [0];
+	const sumMin = (): number => sum(chosen.map((i) => bounds[i].min));
+	const sumMax = (): number => sum(chosen.map((i) => bounds[i].max));
 
-	let learningMinutes: number[];
-	let reviewBudget = sum(split.reviewMinutes);
-	if (learningPicks.length === split.learningMinutes.length) {
-		learningMinutes = split.learningMinutes;
+	// `sumMax < L` is the anti-fragmentation guard: only add a block when the
+	// current set cannot legally take the time. `sumMin + next.min <= L` is the
+	// legality guard: only add one when every block can still reach its floor.
+	for (let i = 1; i < ordered.length; i++) {
+		if (sumMax() >= allocatedMinutes - EPS) break;
+		if (sumMin() + bounds[i].min > allocatedMinutes + EPS) break;
+		chosen.push(i);
+	}
+
+	const base = sumMin();
+	let minutes: number[];
+	let leftoverMinutes: number;
+	if (base > allocatedMinutes + EPS) {
+		// Below the best candidate's floor. Unreachable through the presets, but a
+		// short block beats no block at all.
+		minutes = [allocatedMinutes];
+		chosen.length = 1;
+		leftoverMinutes = 0;
 	} else {
-		const capped = capLearningMinutes(
-			sum(split.learningMinutes),
-			learningPicks.length,
+		const headroom = chosen.map((i) => bounds[i].max - bounds[i].min);
+		const totalHeadroom = sum(headroom);
+		const rem = Math.min(allocatedMinutes - base, totalHeadroom);
+		minutes = chosen.map(
+			(i, n) =>
+				bounds[i].min +
+				(totalHeadroom > 0 ? (rem * headroom[n]) / totalHeadroom : 0),
 		);
-		learningMinutes = capped.minutes;
-		reviewBudget += capped.surplus;
+		leftoverMinutes = Math.max(0, allocatedMinutes - base - rem);
 	}
 
-	const learningPieceIds = new Set(
-		learningPicks.map((c) => c.piece.id).filter((id): id is string => !!id),
-	);
-	// With no learning block the "review never outnumbers learning" rule has
-	// nothing to bound — the line is review, so it is sized on its own.
-	const wantedReviewBlocks =
-		learningMinutes.length > 0
-			? splitReviewMinutes(reviewBudget, learningMinutes.length).length
-			: splitReviewMinutes(reviewBudget, Number.MAX_SAFE_INTEGER).length;
-	const reviewPicks = takeDistinct(
-		orderReviewPool(pools.review, learningPieceIds),
-		wantedReviewBlocks,
-		taken,
-	);
-
-	let leftoverMinutes = 0;
-	if (reviewPicks.length === 0 && reviewBudget > EPS) {
-		// Nothing learned to review yet — hand the minutes back to learning, still
-		// capped, and report what even that cannot absorb.
-		const capacity = Math.max(
-			0,
-			learningMinutes.length * LEARNING_BLOCK_MAX - sum(learningMinutes),
-		);
-		const give = Math.min(reviewBudget, capacity);
-		if (give > 0) {
-			const per = give / learningMinutes.length;
-			learningMinutes = learningMinutes.map((m) => m + per);
+	const learningBlocks: PlannedBlock[] = [];
+	const reviewBlocks: PlannedBlock[] = [];
+	chosen.forEach((i, n) => {
+		const candidate = ordered[i];
+		if (candidate.phase === "learning") {
+			learningBlocks.push(
+				sectionBlock("repertoire-learning", candidate, minutes[n]),
+			);
+		} else {
+			reviewBlocks.push(
+				sectionBlock("repertoire-review", candidate, minutes[n]),
+			);
 		}
-		leftoverMinutes = reviewBudget - give;
-		reviewBudget = 0;
-	}
+	});
 
-	const reviewMinutes =
-		reviewPicks.length > 0
-			? reviewPicks.map(() => reviewBudget / reviewPicks.length)
-			: [];
+	// The piece anchor decides *which* sections run; within a kind the student
+	// still meets the one that needs work most first.
+	const byScoreDesc = (a: PlannedBlock, b: PlannedBlock) =>
+		(b.score ?? 0) - (a.score ?? 0);
+	learningBlocks.sort(byScoreDesc);
+	reviewBlocks.sort(byScoreDesc);
 
-	return {
-		learningBlocks: learningPicks.map((c, i) =>
-			sectionBlock("repertoire-learning", c, learningMinutes[i]),
-		),
-		reviewBlocks: reviewPicks.map((c, i) =>
-			sectionBlock("repertoire-review", c, reviewMinutes[i]),
-		),
-		leftoverMinutes,
-	};
+	return { learningBlocks, reviewBlocks, leftoverMinutes };
 }
 
 export interface StabilizingLineResult {
@@ -864,10 +856,9 @@ export function buildPlan(
 
 	// Availability flags (warmup excluded — it has its own freeform fallback).
 	const techniqueEligible = hasEligibleTechnique(techniques, now);
-	const pools = learningLinePools(pieces, sections, now);
 	// The line survives on review alone: with nothing new to acquire today, its
 	// minutes are better spent on that piece's learned sections than handed away.
-	const learningEligible = pools.learning.length > 0 || pools.review.length > 0;
+	const learningEligible = learningLinePool(pieces, sections, now).length > 0;
 	const stabilizingEligible =
 		stabilizingLinePool(pieces, sections, now).length > 0;
 	const maintenanceEligible = eligibleMaintenancePieces(pieces, now).length > 0;
@@ -1009,11 +1000,10 @@ export function buildPlan(
 		unplaced = 0;
 	}
 	if (learning.leftoverMinutes > EPS) {
-		// The learning line got its blocks but not all of its minutes: the block
-		// caps refused the rest and there was nothing to review. Filed under
-		// `repertoire-review` rather than `repertoire-learning` so the preview says
-		// which half of the line came up empty — and so it can never collide with
-		// the whole-line entry pushed above.
+		// The learning line got its blocks but not all of its minutes: either the
+		// pool ran out of eligible sections or every chosen block hit its ceiling.
+		// Filed under `repertoire-review` so it can never collide with the
+		// whole-line `repertoire-learning` entry pushed above.
 		omitted.push({
 			kind: "repertoire-review",
 			reason: omittedReason(hasReviewContent(pieces, sections)),
