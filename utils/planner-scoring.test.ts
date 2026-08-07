@@ -3,6 +3,7 @@ import type { Section } from "@/models/section";
 import {
 	buildSectionCandidates,
 	daysSince,
+	needsWorkTerm,
 	PHASE_SCORE,
 	scoreMaintenancePiece,
 	scoreSectionCandidate,
@@ -33,7 +34,23 @@ describe("daysSince", () => {
 	});
 });
 
+describe("needsWorkTerm", () => {
+	it("is 0 for an unlogged attempt", () => {
+		expect(needsWorkTerm(null, null)).toBe(0);
+		expect(needsWorkTerm(undefined, undefined)).toBe(0);
+		expect(needsWorkTerm(5, 1)).toBe(0);
+	});
+
+	it("squares, so a minor slip is nearly free and a collapse is an emergency", () => {
+		expect(needsWorkTerm(4, 2)).toBe(2); // minor slips, comfortable
+		expect(needsWorkTerm(3, 3)).toBe(8); // middling
+		expect(needsWorkTerm(2, 4)).toBe(18); // rough, demanding
+		expect(needsWorkTerm(1, 5)).toBe(32); // fell apart, at my limit
+	});
+});
+
 describe("scoreSectionCandidate", () => {
+	// docs/specs/learning-line-greedy-selection.md §3.1
 	it("applies phase weight × days", () => {
 		const piece = makePiece({ id: "p1" });
 		const past = new Date(NOW.getTime() - 3 * 86_400_000);
@@ -41,18 +58,33 @@ describe("scoreSectionCandidate", () => {
 		expect(score).toBe(PHASE_SCORE.learning * 3);
 	});
 
-	it("adds BPM gap term for learning", () => {
+	it("weights the BPM gap by phase", () => {
 		const piece = makePiece({ id: "p1", targetTempoBpm: 120 });
-		const past = new Date(NOW.getTime() - 1 * 86_400_000);
-		const score = scoreSectionCandidate(piece, "learning", past, 80, NOW);
-		expect(score).toBe(PHASE_SCORE.learning * 1 + 40);
+		const day = new Date(NOW.getTime() - 1 * 86_400_000);
+		// Learning gaps are large, so the weight is small — 0.25 × 40.
+		expect(scoreSectionCandidate(piece, "learning", day, 80, NOW)).toBe(
+			10 + 10,
+		);
+		// Stabilizing gaps are small — 0.5 × 20.
+		expect(scoreSectionCandidate(piece, "stabilizing", day, 100, NOW)).toBe(
+			3 + 10,
+		);
+		// A maintenance section below tempo costs a full day of neglect per bpm.
+		expect(scoreSectionCandidate(piece, "maintenance", day, 112, NOW)).toBe(
+			1 + 8,
+		);
 	});
 
-	it("adds BPM gap term for stabilizing", () => {
-		const piece = makePiece({ id: "p1", targetTempoBpm: 120 });
-		const past = new Date(NOW.getTime() - 2 * 86_400_000);
-		const score = scoreSectionCandidate(piece, "stabilizing", past, 100, NOW);
-		expect(score).toBe(PHASE_SCORE.stabilizing * 2 + 20);
+	it("adds the needs-work term at the phase weight", () => {
+		const piece = makePiece({ id: "p1" });
+		const day = new Date(NOW.getTime() - 1 * 86_400_000);
+		// q2/e4 → 18, halved for learning.
+		expect(scoreSectionCandidate(piece, "learning", day, null, NOW, 2, 4)).toBe(
+			10 + 9,
+		);
+		expect(
+			scoreSectionCandidate(piece, "stabilizing", day, null, NOW, 2, 4),
+		).toBe(3 + 18);
 	});
 
 	it("never-practiced returns 999 days × phaseScore", () => {
@@ -61,27 +93,64 @@ describe("scoreSectionCandidate", () => {
 		expect(score).toBe(PHASE_SCORE.stabilizing * 999);
 	});
 
-	it("maintenance: uses days + effort/quality bonus, no bpmGap", () => {
+	it("ranks a struggle above a smaller tempo gap (the acceptance case)", () => {
+		// A section at 30 bpm that went perfectly must score BELOW one at 40 bpm
+		// that fell apart, even though 40 is closer to the 60 target.
+		const piece = makePiece({ id: "p1", targetTempoBpm: 60 });
+		const day = new Date(NOW.getTime() - 1 * 86_400_000);
+		const easy = scoreSectionCandidate(piece, "learning", day, 30, NOW, 5, 1);
+		const hard = scoreSectionCandidate(piece, "learning", day, 40, NOW, 2, 5);
+		expect(easy).toBe(10 + 7.5); // 0.25 × 30 gap, no needs-work
+		expect(hard).toBe(10 + 5 + 12.5); // 0.25 × 20 gap, 0.5 × 25 needs-work
+		expect(hard).toBeGreaterThan(easy);
+	});
+
+	it("lets neglect and struggle carry a review past new acquisition", () => {
+		// §3.1's behaviour table: target 120, learning at 70, stabilizing at 110.
 		const piece = makePiece({ id: "p1", targetTempoBpm: 120 });
-		const past = new Date(NOW.getTime() - 3 * 86_400_000);
-		const score = scoreSectionCandidate(
+		const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000);
+		const learningBaseline = scoreSectionCandidate(
 			piece,
-			"maintenance",
-			past,
-			80,
+			"learning",
+			daysAgo(1),
+			70,
 			NOW,
 			3,
 			4,
 		);
-		// days=3, effort=4 → +3, quality=3 → +2; bpmGap ignored
-		expect(score).toBe(3 + 3 + 2);
+		expect(learningBaseline).toBe(29);
+
+		// Fell apart yesterday → repeat it, correct.
+		expect(
+			scoreSectionCandidate(piece, "learning", daysAgo(1), 70, NOW, 1, 5),
+		).toBe(38.5);
+		// Review wins on neglect …
+		expect(
+			scoreSectionCandidate(piece, "stabilizing", daysAgo(8), 110, NOW, 4, 2),
+		).toBeGreaterThan(learningBaseline);
+		// … and on struggle, three days after a rough pass.
+		expect(
+			scoreSectionCandidate(piece, "stabilizing", daysAgo(3), 110, NOW, 2, 4),
+		).toBeGreaterThan(learningBaseline);
+		// Recent and fine → skipped.
+		expect(
+			scoreSectionCandidate(piece, "stabilizing", daysAgo(3), 110, NOW, 4, 2),
+		).toBeLessThan(learningBaseline);
+		// Maintenance on target rarely surfaces, but drift is visible.
+		expect(
+			scoreSectionCandidate(piece, "maintenance", daysAgo(14), 120, NOW, 5, 1),
+		).toBe(14);
+		expect(
+			scoreSectionCandidate(piece, "maintenance", daysAgo(14), 112, NOW, 5, 1),
+		).toBe(22);
 	});
 
-	it("maintenance: defaults effort/quality give 0 bonus", () => {
+	it("defaults an unlogged attempt to no needs-work penalty", () => {
 		const piece = makePiece({ id: "p1" });
 		const past = new Date(NOW.getTime() - 5 * 86_400_000);
-		const score = scoreSectionCandidate(piece, "maintenance", past, null, NOW);
-		expect(score).toBe(5);
+		expect(scoreSectionCandidate(piece, "maintenance", past, null, NOW)).toBe(
+			5,
+		);
 	});
 });
 
@@ -202,8 +271,8 @@ describe("per-mode scoring", () => {
 		buildSectionCandidates([piece], [section], NOW)[0];
 
 	it("takes the maximum across modes and records the winner", () => {
-		// LH: 1 day, 115 target − 60 = 55 gap → 10 + 55 = 65
-		// HT: 1 day, 100 target − 95 = 5 gap  → 10 + 5  = 15
+		// LH: 1 day, 115 target − 60 = 55 gap → 10 + 0.25·55 = 23.75
+		// HT: 1 day, 100 target − 95 = 5 gap  → 10 + 0.25·5  = 11.25
 		const candidate = candidateFor(
 			makeSection({
 				id: "s1",
@@ -215,7 +284,7 @@ describe("per-mode scoring", () => {
 				},
 			}),
 		);
-		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 55);
+		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 55);
 		expect(candidate.modeKey).toBe("LH");
 	});
 
@@ -235,8 +304,8 @@ describe("per-mode scoring", () => {
 			}),
 		);
 		// hands-separate target is 115, hands-together 100
-		expect(separate.score).toBe(PHASE_SCORE.learning * 1 + 25);
-		expect(together.score).toBe(PHASE_SCORE.learning * 1 + 10);
+		expect(separate.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 25);
+		expect(together.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 10);
 	});
 
 	it("ignores modes that were never practised", () => {
@@ -263,8 +332,8 @@ describe("per-mode scoring", () => {
 				},
 			}),
 		);
-		// days=3, effort=4 → +3, quality=3 → +2; no bpm term in maintenance
-		expect(candidate.score).toBe(3 + 3 + 2);
+		// days=3, 100 target − 80 = 20 gap at weight 1, needs-work q3/e4 = 13
+		expect(candidate.score).toBe(3 + 20 + 13);
 		expect(candidate.modeKey).toBe("HT");
 	});
 
@@ -276,7 +345,7 @@ describe("per-mode scoring", () => {
 				byMode: { "LH.staccato": { bpm: 90, lastPracticed: daysAgo(1) } },
 			}),
 		);
-		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 25);
+		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 25);
 		expect(candidate.modeKey).toBe("LH.staccato");
 	});
 
@@ -289,7 +358,7 @@ describe("per-mode scoring", () => {
 				byMode: { HT: { bpm: 50, lastPracticed: daysAgo(1) } },
 			}),
 		);
-		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 10);
+		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 10);
 	});
 
 	it("drops only the modes practised today", () => {
@@ -331,7 +400,7 @@ describe("per-mode scoring", () => {
 				lastPracticed: daysAgo(1),
 			}),
 		);
-		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 20);
+		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 20);
 		expect(candidate.modeKey).toBeNull();
 	});
 

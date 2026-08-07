@@ -4,8 +4,12 @@ import type { TechniqueItem } from "@/models/technique";
 import { isPracticedToday } from "./day-boundary";
 import { bestCandidateByPiece } from "./piece-scoring";
 import {
+	BPM_GAP_WEIGHT,
+	bpmGap,
 	buildSectionCandidates,
 	daysSince,
+	NEEDS_WORK_WEIGHT,
+	needsWorkTerm,
 	PHASE_SCORE,
 	type SectionCandidate,
 	scoreMaintenancePiece,
@@ -48,34 +52,28 @@ function reasonForCandidate(
 	}
 	const days = daysSince(candidate.lastPracticed, now);
 
-	if (candidate.phase === "maintenance") {
-		const effort = candidate.lastEffort ?? 1;
-		const quality = candidate.lastQuality ?? 5;
-		const bonus = effort - 1 + (5 - quality);
-		if (bonus > 1 * days) {
-			return {
-				reasonKey: "screen.overview.pieceReason.lastResultPoor",
-				reasonParams: {},
-			};
-		}
+	// Mirrors the three terms of `scoreSectionCandidate`: whichever contributed
+	// most is the honest answer to "why this piece".
+	const phase = candidate.phase;
+	const target =
+		candidate.section?.targetBpmOverride ?? candidate.piece.targetTempoBpm;
+	const gap = bpmGap(target, candidate.currentBpm);
+	const daysTerm = PHASE_SCORE[phase] * days;
+	const bpmTerm = BPM_GAP_WEIGHT[phase] * gap;
+	const workTerm =
+		NEEDS_WORK_WEIGHT[phase] *
+		needsWorkTerm(candidate.lastQuality, candidate.lastEffort);
+
+	if (workTerm > daysTerm && workTerm >= bpmTerm) {
 		return {
-			reasonKey: "screen.overview.pieceReason.daysSince",
-			reasonParams: { days },
+			reasonKey: "screen.overview.pieceReason.lastResultPoor",
+			reasonParams: {},
 		};
 	}
-
-	const phaseScore = PHASE_SCORE[candidate.phase];
-	let bpmTerm = 0;
-	if (candidate.piece.targetTempoBpm != null && candidate.currentBpm != null) {
-		bpmTerm = Math.max(
-			0,
-			candidate.piece.targetTempoBpm - candidate.currentBpm,
-		);
-	}
-	if (bpmTerm > phaseScore * days) {
+	if (bpmTerm > daysTerm) {
 		return {
 			reasonKey: "screen.overview.pieceReason.bpmGap",
-			reasonParams: { gap: bpmTerm },
+			reasonParams: { gap },
 		};
 	}
 	return {

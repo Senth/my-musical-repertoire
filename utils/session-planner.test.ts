@@ -194,9 +194,136 @@ describe("pickRepertoireSection", () => {
 describe("pickRepertoireLearningBlocks", () => {
 	const days = (n: number) => new Date(NOW.getTime() - n * 86400000);
 
-	it("never spends the whole line on one section (the reported bug)", () => {
+	/**
+	 * One learning piece whose candidates rank in exactly `types` order — `L` is
+	 * a learning-phase section (8–12 min), `R` a stabilizing one (6–9 min). Scores
+	 * step down by 30 along the string, so greedy walks it left to right.
+	 */
+	function poolFor(types: string): {
+		pieces: Piece[];
+		sections: Section[];
+	} {
+		const sections = Array.from(types, (t, i) => {
+			const phase = t === "L" ? "learning" : "stabilizing";
+			const score = 300 - 30 * i;
+			return makeSection({
+				id: `s${i}`,
+				pieceId: "p1",
+				phase,
+				order: i,
+				lastPracticed: days(score / (phase === "learning" ? 10 : 3)),
+			});
+		});
+		return {
+			pieces: [makePiece({ id: "p1", state: "learning" })],
+			sections,
+		};
+	}
+
+	/** Allocated minutes per section id, whichever kind the block landed in. */
+	function minutesById(
+		types: string,
+		allocatedMinutes: number,
+	): { minutes: Record<string, number>; leftoverMinutes: number } {
+		const { pieces, sections } = poolFor(types);
+		const r = pickRepertoireLearningBlocks(
+			pieces,
+			sections,
+			allocatedMinutes,
+			NOW,
+		);
+		const minutes: Record<string, number> = {};
+		for (const b of [...r.learningBlocks, ...r.reviewBlocks]) {
+			if (b.sectionId) minutes[b.sectionId] = b.allocatedMinutes;
+		}
+		return { minutes, leftoverMinutes: r.leftoverMinutes };
+	}
+
+	describe("§4.3 minute distribution", () => {
+		// Every row of docs/specs/learning-line-greedy-selection.md §4.3. The pool
+		// is longer than the chosen set wherever the table notes a guard firing.
+		const table: Array<[number, string, number[], number]> = [
+			[8, "L", [8], 0],
+			[8, "R", [8], 0],
+			[10, "L", [10], 0],
+			[11, "L", [11], 0],
+			[11, "R", [9], 2],
+			[13, "LR", [12], 1], // 8 + 6 > 13 → the second block would be illegal
+			[14, "LR", [8, 6], 0],
+			[15, "LR", [8 + 4 / 7, 6 + 3 / 7], 0],
+			[16, "LL", [8, 8], 0],
+			[20, "LL", [10, 10], 0],
+			[20, "LR", [8 + 24 / 7, 6 + 18 / 7], 0],
+			[24, "LL", [12, 12], 0],
+			[25, "LLL", [25 / 3, 25 / 3, 25 / 3], 0],
+			[33, "LRL", [12, 9, 12], 0],
+			[
+				60,
+				"LRLRLR",
+				[
+					8 + (18 * 4) / 21,
+					6 + (18 * 3) / 21,
+					8 + (18 * 4) / 21,
+					6 + (18 * 3) / 21,
+					8 + (18 * 4) / 21,
+					6 + (18 * 3) / 21,
+				],
+				0,
+			],
+		];
+
+		for (const [allocated, types, expected, leftover] of table) {
+			it(`${allocated} min over ${types} → ${expected.length} block(s)`, () => {
+				const { minutes, leftoverMinutes } = minutesById(types, allocated);
+				expect(Object.keys(minutes)).toHaveLength(expected.length);
+				expected.forEach((m, i) => {
+					expect(minutes[`s${i}`]).toBeCloseTo(m, 9);
+				});
+				expect(leftoverMinutes).toBeCloseTo(leftover, 9);
+			});
+		}
+
+		it("never returns a block outside its phase's bounds", () => {
+			for (const types of ["L", "R", "LR", "RL", "LLR", "RRL", "LRLRLR"]) {
+				for (let allocated = 8; allocated <= 60; allocated += 0.25) {
+					const { pieces, sections } = poolFor(types);
+					const r = pickRepertoireLearningBlocks(
+						pieces,
+						sections,
+						allocated,
+						NOW,
+					);
+					for (const b of r.learningBlocks) {
+						expect(b.allocatedMinutes).toBeGreaterThanOrEqual(8 - 1e-9);
+						expect(b.allocatedMinutes).toBeLessThanOrEqual(12 + 1e-9);
+					}
+					for (const b of r.reviewBlocks) {
+						expect(b.allocatedMinutes).toBeGreaterThanOrEqual(6 - 1e-9);
+						expect(b.allocatedMinutes).toBeLessThanOrEqual(9 + 1e-9);
+					}
+					const total =
+						[...r.learningBlocks, ...r.reviewBlocks].reduce(
+							(acc, b) => acc + b.allocatedMinutes,
+							0,
+						) + r.leftoverMinutes;
+					expect(total).toBeCloseTo(allocated, 9);
+				}
+			}
+		});
+
+		it("emits one short block rather than nothing below the first floor", () => {
+			const { pieces, sections } = poolFor("L");
+			const r = pickRepertoireLearningBlocks(pieces, sections, 5, NOW);
+			expect(r.learningBlocks).toHaveLength(1);
+			expect(r.learningBlocks[0].allocatedMinutes).toBe(5);
+			expect(r.leftoverMinutes).toBe(0);
+		});
+	});
+
+	it("gives a neglected section a real review block, never a 4-minute check (the reported bug)", () => {
 		// One learning section and several already-learned ones, 20-minute line.
-		// Before the split this was 20 minutes on `s-learn` and nothing else.
+		// The shipped 25% share made this an 8 + 8 + 4 split; 4 minutes is one
+		// pass, not a rehearsal.
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const sections: Section[] = [
 			makeSection({
@@ -229,15 +356,17 @@ describe("pickRepertoireLearningBlocks", () => {
 			}),
 		];
 		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
+		// r0 (27) and r1 (12) both out-score yesterday's learning section (10).
+		expect(r.reviewBlocks.map((b) => b.sectionId)).toEqual(["r0", "r1"]);
 		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["s-learn"]);
-		expect(r.learningBlocks[0].allocatedMinutes).toBeCloseTo(12);
-		expect(r.reviewBlocks).toHaveLength(1);
-		expect(r.reviewBlocks[0].allocatedMinutes).toBeCloseTo(8);
-		expect(r.reviewBlocks[0].sectionId).toBe("r0"); // stalest of the learned ones
+		for (const b of r.reviewBlocks) {
+			expect(b.allocatedMinutes).toBeGreaterThanOrEqual(6);
+			expect(b.allocatedMinutes).toBeLessThanOrEqual(9);
+		}
 		expect(r.leftoverMinutes).toBe(0);
 	});
 
-	it("spreads a long line over distinct learning sections", () => {
+	it("skips a review that is recent and fine", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const sections: Section[] = [
 			makeSection({
@@ -263,10 +392,59 @@ describe("pickRepertoireLearningBlocks", () => {
 			}),
 		];
 		const r = pickRepertoireLearningBlocks(pieces, sections, 24, NOW);
+		// a (30) and b (20) beat c (15), and two 12-minute blocks fill the line.
 		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["a", "b"]);
-		expect(r.learningBlocks.every((b) => b.allocatedMinutes === 9)).toBe(true);
+		expect(r.learningBlocks.every((b) => b.allocatedMinutes === 12)).toBe(true);
+		expect(r.reviewBlocks).toEqual([]);
+	});
+
+	it("promotes that same review once it has been neglected long enough", () => {
+		// Identical to the case above but with `c` untouched for three weeks: the
+		// score, not a reserved share, is what turns the session into a review.
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({
+				id: "a",
+				pieceId: "p1",
+				phase: "learning",
+				order: 0,
+				lastPracticed: days(3),
+			}),
+			makeSection({
+				id: "c",
+				pieceId: "p1",
+				phase: "stabilizing",
+				order: 1,
+				lastPracticed: days(21),
+			}),
+		];
+		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
 		expect(r.reviewBlocks.map((b) => b.sectionId)).toEqual(["c"]);
-		expect(r.reviewBlocks[0].allocatedMinutes).toBeCloseTo(6);
+		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["a"]);
+	});
+
+	it("moves to the next piece only once the anchor is exhausted", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "pa", title: "A", state: "learning" }),
+			makePiece({ id: "pb", title: "B", state: "learning" }),
+		];
+		const sections: Section[] = [
+			makeSection({
+				id: "a1",
+				pieceId: "pa",
+				phase: "learning",
+				lastPracticed: days(5), // 50 — the anchor
+			}),
+			makeSection({
+				id: "b1",
+				pieceId: "pb",
+				phase: "learning",
+				lastPracticed: days(4), // 40
+			}),
+		];
+		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
+		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["a1", "b1"]);
+		expect(r.learningBlocks.every((b) => b.allocatedMinutes === 10)).toBe(true);
 	});
 
 	it("reviews the piece it is learning first, even when another scores higher", () => {
@@ -321,14 +499,14 @@ describe("pickRepertoireLearningBlocks", () => {
 		expect(r.leftoverMinutes).toBe(0);
 	});
 
-	it("hands review minutes back to learning, then reports what will not fit", () => {
-		// Brand-new piece: one section, nothing learned yet to review.
+	it("caps the only block it has and reports what will not fit", () => {
+		// Brand-new piece: one section, nothing learned yet to review. The cap is a
+		// pedagogical ceiling, so the surplus is handed back rather than absorbed.
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const sections: Section[] = [
 			makeSection({ id: "s1", pieceId: "p1", phase: "learning" }),
 		];
 		const under = pickRepertoireLearningBlocks(pieces, sections, 13, NOW);
-		// 9.75 learning + 3.25 review → the block absorbs 2.25 up to its cap.
 		expect(under.learningBlocks[0].allocatedMinutes).toBeCloseTo(12);
 		expect(under.reviewBlocks).toEqual([]);
 		expect(under.leftoverMinutes).toBeCloseTo(1);
@@ -1448,18 +1626,18 @@ describe("buildPlan", () => {
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
 		const plan = buildPlan(BALANCED_60, pieces, sections, ts, NOW);
 		// 60 balanced: rep 35 → learning 19.25, stabilizing 10.5, maintenance 5.25.
-		// The learning line wants 2 × 8 + 3.25 review but has one learning section,
-		// so it collapses to 12 learning + 7.25 review. Maintenance leaves 4.05
-		// over, which tops up review (→ 8) and stabilizing (→ 12) to their caps;
-		// the remaining 1.8 lands on the freeform reading timer.
+		// The learning line takes both of `pl`'s sections — 11 on the learning one,
+		// 8.25 on the review. Maintenance leaves 4.05 over, which tops all three
+		// section blocks up to their caps (12 / 9 / 12); the remaining 0.8 lands on
+		// the freeform reading timer.
 		const learn = plan.blocks.find((b) => b.kind === "repertoire-learning");
 		const review = plan.blocks.find((b) => b.kind === "repertoire-review");
 		const stab = plan.blocks.find((b) => b.kind === "repertoire-stabilizing");
 		const sight = plan.blocks.find((b) => b.kind === "sight-reading");
 		expect(learn?.allocatedMinutes).toBeCloseTo(12);
-		expect(review?.allocatedMinutes).toBeCloseTo(8);
+		expect(review?.allocatedMinutes).toBeCloseTo(9);
 		expect(stab?.allocatedMinutes).toBeCloseTo(12);
-		expect(sight?.allocatedMinutes).toBeCloseTo(9.8);
+		expect(sight?.allocatedMinutes).toBeCloseTo(8.8);
 		// Nothing overran and nothing was dropped → still exactly 60.
 		const total = plan.blocks.reduce((acc, b) => acc + b.allocatedMinutes, 0);
 		expect(total).toBeCloseTo(60);

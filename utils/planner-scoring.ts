@@ -9,9 +9,40 @@ import {
 	targetForMode,
 } from "./practice-modes";
 
+/**
+ * The three weights of the section score, one row per phase:
+ *
+ *     score = PHASE_SCORE·days + BPM_GAP_WEIGHT·bpmGap + NEEDS_WORK_WEIGHT·needsWork
+ *
+ * One formula for every phase — no branch — so scores stay comparable and the
+ * learning line can rank a neglected stabilizing section against a learning one
+ * in a single pool. See `docs/specs/learning-line-greedy-selection.md` §3.1.
+ */
+
+/** `M` — how fast a section of this phase decays per day untouched. */
 export const PHASE_SCORE: Record<SectionPhase, number> = {
 	learning: 10,
-	stabilizing: 2.5,
+	stabilizing: 3,
+	maintenance: 1,
+};
+
+/**
+ * `N` — weight on the raw BPM gap. Rises as the phase matures because the gaps
+ * shrink (learning ~50, stabilizing ~10, maintenance ~0): the weighting
+ * normalizes the term into the same band everywhere, so tempo is a nudge in
+ * every phase instead of dominating one and vanishing from another.
+ */
+export const BPM_GAP_WEIGHT: Record<SectionPhase, number> = {
+	learning: 0.25,
+	stabilizing: 0.5,
+	maintenance: 1,
+};
+
+/** `P` — weight on the squared needs-work term. Halved for learning, where a
+ * rough attempt is expected rather than alarming. */
+export const NEEDS_WORK_WEIGHT: Record<SectionPhase, number> = {
+	learning: 0.5,
+	stabilizing: 1,
 	maintenance: 1,
 };
 
@@ -67,6 +98,30 @@ export interface SectionCandidate {
 	practicedToday: boolean;
 }
 
+/**
+ * How badly the last logged attempt went, 0..32. Squared, not linear: a minor
+ * slip should be nearly free, a section that fell apart at the limit should be
+ * an emergency, and the curve between them is what tells those two apart.
+ *
+ * Unlogged defaults to `quality 5 / effort 1` — a section with no history
+ * contributes 0 here, so the term never inflates something never played.
+ */
+export function needsWorkTerm(
+	quality?: number | null,
+	effort?: number | null,
+): number {
+	return (5 - (quality ?? 5)) ** 2 + ((effort ?? 1) - 1) ** 2;
+}
+
+/** Raw BPM shortfall against the target; 0 when either value is unknown. */
+export function bpmGap(
+	target: number | null | undefined,
+	currentBpm: number | null | undefined,
+): number {
+	if (target == null || currentBpm == null) return 0;
+	return Math.max(0, target - currentBpm);
+}
+
 export function scoreSectionCandidate(
 	piece: Piece,
 	phase: SectionPhase,
@@ -79,20 +134,12 @@ export function scoreSectionCandidate(
 	target?: number | null,
 ): number {
 	const days = daysSince(lastPracticed, now);
-
-	if (phase === "maintenance") {
-		const effort = lastEffort ?? 1;
-		const quality = lastQuality ?? 5;
-		return 1 * days + (effort - 1) + (5 - quality);
-	}
-
-	const phaseScore = PHASE_SCORE[phase];
 	const effectiveTarget = target === undefined ? piece.targetTempoBpm : target;
-	let bpmTerm = 0;
-	if (effectiveTarget != null && currentBpm != null) {
-		bpmTerm = Math.max(0, effectiveTarget - currentBpm);
-	}
-	return phaseScore * days + bpmTerm;
+	return (
+		PHASE_SCORE[phase] * days +
+		BPM_GAP_WEIGHT[phase] * bpmGap(effectiveTarget, currentBpm) +
+		NEEDS_WORK_WEIGHT[phase] * needsWorkTerm(lastQuality, lastEffort)
+	);
 }
 
 /**
