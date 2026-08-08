@@ -16,6 +16,10 @@ import { BpmControl } from "@/components/practice/BpmControl";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import { ModeSelector } from "@/components/practice/ModeSelector";
+import {
+	PhaseOfferCard,
+	PhaseStatusLine,
+} from "@/components/practice/PhaseOfferCard";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
@@ -30,7 +34,11 @@ import { parseBpm, useModeDrafts } from "@/hooks/use-mode-drafts";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { usePracticeSave } from "@/hooks/use-practice-save";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
-import { useSections, useUpdateSection } from "@/hooks/use-sections";
+import {
+	useChangeSectionPhase,
+	useSectionPhaseHistory,
+} from "@/hooks/use-section-phase";
+import { useSections } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import {
@@ -44,6 +52,11 @@ import {
 	mistakeOptions,
 	qualityOptions,
 } from "@/utils/estimation-options";
+import {
+	decidePhaseOffer,
+	type PendingPhaseOffer,
+	type PhaseOfferStatus,
+} from "@/utils/phase-offer";
 import {
 	hsTarget,
 	isHtReady,
@@ -83,7 +96,7 @@ export function PiecePracticeContent({
 	const { savePractice } = useSavePractice();
 	const { saveSectionPractice } = useSaveSectionPractice();
 	const { deletePiece } = useDeletePiece();
-	const { updateSection } = useUpdateSection();
+	const { changeSectionPhase, dismissPhaseOffer } = useChangeSectionPhase();
 	const standaloneSessionId = useRef(randomUUID());
 
 	const piece = pieces.find((p) => p.id === pieceId);
@@ -94,8 +107,13 @@ export function PiecePracticeContent({
 	const {
 		lastLog,
 		logsByMode,
+		logs: priorLogs,
 		loading: lastLogLoading,
 	} = useLastPracticeLog(lastLogScope);
+	const { transitions, reload: reloadTransitions } = useSectionPhaseHistory(
+		pieceId,
+		sectionIdProp,
+	);
 
 	const getBackDestination = (): string => {
 		if (from === "pieces") return "/(app)/(tabs)/piece";
@@ -137,6 +155,11 @@ export function PiecePracticeContent({
 	const [notice, setNotice] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
 	const [savedEntries, setSavedEntries] = useState<ModeEntry[]>([]);
+	const [pendingOffer, setPendingOffer] = useState<PendingPhaseOffer | null>(
+		null,
+	);
+	const [offerStatus, setOfferStatus] = useState<PhaseOfferStatus | null>(null);
+	const [offerBusy, setOfferBusy] = useState(false);
 	const metronomeStopRef = useRef<(() => void) | null>(null);
 
 	const validateBpm = useCallback(
@@ -260,7 +283,7 @@ export function PiecePracticeContent({
 				triggerOverride ?? (scopedSection ? "section-panel" : "full-piece");
 			if (scopedSection) {
 				if (!scopedSection.id) return { ok: false };
-				await saveSectionPractice(
+				const mergedByMode = await saveSectionPractice(
 					pieceId,
 					scopedSection.id,
 					practiceDate,
@@ -269,6 +292,34 @@ export function PiecePracticeContent({
 					sessionId,
 				);
 				setSavedEntries(modes.entries);
+
+				// Only ever after the save commits — a nudge offered while the timer
+				// is still running would be a decision made on mood, not on evidence.
+				const { offer, status } = decidePhaseOffer({
+					section: scopedSection,
+					piece,
+					byMode: mergedByMode,
+					priorLogs,
+					savedEntries: modes.entries,
+					savedAt: practiceDate,
+					transitions,
+					now: practiceDate,
+				});
+				const pending: PendingPhaseOffer | null = offer
+					? {
+							offer,
+							pieceId,
+							sectionId: scopedSection.id,
+							sectionLabel: scopedSection.label,
+							achievedBpmAtEvent: offer.htBpm,
+							qualityAtEvent: mergedByMode?.HT?.quality ?? null,
+							priorPhaseChangedAt: scopedSection.phaseChangedAt ?? null,
+							sessionId,
+						}
+					: null;
+				setPendingOffer(pending);
+				setOfferStatus(status);
+				if (inCoach) coach.phaseOfferRef.current = pending;
 			} else {
 				if (!piece) return { ok: false };
 				const { demotedCount } = await savePractice({
@@ -305,6 +356,9 @@ export function PiecePracticeContent({
 		achievedBpm,
 		coach.sessionId,
 		coach.notify,
+		coach.phaseOfferRef,
+		priorLogs,
+		transitions,
 		inCoach,
 		triggerOverride,
 		scopedSection,
@@ -321,6 +375,40 @@ export function PiecePracticeContent({
 	]);
 
 	const handleSave = usePracticeSave(performSave, () => setSaved(true));
+
+	/** Resolve the nudge either way; both outcomes write an audit row. */
+	const resolveOffer = useCallback(
+		async (accepted: boolean) => {
+			if (!pendingOffer) return;
+			const { offer } = pendingOffer;
+			setOfferBusy(true);
+			try {
+				const event = {
+					pieceId: pendingOffer.pieceId,
+					sectionId: pendingOffer.sectionId,
+					fromPhase: offer.fromPhase,
+					toPhase: offer.toPhase,
+					trigger:
+						offer.kind === "advance"
+							? ("advance-button" as const)
+							: ("demote-button" as const),
+					achievedBpmAtEvent: pendingOffer.achievedBpmAtEvent,
+					qualityAtEvent: pendingOffer.qualityAtEvent,
+					priorPhaseChangedAt: pendingOffer.priorPhaseChangedAt,
+					sessionId: pendingOffer.sessionId,
+				};
+				if (accepted) await changeSectionPhase(event);
+				else await dismissPhaseOffer(event);
+				setPendingOffer(null);
+				reloadTransitions();
+			} catch {
+				setError(t("error.firebase"));
+			} finally {
+				setOfferBusy(false);
+			}
+		},
+		[pendingOffer, changeSectionPhase, dismissPhaseOffer, reloadTransitions, t],
+	);
 
 	const handleDelete = async () => {
 		if (!pieceId) return;
@@ -417,6 +505,18 @@ export function PiecePracticeContent({
 					})}
 					onDone={handleDone}
 					backLabel={getBackLabel()}
+					beforeActions={
+						pendingOffer ? (
+							<PhaseOfferCard
+								offer={pendingOffer.offer}
+								busy={offerBusy}
+								onAccept={() => resolveOffer(true)}
+								onDismiss={() => resolveOffer(false)}
+							/>
+						) : offerStatus ? (
+							<PhaseStatusLine status={offerStatus} />
+						) : null
+					}
 				/>
 			) : saved && !inCoach ? (
 				<PracticeComparison
@@ -581,9 +681,21 @@ export function PiecePracticeContent({
 							flaggableIds={flaggableIds}
 							onToggleFlag={handleToggleFlag}
 							onPractice={handlePracticeSection}
-							onChangePhase={(sectionId, phase) =>
-								updateSection(pieceId, sectionId, { phase })
-							}
+							onChangePhase={(sectionId, phase) => {
+								const target = activeSections.find((s) => s.id === sectionId);
+								if (!target || phase === target.phase) return;
+								changeSectionPhase({
+									pieceId,
+									sectionId,
+									fromPhase: target.phase,
+									toPhase: phase,
+									trigger: "phase-chip",
+									achievedBpmAtEvent: target.byMode?.HT?.bpm ?? null,
+									qualityAtEvent: target.byMode?.HT?.quality ?? null,
+									priorPhaseChangedAt: target.phaseChangedAt ?? null,
+									sessionId: coach.sessionId ?? standaloneSessionId.current,
+								}).catch(() => setError(t("error.firebase")));
+							}}
 						/>
 					)}
 

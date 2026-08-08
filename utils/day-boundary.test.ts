@@ -1,5 +1,6 @@
 import {
 	DAY_CUTOFF_HOUR,
+	dayKey,
 	dayStartCutoff,
 	isPracticedToday,
 } from "./day-boundary";
@@ -36,6 +37,30 @@ describe("day-boundary", () => {
 			expect(cutoff.getMonth()).toBe(3); // April
 			expect(cutoff.getDate()).toBe(30);
 			expect(cutoff.getHours()).toBe(3);
+		});
+	});
+
+	describe("dayKey", () => {
+		it("formats the local calendar day zero-padded", () => {
+			expect(dayKey(new Date(2026, 4, 5, 10, 0))).toBe("2026-05-05");
+		});
+
+		it("puts a late-night log on the previous day", () => {
+			expect(dayKey(new Date(2026, 4, 15, 1, 30))).toBe("2026-05-14");
+		});
+
+		it("puts a 3am log on the new day", () => {
+			expect(dayKey(new Date(2026, 4, 15, 3, 0))).toBe("2026-05-15");
+		});
+
+		it("rolls back across a month boundary", () => {
+			expect(dayKey(new Date(2026, 4, 1, 2, 0))).toBe("2026-04-30");
+		});
+
+		it("sorts chronologically as a string", () => {
+			const older = dayKey(new Date(2026, 8, 9, 12, 0));
+			const newer = dayKey(new Date(2026, 8, 10, 12, 0));
+			expect(older < newer).toBe(true);
 		});
 	});
 

@@ -1,12 +1,19 @@
 import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
+import { AddNextSectionNudge } from "@/components/piece/AddNextSectionNudge";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveSession } from "@/hooks/use-active-session";
+import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
+import { useAllSections } from "@/hooks/use-sections";
+import type { Piece } from "@/models/piece";
+import type { Section } from "@/models/section";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
+import { addSectionNudgeSection } from "@/utils/add-section-nudge";
 import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
 import { planTotalMinutes } from "@/utils/session-planner";
 import { clearActiveSession } from "@/utils/session-storage";
@@ -17,6 +24,10 @@ export default function SessionSummaryScreen() {
 	const router = useRouter();
 	const { user } = useAuth();
 	const { session, loaded } = useActiveSession(user);
+	const { pieces } = usePieces();
+	const { sections } = useAllSections();
+	const { updatePiece } = useUpdatePiece();
+	const [busyPieceId, setBusyPieceId] = useState<string | null>(null);
 
 	const handleDone = async () => {
 		if (user) {
@@ -24,6 +35,35 @@ export default function SessionSummaryScreen() {
 		}
 		router.replace("/(app)/(tabs)/overview");
 	};
+
+	const handleNoMoreSections = async (pieceId: string) => {
+		setBusyPieceId(pieceId);
+		try {
+			await updatePiece(pieceId, { allSectionsAdded: true });
+		} catch {
+			// Non-fatal: the nudge simply stays until the next session.
+		} finally {
+			setBusyPieceId(null);
+		}
+	};
+
+	// Only the pieces this session actually touched — the summary reports on the
+	// session just practised, it does not audit the whole library.
+	const nudges = useMemo(() => {
+		if (!session) return [];
+		const practisedIds = new Set(
+			session.plan.blocks
+				.map((b) => b.pieceId)
+				.filter((id): id is string => !!id),
+		);
+		return pieces
+			.filter((p) => p.id && practisedIds.has(p.id))
+			.map((p) => ({ piece: p, section: addSectionNudgeSection(p, sections) }))
+			.filter(
+				(entry): entry is { piece: Piece; section: Section } =>
+					entry.section != null,
+			);
+	}, [session, pieces, sections]);
 
 	if (!loaded) {
 		return <LoadingScreen />;
@@ -99,6 +139,18 @@ export default function SessionSummaryScreen() {
 						/>
 					);
 				})}
+
+				{nudges.map(({ piece, section }) => (
+					<AddNextSectionNudge
+						key={piece.id}
+						pieceTitle={piece.title}
+						sectionLabel={section.label}
+						phaseLabel={t(`section.phase.${section.phase}`)}
+						busy={busyPieceId === piece.id}
+						onAddSection={() => router.push(`/piece/${piece.id}/section/new`)}
+						onNoMoreSections={() => handleNoMoreSections(piece.id as string)}
+					/>
+				))}
 
 				<Button mode="contained" onPress={handleDone}>
 					{t("screen.session.summary.done")}

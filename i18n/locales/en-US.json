@@ -354,6 +354,52 @@
 				"backToOverview": "Back to Overview",
 				"backToPieces": "Back to Pieces",
 				"backToPiece": "Back to Piece"
+			},
+			"phaseOffer": {
+				"title": {
+					"advance": {
+						"stabilizing": "Ready to move this to stabilizing?",
+						"maintenance": "Ready to move this to maintenance?",
+						"learning": "Ready to move this to learning?"
+					},
+					"demote": {
+						"stabilizing": "Move this back to stabilizing?",
+						"learning": "Move this back to learning?",
+						"maintenance": "Move this back to maintenance?"
+					}
+				},
+				"reason": {
+					"advance_one": "Hands together at {{bpm}} BPM, clean for {{count}} session.",
+					"advance_other": "Hands together at {{bpm}} BPM, clean for {{count}} sessions.",
+					"advanceNoBpm_one": "Clean for {{count}} session.",
+					"advanceNoBpm_other": "Clean for {{count}} sessions.",
+					"bpmDrop": "Tempo dropped {{percent}}% since last session.",
+					"lowQuality": "You rated this session {{quality}} out of 5.",
+					"strain": "Maximum effort for a quality of {{quality}} out of 5.",
+					"demoteGeneric": "This session did not hold together."
+				},
+				"check": {
+					"memory": "I can play this without the score",
+					"continuity": "It connects cleanly to the section before it"
+				},
+				"advanceAction": "Advance",
+				"demoteAction": "Demote",
+				"notYet": "Not yet",
+				"status": {
+					"htTempo": "Hands together at {{current}} of {{required}} BPM",
+					"htTempoNone": "Hands together not timed yet — needs {{required}} BPM",
+					"handsSeparate": "{{mode}} at {{current}} BPM, needs {{required}}",
+					"handsSeparateNone": "{{mode}} not timed yet, needs {{required}} BPM",
+					"cleanDays": "{{count}} of {{required}} clean sessions",
+					"bpmTrend": "Tempo dipped since last session",
+					"suppressed": "Change the phase from the chip when you are ready",
+					"noTarget": "Set a target tempo to track progress"
+				},
+				"cyclingGuard": {
+					"today": "Moved to {{phase}} today — change it again?",
+					"yesterday": "Moved to {{phase}} yesterday — change it again?",
+					"daysAgo": "Moved to {{phase}} {{count}} days ago — change it again?"
+				}
 			}
 		},
 		"editPiece": {
@@ -370,7 +416,9 @@
 			"error": {
 				"titleRequired": "Title is required.",
 				"composerRequired": "Composer is required."
-			}
+			},
+			"allSectionsAdded": "All sections added",
+			"allSectionsAddedHelp": "Stops the app suggesting you add the next passage."
 		},
 		"pieces": {
 			"title": "Pieces",
@@ -675,6 +723,12 @@
 					"labelRequired": "Label is required.",
 					"endBarRequiresStartBar": "End bar requires a start bar."
 				}
+			},
+			"addNextNudge": {
+				"title": "Ready for the next passage?",
+				"body": "Section {{section}} is {{phase}} — ready to add the next passage of {{piece}}?",
+				"add": "Add section",
+				"noMore": "No more sections"
 			}
 		}
 	}
