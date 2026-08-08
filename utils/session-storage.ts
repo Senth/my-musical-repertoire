@@ -156,3 +156,20 @@ export async function writeTechniqueListPrefs(
 ): Promise<void> {
 	await AsyncStorage.setItem(techniqueListPrefsKey(uid), JSON.stringify(prefs));
 }
+
+/**
+ * Drops every device-local trace of a user. Called when the account is deleted:
+ * the privacy policy promises the data is gone, and the on-device copy is data
+ * too. Every key written above has to be listed here.
+ */
+export async function clearLocalUserData(uid: string): Promise<void> {
+	const keys = [
+		activeSessionKey(uid),
+		sightReadingBpmKey(uid),
+		installPromptDismissedKey(uid),
+		pieceScoresKey(uid),
+		pieceListPrefsKey(uid),
+		techniqueListPrefsKey(uid),
+	];
+	await Promise.all(keys.map((key) => AsyncStorage.removeItem(key)));
+}

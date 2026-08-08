@@ -9,9 +9,11 @@ import {
 	Card,
 	HelperText,
 	Snackbar,
+	Text,
 	useTheme,
 } from "react-native-paper";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignIn";
+import { LegalLinks } from "@/components/legal/LegalLinks";
 import { FormTextField } from "@/components/ui/FormTextField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsCompact } from "@/hooks/use-is-compact";
@@ -246,6 +248,20 @@ export default function LoginScreen() {
 						: "screen.login.switchToSignIn",
 				)}
 			</Button>
+
+			{mode === "register" && (
+				<Text
+					variant="bodySmall"
+					style={{
+						color: theme.colors.onSurfaceVariant,
+						textAlign: "center",
+					}}
+				>
+					{t("screen.login.legalConsent")}
+				</Text>
+			)}
+
+			<LegalLinks />
 		</View>
 	);
 

@@ -1,11 +1,15 @@
 import {
 	createUserWithEmailAndPassword,
+	deleteUser,
+	EmailAuthProvider,
 	fetchSignInMethodsForEmail,
 	confirmPasswordReset as firebaseConfirmPasswordReset,
 	sendPasswordResetEmail as firebaseSendPasswordResetEmail,
 	signOut as firebaseSignOut,
 	GoogleAuthProvider,
 	onAuthStateChanged,
+	reauthenticateWithCredential,
+	reauthenticateWithPopup,
 	signInWithCredential,
 	signInWithEmailAndPassword,
 	type User,
@@ -29,6 +33,11 @@ interface AuthContextType {
 	getSignInMethodsForEmail: (email: string) => Promise<string[]>;
 	sendPasswordResetEmail: (email: string) => Promise<void>;
 	confirmPasswordReset: (oobCode: string, newPassword: string) => Promise<void>;
+	/** Proves the session is fresh, which Firebase demands before deletion. */
+	reauthenticateWithPassword: (password: string) => Promise<void>;
+	reauthenticateWithGoogle: () => Promise<void>;
+	/** Removes the auth user. Firestore data must already be deleted. */
+	deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,6 +83,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		await firebaseConfirmPasswordReset(auth, oobCode, newPassword);
 	};
 
+	const reauthenticateWithPassword = async (password: string) => {
+		const current = auth.currentUser;
+		if (!current?.email) throw new Error("Not authenticated");
+		await reauthenticateWithCredential(
+			current,
+			EmailAuthProvider.credential(current.email, password),
+		);
+	};
+
+	const reauthenticateWithGoogle = async () => {
+		const current = auth.currentUser;
+		if (!current) throw new Error("Not authenticated");
+		const provider = new GoogleAuthProvider();
+		await reauthenticateWithPopup(current, provider);
+	};
+
+	const deleteAccount = async () => {
+		const current = auth.currentUser;
+		if (!current) throw new Error("Not authenticated");
+		await deleteUser(current);
+	};
+
 	return (
 		<AuthContext.Provider
 			value={{
@@ -86,6 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				getSignInMethodsForEmail,
 				sendPasswordResetEmail,
 				confirmPasswordReset,
+				reauthenticateWithPassword,
+				reauthenticateWithGoogle,
+				deleteAccount,
 			}}
 		>
 			{children}
