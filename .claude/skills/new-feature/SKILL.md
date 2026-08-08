@@ -68,6 +68,7 @@ Write a concise feature spec to `docs/specs/<feature-name>.md` (create the direc
 5. **Logging** — what gets recorded and why
 6. **Out of scope** — explicit exclusions to prevent scope creep
 7. **Phases** — ordered implementation phases, each small enough for one sub-agent session. Last phase should include full end-to-end testing with playwright.
+8. **Cleanup Phase** — add a final phase for cleaning up the spec. This removes all the phases from the spec, but should include all details in a very concise form, so that the spec can be archived and the feature can be maintained without needing to refer back to the full spec. In addition add a 1-2 sentence summary description to the docs/specs/INDEX.md file.
 
 The Phases section is required. Break the feature into concrete, independently deliverable phases (e.g., "Phase 1: data model + Firestore writes", "Phase 2: UI list view", "Phase 3: recommendation signal integration").
 
@@ -77,7 +78,7 @@ Once the spec is confirmed, add a `# Phase 0: Handoff` section to the top with i
 
 - The path to the spec file (`docs/specs/<feature-name>.md`)
 - Instruction to use the spec's Phases section as its implementation plan
-- **Ensure a tracking issue exists.** Use the existing issue, or create one with `gh issue create --label feature` (it auto-lands in Backlog). Put the implementation phases as a task-list in the issue body and link the spec.
+- **Ensure a tracking issue exists.** Use the existing issue, or create one with `gh issue create --label feature` (it auto-lands in Backlog). As a comment to the issue, add link to the spec.
 - Move the issue to **In Progress** on the board, then run `scripts/sync-todo.sh`.
 - After all phases are verified working, close the issue (PR body `Closes #NN`) and run `scripts/sync-todo.sh` to refresh `TODO.md`.
 
