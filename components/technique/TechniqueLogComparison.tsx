@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, Divider, Text, useTheme } from "react-native-paper";
@@ -24,6 +25,8 @@ interface TechniqueLogComparisonProps {
 	modes: ModeComparison[];
 	onDone: () => void;
 	backLabel: string;
+	/** Slot between the comparison and the Done button — the phase nudge lives here. */
+	beforeActions?: ReactNode;
 }
 
 function QualityRow({
@@ -189,6 +192,7 @@ export function TechniqueLogComparison({
 	modes,
 	onDone,
 	backLabel,
+	beforeActions,
 }: TechniqueLogComparisonProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -205,7 +209,7 @@ export function TechniqueLogComparison({
 				: theme.colors.onSurface;
 
 	return (
-		<ScreenContent scroll={showModeHeadings}>
+		<ScreenContent scroll={showModeHeadings || beforeActions != null}>
 			<View className="gap-1">
 				<Text variant="headlineSmall">
 					{t("screen.practiceTechnique.comparison.title")}
@@ -264,6 +268,8 @@ export function TechniqueLogComparison({
 					)}
 				</View>
 			))}
+
+			{beforeActions}
 
 			<View className="mt-4">
 				<Button mode="contained" onPress={onDone}>

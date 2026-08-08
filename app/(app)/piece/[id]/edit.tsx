@@ -2,7 +2,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { Button, TextInput } from "react-native-paper";
+import { Button, Switch, Text, TextInput, useTheme } from "react-native-paper";
 import { HistoryAutocompleteInput } from "@/components/piece/HistoryAutocompleteInput";
 import { DropdownField } from "@/components/ui/DropdownField";
 import { FormScaffold } from "@/components/ui/FormScaffold";
@@ -18,6 +18,7 @@ import { validateBpm, validateDuration } from "@/utils/validation";
 
 export default function EditPieceScreen() {
 	const { t } = useTranslation();
+	const theme = useTheme();
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const goBack = useUpNavigation(`/piece/${id}`);
 	const { pieces } = usePieces();
@@ -43,6 +44,9 @@ export default function EditPieceScreen() {
 		piece?.difficulty?.toString() ?? null,
 	);
 	const [notes, setNotes] = useState(piece?.notes ?? "");
+	const [allSectionsAdded, setAllSectionsAdded] = useState(
+		piece?.allSectionsAdded ?? false,
+	);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [titleError, setTitleError] = useState<string | null>(null);
@@ -90,6 +94,7 @@ export default function EditPieceScreen() {
 			);
 			setDifficulty(piece.difficulty?.toString() ?? null);
 			setNotes(piece.notes ?? "");
+			setAllSectionsAdded(piece.allSectionsAdded ?? false);
 			hasSeeded.current = true;
 		}
 	}, [piece]);
@@ -152,6 +157,7 @@ export default function EditPieceScreen() {
 				durationSeconds,
 				difficulty: parsedDifficulty,
 				notes: notes.trim() || null,
+				allSectionsAdded,
 			});
 			goBack();
 		} catch {
@@ -231,6 +237,25 @@ export default function EditPieceScreen() {
 				multiline
 				numberOfLines={3}
 			/>
+
+			<View className="flex-row items-center justify-between gap-3">
+				<View className="flex-1">
+					<Text variant="bodyLarge">
+						{t("screen.editPiece.allSectionsAdded")}
+					</Text>
+					<Text
+						variant="bodySmall"
+						style={{ color: theme.colors.onSurfaceVariant }}
+					>
+						{t("screen.editPiece.allSectionsAddedHelp")}
+					</Text>
+				</View>
+				<Switch
+					value={allSectionsAdded}
+					onValueChange={setAllSectionsAdded}
+					accessibilityLabel={t("screen.editPiece.allSectionsAdded")}
+				/>
+			</View>
 
 			<Button
 				mode="contained"

@@ -31,6 +31,7 @@ interface FirestorePiece {
 	sectionCount?: number;
 	notes?: string | null;
 	durationSeconds?: number | null;
+	allSectionsAdded?: boolean;
 }
 
 export function fromFirestore(
@@ -54,6 +55,7 @@ export function fromFirestore(
 		sectionCount: data.sectionCount ?? 0,
 		notes: data.notes ?? null,
 		durationSeconds: data.durationSeconds ?? null,
+		allSectionsAdded: data.allSectionsAdded ?? false,
 	};
 }
 
@@ -143,6 +145,7 @@ export function useUpdatePiece() {
 				| "lastAchievedTempoBpm"
 				| "notes"
 				| "durationSeconds"
+				| "allSectionsAdded"
 			>
 		>,
 	) => {

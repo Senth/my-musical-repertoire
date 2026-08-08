@@ -81,10 +81,13 @@ export function groupLogsByMode(
 export function useLastPracticeLog(scope: LastLogScope): {
 	lastLog: NormalizedLastLog | null;
 	logsByMode: Record<ModeKey, NormalizedLastLog>;
+	/** The whole fetched window, newest first — what the multi-session criteria read. */
+	logs: NormalizedLastLog[];
 	loading: boolean;
 } {
 	const { user } = useAuth();
 	const [lastLog, setLastLog] = useState<NormalizedLastLog | null>(null);
+	const [logs, setLogs] = useState<NormalizedLastLog[]>([]);
 	const [logsByMode, setLogsByMode] = useState<
 		Record<ModeKey, NormalizedLastLog>
 	>({});
@@ -100,6 +103,7 @@ export function useLastPracticeLog(scope: LastLogScope): {
 	useEffect(() => {
 		if (!user) {
 			setLastLog(null);
+			setLogs([]);
 			setLogsByMode({});
 			setLoading(false);
 			return;
@@ -139,6 +143,7 @@ export function useLastPracticeLog(scope: LastLogScope): {
 			);
 		} else {
 			setLastLog(null);
+			setLogs([]);
 			setLogsByMode({});
 			setLoading(false);
 			return;
@@ -149,19 +154,21 @@ export function useLastPracticeLog(scope: LastLogScope): {
 
 		getDocs(q)
 			.then((snap) => {
-				const logs = snap.docs.map((d) =>
+				const fetched = snap.docs.map((d) =>
 					normalizeLastLog(d.data() as Record<string, unknown>, scopeType),
 				);
-				setLastLog(logs[0] ?? null);
-				setLogsByMode(scopeType === "piece" ? {} : groupLogsByMode(logs));
+				setLastLog(fetched[0] ?? null);
+				setLogs(fetched);
+				setLogsByMode(scopeType === "piece" ? {} : groupLogsByMode(fetched));
 				setLoading(false);
 			})
 			.catch(() => {
 				setLastLog(null);
+				setLogs([]);
 				setLogsByMode({});
 				setLoading(false);
 			});
 	}, [user, scopeType, pieceId, sectionId, techniqueId]);
 
-	return { lastLog, logsByMode, loading };
+	return { lastLog, logsByMode, logs, loading };
 }

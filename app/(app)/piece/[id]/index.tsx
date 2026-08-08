@@ -18,6 +18,7 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { AddNextSectionNudge } from "@/components/piece/AddNextSectionNudge";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { SectionDetailRow } from "@/components/section/SectionDetailRow";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
@@ -25,13 +26,11 @@ import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { useFabStyleStack } from "@/hooks/use-fab-style";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
-import {
-	useReorderSections,
-	useSections,
-	useUpdateSection,
-} from "@/hooks/use-sections";
+import { useChangeSectionPhase } from "@/hooks/use-section-phase";
+import { useReorderSections, useSections } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { Section } from "@/models/section";
+import { addSectionNudgeSection } from "@/utils/add-section-nudge";
 import { formatDaysAgo } from "@/utils/date";
 import { formatComposerLine } from "@/utils/piece-display";
 
@@ -48,7 +47,7 @@ export default function PieceDetailScreen() {
 	const { deletePiece } = useDeletePiece();
 	const { updatePiece } = useUpdatePiece();
 	const { reorderSections } = useReorderSections();
-	const { updateSection } = useUpdateSection();
+	const { changeSectionPhase } = useChangeSectionPhase();
 
 	const piece = pieces.find((p) => p.id === id);
 
@@ -60,6 +59,21 @@ export default function PieceDetailScreen() {
 	const [error, setError] = useState<string | null>(null);
 	const [sectionsMenuVisible, setSectionsMenuVisible] = useState(false);
 	const [reordering, setReordering] = useState(false);
+	const [nudgeBusy, setNudgeBusy] = useState(false);
+
+	const nudgeSection = addSectionNudgeSection(piece, sections);
+
+	const handleNoMoreSections = async () => {
+		if (!id) return;
+		setNudgeBusy(true);
+		try {
+			await updatePiece(id, { allSectionsAdded: true });
+		} catch {
+			setError(t("error.firebase"));
+		} finally {
+			setNudgeBusy(false);
+		}
+	};
 
 	// Seed notes text when piece data arrives
 	useEffect(() => {
@@ -352,6 +366,19 @@ export default function PieceDetailScreen() {
 						)}
 					</View>
 
+					{nudgeSection && (
+						<View className="px-4 pb-2">
+							<AddNextSectionNudge
+								pieceTitle={piece.title}
+								sectionLabel={nudgeSection.label}
+								phaseLabel={t(`section.phase.${nudgeSection.phase}`)}
+								busy={nudgeBusy}
+								onAddSection={() => router.push(`/piece/${id}/section/new`)}
+								onNoMoreSections={handleNoMoreSections}
+							/>
+						</View>
+					)}
+
 					{/* Sections list / empty state */}
 					{!sectionsLoading && sections.length === 0 ? (
 						<View className="items-center py-8 gap-4 px-4">
@@ -393,9 +420,19 @@ export default function PieceDetailScreen() {
 											`/piece/${id}/practice?sectionId=${s.id}&from=piece-detail`,
 										)
 									}
-									onChangePhase={(phase) =>
-										id && s.id ? updateSection(id, s.id, { phase }) : undefined
-									}
+									onChangePhase={(phase) => {
+										if (!id || !s.id || phase === s.phase) return;
+										changeSectionPhase({
+											pieceId: id,
+											sectionId: s.id,
+											fromPhase: s.phase,
+											toPhase: phase,
+											trigger: "phase-chip",
+											achievedBpmAtEvent: s.byMode?.HT?.bpm ?? null,
+											qualityAtEvent: s.byMode?.HT?.quality ?? null,
+											priorPhaseChangedAt: s.phaseChangedAt ?? null,
+										}).catch(() => setError(t("error.firebase")));
+									}}
 								/>
 							))}
 						</View>

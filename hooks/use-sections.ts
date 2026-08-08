@@ -34,6 +34,7 @@ interface FirestoreSection {
 	lastQuality?: 1 | 2 | 3 | 4 | 5 | null;
 	lastEffort?: 1 | 2 | 3 | 4 | 5 | null;
 	byMode?: unknown;
+	phaseChangedAt?: { toDate: () => Date } | null;
 }
 
 function fromFirestore(
@@ -60,6 +61,7 @@ function fromFirestore(
 		lastQuality: data.lastQuality ?? null,
 		lastEffort: data.lastEffort ?? null,
 		byMode: byModeFromFirestore(data.byMode),
+		phaseChangedAt: data.phaseChangedAt?.toDate() ?? null,
 	};
 }
 
@@ -200,6 +202,7 @@ export function useUpdateSection() {
 				| "lastQuality"
 				| "lastEffort"
 				| "byMode"
+				| "phaseChangedAt"
 			>
 		>,
 	) => {

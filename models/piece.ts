@@ -33,4 +33,6 @@ export interface Piece {
 	sectionCount?: number;
 	notes?: string | null;
 	durationSeconds?: number | null; // full play-through estimate; null if unknown
+	/** Silences the add-next-section nudge — there is no more material to add. */
+	allSectionsAdded?: boolean;
 }

@@ -10,7 +10,11 @@ import {
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Piece } from "@/models/piece";
-import type { PracticeMistakes, PracticeTrigger } from "@/models/practice";
+import type {
+	ByMode,
+	PracticeMistakes,
+	PracticeTrigger,
+} from "@/models/practice";
 import type { Section } from "@/models/section";
 import { awaitWrite } from "@/utils/firestore-write";
 import {
@@ -21,6 +25,7 @@ import {
 } from "@/utils/practice-modes";
 import { computeRunThroughEffects } from "@/utils/run-through-credit";
 import { useUpdatePiece } from "./use-pieces";
+import { queuePhaseChange } from "./use-section-phase";
 
 export interface SavePracticeInput {
 	piece: Piece;
@@ -123,8 +128,22 @@ export function useSavePractice() {
 			});
 		}
 
+		// Demotions go through the shared helper so they stamp `phaseChangedAt`
+		// and leave an audit row like every other phase change.
 		for (const sectionId of demotions) {
-			batch.update(doc(sectionsRef, sectionId), { phase: "stabilizing" });
+			const demoted = sections.find((s) => s.id === sectionId);
+			queuePhaseChange(batch, user.uid, {
+				pieceId,
+				sectionId,
+				fromPhase: "maintenance",
+				toPhase: "stabilizing",
+				trigger: "run-through",
+				achievedBpmAtEvent: achievedBpm ?? null,
+				qualityAtEvent: demoted?.byMode?.HT?.quality ?? null,
+				priorPhaseChangedAt: demoted?.phaseChangedAt ?? null,
+				sessionId: sessionId ?? null,
+				date,
+			});
 		}
 
 		await awaitWrite(batch.commit());
@@ -139,7 +158,11 @@ export function useSaveSectionPractice() {
 	const { user } = useAuth();
 	const { updatePiece } = useUpdatePiece();
 
-	/** Writes one practice log per mode, then folds them all into `byMode`. */
+	/**
+	 * Writes one practice log per mode, then folds them all into `byMode`.
+	 * Returns the merged map so the caller can evaluate the progression nudges
+	 * against what was just written rather than the stale snapshot.
+	 */
 	const saveSectionPractice = async (
 		pieceId: string,
 		sectionId: string,
@@ -147,9 +170,9 @@ export function useSaveSectionPractice() {
 		entries: ModeEntry[],
 		triggeredFrom?: PracticeTrigger,
 		sessionId?: string | null,
-	) => {
+	): Promise<ByMode | null> => {
 		if (!user) throw new Error("Not authenticated");
-		if (entries.length === 0) return;
+		if (entries.length === 0) return null;
 
 		const sectionRef = doc(
 			db,
@@ -201,6 +224,8 @@ export function useSaveSectionPractice() {
 			lastPracticed: date,
 			...(derived.bpm != null ? { lastAchievedTempoBpm: derived.bpm } : {}),
 		});
+
+		return byMode;
 	};
 
 	return { saveSectionPractice };
