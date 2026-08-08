@@ -15,8 +15,13 @@ import type { Section, SectionPhase } from "@/models/section";
 interface SectionsPracticePanelProps {
 	sections: Section[];
 	piece: Piece;
-	mistakeLevel: "normal" | "checkbox";
+	mistakeLevel: "normal" | "checkbox" | "run-through";
 	flaggedIds: string[];
+	/**
+	 * Sections a checkbox may appear on. A row outside this set keeps its plain
+	 * appearance — ticking it would do nothing.
+	 */
+	flaggableIds?: string[];
 	onToggleFlag: (sectionId: string) => void;
 	onPractice: (sectionId: string) => void;
 	onChangePhase?: (sectionId: string, phase: SectionPhase) => void;
@@ -27,6 +32,7 @@ export function SectionsPracticePanel({
 	piece,
 	mistakeLevel,
 	flaggedIds,
+	flaggableIds,
 	onToggleFlag,
 	onPractice,
 	onChangePhase,
@@ -36,10 +42,13 @@ export function SectionsPracticePanel({
 
 	if (sections.length === 0) return null;
 
-	const isCheckbox = mistakeLevel === "checkbox";
-	const headerKey = isCheckbox
-		? "screen.practice.sectionsPanel.headerCheckbox"
-		: "screen.practice.sectionsPanel.header";
+	const showCheckboxes = mistakeLevel !== "normal";
+	const headerKey =
+		mistakeLevel === "run-through"
+			? "screen.practice.sectionsPanel.headerRunThrough"
+			: mistakeLevel === "checkbox"
+				? "screen.practice.sectionsPanel.headerCheckbox"
+				: "screen.practice.sectionsPanel.header";
 
 	return (
 		<View className="gap-3">
@@ -48,6 +57,8 @@ export function SectionsPracticePanel({
 			{sections.map((section) => {
 				const sid = section.id ?? "";
 				const checked = flaggedIds.includes(sid);
+				const isCheckbox =
+					showCheckboxes && (flaggableIds?.includes(sid) ?? true);
 				const effectiveTarget =
 					section.targetBpmOverride ?? piece.targetTempoBpm ?? null;
 				const showBpm = section.currentBpm != null || effectiveTarget != null;

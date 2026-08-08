@@ -8,6 +8,7 @@ import {
 	Button,
 	Divider,
 	Menu,
+	Snackbar,
 	Text,
 	useTheme,
 } from "react-native-paper";
@@ -133,6 +134,7 @@ export function PiecePracticeContent({
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [notice, setNotice] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
 	const [savedEntries, setSavedEntries] = useState<ModeEntry[]>([]);
 	const metronomeStopRef = useRef<(() => void) | null>(null);
@@ -180,9 +182,28 @@ export function PiecePracticeContent({
 		}
 	}, [scopedSection, piece]);
 
+	// A run-through of a piece the student is holding: unticked sections earn
+	// credit, so the checkboxes must be offered however well the run went.
+	const isRunThrough =
+		!scopedSection &&
+		(piece?.state === "maintenance" || piece?.state === "performance");
+
+	// Only rows where ticking does something get a checkbox. Outside a
+	// run-through that is every section — the tick is still recorded on the piece
+	// log — but a run-through only acts on maintenance-phase sections.
+	const flaggableIds = useMemo(
+		() =>
+			activeSections
+				.filter((s) => !isRunThrough || s.phase === "maintenance")
+				.map((s) => s.id ?? ""),
+		[activeSections, isRunThrough],
+	);
+
 	const showCheckboxes =
 		!scopedSection &&
-		(technicalMistakes >= PracticeMistakes.some ||
+		flaggableIds.length > 0 &&
+		(isRunThrough ||
+			technicalMistakes >= PracticeMistakes.some ||
 			memoryMistakes >= PracticeMistakes.some);
 
 	const handleToggleFlag = (sid: string) => {
@@ -249,16 +270,25 @@ export function PiecePracticeContent({
 				);
 				setSavedEntries(modes.entries);
 			} else {
-				await savePractice(
-					pieceId,
-					practiceDate,
+				if (!piece) return { ok: false };
+				const { demotedCount } = await savePractice({
+					piece,
+					sections: activeSections,
+					date: practiceDate,
 					technicalMistakes,
 					memoryMistakes,
-					parseBpm(achievedBpm),
+					achievedBpm: parseBpm(achievedBpm),
 					flaggedSectionIds,
 					triggeredFrom,
 					sessionId,
-				);
+				});
+				if (demotedCount > 0) {
+					const message = t("screen.practice.demoted", { count: demotedCount });
+					// Inside the coach this component unmounts the moment the block
+					// advances, so the message has to live at the coach screen level.
+					if (inCoach) coach.notify(message);
+					else setNotice(message);
+				}
 			}
 			return { ok: true };
 		} catch {
@@ -269,9 +299,13 @@ export function PiecePracticeContent({
 		}
 	}, [
 		pieceId,
+		piece,
+		activeSections,
 		validateBpm,
 		achievedBpm,
 		coach.sessionId,
+		coach.notify,
+		inCoach,
 		triggerOverride,
 		scopedSection,
 		flaggedSectionIds,
@@ -536,8 +570,15 @@ export function PiecePracticeContent({
 						<SectionsPracticePanel
 							sections={activeSections}
 							piece={piece}
-							mistakeLevel={showCheckboxes ? "checkbox" : "normal"}
+							mistakeLevel={
+								showCheckboxes
+									? isRunThrough
+										? "run-through"
+										: "checkbox"
+									: "normal"
+							}
 							flaggedIds={flaggedSectionIds}
+							flaggableIds={flaggableIds}
 							onToggleFlag={handleToggleFlag}
 							onPractice={handlePracticeSection}
 							onChangePhase={(sectionId, phase) =>
@@ -560,6 +601,17 @@ export function PiecePracticeContent({
 			)}
 
 			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
+
+			{!inCoach && (
+				<Snackbar
+					visible={!!notice}
+					onDismiss={() => setNotice(null)}
+					duration={4000}
+					action={{ label: t("common.ok"), onPress: () => setNotice(null) }}
+				>
+					{notice ?? ""}
+				</Snackbar>
+			)}
 
 			{!inCoach && (
 				<DeletePieceDialog

@@ -15,6 +15,7 @@ import {
 	redistributeForAvailability,
 	type SlotAvailability,
 	type SlotMinutes,
+	stabilizingLinePool,
 } from "./session-planner";
 import { makePiece, makeSection, makeTechnique } from "./test-factories";
 
@@ -2111,5 +2112,84 @@ describe("same-day exclusion", () => {
 		).toBeUndefined();
 		const om = plan.omitted?.find((o) => o.kind === "repertoire-learning");
 		expect(om?.reason).toBe("practiced-today");
+	});
+});
+
+/**
+ * Properties the run-through credit design depends on
+ * (`docs/specs/run-through-credit-and-demotion.md` §7). They hold today; these
+ * tests exist so a future change cannot quietly break them.
+ */
+describe("run-through credit invariants", () => {
+	it("plans every maintenance block as a whole piece, never a section", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({ id: "pl", state: "learning" }),
+			...["m1", "m2"].map((id) =>
+				makePiece({
+					id,
+					title: id.toUpperCase(),
+					state: "maintenance",
+					lastPracticed: days,
+					durationSeconds: 60, // cost 1.2 — both fit the budget
+				}),
+			),
+		];
+		// Sections on the maintenance pieces must not turn the block into a
+		// section block: run-throughs are whole-piece by definition.
+		const sections: Section[] = [
+			makeSection({ id: "m1a", pieceId: "m1", phase: "maintenance" }),
+			makeSection({ id: "m1b", pieceId: "m1", phase: "stabilizing", order: 1 }),
+			makeSection({ id: "m2a", pieceId: "m2", phase: "maintenance" }),
+		];
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const maint = plan.blocks.filter(
+			(b) => b.kind === "repertoire-maintenance",
+		);
+		expect(maint.length).toBeGreaterThan(0);
+		for (const block of maint) {
+			expect(block.sectionId).toBeNull();
+		}
+	});
+
+	describe("stabilizingLinePool phase coverage", () => {
+		const days = new Date(NOW.getTime() - 5 * 86400000);
+
+		it("scores all three phases inside a stabilizing-state piece", () => {
+			const pieces: Piece[] = [makePiece({ id: "ps", state: "stabilizing" })];
+			const sections: Section[] = [
+				makeSection({ id: "a", pieceId: "ps", phase: "learning", order: 0 }),
+				makeSection({ id: "b", pieceId: "ps", phase: "stabilizing", order: 1 }),
+				makeSection({ id: "c", pieceId: "ps", phase: "maintenance", order: 2 }),
+			];
+			const pool = stabilizingLinePool(pieces, sections, NOW);
+			expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b", "c"]);
+		});
+
+		it.each([
+			"maintenance",
+			"performance",
+		] as const)("takes only learning and stabilizing sections out of a %s piece", (state) => {
+			const pieces: Piece[] = [
+				makePiece({ id: "pm", state, lastPracticed: days }),
+			];
+			const sections: Section[] = [
+				makeSection({ id: "a", pieceId: "pm", phase: "learning", order: 0 }),
+				makeSection({
+					id: "b",
+					pieceId: "pm",
+					phase: "stabilizing",
+					order: 1,
+				}),
+				makeSection({
+					id: "c",
+					pieceId: "pm",
+					phase: "maintenance",
+					order: 2,
+				}),
+			];
+			const pool = stabilizingLinePool(pieces, sections, NOW);
+			expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b"]);
+		});
 	});
 });

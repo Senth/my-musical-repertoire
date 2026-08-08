@@ -7,6 +7,7 @@ import {
 	Dialog,
 	HelperText,
 	Portal,
+	Snackbar,
 	Text,
 	TextInput,
 	useTheme,
@@ -55,6 +56,8 @@ export default function CoachScreen() {
 		elapsedSeconds: number;
 	} | null>(null);
 	const [, setTick] = useState(0);
+	// Owned by the screen, not the block body: the body unmounts on advance.
+	const [notice, setNotice] = useState<string | null>(null);
 	const cueFiredForIndexRef = useRef<Set<number>>(new Set());
 
 	const saveHandlerRef = useRef<(() => Promise<{ saved: boolean }>) | null>(
@@ -268,15 +271,19 @@ export default function CoachScreen() {
 		handleExit();
 	}, [dismissConfirm, handleExit]);
 
+	const notify = useCallback((message: string) => setNotice(message), []);
+
 	const coachValue: CoachContextValue = useMemo(
 		() => ({
 			inCoach: true,
 			sessionId: session?.sessionId ?? null,
 			saveHandlerRef,
 			validateHandlerRef,
+			notify,
 		}),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[session?.sessionId],
+		// The two handler refs are stable for the screen's lifetime — including
+		// them would only churn the context value on every render.
+		[session?.sessionId, notify],
 	);
 
 	if (!loaded) {
@@ -354,6 +361,7 @@ export default function CoachScreen() {
 			sessionId={coachValue.sessionId}
 			saveHandlerRef={coachValue.saveHandlerRef}
 			validateHandlerRef={coachValue.validateHandlerRef}
+			notify={coachValue.notify}
 		>
 			<CoachShell
 				currentBlock={currentBlock}
@@ -383,6 +391,14 @@ export default function CoachScreen() {
 				onKeepPracticing={dismissConfirm}
 				onExit={handleConfirmedExit}
 			/>
+			<Snackbar
+				visible={!!notice}
+				onDismiss={() => setNotice(null)}
+				duration={4000}
+				action={{ label: t("common.ok"), onPress: () => setNotice(null) }}
+			>
+				{notice ?? ""}
+			</Snackbar>
 		</CoachProvider>
 	);
 }
