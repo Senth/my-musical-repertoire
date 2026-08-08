@@ -7,6 +7,7 @@ import {
 } from "./list-prefs";
 import {
 	clearActiveSession,
+	clearLocalUserData,
 	readActiveSession,
 	readPieceListPrefs,
 	readPieceScores,
@@ -160,5 +161,26 @@ describe("session-storage", () => {
 		expect(await readPieceListPrefs("u1")).toBeNull();
 		mocked.__store.set("technique-list-prefs:u1", JSON.stringify({ v: 0 }));
 		expect(await readTechniqueListPrefs("u1")).toBeNull();
+	});
+
+	it("clears every local key for one uid and leaves other users alone", async () => {
+		const keys = [
+			"active-session",
+			"sight-reading-bpm",
+			"installPromptDismissed",
+			"piece-scores",
+			"pieces-list-prefs",
+			"technique-list-prefs",
+		];
+		for (const key of keys) {
+			mocked.__store.set(`${key}:u1`, "x");
+			mocked.__store.set(`${key}:u2`, "x");
+		}
+
+		await clearLocalUserData("u1");
+
+		expect([...mocked.__store.keys()].sort()).toEqual(
+			keys.map((key) => `${key}:u2`).sort(),
+		);
 	});
 });

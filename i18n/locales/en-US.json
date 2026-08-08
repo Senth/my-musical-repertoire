@@ -188,6 +188,272 @@
 				"server": "Could not set password. Please try again."
 			}
 		},
+		"legal": {
+			"privacy": "Privacy Policy",
+			"terms": "Terms of Service",
+			"back": "Back",
+			"lastUpdated": "Last updated: {{date}}"
+		},
+		"privacy": {
+			"title": "Privacy Policy",
+			"lastUpdated": "8 August 2026",
+			"sections": [
+				{
+					"heading": "In short",
+					"paragraphs": [
+						"My Musical Repertoire keeps the practice notes you write, the email address you sign in with, and — for security — your IP address and sign-in times. If you use Google sign-in, it also keeps your Google account ID, name, and profile picture.",
+						"There are no ads, no analytics, and no trackers. Your data is never sold and never shared for advertising. The only company that touches it is Google, which stores it for me and may not use it for its own purposes."
+					]
+				},
+				{
+					"heading": "Who is responsible",
+					"paragraphs": [
+						"The app is run by Matteus Magnusson, a private individual, as a free hobby project. In GDPR terms, that makes me the data controller for the data described here.",
+						"You can reach me at senth.wallace@gmail.com."
+					]
+				},
+				{
+					"heading": "What is collected",
+					"paragraphs": ["Only what the app needs to work:"],
+					"bullets": [
+						"Your account: your email address. If you sign in with Google, also your Google account ID and the name and profile picture on that account. If you sign in with a password, the password is stored by Google Firebase Authentication in hashed form, and I never see it.",
+						"Your practice data: everything you type into the app. Pieces, composers, collections, sections, techniques, notes, tempo goals, difficulty ratings, the self-assessments you make after practising, your practice history, and your saved session presets.",
+						"Technical data: Google Firebase records your IP address and the time of sign-in attempts, so that accounts stay secure and abuse can be blocked."
+					],
+					"paragraphsAfter": [
+						"An email address is needed to create an account; without it the app cannot be provided. Everything else is optional — the app just does less if you leave it out."
+					]
+				},
+				{
+					"heading": "What is not collected",
+					"bullets": [
+						"No analytics or usage tracking.",
+						"No advertising, advertising IDs, or tracking cookies.",
+						"No location data.",
+						"No access to your microphone, camera, contacts, or files.",
+						"No recordings of your playing."
+					]
+				},
+				{
+					"heading": "Why it is collected",
+					"paragraphs": ["Your data is used for two things:"],
+					"bullets": [
+						"To give you the service you signed up for. Without your pieces and practice history the app has nothing to work with. Legal basis: performance of a contract, GDPR Article 6(1)(b).",
+						"To keep accounts secure and block abuse. Legal basis: legitimate interests, GDPR Article 6(1)(f)."
+					],
+					"paragraphsAfter": [
+						"Because that second purpose relies on legitimate interests, you have the right to object to it at any time — email me and I will consider your objection.",
+						"Your data is never used for marketing. The app ranks your own pieces to suggest what to practise next, but that is calculated from what you entered and has no legal or similarly significant effect on you."
+					]
+				},
+				{
+					"heading": "Where your data is stored",
+					"paragraphs": [
+						"Your account and practice data are stored in Google Firebase (Firebase Authentication and Cloud Firestore). Google runs those servers on my behalf and is not allowed to use your data for its own purposes. Google describes its own handling at https://firebase.google.com/support/privacy.",
+						"Google may store and process the data outside the EU and EEA, including in the United States. Where that happens, the transfer is covered by Google's standard data protection clauses approved by the European Commission and, for the United States, by the EU–US Data Privacy Framework. Email me and I will send you a copy of the safeguards that apply.",
+						"A copy is also kept on your own device — in your browser's IndexedDB and local storage, plus a service-worker cache of the app itself — so you can practise offline. This storage is strictly necessary to run the app, so no cookie banner is needed. If you sign in with Google, Google sets its own cookies for that sign-in. Clearing your browser's site data for this app removes the copy on your device."
+					]
+				},
+				{
+					"heading": "Who your data is shared with",
+					"paragraphs": [
+						"Your data is not sold, rented, or shared for advertising, and no other user can see your account.",
+						"The only company involved is Google, as the hosting provider described above. Beyond that, data would only be disclosed if the law required it."
+					]
+				},
+				{
+					"heading": "How long it is kept",
+					"paragraphs": [
+						"Your data is kept for as long as your account exists. Delete a piece, a section, or a practice log and it is gone from the app straight away. As with deleting your account, copies may sit in Google's backups for a limited time before they expire.",
+						"Delete your account and everything I store about you is erased right away. Copies may survive in Google's backups and in Google's own sign-in security logs for a limited time, on Google's retention schedule, after which they are deleted too.",
+						"If you stop using the app entirely, I may email the address on your account and delete an account that has been unused for three years, after giving you at least 30 days to say you want to keep it."
+					]
+				},
+				{
+					"heading": "Your rights",
+					"paragraphs": ["Under the GDPR you can:"],
+					"bullets": [
+						"See what is stored about you. Your account and practice data are already visible in the app; for the sign-in security records Google holds, email me and I will get them for you.",
+						"Correct anything that is wrong, by editing it in the app.",
+						"Delete your data, either piece by piece or the whole account at once.",
+						"Get a copy of your data in a machine-readable format. There is no export button yet, so email me and I will send you a file.",
+						"Object to or restrict how your data is used.",
+						"Complain to the data protection authority in the country you live in."
+					],
+					"paragraphsAfter": [
+						"For anything you cannot do yourself in the app, email senth.wallace@gmail.com. I will answer within one month. If a request is complicated I may need up to two more months, and I will tell you if that happens. It is free, unless a request is clearly excessive or repeated."
+					]
+				},
+				{
+					"heading": "Deleting your account",
+					"paragraphs": [
+						"You can delete your account, and every piece, section, technique, practice log, and preset that belongs to it, from the button at the bottom of this page.",
+						"This is permanent and cannot be undone. There is no export button yet, so email me for a copy of your data before you delete, if you want to keep it."
+					]
+				},
+				{
+					"heading": "Children",
+					"paragraphs": [
+						"The app is not intended for children under 13, or under the minimum age in your country if that is higher, and accounts should not be created for them. If you are under 18, a parent or guardian needs to agree to the Terms of Service for you.",
+						"If you believe a child has given me their data, email me and I will delete it."
+					]
+				},
+				{
+					"heading": "Security",
+					"paragraphs": [
+						"All traffic between the app and Firebase is encrypted with HTTPS. Firestore security rules allow only your own signed-in account to read or write your data.",
+						"No system is perfectly secure, so I cannot promise that a breach is impossible. If a breach happens, I will tell the supervisory authority within 72 hours where the law requires it, and I will tell you without undue delay if the breach is likely to put your rights and freedoms at high risk.",
+						"The app's source code is open and can be reviewed at https://github.com/Senth/my-musical-repertoire."
+					]
+				},
+				{
+					"heading": "Changes to this policy",
+					"paragraphs": [
+						"The date at the top always shows the current version. If something important changes, I will email the address on your account at least 30 days before the change takes effect."
+					]
+				},
+				{
+					"heading": "Contact",
+					"paragraphs": [
+						"Questions, requests, or complaints: senth.wallace@gmail.com."
+					]
+				}
+			]
+		},
+		"terms": {
+			"title": "Terms of Service",
+			"lastUpdated": "8 August 2026",
+			"sections": [
+				{
+					"heading": "In short",
+					"paragraphs": [
+						"This is a free hobby app. Use it for your own practice, do not break it, and keep your own notes of anything you cannot afford to lose. It comes with no warranty."
+					]
+				},
+				{
+					"heading": "These terms",
+					"paragraphs": [
+						"My Musical Repertoire is provided by Matteus Magnusson, a private individual. By creating an account or using the app you accept these terms. If you do not accept them, please do not use the app.",
+						"How your data is handled is explained in the Privacy Policy. That policy is information about what I do with your data, not a set of contract terms you have to agree to."
+					]
+				},
+				{
+					"heading": "What the app is",
+					"paragraphs": [
+						"A tool for tracking the pieces you play and deciding what to practise next. It is free, it carries no ads, and it is built in my spare time.",
+						"It is not a teacher, and its practice suggestions are only suggestions. How you practise is up to you, and to the extent the law allows, injury or musical outcomes that follow are your responsibility — see the Liability section for what I cannot exclude."
+					]
+				},
+				{
+					"heading": "Your account",
+					"bullets": [
+						"You must be at least 13 years old, or older if that is the minimum age in your country. If you are under 18, a parent or guardian must agree to these terms for you.",
+						"Give a real email address, so that account recovery and important notices reach you.",
+						"Keep your password to yourself. You are responsible for what happens under your account.",
+						"Tell me at senth.wallace@gmail.com if you think someone else has got into it."
+					]
+				},
+				{
+					"heading": "How you may use it",
+					"paragraphs": ["Please do not:"],
+					"bullets": [
+						"Break the law with it, or store content you have no right to store.",
+						"Try to reach anyone else's account or data.",
+						"Attack, overload, or probe the service, or work around its security.",
+						"Upload malware, or use the app to send spam.",
+						"Resell the service or pass it off as your own."
+					],
+					"paragraphsAfter": [
+						"The source code is open under the MIT licence and you are free to run your own copy. That licence covers the code, not this hosted service."
+					]
+				},
+				{
+					"heading": "What you write stays yours",
+					"paragraphs": [
+						"Your pieces, notes, and practice history belong to you. I claim no ownership of them and will not use them for anything other than running the app for you.",
+						"You give me only the permission needed to store your content and show it back to you, and that permission ends when you delete the content or your account."
+					]
+				},
+				{
+					"heading": "Availability",
+					"paragraphs": [
+						"The app is offered as it is and as available. It may be slow, unavailable, or lose features, and it is maintained on a best-effort basis by one person.",
+						"Features may change or be removed. If I decide to shut the service down, I will give you at least 30 days' notice by email so you can save your data. If something outside my control ends the service suddenly, I will tell you as soon as I can."
+					]
+				},
+				{
+					"heading": "Keep your own copy",
+					"paragraphs": [
+						"Do not rely on this app as the only record of your work. Bugs, mistakes, and outages can lose data, and while I take reasonable care I cannot guarantee it will always be there.",
+						"There is no export button yet, so keep your own notes of anything you cannot afford to lose, or email me and I will send you a copy of your data."
+					]
+				},
+				{
+					"heading": "Ending it",
+					"paragraphs": [
+						"You can delete your account at any time from the Privacy Policy page. That erases your data right away, apart from the backup and sign-in security copies Google keeps for a limited time, as described in the Privacy Policy.",
+						"I may suspend or close an account that breaks these terms, or that puts the service or other people at risk. Unless the law requires otherwise, I will tell you why and, where it is reasonable, give you a chance to put it right first.",
+						"If an account goes unused for three years, I may close it. Before that I will email the address on the account and give you at least 30 days to tell me you want to keep it.",
+						"If I close your account, I will delete your data as described in the Privacy Policy. Unless the reason makes it unsafe to do so, I will give you a chance to ask me for a copy of your data first.",
+						"The sections on no warranty, liability, and which law applies keep working after your account ends."
+					]
+				},
+				{
+					"heading": "No warranty",
+					"paragraphs": [
+						"To the extent the law allows, the app is provided as it is, with no promise that it will be error-free, uninterrupted, or suitable for any particular purpose.",
+						"If you are a consumer, this does not take away any right your local law gives you, including any right to have faults put right."
+					]
+				},
+				{
+					"heading": "Liability",
+					"paragraphs": [
+						"To the extent the law allows, I am not liable for indirect or consequential loss, lost profit, or lost practice time arising from your use of the app.",
+						"I cannot exclude liability that the law says I must keep — for example, if I lose your data through serious carelessness of my own, or for death or personal injury caused by negligence, or for fraud. If you are a consumer, your mandatory statutory rights are unaffected."
+					]
+				},
+				{
+					"heading": "Changes to these terms",
+					"paragraphs": [
+						"These terms may change, for example when the app gains a feature that needs covering. The date at the top always shows the current version.",
+						"For changes that affect your rights, I will email the address on your account at least 30 days before they take effect. If you keep using the app after that, the new terms apply. If you do not want them, you can delete your account instead."
+					]
+				},
+				{
+					"heading": "Which law applies",
+					"paragraphs": [
+						"These terms do not pick a particular country's law. If you are a consumer, the mandatory consumer protection rules of the country you live in still apply, and nothing here takes away any right you have to bring a claim in the courts your own law gives you access to.",
+						"If any part of these terms turns out to be unenforceable, the rest of them still apply."
+					]
+				},
+				{
+					"heading": "Contact",
+					"paragraphs": [
+						"Questions about these terms: senth.wallace@gmail.com."
+					]
+				}
+			]
+		},
+		"deleteAccount": {
+			"button": "Delete my account",
+			"dialogTitle": "Delete your account?",
+			"dialogBody": "This permanently erases your account and every piece, section, technique, practice log, and session preset in it. It cannot be undone.",
+			"confirmPrompt": "Type DELETE to confirm.",
+			"confirmWord": "DELETE",
+			"confirmLabel": "Confirm",
+			"cancel": "Cancel",
+			"confirm": "Delete forever",
+			"passwordPrompt": "Enter your password to confirm it is you.",
+			"passwordLabel": "Password",
+			"googlePrompt": "You will be asked to sign in with Google again to confirm it is you.",
+			"deleting": "Deleting your account…",
+			"error": {
+				"wrongPassword": "That password is not correct.",
+				"reauth": "Could not confirm it is you. Please sign in again and retry.",
+				"server": "Could not delete your account. Please try again, or email senth.wallace@gmail.com.",
+				"offline": "You are offline. Deleting an account needs a connection."
+			}
+		},
 		"login": {
 			"title": "Sign In",
 			"titleRegister": "Register",
@@ -205,6 +471,7 @@
 			"setPassword": "Set a password",
 			"setPasswordSent": "Check your inbox (and spam folder) to set your password.",
 			"setPasswordError": "Could not send the email. Please try again.",
+			"legalConsent": "By registering you accept the Terms of Service and the Privacy Policy. If you are under 18, a parent or guardian must agree for you.",
 			"error": {
 				"email": "Please enter a valid email address.",
 				"userNotFound": "No user found with this email and password combination.",

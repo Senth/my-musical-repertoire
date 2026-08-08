@@ -16,6 +16,7 @@ import {
 	Text,
 	useTheme,
 } from "react-native-paper";
+import { LegalLinks } from "@/components/legal/LegalLinks";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
@@ -321,6 +322,8 @@ export default function OverviewScreen() {
 				>
 					{t("screen.overview.seeAllTechniques")}
 				</Button>
+
+				<LegalLinks />
 			</ScreenContent>
 
 			{fabVisible && (

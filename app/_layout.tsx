@@ -56,8 +56,11 @@ function AuthGate() {
 		if (loading) return;
 
 		const inAuthGroup = segments[0] === "(auth)";
+		// The policy and terms must be readable without an account — a signed-out
+		// visitor following the link from login cannot be bounced back to it.
+		const inLegalGroup = segments[0] === "(legal)";
 
-		if (!user && !inAuthGroup) {
+		if (!user && !inAuthGroup && !inLegalGroup) {
 			router.replace("/(auth)/login");
 		} else if (user && inAuthGroup) {
 			router.replace("/(app)/(tabs)/overview");
