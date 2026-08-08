@@ -292,11 +292,14 @@
 			"sectionsPanel": {
 				"header": "Sections",
 				"headerCheckbox": "Sections — tap the ones that were problematic",
+				"headerRunThrough": "Sections — which ones need work? The rest count as practiced",
 				"bpmLine": "{{current}} / {{target}} BPM",
 				"practice": "Practice",
 				"a11yPractice": "Practice section {{label}}",
 				"a11yToggleFlag": "Flag section {{label}} as problematic"
 			},
+			"demoted_one": "{{count}} section moved back to stabilizing",
+			"demoted_other": "{{count}} sections moved back to stabilizing",
 			"modes": {
 				"handsLabel": "Hands",
 				"drillLabel": "Drill",

@@ -1,13 +1,14 @@
 import {
 	addDoc,
 	collection,
-	deleteDoc,
+	type DocumentReference,
 	doc,
 	getDocs,
 	onSnapshot,
 	query,
 	type Timestamp,
 	updateDoc,
+	writeBatch,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "@/config/firebase";
@@ -154,27 +155,44 @@ export function useUpdatePiece() {
 	return { updatePiece };
 }
 
+/** Firestore caps a batch at 500 writes; stay clear of the edge. */
+const DELETE_BATCH_LIMIT = 450;
+
 export function useDeletePiece() {
 	const { user } = useAuth();
 
+	/**
+	 * Deletes the piece and everything under it. Firestore has no cascading
+	 * delete, so the subcollections have to be enumerated by hand — left behind
+	 * they are unreachable orphans that still occupy storage.
+	 *
+	 * Children are deleted before the piece itself, so a failure part-way leaves
+	 * the piece still listed rather than a ghost tree under a piece that is gone.
+	 */
 	const deletePiece = async (pieceId: string) => {
 		if (!user) throw new Error("Not authenticated");
 
-		const practicesRef = collection(
-			db,
-			"users",
-			user.uid,
-			"pieces",
-			pieceId,
-			"practices",
-		);
-		const practicesSnapshot = await getDocs(practicesRef);
-		await awaitWrite(
-			Promise.all(practicesSnapshot.docs.map((d) => deleteDoc(d.ref))),
-		);
-
 		const pieceRef = doc(db, "users", user.uid, "pieces", pieceId);
-		await awaitWrite(deleteDoc(pieceRef));
+		const targets: DocumentReference[] = [];
+
+		const sectionsSnapshot = await getDocs(collection(pieceRef, "sections"));
+		for (const section of sectionsSnapshot.docs) {
+			const logs = await getDocs(collection(section.ref, "practiceLogs"));
+			targets.push(...logs.docs.map((d) => d.ref));
+			targets.push(section.ref);
+		}
+
+		const pieceLogs = await getDocs(collection(pieceRef, "practiceLogs"));
+		targets.push(...pieceLogs.docs.map((d) => d.ref));
+		targets.push(pieceRef);
+
+		for (let i = 0; i < targets.length; i += DELETE_BATCH_LIMIT) {
+			const batch = writeBatch(db);
+			for (const ref of targets.slice(i, i + DELETE_BATCH_LIMIT)) {
+				batch.delete(ref);
+			}
+			await awaitWrite(batch.commit());
+		}
 	};
 
 	return { deletePiece };

@@ -19,6 +19,11 @@ export interface CoachContextValue {
 	sessionId: string | null;
 	saveHandlerRef: MutableRefObject<SaveFn | null>;
 	validateHandlerRef: MutableRefObject<ValidateFn | null>;
+	/**
+	 * Shows a message at the coach screen level. A block body unmounts the moment
+	 * the block advances, so a snackbar it owns would never be seen.
+	 */
+	notify: (message: string) => void;
 }
 
 const CoachContext = createContext<CoachContextValue | null>(null);
@@ -28,17 +33,19 @@ export function CoachProvider({
 	sessionId,
 	saveHandlerRef,
 	validateHandlerRef,
+	notify,
 	children,
 }: {
 	inCoach: boolean;
 	sessionId: string | null;
 	saveHandlerRef: MutableRefObject<SaveFn | null>;
 	validateHandlerRef: MutableRefObject<ValidateFn | null>;
+	notify: (message: string) => void;
 	children: ReactNode;
 }) {
 	const value = useMemo<CoachContextValue>(
-		() => ({ inCoach, sessionId, saveHandlerRef, validateHandlerRef }),
-		[inCoach, sessionId, saveHandlerRef, validateHandlerRef],
+		() => ({ inCoach, sessionId, saveHandlerRef, validateHandlerRef, notify }),
+		[inCoach, sessionId, saveHandlerRef, validateHandlerRef, notify],
 	);
 	return (
 		<CoachContext.Provider value={value}>{children}</CoachContext.Provider>
@@ -49,6 +56,7 @@ const NOOP_SAVE_REF: MutableRefObject<SaveFn | null> = { current: null };
 const NOOP_VALIDATE_REF: MutableRefObject<ValidateFn | null> = {
 	current: null,
 };
+const NOOP_NOTIFY = () => {};
 
 export function useCoach(): CoachContextValue {
 	const ctx = useContext(CoachContext);
@@ -58,6 +66,7 @@ export function useCoach(): CoachContextValue {
 		sessionId: null,
 		saveHandlerRef: NOOP_SAVE_REF,
 		validateHandlerRef: NOOP_VALIDATE_REF,
+		notify: NOOP_NOTIFY,
 	};
 }
 
