@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 import { Button, Tooltip } from "react-native-paper";
 import { useMetronome } from "@/hooks/use-metronome";
 
@@ -10,6 +11,12 @@ interface MetronomeButtonProps {
 }
 
 const DEBOUNCE_MS = 150;
+
+// Every label the button can show. Rendered as hidden ghosts so the button is
+// always as wide as its longest state and never resizes when the label changes.
+const LABEL_KEYS = ["start", "stop", "paused"] as const;
+
+const GHOST = { height: 0, overflow: "hidden" } as const;
 
 export function MetronomeButton({
 	bpm,
@@ -35,21 +42,42 @@ export function MetronomeButton({
 	}, [parsed, valid]);
 
 	const { isRunning, toggle, stop } = useMetronome(debouncedBpm);
+	const [paused, setPaused] = useState(false);
 
-	// Auto-stop when BPM becomes invalid/empty while metronome is running
+	// Pause — rather than stop — when the BPM turns invalid mid-edit (or when
+	// switching to a mode that has no BPM yet), so the metronome picks itself
+	// back up once a valid BPM is entered again.
 	useEffect(() => {
 		if (!valid && isRunning) {
 			stop();
+			setPaused(true);
 		}
 	}, [valid, isRunning, stop]);
 
+	// Resume once the edited BPM has settled, so we never click at the stale tempo.
+	useEffect(() => {
+		if (paused && valid && debouncedBpm === parsed) {
+			setPaused(false);
+			toggle();
+		}
+	}, [paused, valid, debouncedBpm, parsed, toggle]);
+
+	// A stop from the outside (saving, navigating away) is final — drop the
+	// pending resume as well.
+	const stopAll = useCallback(() => {
+		setPaused(false);
+		stop();
+	}, [stop]);
+
 	useEffect(() => {
 		if (!stopRef) return;
-		stopRef.current = stop;
+		stopRef.current = stopAll;
 		return () => {
 			stopRef.current = null;
 		};
-	}, [stop, stopRef]);
+	}, [stopAll, stopRef]);
+
+	const labelKey = isRunning ? "stop" : paused ? "paused" : "start";
 
 	const button = (
 		<Button
@@ -58,15 +86,38 @@ export function MetronomeButton({
 			onPress={toggle}
 			disabled={disabled || !valid}
 		>
-			{isRunning ? t("common.metronome.stop") : t("common.metronome.start")}
+			{t(`common.metronome.${labelKey}`)}
 		</Button>
 	);
 
-	if (!valid) {
-		return (
-			<Tooltip title={t("common.metronome.enterBpmToEnable")}>{button}</Tooltip>
-		);
-	}
-
-	return button;
+	return (
+		<View>
+			<View aria-hidden accessible={false} style={GHOST}>
+				{LABEL_KEYS.map((key) => (
+					<Button
+						key={key}
+						mode="outlined"
+						icon="metronome"
+						disabled
+						focusable={false}
+					>
+						{t(`common.metronome.${key}`)}
+					</Button>
+				))}
+			</View>
+			{valid ? (
+				button
+			) : (
+				<Tooltip
+					title={t(
+						paused
+							? "common.metronome.enterBpmToResume"
+							: "common.metronome.enterBpmToEnable",
+					)}
+				>
+					{button}
+				</Tooltip>
+			)}
+		</View>
+	);
 }

@@ -67,7 +67,9 @@
 		"metronome": {
 			"start": "Start Metronome",
 			"stop": "Stop Metronome",
-			"enterBpmToEnable": "Enter a BPM to enable the metronome"
+			"paused": "Metronome Paused",
+			"enterBpmToEnable": "Enter a BPM to enable the metronome",
+			"enterBpmToResume": "Enter a BPM to resume the metronome"
 		},
 		"bpm": {
 			"half": "½",
