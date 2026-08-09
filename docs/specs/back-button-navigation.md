@@ -1,82 +1,50 @@
-# Phase 0: Handoff
+# Back-button navigation
 
-**Implementer:** this spec is your plan. Build it phase-by-phase using the
-**Phases** section below; each phase is sized for one focused session.
+Tracking issue: [#28](https://github.com/Senth/my-musical-repertoire/issues/28)
 
-- Spec file: `docs/specs/back-button-navigation.md` (this file).
-- Tracking issue: [#28](https://github.com/Senth/my-musical-repertoire/issues/28)
-  (labeled `bug`, board column **In Progress**). The phase checklist lives in the
-  issue body — tick items as you complete them.
-- After all phases verify working, close #28 via `Closes #28` in the PR body and run
-  `scripts/sync-todo.sh` to refresh `TODO.md`.
-- Project conventions: see `.claude/CLAUDE.md` (run tests + lint and fix all issues
-  incl. pre-existing; manually verify on web via Playwright, port 8081 main / 8082
-  worktree; login senth.wallace@gmail.com).
+## 1. What
 
----
+Every in-app back affordance pops history when it exists and otherwise falls back
+to the screen's logical parent — the hierarchy, or for practice screens the
+`from` launch source. Covers the on-screen Appbar back arrow and the Android
+hardware back button, and routes post-save / Cancel navigation through the same
+helper.
 
-# Back-Button Navigation
+## 2. Why
 
-Issue: [#28](https://github.com/Senth/my-musical-repertoire/issues/28)
+`router.back()` is a pure history pop. After a page reload or a deep link the
+in-app history is empty, so the back arrow — and any save-then-`router.back()` —
+silently did **nothing**. That was the headline complaint in #28.
 
-## What
+There was also an inconsistency: practice screens already routed their **Done**
+button to a `from`-aware destination while their back arrow still called
+`router.back()`.
 
-Make every in-app back affordance behave intuitively: pop history when it exists,
-otherwise fall back to the screen's logical parent (hierarchy, or the practice
-screen's launch source). Covers the on-screen Appbar back arrow and the Android
-hardware back button. Also unifies post-save / Cancel navigation through the same
-safe helper.
+One helper — `canGoBack() ? router.back() : router.replace(fallback)` — fixes
+both. In-session, history naturally returns the user to wherever they came from,
+preserving list scroll and state; only when there is no history does the app
+deterministically go **up one step**.
 
-## Why
+### Decisions locked
 
-`router.back()` is a pure history pop. After a page reload or deep link the in-app
-history is empty, so the back arrow (and a save-then-`router.back()`) silently does
-**nothing** — the headline complaint in #28. There is also an inconsistency: practice
-screens already route their **Done** button to a `from`-aware destination, but their
-back arrow still calls `router.back()`.
+- **History-first with a hierarchy/`from` fallback**, not "always replace to
+  parent". In-session back stays natural; the fallback fires only on reload or
+  deep link.
+- **Web browser back is left native.** In-session it already works, since each
+  `push` adds a browser entry. After a cold reload of a deep URL the browser's
+  own back button may leave the app — accepted, because the on-screen arrow
+  always works. **No history seeding.**
+- **Post-save / Cancel** go through the same helper, which fixes the
+  save-then-stuck trap on a reloaded form.
 
-The fix: a single helper — `canGoBack() ? router.back() : router.replace(fallback)` —
-used everywhere. In-session, history naturally returns the user to wherever they came
-from (preserving list scroll/state); only when there is no history do we deterministically
-go **up one step**. This satisfies all three issue bullets without changing the pleasant
-in-session behavior.
+## 3. Data model
 
-### Decisions locked during grilling
+None. Pure navigation. No Firestore, no AsyncStorage, no new i18n strings.
 
-- **Model:** history-first, hierarchy/`from` fallback (NOT "always replace to parent").
-  In-session back stays natural; the fallback only fires on reload / deep link.
-- **Triggers in scope:** in-app Appbar back arrow **+ Android hardware back** (`BackHandler`).
-  Both are reload-safe via the fallback.
-- **Web browser back:** left as native. In-session it already works (each `push` adds a
-  browser entry). After a *cold reload* of a deep URL the browser's own back button may
-  leave the app — accepted; the on-screen back arrow always works. **No history seeding.**
-- **Post-save / Cancel:** routed through the same helper (fixes the save-then-stuck trap
-  on a reloaded form).
-- **Post-practice labeled button** ("Back to Pieces" / "Back to Overview" — the
-  `PracticeComparison` / `TechniqueLogComparison` `onDone` CTA): this is a *distinct*
-  affordance from the back arrow. It always does a deterministic `router.replace` **up to
-  the list/overview level** — overview if launched `from=overview`, otherwise the
-  pieces/techniques **list**. It never lands on a detail page and is never converted to the
-  history-first `goBack` helper.
-- **Dead duplicates:** `app/(app)/add-technique.tsx` and `app/(app)/edit-technique/[id].tsx`
-  are unreferenced (live screens are `technique/add.tsx` / `technique/[id]/edit.tsx`) — delete them.
-
-## Data Model
-
-None. Pure navigation change. No Firestore, no AsyncStorage, no new i18n strings.
-
-## UI Flow
-
-New hook **`hooks/use-up-navigation.ts`**:
+## 4. The hook
 
 ```ts
-import { useFocusEffect } from "expo-router";
-import { type Href, useRouter } from "expo-router";
-import { useCallback } from "react";
-import { BackHandler, Platform } from "react-native";
-
-/** Returns a `goBack` that pops history when possible, else replaces to `fallback`.
- *  Also intercepts the Android hardware back button (while focused) to do the same. */
+// hooks/use-up-navigation.ts
 export function useUpNavigation(fallback: Href): () => void {
   const router = useRouter();
 
@@ -90,7 +58,7 @@ export function useUpNavigation(fallback: Href): () => void {
       if (Platform.OS !== "android") return;
       const sub = BackHandler.addEventListener("hardwareBackPress", () => {
         goBack();
-        return true; // handled — block default
+        return true;   // handled — block default
       });
       return () => sub.remove();
     }, [goBack]),
@@ -100,98 +68,65 @@ export function useUpNavigation(fallback: Href): () => void {
 }
 ```
 
-- Registering the `BackHandler` inside `useFocusEffect` ensures only the focused screen
-  intercepts (LIFO listeners would otherwise all fire).
-- Tab screens (overview / pieces / techniques) do **not** use the hook, so the hardware
-  back keeps its default root behavior (exit app).
+Registering the `BackHandler` inside `useFocusEffect` ensures only the focused
+screen intercepts; LIFO listeners would otherwise all fire. Tab screens
+(overview / pieces / techniques) deliberately do **not** use the hook, so the
+hardware back keeps its default root behaviour of exiting the app.
 
-### Per-screen fallback map
+The `Platform.OS === "android"` guard also means the hook never touches web,
+which matters: `react-native-web`'s `BackHandler` is a no-op stub that only
+`console.error`s. Web back interception needs a `popstate` sentinel instead —
+that is the coach exit guard in [`pwa-support.md`](pwa-support.md).
 
-Each screen calls `const goBack = useUpNavigation(<fallback>)` and uses `goBack` for
-the `Appbar.BackAction`, plus any post-save / Cancel `router.back()`.
+## 5. Per-screen fallbacks
 
-| Screen | File | Fallback (`replace` target when no history) |
-|---|---|---|
-| Piece detail | `piece/[id]/index.tsx` | `/(app)/(tabs)/piece` |
-| Piece section | `piece/[id]/section/[sectionId].tsx` | `/piece/${pieceId}` |
-| Piece edit | `piece/[id]/edit.tsx` | `/piece/${id}` |
-| Piece add | `piece/add.tsx` | `/(app)/(tabs)/piece` |
-| Piece practice | `piece/[id]/practice.tsx` | `getBackDestination()` (`from`-based) |
-| Technique detail | `technique/[id]/index.tsx` | `/(app)/(tabs)/technique` |
-| Technique edit | `technique/[id]/edit.tsx` | `/technique/${id}` |
-| Technique add | `technique/add.tsx` | `/(app)/(tabs)/technique` |
-| Technique practice | `technique/[id]/practice.tsx` | `getBackDestination()` (`from`-based) |
-| Session setup | `session/setup.tsx` | `/(app)/(tabs)/overview` |
+Each screen calls `const goBack = useUpNavigation(<fallback>)` and uses `goBack`
+for its `Appbar.BackAction` and for any post-save or Cancel navigation.
 
-Notes:
-- **Practice — two distinct affordances:**
-  - **Back arrow** (`Appbar.BackAction`): history-first via `useUpNavigation`, reload-fallback =
-    `getBackDestination()` (kept **detail-aware**: `from=piece-detail` reload → that piece's
-    detail, preserving the practiced item's context = "up one step").
-  - **Labeled Done button** (`onDone`): always `router.replace(getDoneDestination())` where
-    **`getDoneDestination()`** = overview when `from=overview`, else the pieces/techniques
-    **list** (never a detail page). The label (`getBackLabel`, used only by this button) is
-    updated to match — drop the "Back to Piece" / "Back to Technique" branch so it only ever
-    reads "Back to Overview" or "Back to Pieces"/"Back to Techniques". No new i18n keys
-    (existing `backToPieces` / `backToTechniques` / `backToOverview`); the now-unused
-    `backToPiece` / `backToTechnique` keys may be left in place.
-  - So in a single session, the arrow may pop to a detail page (natural history) while the
-    Done button returns to the list — intentional: the arrow is "go back one step", the Done
-    button is "finish and return to my list".
-- **Edit reached from a list row** (the list has a direct "edit" action): in-session back
-  pops to the list; on cold reload it falls back to the *detail* (hierarchy parent). Accepted.
-- `session/coach.tsx` and `session/summary.tsx` are unchanged (they drive their own flow
-  via explicit `router.replace`; no back arrow).
+| Screen | Fallback (`replace` target when no history) |
+| --- | --- |
+| Piece detail | `/(app)/(tabs)/piece` |
+| Piece section | `/piece/${pieceId}` |
+| Piece edit | `/piece/${id}` |
+| Piece add | `/(app)/(tabs)/piece` |
+| Piece practice | `getBackDestination()` (`from`-based) |
+| Technique detail | `/(app)/(tabs)/technique` |
+| Technique edit | `/technique/${id}` |
+| Technique add | `/(app)/(tabs)/technique` |
+| Technique practice | `getBackDestination()` (`from`-based) |
+| Session setup | `/(app)/(tabs)/overview` |
 
-## Logging
+### Practice screens have two distinct affordances
 
-None. No new signals for the recommendation engine.
+- **Back arrow** — history-first via `useUpNavigation`, with a **detail-aware**
+  reload fallback: `from=piece-detail` reloaded lands on that piece's detail,
+  preserving the practised item's context, which is what "up one step" means.
+- **Labeled Done button** — always `router.replace(getDoneDestination())`:
+  overview when `from=overview`, otherwise the pieces/techniques **list**. It
+  never lands on a detail page and is never converted to the history-first
+  helper. The label follows: it only ever reads "Back to Overview" or "Back to
+  Pieces"/"Back to Techniques".
 
-## Out of Scope
+So within one session the arrow may pop to a detail page while Done returns to
+the list. That is intentional: the arrow means "go back one step", the Done
+button means "finish and return to my list".
 
-- Web browser back-button behavior after a cold reload (no `window.history` seeding).
-- `initialRouteName` / stack anchoring.
-- Changing the `from` query-param scheme or the practice Done semantics.
-- Bottom-tab hardware-back behavior.
-- Coach / summary session flow.
+**Edit reached from a list row** (where the list has a direct edit action) pops
+to the list in-session and falls back to the *detail* on a cold reload. Accepted.
 
-## Phases
+`session/coach.tsx` and `session/summary.tsx` are unchanged — they drive their
+own flow via explicit `router.replace` and have no back arrow. The coach has its
+own web exit guard.
 
-**Phase 1 — Hook + cleanup**
-- Add `hooks/use-up-navigation.ts` as specified.
-- Delete dead duplicates `app/(app)/add-technique.tsx` and `app/(app)/edit-technique/[id].tsx`.
-- Confirm nothing imports/links them (already verified) and routes still typecheck.
+## 6. Logging
 
-**Phase 2 — Piece stack**
-- Wire `useUpNavigation` into `piece/[id]/index.tsx`, `piece/[id]/section/[sectionId].tsx`
-  (back arrow + both post-save/cancel `router.back()`), `piece/[id]/edit.tsx`
-  (arrow + save-nav), `piece/add.tsx` (arrow + save-nav).
-- `piece/[id]/practice.tsx`: arrow → `useUpNavigation(getBackDestination())` (detail-aware);
-  add `getDoneDestination()` (overview if `from=overview` else `/(app)/(tabs)/piece`) and point
-  `handleDone` at it; update `getBackLabel` to drop the `from=piece-detail` "Back to Piece" branch.
+None.
 
-**Phase 3 — Technique stack + session setup**
-- Wire `useUpNavigation` into `technique/[id]/index.tsx`, `technique/[id]/edit.tsx`
-  (arrow + save-nav), `technique/add.tsx` (arrow + save-nav), `session/setup.tsx`
-  (arrow + Cancel).
-- `technique/[id]/practice.tsx`: arrow → `useUpNavigation(getBackDestination())` (detail-aware);
-  add `getDoneDestination()` (overview if `from=overview` else `/(app)/(tabs)/technique`) and point
-  `handleDone` at it; update `getBackLabel` to drop the `from=technique-detail` "Back to Technique" branch.
+## 7. Out of scope
 
-**Phase 4 — Verify (lint, tests, Playwright e2e)**
-- Run full test suite + Biome/ESLint; fix all issues (including any pre-existing).
-- Playwright (web, login senth.wallace@gmail.com) scenarios:
-  1. Pieces list → piece → section → back ⇒ piece detail; back ⇒ pieces list.
-  2. Overview card → piece detail → back ⇒ overview (in-session history).
-  3. Pieces list → practice (`from=pieces`) → back arrow ⇒ pieces list; **Done** button ⇒ pieces list.
-  4. **Piece detail → Practice** (`from=piece-detail`): back arrow (in-session) ⇒ piece detail;
-     but the **Done** button ⇒ pieces **list** (label reads "Back to Pieces", never "Back to Piece").
-  5. Overview card → practice (`from=overview`) → **Done** ⇒ overview.
-  6. **Reload** on `/piece/<id>` → back arrow ⇒ pieces list (no-op bug fixed).
-  7. **Reload** on `/piece/<id>/section/<sid>` → back arrow ⇒ piece detail.
-  8. **Reload** on `/piece/<id>/practice?from=piece-detail` → back arrow ⇒ that piece's detail;
-     **Done** ⇒ pieces list.
-  9. Edit a piece, reload the edit form, Save ⇒ piece detail (not stuck).
-  10. Equivalent technique-side spot checks (incl. Done ⇒ techniques list from `from=technique-detail`).
-- (Android hardware back can't be exercised via web Playwright; verify the hook logic /
-  no web regressions. Flag for manual device check.)
+- **Web browser back behaviour after a cold reload** — no `window.history`
+  seeding.
+- **`initialRouteName` / stack anchoring.**
+- **Changing the `from` query-param scheme** or the practice Done semantics.
+- **Bottom-tab hardware-back behaviour.**
+- **The coach / summary session flow**, which owns its own navigation.

@@ -271,7 +271,7 @@ function blockBounds(candidate: SectionCandidate): {
  * all-review or mixed falls out of the scores, and the score has its own
  * back-pressure — every section accrues `PHASE_SCORE·days` while it waits and
  * resets to zero when picked, so the line can never lock into one mode. See
- * `docs/specs/learning-line-greedy-selection.md` §4.
+ * `docs/specs/session-planner.md` §4.2.
  *
  * Minutes: every block gets its floor, then the remainder is spread in
  * proportion to each block's headroom so they all reach their maximum together.

@@ -50,7 +50,7 @@ describe("needsWorkTerm", () => {
 });
 
 describe("scoreSectionCandidate", () => {
-	// docs/specs/learning-line-greedy-selection.md §3.1
+	// docs/specs/planner-scoring.md §3
 	it("applies phase weight × days", () => {
 		const piece = makePiece({ id: "p1" });
 		const past = new Date(NOW.getTime() - 3 * 86_400_000);

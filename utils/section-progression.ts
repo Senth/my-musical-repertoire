@@ -12,7 +12,7 @@ import { hsTarget, type ModeEntry } from "./practice-modes";
 /**
  * Section progression nudges — the criteria engine.
  *
- * Pure: no Firestore, no React. See `docs/specs/section-progression-nudges.md`
+ * Pure: no Firestore, no React. See `docs/specs/section-phases.md`
  * §3 for the rules and the pedagogy behind each number.
  */
 

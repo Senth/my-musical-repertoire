@@ -19,7 +19,7 @@ interface AddNextSectionNudgeProps {
 /**
  * Offered when a learning piece has no learning-phase sections left. Always one
  * tap to the action — "No more sections" is a decision the student records, not
- * a bare dismiss. See `docs/specs/section-progression-nudges.md` §5.3.
+ * a bare dismiss. See `docs/specs/section-phases.md` §6.3.
  */
 export function AddNextSectionNudge({
 	pieceTitle,

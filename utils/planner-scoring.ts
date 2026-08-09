@@ -17,7 +17,7 @@ import {
  *
  * One formula for every phase — no branch — so scores stay comparable and the
  * learning line can rank a neglected stabilizing section against a learning one
- * in a single pool. See `docs/specs/learning-line-greedy-selection.md` §3.1.
+ * in a single pool. See `docs/specs/planner-scoring.md` §3.
  */
 
 /** `M` — how fast a section of this phase decays per day untouched. */
