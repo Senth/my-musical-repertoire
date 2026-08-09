@@ -241,7 +241,7 @@ describe("pickRepertoireLearningBlocks", () => {
 	}
 
 	describe("§4.3 minute distribution", () => {
-		// Every row of docs/specs/learning-line-greedy-selection.md §4.3. The pool
+		// Every row of docs/specs/session-planner.md §4.2. The pool
 		// is longer than the chosen set wherever the table notes a guard firing.
 		const table: Array<[number, string, number[], number]> = [
 			[8, "L", [8], 0],
@@ -2117,7 +2117,7 @@ describe("same-day exclusion", () => {
 
 /**
  * Properties the run-through credit design depends on
- * (`docs/specs/run-through-credit-and-demotion.md` §7). They hold today; these
+ * (`docs/specs/section-phases.md` §4.4). They hold today; these
  * tests exist so a future change cannot quietly break them.
  */
 describe("run-through credit invariants", () => {

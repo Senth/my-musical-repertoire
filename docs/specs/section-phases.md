@@ -1,45 +1,90 @@
-# Section progression nudges
+# Section phases
 
-Tracking issue: [#19](https://github.com/Senth/my-musical-repertoire/issues/19)
+Tracking issues: [#19](https://github.com/Senth/my-musical-repertoire/issues/19),
+[#100](https://github.com/Senth/my-musical-repertoire/issues/100)
 
 ## 1. What
 
-After a section practice block is logged, the app offers a one-tap **Advance**
-(learning → stabilizing → maintenance) or **Demote** (maintenance → stabilizing
-→ learning) when the logged evidence supports it — and, once a learning piece has
-no learning-phase sections left, nudges the student to add the next section of
-that piece.
+How a section's `phase` — `learning` → `stabilizing` → `maintenance` — moves, and
+what moves it.
 
-Both are nudges. The app never changes a phase by itself.
+Three mechanisms, in order of how much they assume:
+
+1. **The phase chip** — the always-present manual override, on the piece detail
+   row and in the sections panel.
+2. **Progression nudges** — after a section block is logged, a one-tap
+   **Advance** or **Demote** offer when the logged evidence supports it. The app
+   never changes a phase by itself here.
+3. **Run-through demotion** — the one *automatic* phase change in the app. A
+   whole-piece run-through of a maintenance or performance piece credits the
+   sections that held together and demotes the ones the student ticked as shaky.
+
+Plus one related nudge: once a learning piece has no learning-phase sections
+left, the app suggests adding the next section.
+
+Every phase change, from any trigger, stamps `phaseChangedAt` and — except for
+the section edit form's dropdown — writes an audit row to a `phaseTransitions`
+subcollection.
 
 ## 2. Why
 
 Phase is the strongest input to the planner: `PHASE_SCORE` is
 `learning 10 / stabilizing 3 / maintenance 1`, so a section's phase decides how
-often it is scheduled and how long its block is. Before this, the only way to
-move a phase was the `SectionPhaseChip` menu — a lever with no opinion about when
-to pull it — so phases drifted stale in both directions. The evidence to decide
-was already being logged and thrown away: every section save writes `quality`,
-`effort` and `achievedBpm` per hands mode, and the practice screen fetched the
-last 25 logs only to keep the newest per mode.
+often it is scheduled and how long its block is. Before nudges existed, the only
+way to move a phase was the chip menu — a lever with no opinion about when to
+pull it — so phases drifted stale in both directions. The evidence to decide was
+already being logged and thrown away: every section save writes `quality`,
+`effort` and `achievedBpm` per hands mode.
 
-**The pedagogy behind the numbers.** Advance requires full mastery rather than
-80–90%, because the phase change *is* the deprioritisation — advancing early buys
-nothing (a stabilizing section still scores its `bpmGap`) and only moves the last
-15% of the tempo work into a phase where it is harder to do; if the target is
-genuinely unreachable the fix is a lower target, not a lower bar. Hands-separate
-must be proven, because HT at target while LH/RH lag means the hands are coasting
-through coordination problems under motor overload and embedding them as
-fingering habits — hence `HS_TARGET_MULTIPLIER` (1.15) is honoured at the
-learning gate. 95% is enough for stabilizing (the last 5 BPM of a learning
-passage is a stabilizing problem) but maintenance gets no discount, because
-maintenance means done. Demotion is deliberately asymmetric: advancing claims a
-durable state and needs multi-day evidence, while one bad session is enough to
-*offer* dropping a claim that is no longer true. A flat "10 BPM drop" trigger was
-rejected — 10 BPM is 5.5% at target 180 and 17% at target 60, so only the
-relative form survives.
+### The pedagogy behind the numbers
 
-## 3. Criteria
+Advance requires **full mastery** rather than 80–90%, because the phase change
+*is* the deprioritisation — advancing early buys nothing (a stabilizing section
+still scores its BPM gap) and only moves the last 15% of the tempo work into a
+phase where it is harder to do. If the target is genuinely unreachable the fix is
+a lower target, not a lower bar.
+
+**Hands-separate must be proven**, because HT at target while LH/RH lag means the
+hands are coasting through coordination problems under motor overload and
+embedding them as fingering habits — hence `HS_TARGET_MULTIPLIER` (1.15) is
+honoured at the learning gate. 95% is enough for stabilizing (the last 5 BPM of a
+learning passage is a stabilizing problem) but maintenance gets no discount,
+because maintenance means done.
+
+**Demotion is deliberately asymmetric.** Advancing claims a durable state and
+needs multi-day evidence; one bad session is enough to *offer* dropping a claim
+that is no longer true. A flat "10 BPM drop" trigger was rejected — 10 BPM is
+5.5% at target 180 and 17% at target 60, so only the relative form survives.
+
+### Why a run-through writes to sections at all
+
+A maintenance-phase section inside a maintenance- or performance-state piece is
+**unreachable by the planner**. The learning line only looks at learning-state
+pieces; the stabilizing line takes only learning/stabilizing-phase sections out
+of maintenance pieces; the maintenance line schedules whole pieces and never
+sections. So those sections were never planned, never logged, and their
+`lastPracticed` froze while `daysSince` climbed against a score nothing read.
+
+Meanwhile the one signal that did exist was wired backwards: ticking a section as
+bad wrote `lastPracticed = now` to it, resetting `daysSince` to 0 and **lowering**
+the score of the exact section that just fell apart.
+
+Both halves of a run-through carry information:
+
+- **Unticked** — the section held together at tempo, in context, under the
+  pressure of a continuous play-through. That is genuine maintenance-phase
+  practice and it should refresh recency.
+- **Ticked** — the section was *revealed* weak, not repaired. A run-through is
+  not repair work, so it must not count as practice; and a section that fails in
+  performance context is by definition no longer maintained.
+
+Demotion, not a priority flag, is the mechanism. Moving `maintenance` →
+`stabilizing` triples the decay rate and puts the section into the stabilizing
+line's pool, where it competes on the same formula as everything else. We do not
+claim a shaky section matters more than any other stabilizing section — only that
+it is no longer maintained. The score handles the rest.
+
+## 3. Nudge criteria
 
 `utils/section-progression.ts` holds the engine; every threshold is an
 individually exported constant. `utils/phase-offer.ts` composes it into the one
@@ -128,11 +173,6 @@ Target `stabilizing → learning` and `maintenance → stabilizing`. One qualify
 session is enough to *offer*; nothing is ever demoted without a tap. The reasons
 are checked in the order listed so the copy quotes the most informative one.
 
-The run-through auto-demotion
-(`docs/specs/run-through-credit-and-demotion.md`) is untouched and remains the
-only automatic phase change in the app; a run-through is a performance context,
-where failure is unambiguous.
-
 ### 3.5 Suppression and the cycling guard
 
 **Dismissal suppression.** Count the section's `phaseTransitions` docs with
@@ -174,9 +214,90 @@ The status line is a standalone-practice surface only. In the coach the offer is
 a modal dialog, and interrupting a session with a modal to report "1 of 2 clean
 sessions" would be worse than saying nothing.
 
-## 4. Data model
+## 4. Run-through credit and demotion
 
-### 4.1 `Section` — `phaseChangedAt`
+`utils/run-through-credit.ts` — `computeRunThroughEffects` is pure; the write is
+part of the whole-piece save batch (`useSavePractice`).
+
+Everything below applies **only** when the parent piece's state is `maintenance`
+or `performance`, and **only** to sections whose phase is `maintenance`.
+Everything else is untouched. Archived sections are never touched.
+
+| `piece.state` | `section.phase` | ticked | effect |
+| --- | --- | --- | --- |
+| maintenance / performance | maintenance | no | **credit** |
+| maintenance / performance | maintenance | yes | **demote** → `stabilizing`, no credit |
+| maintenance / performance | stabilizing, learning | either | nothing written |
+| learning, stabilizing, on_hold, shelved | any | either | nothing written |
+
+### 4.1 Credit
+
+Written to `byMode.HT` only. A run-through is hands-together by definition and
+says nothing about hands-separate work, so `LH`/`RH` are never touched.
+
+```
+byMode.HT = {
+  lastPracticed: now,                    // always
+  bpm:      achievedBpm != null ? max(prev.bpm ?? 0, achievedBpm) : prev.bpm,
+  quality:  prev.quality == null
+              ? null                     // never invent a rating
+              : (max(tech, mem) <= few(1) ? min(5, prev.quality + 1) : prev.quality),
+  effort:   prev.effort,                 // unknown from a run-through
+}
+```
+
+The section's derived fields are then recomputed with `deriveFromByMode`.
+
+Three deliberate conservatisms:
+
+- **BPM never drops.** The stored tempo is earned history from isolated work; a
+  run-through taken below it is not evidence the section got slower. A blank
+  `achievedBpm` writes nothing.
+- **Quality is never invented.** A section that was never rated stays `null`
+  (`needsWorkTerm` already treats `null` as quality 5). `prev ?? 3` is *not*
+  used — no prior rating means no bump.
+- **Quality rises at most one step, and only after a clean run.** One good
+  play-through must not erase three bad isolated logs.
+
+Credit is granted regardless of how badly the run went overall. The student
+ticked the sections that failed; the rest held up, and that is their word on it.
+
+### 4.2 Same-day exclusion
+
+Credit sets `byMode.HT.lastPracticed = now`, so the per-mode practised-today
+filter treats that mode as done. This is correct and needs no new code:
+
+- section with only `HT` → excluded for the rest of the day
+- section with `HT` + `LH`/`RH` → still scores on the stale separate-hands modes
+- **ticked section** → nothing written → still schedulable for repair in a later
+  session the same day
+
+### 4.3 Demotion
+
+`section.phase` is set to `stabilizing`, `phaseChangedAt` is stamped, and a
+`run-through` transition doc is written on the same batch. No flag entity, no
+history record beyond that. Recovery is the editable phase chip. There is no
+automatic promotion back to `maintenance`.
+
+A run-through is a performance context, where failure is unambiguous — which is
+why this is the only automatic phase change in the app, and why the
+evidence-based nudges (§3) always ask.
+
+### 4.4 Verified invariants
+
+Two properties are already true in the planner and carry regression tests so a
+future change cannot quietly break them:
+
+- **Maintenance blocks are whole-piece only** — every `repertoire-maintenance`
+  block has `sectionId === null`, so the coach renders the whole-piece form.
+- **The stabilizing line scores all three phases** for stabilizing-state pieces
+  (no phase filter); only the maintenance/performance branch filters to
+  `learning`/`stabilizing`. Demoted sections in stabilizing pieces keep their
+  coverage.
+
+## 5. Data model
+
+### 5.1 `Section.phaseChangedAt`
 
 | Field | Type | Notes |
 | --- | --- | --- |
@@ -185,13 +306,13 @@ sessions" would be worse than saying nothing.
 Two consumers: the cycling guard (§3.5) and `daysInPriorPhase` on the transition
 log.
 
-### 4.2 `Piece` — `allSectionsAdded`
+### 5.2 `Piece.allSectionsAdded`
 
 | Field | Type | Notes |
 | --- | --- | --- |
 | `allSectionsAdded` | `boolean` | Absent/false by default. True suppresses the add-section nudge for that piece permanently. Editable both ways from the piece edit form. No migration. |
 
-### 4.3 `users/{uid}/pieces/{pieceId}/sections/{sectionId}/phaseTransitions/{id}`
+### 5.3 `users/{uid}/pieces/{pieceId}/sections/{sectionId}/phaseTransitions/{id}`
 
 One doc per offer resolution **and** per phase change made from the chip or a
 run-through:
@@ -219,7 +340,7 @@ The one phase change that writes no transition row is the section edit form's
 phase dropdown: it is a field editor, not one of the coached triggers the audit
 trail is about. It still stamps `phaseChangedAt`.
 
-### 4.4 `firestore.rules`
+### 5.4 `firestore.rules`
 
 The rules enumerate every path explicitly, so the subcollection has its own block
 nested inside `match /sections/{sectionId}`:
@@ -233,9 +354,9 @@ match /phaseTransitions/{transitionId} {
 **Deploy with `yarn deploy:dev`.** An undeployed rule fails every write with
 "Missing or insufficient permissions" while the local file looks correct.
 
-### 4.5 Reads and offline
+### 5.5 Reads and offline
 
-- Log history comes from the existing `useLastPracticeLog` fetch, which now also
+- Log history comes from the existing `useLastPracticeLog` fetch, which also
   returns the raw `logs` window alongside `logsByMode`. `getDocs` serves from the
   Firestore offline cache when disconnected.
 - Dismissal counts come from `useSectionPhaseHistory`, a `getDocs` of the newest
@@ -246,23 +367,22 @@ match /phaseTransitions/{transitionId} {
   (`queuePhaseChange` / `useChangeSectionPhase`) — never a phase change without
   its audit row. The run-through save queues onto the batch it already owns.
 
-## 5. UI
+## 6. UI
 
-### 5.1 The offer
+### 6.1 The offer
 
 Evaluated **after** the save commits, never before. In the coach the log form is
 on screen while the timer runs, so an in-form button would produce transitions
 made on mood rather than on logged evidence.
 
-**Standalone section practice** (`app/(app)/piece/[id]/practice.tsx`, the
-`saved && !inCoach && scopedSection` branch): `PhaseOfferCard` in
-`TechniqueLogComparison`'s `beforeActions` slot, above the Done button.
+**Standalone section practice** (the `saved && !inCoach && scopedSection`
+branch): `PhaseOfferCard` in `TechniqueLogComparison`'s `beforeActions` slot,
+above the Done button.
 
-**Inside the coach**: `PhaseOfferDialog`, rendered by `app/(app)/session/coach.tsx`
-after the save succeeds and **before** `advance("completed")`, mirroring
-`DurationPromptDialog`. `PiecePracticeContent` unmounts on advance, so the block
-body leaves the offer on `CoachContext.phaseOfferRef` and the coach screen
-resolves it.
+**Inside the coach**: `PhaseOfferDialog`, rendered by the coach screen after the
+save succeeds and **before** `advance("completed")`, mirroring
+`DurationPromptDialog`. The block body unmounts on advance, so it leaves the
+offer on `CoachContext.phaseOfferRef` and the coach screen resolves it.
 
 Both surfaces share `PhaseOfferBody`:
 
@@ -293,19 +413,28 @@ They are not persisted: adding two questions to the form the student fills after
 
 Note for maintainers: Paper's `Dialog` clones its children to position them, so
 `PhaseOfferDialog` returns `null` when there is no offer rather than wrapping its
-`Dialog.*` children in a Fragment, which would take the injected `style` prop.
+`Dialog.*` children in a Fragment, which would swallow the injected `style` prop.
 
-### 5.2 `SectionPhaseChip` stays
+### 6.2 `SectionPhaseChip`
 
-The chip remains the always-present manual override on the piece detail row and
-in `SectionsPracticePanel`. The buttons are contextual nudges that appear and
-vanish with the evidence; the chip never moves. They must not look alike — the
-offer is a card/dialog with copy and checkboxes, the chip is a chip.
+The chip is the always-present manual override on the piece detail row and in
+`SectionsPracticePanel`. Given an `onChangePhase` prop it becomes pressable and
+opens a small menu listing all three phases with the current one marked —
+supporting promote **and** demote; without it, it renders as a static chip
+(read-only headers).
+
+The menu is **lazy-mounted** (rendered only once opened) to avoid the RN-Paper
+Menu web focus-steal bug.
+
+The buttons are contextual nudges that appear and vanish with the evidence; the
+chip never moves. They must not look alike — the offer is a card/dialog with copy
+and checkboxes, the chip is a chip.
 
 Chip-driven changes go through `useChangeSectionPhase`, so they write
-`phaseChangedAt` and a `phase-chip` transition doc.
+`phaseChangedAt` and a `phase-chip` transition doc. The full phase picker in the
+section edit screen is unchanged.
 
-### 5.3 Add-section nudge
+### 6.3 Add-section nudge
 
 `addSectionNudgeSection(piece, sections)` (`utils/add-section-nudge.ts`) returns
 the section to name — the furthest along by `order` — or null. A learning piece
@@ -317,37 +446,48 @@ the section to name — the furthest along by `order` — or null. A learning pi
 - `piece.allSectionsAdded` is not true
 
 It fires when the last learning section reaches **stabilizing**, not maintenance
-— the window where there is attention to spare for new material, and where
-anchor-piece cohesion (`learning-line-greedy-selection.md` §2) makes A and B
-reinforce each other.
+— the window where there is attention to spare for new material, and where the
+learning line's anchor-piece cohesion
+([`session-planner.md`](session-planner.md) §4.2) makes A and B reinforce each
+other.
 
-**Coach summary** (`app/(app)/session/summary.tsx`): after the block list, an
-`AddNextSectionNudge` per qualifying piece — but only for pieces that appear in
-`session.plan.blocks`, so the summary reports on the session just practised
-rather than auditing the whole library.
+**Coach summary**: after the block list, an `AddNextSectionNudge` per qualifying
+piece — but only for pieces that appear in `session.plan.blocks`, so the summary
+reports on the session just practised rather than auditing the whole library.
 
-**Piece detail** (`app/(app)/piece/[id]/index.tsx`): the same card above the
-sections list whenever the piece qualifies.
+**Piece detail**: the same card above the sections list whenever the piece
+qualifies.
 
 Copy: "Section {label} is stabilizing — ready to add the next passage of
 {piece}?" Actions:
 
-- **Add section** → `router.push('/piece/{id}/section/new')`. One tap to the
-  action, never a bare dismiss.
+- **Add section** → routes to the new-section form. One tap to the action, never
+  a bare dismiss.
 - **No more sections** → sets `allSectionsAdded: true`.
 
-**Piece edit** (`app/(app)/piece/[id]/edit.tsx`): an "All sections added" switch,
-so the flag can be cleared again.
+**Piece edit** carries an "All sections added" switch, so the flag can be cleared
+again.
 
-## 6. Logging
+### 6.4 Run-through feedback
 
-- `phaseTransitions` (§4.3) is the record. Accepted and dismissed both.
+After a whole-piece save that demoted at least one section, a snackbar: "2
+sections moved back to stabilizing". Inside the coach the practice content
+unmounts the moment the block advances, so the snackbar is rendered by the coach
+screen through `CoachContext.notify()`; standalone practice uses a local one.
+
+## 7. Logging
+
+- `phaseTransitions` (§5.3) is the record — accepted and dismissed both.
+- Section logs written as run-through credit carry `source: "run-through"`, so
+  later analysis can separate "held up in context" from "repaired in isolation"
+  without guessing from `triggeredFrom`. Ticked sections get **no** log — there
+  are no stats to record.
+- The whole-piece log's `flaggedSectionIds` plus the phase change reconstruct a
+  demotion event; demotions are not separately logged beyond the transition doc.
 - No new per-session log fields. `quality`, `effort` and `achievedBpm` already
   carry everything the criteria read.
-- The run-through demotion writes `phaseChangedAt` and a `run-through` transition
-  doc, so every coached phase change in the app has one shape.
 
-## 7. What this feature does **not** change
+## 8. What this does not change
 
 Stated so a reviewer does not go looking:
 
@@ -355,21 +495,33 @@ Stated so a reviewer does not go looking:
   formula in `utils/planner-scoring.ts` are untouched. The phase change itself is
   the whole effect on the planner.
 - **Block sizing and the learning line.** Unchanged.
-- **The run-through credit/demotion path.** Only gains the two audit writes.
-- **Section BPM and history on demotion.** `byMode`, `currentBpm` and the logs
-  are preserved exactly — a demoted section keeps its earned history.
+- **Section BPM and history on demotion.** `byMode` and the logs are preserved
+  exactly — a demoted section keeps its earned history, and no tempo is
+  prescribed.
 - **`MODE_LOG_LIMIT` or the log query.** `useLastPracticeLog` returns one extra
   field; it fetches exactly what it did before.
 
-## 8. Out of scope
+## 9. Out of scope
 
 Deliberately excluded. Each is a separate issue if the need shows up in use:
 
-- **Any automatic phase change** from these criteria. The app nudges; the student
-  taps. This is `docs/PROJECT.md`'s student-gated principle and it is not
-  negotiable here.
+- **Any automatic phase change from the §3 criteria.** The app nudges; the
+  student taps. This is `docs/PROJECT.md`'s student-gated principle and it is not
+  negotiable here. The run-through demotion (§4) is the single exception, and it
+  is justified by the performance context.
 - **Advancing or demoting whole pieces** (`piece.state`), including "the last
-  section reached stabilizing, promote the piece".
+  section reached stabilizing, promote the piece", and piece-level
+  "maintenance → stabilizing" suggestions in the overview.
+- **Any flag entity.** No `openFlag`, no `flagHistory`, no `FLAG_WEIGHT` score
+  term. Demotion is the whole mechanism.
+- **Cascading demotion.** A ticked `stabilizing`- or `learning`-phase section is
+  not demoted further.
+- **Automatic promotion back to maintenance**, and any evidence-based criteria
+  for it.
+- **Undo affordance** for demotion — the editable phase chip is the recovery path.
+- **Technical vs memory branching** — different repair prescriptions, focus
+  categories, drill suggestions.
+- **Per-section severity input.** Severity stays piece-level.
 - **Continuity / section-chaining evidence**
   ([#87](https://github.com/Senth/my-musical-repertoire/issues/87)). The
   maintenance gate asks the student instead of measuring it.
@@ -381,9 +533,10 @@ Deliberately excluded. Each is a separate issue if the need shows up in use:
   hand later, automate never unless the data demands it.
 - **Demotion below `learning`** or any "relearn" state
   ([#89](https://github.com/Senth/my-musical-repertoire/issues/89)).
-- **The >9-minute-block demotion trigger** floated in
-  `learning-line-greedy-selection.md` §3.3. Block duration is not evidence about
+- **The >9-minute-block demotion trigger.** Block duration is not evidence about
   a section; the quality/effort signal already covers it.
 - **Nudging about techniques.** Sections only — techniques have their own state
   model.
 - **Backfilling `phaseChangedAt`** from anything.
+- **Renaming `section.phase` → `section.state`** — that is
+  [#84](https://github.com/Senth/my-musical-repertoire/issues/84), independent.

@@ -24,7 +24,7 @@ import { daysBetween } from "@/utils/section-progression";
 /**
  * Every phase change in the app goes through here, so the
  * `sections/{id}/phaseTransitions` audit trail is complete rather than a
- * partial view of the new nudges. See `docs/specs/section-progression-nudges.md`
+ * partial view of the new nudges. See `docs/specs/section-phases.md`
  * §4.3.
  */
 

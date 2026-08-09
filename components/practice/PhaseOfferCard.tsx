@@ -36,7 +36,7 @@ function actionLabelKey(offer: PhaseOffer): string {
 
 /**
  * The standalone-practice surface for a phase nudge: a card above the Done
- * button. See `docs/specs/section-progression-nudges.md` §5.1.
+ * button. See `docs/specs/section-phases.md` §6.1.
  */
 export function PhaseOfferCard({
 	offer,

@@ -33,7 +33,7 @@ function cyclingGuardKey(days: number): string {
  *
  * `onChecksChange` reports whether every checkbox shown has been ticked, so the
  * wrapper can enable its primary action. See
- * `docs/specs/section-progression-nudges.md` §5.1.
+ * `docs/specs/section-phases.md` §6.1.
  */
 export function PhaseOfferBody({
 	offer,

@@ -93,7 +93,7 @@ function creditedBpm(
  *
  * Pure — no Firestore, no React. Returns an empty result for any piece state or
  * section phase outside the maintenance/performance × maintenance cell.
- * See `docs/specs/run-through-credit-and-demotion.md` §3.
+ * See `docs/specs/section-phases.md` §4.
  */
 export function computeRunThroughEffects({
 	piece,

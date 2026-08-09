@@ -17,7 +17,7 @@ import {
  * Turns the criteria engine into the one thing the UI needs to know: which
  * offer to show, or which passive status line to show instead. Pure.
  *
- * See `docs/specs/section-progression-nudges.md` §3.5 and §3.6.
+ * See `docs/specs/section-phases.md` §3.5 and §3.6.
  */
 
 export type PhaseOfferKind = "advance" | "demote";

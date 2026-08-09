@@ -46,7 +46,7 @@ export type PhaseTransitionOutcome = "accepted" | "dismissed";
 /**
  * One row of `sections/{id}/phaseTransitions`. Written on every phase change and
  * on every declined nudge — the dismissals are what say whether the advance
- * thresholds are set too high. See `docs/specs/section-progression-nudges.md`.
+ * thresholds are set too high. See `docs/specs/section-phases.md`.
  */
 export interface PhaseTransition {
 	id?: string;

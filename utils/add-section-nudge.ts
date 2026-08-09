@@ -11,7 +11,7 @@ import type { Section } from "@/models/section";
  * Fires at *stabilizing*, not maintenance: that is the window where there is
  * attention to spare for new material, and where the two sections still
  * reinforce each other as an anchor pair. See
- * `docs/specs/section-progression-nudges.md` §5.3.
+ * `docs/specs/section-phases.md` §6.3.
  */
 export function addSectionNudgeSection(
 	piece: Piece | null | undefined,
