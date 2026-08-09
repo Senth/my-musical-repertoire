@@ -17,7 +17,6 @@ export interface Section {
 	phase: SectionPhase;
 	startBar?: number | null;
 	endBar?: number | null;
-	currentBpm?: number | null;
 	targetBpmOverride?: number | null;
 	notes?: string | null;
 	archived: boolean;

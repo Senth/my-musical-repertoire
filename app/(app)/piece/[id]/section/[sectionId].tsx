@@ -24,7 +24,6 @@ import {
 } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { SECTION_PHASES, type SectionPhase } from "@/models/section";
-import { validateBpm } from "@/utils/validation";
 
 export default function SectionEditScreen() {
 	const { t } = useTranslation();
@@ -51,13 +50,11 @@ export default function SectionEditScreen() {
 	const [phase, setPhase] = useState<SectionPhase>("learning");
 	const [startBarText, setStartBarText] = useState("");
 	const [endBarText, setEndBarText] = useState("");
-	const [currentBpmText, setCurrentBpmText] = useState("");
 	const [notes, setNotes] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [labelError, setLabelError] = useState<string | null>(null);
 	const [endBarError, setEndBarError] = useState<string | null>(null);
-	const [bpmError, setBpmError] = useState<string | null>(null);
 	const [archiveDialogVisible, setArchiveDialogVisible] = useState(false);
 	const [archiveLoading, setArchiveLoading] = useState(false);
 	const hasSeeded = useRef(false);
@@ -83,10 +80,6 @@ export default function SectionEditScreen() {
 		return err;
 	};
 
-	const handleBpmBlur = () => {
-		setBpmError(validateBpm(currentBpmText, t));
-	};
-
 	// Seed form once when editing an existing section and data arrives from Firestore
 	useEffect(() => {
 		if (isNew || hasSeeded.current || !section) return;
@@ -94,7 +87,6 @@ export default function SectionEditScreen() {
 		setPhase(section.phase);
 		setStartBarText(section.startBar?.toString() ?? "");
 		setEndBarText(section.endBar?.toString() ?? "");
-		setCurrentBpmText(section.currentBpm?.toString() ?? "");
 		setNotes(section.notes ?? "");
 		hasSeeded.current = true;
 	}, [isNew, section]);
@@ -109,9 +101,7 @@ export default function SectionEditScreen() {
 	const handleSave = async () => {
 		const labelErr = validateLabel();
 		const endBarErr = validateEndBar();
-		const bpmErr = validateBpm(currentBpmText, t);
-		setBpmError(bpmErr);
-		if (labelErr || endBarErr || bpmErr) return;
+		if (labelErr || endBarErr) return;
 
 		const startBar = parseOptionalInt(startBarText);
 		const endBar = parseOptionalInt(endBarText);
@@ -127,7 +117,6 @@ export default function SectionEditScreen() {
 				phase,
 				startBar,
 				endBar,
-				currentBpm: parseOptionalInt(currentBpmText),
 				targetBpmOverride: null as number | null,
 				notes: notes.trim() || null,
 			};
@@ -219,15 +208,6 @@ export default function SectionEditScreen() {
 					{endBarError ?? ""}
 				</HelperText>
 			</View>
-
-			<FormTextField
-				label={t("screen.pieceSections.form.currentBpmLabel")}
-				value={currentBpmText}
-				onChangeText={setCurrentBpmText}
-				keyboardType="numeric"
-				error={bpmError}
-				onBlur={handleBpmBlur}
-			/>
 
 			<TextInput
 				label={t("screen.pieceSections.form.notesLabel")}

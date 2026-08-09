@@ -25,7 +25,6 @@ interface FirestoreSection {
 	phase: SectionPhase;
 	startBar?: number | null;
 	endBar?: number | null;
-	currentBpm?: number | null;
 	targetBpmOverride?: number | null;
 	notes?: string | null;
 	archived: boolean;
@@ -52,7 +51,6 @@ function fromFirestore(
 		phase: data.phase,
 		startBar: data.startBar ?? null,
 		endBar: data.endBar ?? null,
-		currentBpm: data.currentBpm ?? null,
 		targetBpmOverride: data.targetBpmOverride ?? null,
 		notes: data.notes ?? null,
 		archived: data.archived ?? false,
@@ -195,7 +193,6 @@ export function useUpdateSection() {
 				| "phase"
 				| "startBar"
 				| "endBar"
-				| "currentBpm"
 				| "targetBpmOverride"
 				| "notes"
 				| "lastPracticed"

@@ -122,14 +122,14 @@ describe("pickRepertoireSection", () => {
 				pieceId: "p1",
 				phase: "learning",
 				lastPracticed: same,
-				currentBpm: 60,
+				byMode: { HT: { bpm: 60, lastPracticed: same } },
 			}),
 			makeSection({
 				id: "s2",
 				pieceId: "p2",
 				phase: "learning",
 				lastPracticed: same,
-				currentBpm: 100,
+				byMode: { HT: { bpm: 100, lastPracticed: same } },
 			}),
 		];
 		const b = pickRepertoireSection("learning", pieces, sections, 10, NOW);

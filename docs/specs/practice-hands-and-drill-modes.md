@@ -79,6 +79,8 @@ byMode?: ByMode;
 
 `currentBpm`, `lastQuality`, `lastEffort` and `lastPracticed` stay, and are **maintained as derived display values** (see §5). Sections never get a drill axis — their `byMode` keys are only `LH` / `RH` / `HT`.
 
+> **Superseded by #102:** `Section.currentBpm` no longer exists. `byMode` is the only stored tempo for a section; surfaces that need one number call `deriveCurrentBpm(section.byMode)` at read time. `lastQuality` / `lastEffort` / `lastPracticed` are unchanged.
+
 ### `TechniqueItem` (`models/technique.ts`)
 
 ```typescript
@@ -133,7 +135,7 @@ Target 111 BPM (hands separate)
 
 Recomputed on every save, for display and for backwards compatibility with surfaces that expect one number:
 
-- `Section.currentBpm` = **minimum `bpm` across present _hands_ modes** (`LH`, `RH`, `HT`). Drill keys are excluded.
+- `Section.currentBpm` = **minimum `bpm` across present _hands_ modes** (`LH`, `RH`, `HT`). Drill keys are excluded. (Since #102 this is computed on read via `deriveCurrentBpm`, not stored.)
 - `TechniqueItem.lastAchievedTempoBpm` = same rule over the technique's `byMode`.
 - `lastQuality` / `lastEffort` = values from the most recently practised mode.
 - `lastPracticed` / `lastPracticedAt` = maximum `lastPracticed` across all modes, drills included.
