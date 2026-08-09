@@ -171,7 +171,13 @@ describe("suggestPieces", () => {
 					id: "s1",
 					pieceId: "p1",
 					lastPracticed: new Date(NOW.getTime() - 1 * 86_400_000),
-					currentBpm: 10, // gap = 110, phaseScore*days = 10
+					// gap = 110, phaseScore*days = 10
+					byMode: {
+						HT: {
+							bpm: 10,
+							lastPracticed: new Date(NOW.getTime() - 1 * 86_400_000),
+						},
+					},
 				}),
 			];
 			const result = suggestPieces(pieces, sections, NOW);

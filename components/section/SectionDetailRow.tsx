@@ -10,6 +10,7 @@ import {
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import type { Section, SectionPhase } from "@/models/section";
 import { formatDaysAgo } from "@/utils/date";
+import { deriveCurrentBpm } from "@/utils/practice-modes";
 
 type AppTheme = MD3Theme & {
 	colors: MD3Theme["colors"] & {
@@ -41,9 +42,12 @@ export function SectionDetailRow({
 	const effectiveTargetBpm =
 		section.targetBpmOverride ?? pieceTargetBpm ?? null;
 
-	const showProgress = section.currentBpm != null && effectiveTargetBpm != null;
+	// Slowest hands mode — the section is only as fast as its weakest hand.
+	const currentBpm = deriveCurrentBpm(section.byMode);
+
+	const showProgress = currentBpm != null && effectiveTargetBpm != null;
 	const rawRatio = showProgress
-		? (section.currentBpm as number) / (effectiveTargetBpm as number)
+		? (currentBpm as number) / (effectiveTargetBpm as number)
 		: 0;
 	const fillRatio = showProgress ? Math.min(1, Math.sqrt(rawRatio)) : 0;
 	const progressColor =
@@ -67,11 +71,11 @@ export function SectionDetailRow({
 	})();
 
 	const bpmText = (() => {
-		if (section.currentBpm == null) return null;
+		if (currentBpm == null) return null;
 		if (effectiveTargetBpm != null) {
-			return `${section.currentBpm} / ${effectiveTargetBpm} BPM`;
+			return `${currentBpm} / ${effectiveTargetBpm} BPM`;
 		}
-		return t("screen.pieceSections.bpm", { bpm: section.currentBpm });
+		return t("screen.pieceSections.bpm", { bpm: currentBpm });
 	})();
 
 	const stalenessText =

@@ -5,6 +5,7 @@ import type { TechniqueItem } from "@/models/technique";
 import { isPracticedToday } from "./day-boundary";
 import {
 	availableHandsModes,
+	deriveCurrentBpm,
 	parseModeKey,
 	targetForMode,
 } from "./practice-modes";
@@ -156,7 +157,6 @@ export function scoreSectionModes(
 	now: Date,
 	legacy: {
 		lastPracticed: Date | null;
-		currentBpm: number | null;
 		lastQuality: number | null;
 		lastEffort: number | null;
 	},
@@ -164,13 +164,14 @@ export function scoreSectionModes(
 	const modes = scorableModes(byMode, now);
 
 	if (modes.length === 0) {
-		// No mode history (or all practised today) — score exactly as before.
+		// No mode history (or all practised today) — score off the rolled-up
+		// slowest hands tempo instead of any single mode.
 		return {
 			score: scoreSectionCandidate(
 				piece,
 				phase,
 				legacy.lastPracticed,
-				legacy.currentBpm,
+				deriveCurrentBpm(byMode),
 				now,
 				legacy.lastQuality,
 				legacy.lastEffort,
@@ -358,7 +359,6 @@ export function buildSectionCandidates(
 					now,
 					{
 						lastPracticed: section.lastPracticed ?? null,
-						currentBpm: section.currentBpm ?? null,
 						lastQuality: section.lastQuality ?? null,
 						lastEffort: section.lastEffort ?? null,
 					},
@@ -369,7 +369,7 @@ export function buildSectionCandidates(
 					section,
 					phase: section.phase,
 					lastPracticed: section.lastPracticed ?? null,
-					currentBpm: section.currentBpm ?? null,
+					currentBpm: deriveCurrentBpm(section.byMode),
 					lastQuality: section.lastQuality ?? null,
 					lastEffort: section.lastEffort ?? null,
 					score,

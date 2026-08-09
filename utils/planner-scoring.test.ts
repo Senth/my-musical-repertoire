@@ -390,17 +390,36 @@ describe("per-mode scoring", () => {
 		expect(candidate.practicedToday).toBe(true);
 	});
 
-	it("falls back to legacy fields when byMode is empty", () => {
+	it("falls back to the section's own fields when byMode is empty", () => {
 		const candidate = candidateFor(
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
 				byMode: {},
-				currentBpm: 80,
 				lastPracticed: daysAgo(1),
 			}),
 		);
+		// No mode history means no tempo at all, so only the recency term survives.
+		expect(candidate.score).toBe(PHASE_SCORE.learning * 1);
+		expect(candidate.currentBpm).toBeNull();
+		expect(candidate.modeKey).toBeNull();
+	});
+
+	it("falls back to the slowest hand when every mode was practised today", () => {
+		const candidate = candidateFor(
+			makeSection({
+				id: "s1",
+				pieceId: "p1",
+				lastPracticed: daysAgo(1),
+				byMode: {
+					LH: { bpm: 100, lastPracticed: NOW },
+					RH: { bpm: 80, lastPracticed: NOW },
+				},
+			}),
+		);
+		// No scorable mode is left, so the gap comes from min(LH, RH) = 80.
 		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 20);
+		expect(candidate.currentBpm).toBe(80);
 		expect(candidate.modeKey).toBeNull();
 	});
 

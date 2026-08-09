@@ -75,7 +75,7 @@ function creditedQuality(
 }
 
 /**
- * `currentBpm` is earned history from isolated work, so a run-through taken
+ * The mode's stored BPM is earned history from isolated work, so a run-through taken
  * below it is not evidence the section got slower. A blank BPM writes nothing.
  */
 function creditedBpm(

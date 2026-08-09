@@ -985,7 +985,6 @@
 				"barsLabel": "Bars (optional)",
 				"startBarLabel": "Start",
 				"endBarLabel": "End",
-				"currentBpmLabel": "Working BPM",
 				"notesLabel": "Notes / Problem (optional)",
 				"save": "Save",
 				"error": {

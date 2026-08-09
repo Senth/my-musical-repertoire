@@ -122,9 +122,6 @@ export function useSavePractice() {
 				lastPracticed: credit.derived.lastPracticed ?? date,
 				lastQuality: credit.derived.quality,
 				lastEffort: credit.derived.effort,
-				...(credit.derived.bpm != null
-					? { currentBpm: credit.derived.bpm }
-					: {}),
 			});
 		}
 
@@ -216,7 +213,6 @@ export function useSaveSectionPractice() {
 				lastPracticed: derived.lastPracticed ?? date,
 				lastQuality: derived.quality,
 				lastEffort: derived.effort,
-				...(derived.bpm != null ? { currentBpm: derived.bpm } : {}),
 			}),
 		);
 

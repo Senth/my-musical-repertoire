@@ -11,6 +11,7 @@ import {
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import type { Piece } from "@/models/piece";
 import type { Section, SectionPhase } from "@/models/section";
+import { deriveCurrentBpm } from "@/utils/practice-modes";
 
 interface SectionsPracticePanelProps {
 	sections: Section[];
@@ -61,8 +62,9 @@ export function SectionsPracticePanel({
 					showCheckboxes && (flaggableIds?.includes(sid) ?? true);
 				const effectiveTarget =
 					section.targetBpmOverride ?? piece.targetTempoBpm ?? null;
-				const showBpm = section.currentBpm != null || effectiveTarget != null;
-				const currentDisplay = section.currentBpm?.toString() ?? "—";
+				const currentBpm = deriveCurrentBpm(section.byMode);
+				const showBpm = currentBpm != null || effectiveTarget != null;
+				const currentDisplay = currentBpm?.toString() ?? "—";
 				const targetDisplay = effectiveTarget?.toString() ?? "—";
 
 				const rowContent = (

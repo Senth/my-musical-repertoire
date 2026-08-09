@@ -88,7 +88,7 @@ describe("scorePiece", () => {
 			id: "s1",
 			pieceId: "p1",
 			phase: "learning",
-			currentBpm: 60,
+			byMode: { HT: { bpm: 60, lastPracticed: daysAgo(1) } },
 			lastPracticed: daysAgo(1),
 		});
 		const overridden = { ...section, targetBpmOverride: 160 };
@@ -122,14 +122,14 @@ describe("scorePieces", () => {
 				id: "s1",
 				pieceId: "p1",
 				phase: "learning",
-				currentBpm: 80,
+				byMode: { HT: { bpm: 80, lastPracticed: daysAgo(6) } },
 				lastPracticed: daysAgo(6),
 			}),
 			makeSection({
 				id: "s2",
 				pieceId: "p1",
 				phase: "stabilizing",
-				currentBpm: 110,
+				byMode: { HT: { bpm: 110, lastPracticed: daysAgo(2) } },
 				lastPracticed: daysAgo(2),
 			}),
 		];

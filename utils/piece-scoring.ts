@@ -72,7 +72,6 @@ export function scorePiece(
 			now,
 			{
 				lastPracticed: section.lastPracticed ?? null,
-				currentBpm: section.currentBpm ?? null,
 				lastQuality: section.lastQuality ?? null,
 				lastEffort: section.lastEffort ?? null,
 			},

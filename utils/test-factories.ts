@@ -29,7 +29,6 @@ export function makeSection(
 		archived: false,
 		startBar: null,
 		endBar: null,
-		currentBpm: null,
 		targetBpmOverride: null,
 		notes: null,
 		createdAt: null,
