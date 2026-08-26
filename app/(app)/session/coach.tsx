@@ -505,6 +505,7 @@ function DurationPromptDialog({
 					</Text>
 					<TextInput
 						label={t("screen.session.coach.durationPrompt.minutesLabel")}
+						aria-label={t("screen.session.coach.durationPrompt.minutesLabel")}
 						value={minutesText}
 						onChangeText={setMinutesText}
 						mode="outlined"

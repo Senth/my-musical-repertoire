@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, initializeAuth } from "firebase/auth";
+import { connectAuthEmulator, getAuth, initializeAuth } from "firebase/auth";
 import {
+	connectFirestoreEmulator,
 	getFirestore,
 	initializeFirestore,
 	persistentLocalCache,
@@ -41,5 +42,15 @@ const db =
 				}),
 			})
 		: getFirestore(app);
+
+// The e2e stack points the app at the Firebase emulator suite instead of the
+// dev project, so a test run can seed, assert and throw away data without
+// touching anything real. `scripts/dev-stack.sh` sets the flag; nothing else
+// does, which is why a stray emulator connection cannot reach production.
+if (process.env.EXPO_PUBLIC_USE_EMULATORS === "1") {
+	const host = process.env.EXPO_PUBLIC_EMULATOR_HOST ?? "127.0.0.1";
+	connectAuthEmulator(auth, `http://${host}:8051`, { disableWarnings: true });
+	connectFirestoreEmulator(db, host, 8052);
+}
 
 export { auth, db };

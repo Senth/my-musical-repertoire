@@ -231,6 +231,7 @@ export default function EditPieceScreen() {
 
 			<TextInput
 				label={t("screen.editPiece.notesLabel")}
+				aria-label={t("screen.editPiece.notesLabel")}
 				value={notes}
 				onChangeText={setNotes}
 				mode="outlined"

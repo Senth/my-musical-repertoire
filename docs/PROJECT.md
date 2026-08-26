@@ -2,7 +2,8 @@
 
 > Vision, requirements, key decisions, and architecture principles.
 > **Tasks live in GitHub Issues + the Kanban board, not here** (see [TODO.md](../TODO.md)).
-> Per-feature deep specs live in [`docs/specs/`](specs/).
+> Per-feature deep specs live in [`docs/specs/`](specs/), the review cast in
+> [`PERSONAS.md`](PERSONAS.md), and infrastructure in [`OPERATIONS.md`](OPERATIONS.md).
 
 ## Background & Context
 
@@ -98,6 +99,9 @@ The core problem: _"I often don't know what I should practice, and I want the ap
 | Actionable tasks (bugs, features, ideas, cleanup) | GitHub Issues + Kanban board |
 | Prioritized "what's next" mirror | [`TODO.md`](../TODO.md) (generated) |
 | Per-feature deep specs | [`docs/specs/`](specs/) |
+| In-flight implementation plans | [`docs/specs/wip/`](specs/wip/README.md) |
+| Review personas, and Margit's teaching positions | [`docs/PERSONAS.md`](PERSONAS.md) |
+| Emulators, ports, the review fixture, deploys | [`docs/OPERATIONS.md`](OPERATIONS.md) |
 | Tech stack, setup, web-first workflow, RN cheat sheet | [`README.md`](../README.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md) |
 | Vision, requirements, decisions, architecture | this file |
-| Agent coding rules | [`.github/copilot-instructions.md`](../.github/copilot-instructions.md), `.claude/CLAUDE.md` |
+| Agent coding rules and the five-stage workflow | [`.claude/CLAUDE.md`](../.claude/CLAUDE.md) |

@@ -7,17 +7,28 @@
 		"reset-project": "node ./scripts/reset-project.js",
 		"android": "expo start --android",
 		"ios": "expo start --ios",
-		"web": "expo start --web",
+		"web": "expo start --web --port $(scripts/dev-stack.sh dev-port)",
 		"build:web": "expo export --platform web",
 		"deploy:dev": "firebase deploy --only firestore:rules,firestore:indexes --project default",
 		"lint": "biome check",
+		"typecheck": "tsc --noEmit",
+		"invariants": "scripts/check-invariants.sh",
 		"format": "biome format --write",
-		"test": "jest"
+		"test": "jest",
+		"e2e": "playwright test",
+		"fixture": "playwright test --config=playwright.fixture.config.ts",
+		"emulators": "firebase emulators:start --import .emulator-seed",
+		"emulators:export": "firebase emulators:export .emulator-seed --force"
 	},
 	"jest": {
 		"preset": "jest-expo",
 		"transformIgnorePatterns": [
 			"node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|@react-native-firebase|firebase|react-native-paper|nativewind|react-native-css-interop))"
+		],
+		"testPathIgnorePatterns": [
+			"/node_modules/",
+			"/e2e/",
+			"/.tmp/"
 		]
 	},
 	"dependencies": {
@@ -61,12 +72,15 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.15",
+		"@playwright/test": "^1.62.1",
 		"@react-native/jest-preset": "^0.85.3",
 		"@testing-library/react-native": "~13",
 		"@types/jest": "~30",
+		"@types/node": "^26.3.0",
 		"@types/react": "19.2.14",
 		"fallow": "^2.88.3",
 		"firebase-admin": "^14.2.0",
+		"firebase-tools": "^15.28.1",
 		"jest": "^29",
 		"jest-expo": "~55",
 		"react-test-renderer": "19.2.6",

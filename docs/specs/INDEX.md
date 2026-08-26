@@ -2,8 +2,8 @@
 
 One spec per feature area, describing the behaviour as it currently ships. Specs
 carry the *why* — the pedagogy and the rejected alternatives — so decisions are
-not re-litigated. They are not implementation plans; phases live in the tracking
-issue while the work is in flight.
+not re-litigated. They are not implementation plans: while work is in flight the
+plan lives in [`wip/`](wip/README.md), and `/ship` folds it in here and deletes it.
 
 | Spec | Description | Tags |
 | ---- | ----------- | ---- |

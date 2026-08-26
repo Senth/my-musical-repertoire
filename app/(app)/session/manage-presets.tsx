@@ -211,6 +211,7 @@ export default function ManagePresetsScreen() {
 						<TextInput
 							mode="outlined"
 							label={t("screen.session.editor.nameLabel")}
+							aria-label={t("screen.session.editor.nameLabel")}
 							value={renameText}
 							onChangeText={setRenameText}
 						/>

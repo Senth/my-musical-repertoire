@@ -72,6 +72,7 @@
 			"enterBpmToResume": "Enter a BPM to resume the metronome"
 		},
 		"bpm": {
+			"placeholder": "e.g. 80",
 			"half": "½",
 			"double": "×2"
 		},
