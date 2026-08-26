@@ -20,6 +20,11 @@ This project owns **8050-8056** outright. The sibling `home-backlog` owns 8060-8
 and 8081, so neither repo's stack can ever take a port the other is using — which
 matters because both are Expo web apps and Expo's own default is 8081.
 
+Hand-driven checks — the `playwright-cli` skill, or just looking at something —
+run against the dev project on 8053, signed in as **senth.wallace@gmail.com** with
+the password **hellomynameispassword123**. That is a throwaway dev-project account
+and nothing else. `yarn web` pins the port for you.
+
 `config/firebase.ts` connects to the emulators only when
 `EXPO_PUBLIC_USE_EMULATORS=1`, and only `scripts/dev-stack.sh` sets it. Nothing
 reads it from a `.env` file, which is what keeps an emulator connection from ever
