@@ -334,7 +334,6 @@ export function TechniquePracticeContent({
 							error={bpmError}
 							onBlur={handleBpmBlur}
 							stopRef={metronomeStopRef}
-							placeholder="e.g. 80"
 						/>
 					</View>
 

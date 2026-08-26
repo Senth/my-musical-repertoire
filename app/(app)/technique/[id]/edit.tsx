@@ -105,6 +105,7 @@ export default function EditTechniqueScreen() {
 		<View className="gap-4">
 			<TextInput
 				label={t("screen.editTechnique.titleLabel")}
+				aria-label={t("screen.editTechnique.titleLabel")}
 				value={title}
 				onChangeText={setTitle}
 				mode="outlined"
@@ -135,6 +136,7 @@ export default function EditTechniqueScreen() {
 
 			<TextInput
 				label={t("screen.editTechnique.targetTempoBpmLabel")}
+				aria-label={t("screen.editTechnique.targetTempoBpmLabel")}
 				value={targetTempoBpmText}
 				onChangeText={setTargetTempoBpmText}
 				mode="outlined"
@@ -143,6 +145,7 @@ export default function EditTechniqueScreen() {
 
 			<TextInput
 				label={t("screen.editTechnique.notesLabel")}
+				aria-label={t("screen.editTechnique.notesLabel")}
 				value={notes}
 				onChangeText={setNotes}
 				mode="outlined"

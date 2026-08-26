@@ -28,7 +28,14 @@ export function LegalLinks() {
 			>
 				{t("screen.legal.privacy")}
 			</Text>
-			<Text variant="bodySmall" style={{ color: theme.colors.outline }}>
+			{/* Decorative: it separates the two links and says nothing itself.
+			    `outline` is a border role, and using it for text lands at
+			    4.44:1 — under AA. */}
+			<Text
+				variant="bodySmall"
+				aria-hidden
+				style={{ color: theme.colors.onSurfaceVariant }}
+			>
 				·
 			</Text>
 			<Text

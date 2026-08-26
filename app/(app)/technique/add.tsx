@@ -142,6 +142,7 @@ export default function AddTechniqueScreen() {
 
 			<TextInput
 				label={t("screen.addTechnique.notesLabel")}
+				aria-label={t("screen.addTechnique.notesLabel")}
 				value={notes}
 				onChangeText={setNotes}
 				mode="outlined"

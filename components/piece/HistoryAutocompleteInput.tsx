@@ -41,6 +41,9 @@ export function HistoryAutocompleteInput({
 			<View style={{ position: "relative" }}>
 				<TextInput
 					label={label}
+					// Paper's floating label is a sibling element, not the
+					// input's accessible name — see FormTextField.
+					aria-label={label}
 					value={value}
 					onChangeText={handleChangeText}
 					mode="outlined"

@@ -181,6 +181,7 @@ export default function SectionEditScreen() {
 					<TextInput
 						style={{ flex: 1 }}
 						label={t("screen.pieceSections.form.startBarLabel")}
+						aria-label={t("screen.pieceSections.form.startBarLabel")}
 						value={startBarText}
 						onChangeText={setStartBarText}
 						mode="outlined"
@@ -196,6 +197,7 @@ export default function SectionEditScreen() {
 					<TextInput
 						style={{ flex: 1 }}
 						label={t("screen.pieceSections.form.endBarLabel")}
+						aria-label={t("screen.pieceSections.form.endBarLabel")}
 						value={endBarText}
 						onChangeText={setEndBarText}
 						mode="outlined"
@@ -211,6 +213,7 @@ export default function SectionEditScreen() {
 
 			<TextInput
 				label={t("screen.pieceSections.form.notesLabel")}
+				aria-label={t("screen.pieceSections.form.notesLabel")}
 				value={notes}
 				onChangeText={setNotes}
 				mode="outlined"

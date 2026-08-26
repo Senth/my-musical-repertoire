@@ -16,6 +16,13 @@ jobs:
         with:
           node-version: 22.x
 
+      # The Firestore and Auth emulators are JVM processes.
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
       - name: Cache node_modules
         uses: actions/cache@v4
         with:
@@ -23,6 +30,13 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-node-
+
+      # The emulator jars are ~100MB and are downloaded on first use.
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators
 
       - name: Yarn install
         uses: borales/actions-yarn@v5
@@ -34,6 +48,21 @@ jobs:
         with:
           cmd: lint
 
+      - name: Invariants
+        uses: borales/actions-yarn@v5
+        with:
+          cmd: invariants
+
+      - name: Typecheck
+        uses: borales/actions-yarn@v5
+        with:
+          cmd: typecheck
+
+      - name: Test
+        uses: borales/actions-yarn@v5
+        with:
+          cmd: test --watchAll=false
+
       - name: Export environment variables
         run: echo "${{ secrets.ENV }}" > .env.local
 
@@ -42,8 +71,25 @@ jobs:
         with:
           cmd: build:web
 
-      - name: Test
-        uses: borales/actions-yarn@v5
-        with:
-          cmd: test --watchAll=false
+      - name: Install Playwright browser
+        run: yarn playwright install --with-deps chromium
 
+      # Boots the emulator suite from the committed fixture plus an
+      # emulator-backed web server, the same stack `/review` runs against.
+      - name: Start the e2e stack
+        run: scripts/dev-stack.sh up
+
+      - name: e2e
+        run: yarn e2e
+
+      - name: Upload e2e report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: .tmp/e2e/report
+          retention-days: 7
+
+      - name: Stop the e2e stack
+        if: always()
+        run: scripts/dev-stack.sh down

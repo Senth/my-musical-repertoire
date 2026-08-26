@@ -10,7 +10,6 @@ interface BpmControlProps {
 	error: string | null;
 	onBlur: () => void;
 	stopRef?: MutableRefObject<(() => void) | null>;
-	placeholder?: string;
 }
 
 const BPM_MIN = 20;
@@ -30,7 +29,6 @@ export function BpmControl({
 	error,
 	onBlur,
 	stopRef,
-	placeholder = "e.g. 72",
 }: BpmControlProps) {
 	const { t } = useTranslation();
 	const parsed = Number.parseInt(value.trim(), 10);
@@ -62,7 +60,7 @@ export function BpmControl({
 						keyboardType="numeric"
 						value={value}
 						onChangeText={onChangeText}
-						placeholder={placeholder}
+						placeholder={t("common.bpm.placeholder")}
 						error={!!error}
 						onBlur={onBlur}
 					/>

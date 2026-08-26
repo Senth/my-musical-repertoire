@@ -629,7 +629,6 @@ export function PiecePracticeContent({
 							error={bpmError}
 							onBlur={handleBpmBlur}
 							stopRef={metronomeStopRef}
-							placeholder="e.g. 80"
 						/>
 					</View>
 					<Divider />

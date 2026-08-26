@@ -1,139 +1,218 @@
 ---
 name: new-feature
-description: "Structured new-feature kickoff for my-musical-repertoire. Use when implementing a new feature, starting work on a backlog issue, or planning the next feature. First consults the piano-practice-teacher agent for pedagogical feedback, then runs grill-me to surface requirements and edge cases before coding begins. Not for bug fixes, refactors, or chores."
+description: "Structured new-feature kickoff for my-musical-repertoire. Runs pianist-review when the feature has user-visible surface, then a bounded grill-me, then writes a temporary implementation spec under docs/specs/wip/ and hands off to /implement. Stops before implementation. Not for bug fixes or cleanups."
 ---
 
-# New Feature Skill
+# New feature skill
 
-Orchestrates the full new-feature lifecycle: identify → pedagogy review → scope → place → spec → cleanup.
+Kickoff only: identify → branch → ask → personas → grill → spec → hand off. This skill
+ends when the spec is confirmed. Implementation is `/implement`, in a fresh session.
+**Do not start coding here.**
 
-Tasks live in **GitHub Issues + the Kanban board** (Backlog / Next Up / In Progress), not in markdown. Labels: `bug`, `feature`, `idea`, `cleanup`. `TODO.md` is a generated mirror — never hand-edit it. Project context: `docs/PROJECT.md`; specs: `docs/specs/`.
+Talk to the user in **unslop** prose. Context:
+[`docs/PROJECT.md`](../../../docs/PROJECT.md),
+[`docs/PERSONAS.md`](../../../docs/PERSONAS.md),
+[`docs/specs/INDEX.md`](../../../docs/specs/INDEX.md).
 
-## When to Use This Skill
+Not for bugs or cleanups — those have [`bug`](../bug/SKILL.md) and
+[`cleanup`](../cleanup/SKILL.md). If the chosen issue is labelled `bug` or `cleanup`,
+say so and ask whether to run anyway. It happens, and it is allowed; just do not do it
+silently.
 
-- User says "start new feature", "work on a backlog issue", "next feature", or similar
-- User is about to begin coding a feature from the GitHub board
-- User wants a structured requirements session before writing code
+## Step 1. Identify the feature
 
-**Not for:** bug fixes, refactors, UI polish passes, or chores.
+`GIT_VANILLA=1 gh issue list --state open --label feature`, plus the board's Next Up
+column (mirrored in `TODO.md`). Read `docs/PROJECT.md` and `docs/specs/INDEX.md` first.
 
-## Workflow
+- Named by the user → confirm it.
+- Nothing named → propose the top of Next Up, falling back to Backlog.
+- No issue yet → note that one is created in Step 8; do not create it now.
 
-### Step 1 — Identify the Feature
+**Gate.** Wait for confirmation before running any agent.
 
-Look at the backlog: `gh issue list --label feature --state open` (and the board's **Next Up** column, mirrored in `TODO.md`). Read `docs/PROJECT.md` for vision/requirements context.
+## Step 2. Branch, and move the card
 
-- If the user has specified a feature/issue, confirm it before proceeding. If it has no issue yet, note one will be created in Step 5.
-- If no feature is specified, suggest the top item in **Next Up** (fall back to Backlog) and ask for confirmation before proceeding.
+Branch `#<nn>-<slug>` from `origin/main`. Move the issue to In Progress:
 
-### Step 2 — Piano Teacher Review
+```bash
+NN=<issue-number>
+P=$(GIT_VANILLA=1 gh project view 3 --owner Senth --format json | jq -r .id)
+F=$(GIT_VANILLA=1 gh project field-list 3 --owner Senth --format json \
+    | jq -r '.fields[] | select(.name=="Status") | .id')
+O=$(GIT_VANILLA=1 gh project field-list 3 --owner Senth --format json \
+    | jq -r '.fields[] | select(.name=="Status") | .options[] | select(.name=="In Progress") | .id')
+I=$(GIT_VANILLA=1 gh project item-list 3 --owner Senth --format json --limit 500 \
+    | jq -r --arg n "$NN" '.items[] | select(.content.number == ($n|tonumber)) | .id')
+GIT_VANILLA=1 gh project item-edit --project-id "$P" --id "$I" \
+    --field-id "$F" --single-select-option-id "$O"
+scripts/sync-todo.sh
+```
 
-Invoke the `piano-practice-teacher` agent and present the feature to it. This step always runs. Ask the teacher agent to:
+Missing project scope → `gh auth refresh -s project` and retry; still failing → say so
+and ask the user to move the card by hand.
 
-- Share pedagogical concerns, ideas, or things to consider when implementing this feature
-- Identify whether the feature depends on anything not yet built
-- Flag any logging, lifecycle, or recommendation signals the feature should capture to keep the recommendation engine well-fed
-- Call out UX choices that would make practice harder rather than easier
-- Identify anything missing from the feature scope that a real teacher would expect to see
+## Step 3. The privacy check, first
 
-Summarise the teacher's feedback clearly for the user before proceeding.
+Before anything else about the design: **does this feature change what the privacy
+policy says?** It needs a policy change if it collects a new kind of data, stores data
+somewhere new (a Firestore collection, a device key, a third-party service), sends data
+anywhere, adds analytics or crash reporting, changes retention, or changes what the
+user can do with their own data. The policy is written as an exhaustive inventory, so a
+new collection that is not listed makes the document wrong.
 
-### Step 3 — Grill Me
+Say in one line whether it does. If it does, the spec carries a **Privacy** section and
+a phase that updates `screen.privacy` / `screen.terms` in `i18n/locales/en-US.json`,
+bumps `lastUpdated`, and re-runs a legal review — and the user has to plan the 30-day
+notice email before the feature reaches users. See
+[`.claude/CLAUDE.md`](../../CLAUDE.md).
 
-Invoke the `grill-me` skill, seeding it with:
+Do this here, not at the end. A data model chosen without it is a data model that gets
+redesigned.
 
-1. The feature description confirmed in Step 1
-2. The piano teacher's feedback from Step 2
+## Step 4. Ask only enough to review
 
-The grilling must resolve:
+Backlog issues here are one-liners ("Add on hold for sections"), and `pianist-review`
+stops when its input is too thin. Ask **at most four** questions, only what the
+personas need to be concrete: which screens, which kind of player, what triggers it,
+what it replaces. Use `AskUserQuestion`.
 
-- Exact scope and boundaries of the feature
-- Data model requirements (Firestore collections, fields, types)
-- UI/UX flows and edge cases
-- How it integrates with existing lifecycle states (learning → stabilizing → maintenance)
-- Logging requirements and what signals it produces for future recommendations
-- Any offline / sync considerations
-- Every concern or missing piece flagged by the piano teacher in Step 2
+Skip this when the issue already says enough. Data model, edge cases and boundaries
+belong to Step 6 and must not be asked twice.
 
-Do not proceed until grill-me reaches a shared understanding.
+## Step 5. Pianist review
 
-### Step 4 — Decide Where the Spec Lives
+Run it only when a player or a teacher would notice: a screen, a flow, a suggestion, a
+reason line, wording. Plumbing has nothing for personas to react to — an index, a rules
+refactor, CI, i18n wiring, a data-model change with no visible effect. Say in one line
+that you are skipping it and why.
 
-**Read `docs/specs/INDEX.md` first and default to extending an existing spec.**
-`docs/specs/` holds **one spec per feature area**, not one per issue. A spec that only
-makes sense as a diff against another spec ("supersedes §4 of X") must not exist — it
-guarantees two documents that contradict each other.
+Invoke `pianist-review` with the issue number (or the description plus the Step 4
+answers), name the two or three personas the feature touches, and embed `respond and
+think in caveman ultra`. Hand it the **section map** for the area specs it should read
+— the ranges, not the files:
 
-- **Extend an existing spec** when the work changes behaviour that spec already
-  describes — a new scoring weight, another planner rule, another field on a screen the
-  spec owns. This is the common case. Edit that file in place: rewrite the affected
-  sections so they describe the *new* behaviour, delete what is no longer true, and add
-  the new rationale to its **Why**.
-- **Write a new spec** only when the feature is a genuinely new area with its own data
-  model and screens, and no existing spec would naturally grow to cover it.
-- **If the work spans two specs**, update both and cross-link them rather than creating
-  a third. If it makes two existing specs redundant, merge them and delete the losers —
-  git history keeps the originals.
+```bash
+grep -n '^## ' docs/specs/<area>.md
+```
 
-Then add or update the entry in `docs/specs/INDEX.md`.
+Then split its findings:
 
-### Step 5 — Write the Spec
+- **`blocking` and `should-fix`** — mandatory topics in Step 6. Each ends up resolved in
+  the spec body or in **Out of scope** with the reason. None may be ignored.
+- **`idea`** — list them and **ask** which to file. For each yes:
+  `GIT_VANILLA=1 gh issue create --label idea`, then `scripts/sync-todo.sh`, and link
+  the number from the spec's **Out of scope**. Never file without asking.
+- **Open questions** — seed material for Step 6.
 
-Specs describe **shipped behaviour in the present tense**, so they stay useful for
-maintenance. Cover:
+**Gate.** Present the summary and the idea list, wait, then continue.
 
-1. **What** — one-sentence description
-2. **Why** — pedagogical / product rationale, *including alternatives that were
-   considered and rejected, and why*. This is the part that stops a decision being
-   re-litigated later; do not trim it.
-3. **Data model** — new or changed Firestore fields/collections, and any rules deploy
-4. **UI flow** — screen(s) and interactions
-5. **Logging** — what gets recorded and why
-6. **What this does not change** — properties a reviewer might otherwise go looking for
-7. **Out of scope** — explicit exclusions, with issue links where one exists
-8. **Phases** — ordered implementation phases, each small enough for one sub-agent
-   session. The last phase is full end-to-end testing with playwright, and the phase
-   before it is the cleanup in Step 6.
+## Step 6. Grill me
 
-Break the feature into concrete, independently deliverable phases (e.g. "Phase 1: data
-model + Firestore writes", "Phase 2: UI list view", "Phase 3: recommendation signal
-integration").
+Invoke `grill-me`, seeded with the confirmed feature, the Step 4 answers, every
+`blocking` and `should-fix` finding, and every open question.
 
-### Step 6 — Cleanup Phase (required, part of the plan)
+Give it a **fixed agenda and a stopping condition**: settle the topics below, then
+stop. Not "grill until shared understanding", which has no end. Skip any topic the
+issue already answers.
 
-The **Phases** and **Phase 0: Handoff** sections are scaffolding for the implementation
-run, not part of the spec. The second-to-last phase deletes them and leaves a document
-that reads as a description of the feature:
+- Scope and boundaries, and what is out
+- Data model: collections, fields, types, indexes, and what deletion must now walk
+- Security rules changes, and whether `yarn deploy:dev` is needed before the feature works
+- Offline behaviour: which writes go through `awaitWrite`, what the UI claims while offline
+- UI flow, Paper components, density, overwhelm at David's repertoire size
+- Strings: which `t()` keys, and how the reason line reads to a student
+- **Which acceptance claims can be tested and which need eyes** — this decides Step 7
+- Interaction with the settled decisions in `docs/PROJECT.md` and Margit's standing
+  positions in `docs/PERSONAS.md`
 
-- Delete `Phase 0: Handoff` and the `Phases` section outright. Anything in them that is
-  still true (a migration script's run procedure, a verified invariant) moves into the
-  body first.
-- Rewrite anything phrased as work to be done ("add a field", "we will") into what the
-  code does now.
-- Fold in whatever the implementation actually settled differently from the plan, and
-  delete rules that were superseded — a "superseded by #NN" footnote is a bug in the
-  spec, not a record.
-- Keep it concise but keep the reasoning. Formulas, thresholds, tables and the
-  rejected-alternatives rationale all stay; the value of the spec is that nobody has to
-  re-derive them.
-- Update `docs/specs/INDEX.md`: one row, a 1–2 sentence description of what the feature
-  does, plus tags.
-- Cross-link related specs by relative path instead of restating their rules.
+A genuinely unresolvable topic is recorded in the spec as an open decision rather than
+ground on.
 
-[`section-phases.md`](../../../docs/specs/section-phases.md) is the reference for tone
-and structure.
+## Step 7. Write the spec
 
-### Step 7 — Finalize Spec and Handoff
+`docs/specs/wip/<nn>-<slug>.md`, where `<nn>` is the issue number. Temporary: `/ship`
+folds it into an area spec and deletes it.
 
-Once the spec is confirmed, add a `# Phase 0: Handoff` section to the top with instructions for the implementer agent:
+```
+# Handoff            (wip only)
+1. What              one sentence
+2. Why               rationale, *including the alternatives rejected and why*
+3. Data model        collections, fields, indexes, and what delete-account must walk
+4. Rules             firestore.rules changes, and whether a deploy gates the feature
+5. UI flow           screens, Paper components, offline behaviour
+6. Strings           new t() keys with their en-US wording
+7. Logging           what gets recorded, and what future recommendation it feeds
+8. Privacy           policy impact, or "none" with the reason
+9. Acceptance        (wip only) numbered, tagged [test] or [eye]
+10. What this does NOT change
+11. Out of scope     explicit exclusions, with issue links where one exists
+12. Phases           (wip only)
+```
 
-- The path to the spec file (`docs/specs/<feature-name>.md`)
-- Instruction to use the spec's Phases section as its implementation plan
-- A reminder that the cleanup phase (Step 6) removes Phase 0 and Phases again, so nothing durable may live only in them.
-- **Ensure a tracking issue exists.** Use the existing issue, or create one with `gh issue create --label feature` (it auto-lands in Backlog). As a comment to the issue, add link to the spec.
-- Move the issue to **In Progress** on the board, then run `scripts/sync-todo.sh`.
-- After all phases are verified working, close the issue (PR body `Closes #NN`) and run `scripts/sync-todo.sh` to refresh `TODO.md`.
+Write behaviour in the present tense, as a description of the app. **Why** is what
+stops a decision being re-argued later. Never trim it.
 
-### Step 8 — User Confirmation
+### Acceptance
 
-Present the spec to the user and wait for explicit confirmation before proceeding. If the user requests changes, update the spec and confirm again.
+Numbered, one line each, every one checkable. Tag each:
+
+- **`[test]`** — assertable in a browser. It becomes a real `e2e/` spec during the phase
+  that builds it, and `yarn invariants` checks that a test with a matching title
+  exists. The mapping is literal: **the test title is the claim text**, so write the
+  claim as something a test can be called.
+- **`[eye]`** — a judgement: wording, density, whether something reads as interactive.
+  `browser-review` takes these and nothing else.
+
+```
+## Acceptance
+1. [test] An on-hold section is absent from the next generated plan
+2. [test] Taking a section off hold restores it to the plan without a reload
+3. [eye]  The on-hold chip reads as reversible rather than as an error state
+```
+
+Prefer `[test]`. An `[eye]` claim costs an expensive browser turn on every review; a
+`[test]` claim costs nothing after the day it is written. If a claim *can* be measured,
+it is `[test]`.
+
+### Phases
+
+Vertical slices, each small enough for one sub-agent session and each ending green on
+`yarn lint --write`, `yarn invariants`, `yarn typecheck` and `yarn test`. Name the
+agent size per phase — `feature-small` or `feature-large` — so `/implement` does not
+have to guess.
+
+```
+Phase 1  models + firestore.rules + deletion coverage   feature-large
+Phase 2  hooks and queries                              feature-small
+Phase 3  UI screens + t() keys                          feature-small
+Phase 4  e2e specs for the [test] acceptance claims     feature-small
+```
+
+**Phase 4 is not optional** when the feature is user-visible: the `[test]` claims
+become tests in the same change, not later. Whichever phase builds a screen owns its
+tests.
+
+Do **not** add review, cleanup or PR phases. Those are `/review` and `/ship`, and each
+is its own session.
+
+## Step 8. Handoff
+
+Only after the spec is written and the user has confirmed it. Present it, loop on
+changes until an explicit yes.
+
+1. **Ensure a tracking issue exists.** `GIT_VANILLA=1 gh issue create --label feature`
+   if there is none, then `scripts/sync-todo.sh`, and rename the wip file to match the
+   number.
+2. **Comment the spec link on the issue.** Do not edit the issue description.
+3. Tell the user to run **`/implement docs/specs/wip/<nn>-<slug>.md`** in a fresh
+   session, and stop.
+
+## The Handoff section of the spec
+
+Written for a session with no context but the file. Keep it to four lines:
+
+- This file is the implementation plan; `/implement` works the **Phases** in order.
+- Read `.claude/CLAUDE.md` and the area specs cross-linked above first.
+- Nothing durable may live only in **Handoff**, **Acceptance** or **Phases**. `/ship`
+  deletes all three.
+- After the last phase: `/review` in a fresh session, then `/ship` on a PASS.
