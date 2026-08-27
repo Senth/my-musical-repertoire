@@ -85,9 +85,15 @@ start_web() {
 		echo "web: reused (already listening on $WEB_PORT)"
 		return
 	fi
-	CI=1 EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_USE_EMULATORS=1 \
+	# stdin from /dev/null, not CI=1, to keep Expo non-interactive. CI=1 also
+	# turns Metro's file watcher off, and a watcher-less server keeps serving
+	# the code it started with: you edit a component, re-run e2e, and the app
+	# under test is the old one, so a test can pass against a change that was
+	# never there. GitHub Actions sets CI itself, which is where freezing the
+	# bundle for the length of a run is the right behaviour.
+	EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_USE_EMULATORS=1 \
 		setsid yarn --silent expo start --web --port "$WEB_PORT" \
-		>"$RUN_DIR/web.log" 2>&1 &
+		</dev/null >"$RUN_DIR/web.log" 2>&1 &
 	echo $! >"$RUN_DIR/web.pid"
 	wait_for "$WEB_PORT" "expo web server" 180
 	echo "web: started on http://localhost:$WEB_PORT (emulator-backed)"
