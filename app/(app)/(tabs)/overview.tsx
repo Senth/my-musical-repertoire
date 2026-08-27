@@ -18,6 +18,7 @@ import {
 } from "react-native-paper";
 import { LegalLinks } from "@/components/legal/LegalLinks";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
+import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import {
@@ -48,7 +49,9 @@ import {
 } from "@/models/session-preset";
 import { displayMinutes } from "@/utils/format-minutes";
 import { shouldOfferInstall } from "@/utils/install-gating";
+import { modeLabelLong } from "@/utils/mode-label";
 import { suggestPieces, suggestTechniques } from "@/utils/overview-suggestions";
+import { formatBarRange, formatComposerLine } from "@/utils/piece-display";
 import { planTotalMinutes } from "@/utils/session-planner";
 import {
 	clearActiveSession,
@@ -187,59 +190,81 @@ export default function OverviewScreen() {
 					</Text>
 				)}
 
-				{pieceSuggestions.suggestions.map((s) => (
-					<Card
-						key={s.piece.id}
-						mode="elevated"
-						onPress={() => router.push(`/piece/${s.piece.id}`)}
-						style={accentBorderStyle(
-							pieceStateVisual(s.piece.state, theme.dark),
-						)}
-					>
-						<Card.Title
-							title={s.piece.title}
-							titleStyle={CARD_TITLE_STYLE}
-							subtitle={s.piece.composer}
-							subtitleStyle={{ color: theme.colors.onSurfaceVariant }}
-						/>
-						<Card.Content>
-							<View className="gap-2">
-								<View className="flex-row items-center gap-2 flex-wrap">
-									<PieceStateChip state={s.piece.state} />
-									{(s.piece.sectionCount ?? 0) > 0 && (
-										<Text
-											variant="bodySmall"
-											style={{ color: theme.colors.onSurfaceVariant }}
-										>
-											{t("piece.sectionCount", {
-												count: s.piece.sectionCount,
-											})}
-										</Text>
-									)}
+				{pieceSuggestions.suggestions.map((s) => {
+					const barRange = s.section ? formatBarRange(s.section, t) : null;
+					const subtitle = s.section
+						? formatComposerLine(s.piece.composer, barRange ?? s.section.label)
+						: s.piece.composer;
+					const reasonText = t(
+						s.reasonKey as Parameters<typeof t>[0],
+						s.reasonParams,
+					);
+					const reason = s.modeKey
+						? t("screen.overview.pieceReason.withMode", {
+								mode: modeLabelLong(s.modeKey, t),
+								reason: reasonText,
+							})
+						: reasonText;
+					const practiceQuery = [
+						s.section ? `sectionId=${s.section.id}` : null,
+						s.section && s.modeKey
+							? `mode=${encodeURIComponent(s.modeKey)}`
+							: null,
+						"from=overview",
+					]
+						.filter(Boolean)
+						.join("&");
+
+					return (
+						<Card
+							key={`${s.piece.id}-${s.section?.id ?? "piece"}`}
+							mode="elevated"
+							onPress={() => router.push(`/piece/${s.piece.id}`)}
+							style={accentBorderStyle(
+								pieceStateVisual(s.piece.state, theme.dark),
+							)}
+						>
+							<Card.Title
+								title={s.piece.title}
+								titleStyle={CARD_TITLE_STYLE}
+								subtitle={subtitle}
+								subtitleStyle={{ color: theme.colors.onSurfaceVariant }}
+							/>
+							<Card.Content>
+								<View className="gap-2">
+									<View className="flex-row items-center gap-2 flex-wrap">
+										{s.section ? (
+											<SectionPhaseChip phase={s.section.phase} />
+										) : (
+											<PieceStateChip state={s.piece.state} />
+										)}
+									</View>
+									<PieceProgressBar
+										technicalMistakes={s.piece.lastTechnicalMistakes}
+										memoryMistakes={s.piece.lastMemoryMistakes}
+									/>
+									<Text
+										variant="bodySmall"
+										style={{ color: theme.colors.onSurfaceVariant }}
+									>
+										{reason}
+									</Text>
+									<Button
+										mode="contained-tonal"
+										compact
+										onPress={() =>
+											router.push(
+												`/piece/${s.piece.id}/practice?${practiceQuery}`,
+											)
+										}
+									>
+										{t("screen.overview.practice")}
+									</Button>
 								</View>
-								<PieceProgressBar
-									technicalMistakes={s.piece.lastTechnicalMistakes}
-									memoryMistakes={s.piece.lastMemoryMistakes}
-								/>
-								<Text
-									variant="bodySmall"
-									style={{ color: theme.colors.onSurfaceVariant }}
-								>
-									{t(s.reasonKey as Parameters<typeof t>[0], s.reasonParams)}
-								</Text>
-								<Button
-									mode="contained-tonal"
-									compact
-									onPress={() =>
-										router.push(`/piece/${s.piece.id}/practice?from=overview`)
-									}
-								>
-									{t("screen.overview.practice")}
-								</Button>
-							</View>
-						</Card.Content>
-					</Card>
-				))}
+							</Card.Content>
+						</Card>
+					);
+				})}
 
 				{pieces.length > 0 && (
 					<Button

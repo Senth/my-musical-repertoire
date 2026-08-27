@@ -733,10 +733,11 @@ export function PiecePracticeContent({
 }
 
 export default function PracticeScreen() {
-	const { id, from, sectionId } = useLocalSearchParams<{
+	const { id, from, sectionId, mode } = useLocalSearchParams<{
 		id: string;
 		from?: string;
 		sectionId?: string;
+		mode?: string;
 	}>();
 	// Standalone practice only: inside the coach the wake lock belongs to the
 	// coach screen, which knows whether the session is paused.
@@ -746,6 +747,7 @@ export default function PracticeScreen() {
 			pieceId={id}
 			sectionId={sectionId ?? null}
 			from={from}
+			preselectMode={(mode as ModeKey) ?? null}
 		/>
 	);
 }
