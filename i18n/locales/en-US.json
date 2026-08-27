@@ -509,7 +509,8 @@
 				"bpmGap": "{{gap}} BPM below target",
 				"daysSince": "{{days}} day(s) since last practice",
 				"lastResultPoor": "Last session needs cleanup",
-				"mistakes": "Mistakes to clean up"
+				"mistakes": "Mistakes to clean up",
+				"withMode": "{{mode}} · {{reason}}"
 			},
 			"emptyState": {
 				"noActivePieces": "Start by adding a piece to your repertoire.",

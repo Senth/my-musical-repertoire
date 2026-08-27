@@ -1,14 +1,6 @@
 import { suggestPieces } from "./overview-suggestions";
-import {
-	bestCandidateByPiece,
-	groupSectionsByPiece,
-	scorePiece,
-	scorePieces,
-} from "./piece-scoring";
-import {
-	buildSectionCandidates,
-	scoreMaintenancePiece,
-} from "./planner-scoring";
+import { groupSectionsByPiece, scorePiece, scorePieces } from "./piece-scoring";
+import { scoreMaintenancePiece } from "./planner-scoring";
 import { makePiece, makeSection } from "./test-factories";
 
 const NOW = new Date("2026-06-01T12:00:00Z");
@@ -110,8 +102,9 @@ describe("scorePieces", () => {
 	});
 
 	it("agrees with what the overview scores the same piece at", () => {
-		// The overview picks its learning suggestion from the best section
-		// candidate; the list must not put that piece anywhere else.
+		// The overview may now show both sections of a piece, but its first card
+		// is still the best candidate; the list must not put that piece anywhere
+		// else.
 		const piece = makePiece({
 			id: "p1",
 			state: "learning",
@@ -135,7 +128,7 @@ describe("scorePieces", () => {
 		];
 
 		const { suggestions } = suggestPieces([piece], sections, NOW);
-		expect(suggestions).toHaveLength(1);
+		expect(suggestions).toHaveLength(2);
 		expect(scorePieces([piece], sections, NOW).p1).toBe(suggestions[0].score);
 	});
 });
@@ -150,30 +143,5 @@ describe("groupSectionsByPiece", () => {
 		const grouped = groupSectionsByPiece(sections);
 		expect(grouped.get("p1")?.map((s) => s.id)).toEqual(["s1"]);
 		expect(grouped.get("p2")?.map((s) => s.id)).toEqual(["s3"]);
-	});
-});
-
-describe("bestCandidateByPiece", () => {
-	it("keeps one candidate per piece — the highest scoring one", () => {
-		const piece = makePiece({ id: "p1", state: "learning" });
-		const sections = [
-			makeSection({
-				id: "s1",
-				pieceId: "p1",
-				phase: "learning",
-				lastPracticed: daysAgo(1),
-			}),
-			makeSection({
-				id: "s2",
-				pieceId: "p1",
-				phase: "learning",
-				lastPracticed: daysAgo(30),
-			}),
-		];
-		const best = bestCandidateByPiece(
-			buildSectionCandidates([piece], sections, NOW),
-		);
-		expect(best.size).toBe(1);
-		expect(best.get("p1")?.section?.id).toBe("s2");
 	});
 });

@@ -32,7 +32,7 @@ import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { Section } from "@/models/section";
 import { addSectionNudgeSection } from "@/utils/add-section-nudge";
 import { formatDaysAgo } from "@/utils/date";
-import { formatComposerLine } from "@/utils/piece-display";
+import { formatBarRange, formatComposerLine } from "@/utils/piece-display";
 
 export default function PieceDetailScreen() {
 	const { t } = useTranslation();
@@ -124,18 +124,7 @@ export default function PieceDetailScreen() {
 
 	const renderDragItem = useCallback(
 		({ item, drag, isActive }: RenderItemParams<Section>) => {
-			const barRangeText = (() => {
-				if (item.startBar != null && item.endBar != null) {
-					return t("screen.pieceSections.barRange", {
-						start: item.startBar,
-						end: item.endBar,
-					});
-				}
-				if (item.startBar != null) {
-					return t("screen.pieceSections.barFrom", { start: item.startBar });
-				}
-				return null;
-			})();
+			const barRangeText = formatBarRange(item, t);
 			return (
 				<ScaleDecorator>
 					<View

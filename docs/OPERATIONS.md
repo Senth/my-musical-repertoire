@@ -96,6 +96,13 @@ readiness markers, and every title a spec waits on. **Regenerating it means
 re-running `yarn e2e` and updating those.** A stale fixture is a `blocking` finding
 against whichever change broke it.
 
+**One spec opts out.** `e2e/overview-suggestions.spec.ts` runs in its own Playwright
+project on a throwaway account registered fresh each run by
+`overview-suggestions.setup.ts` — it creates pieces and logs practice it never
+cleans up, which would leave `SEED_USER` dirty and make a second run behave
+differently. It also runs with `retries: 0`, because each test leaves the account
+changed for the next and a retry cannot reproduce its own precondition.
+
 ## What the craft sweep covers
 
 `e2e/craft.spec.ts` walks every route in `ROUTES` (`e2e/support/app.ts`) and asserts

@@ -57,6 +57,7 @@ import {
 	type PendingPhaseOffer,
 	type PhaseOfferStatus,
 } from "@/utils/phase-offer";
+import { formatBarRange } from "@/utils/piece-display";
 import {
 	hsTarget,
 	isHtReady,
@@ -439,6 +440,7 @@ export function PiecePracticeContent({
 	const mistakes = mistakeOptions(t);
 
 	const titleSuffix = scopedSection ? ` — ${scopedSection.label}` : "";
+	const barRangeText = scopedSection ? formatBarRange(scopedSection, t) : null;
 
 	return (
 		<View
@@ -573,19 +575,12 @@ export function PiecePracticeContent({
 
 					<Divider />
 
-					{scopedSection?.startBar != null && (
+					{barRangeText != null && (
 						<Text
 							variant="bodyMedium"
 							style={{ color: theme.colors.onSurfaceVariant }}
 						>
-							{scopedSection.endBar != null
-								? t("screen.pieceSections.barRange", {
-										start: scopedSection.startBar,
-										end: scopedSection.endBar,
-									})
-								: t("screen.pieceSections.barFrom", {
-										start: scopedSection.startBar,
-									})}
+							{barRangeText}
 						</Text>
 					)}
 
@@ -738,10 +733,11 @@ export function PiecePracticeContent({
 }
 
 export default function PracticeScreen() {
-	const { id, from, sectionId } = useLocalSearchParams<{
+	const { id, from, sectionId, mode } = useLocalSearchParams<{
 		id: string;
 		from?: string;
 		sectionId?: string;
+		mode?: string;
 	}>();
 	// Standalone practice only: inside the coach the wake lock belongs to the
 	// coach screen, which knows whether the session is paused.
@@ -751,6 +747,7 @@ export default function PracticeScreen() {
 			pieceId={id}
 			sectionId={sectionId ?? null}
 			from={from}
+			preselectMode={(mode as ModeKey) ?? null}
 		/>
 	);
 }

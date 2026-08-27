@@ -55,7 +55,7 @@ describe("suggestPieces", () => {
 	});
 
 	describe("cap logic", () => {
-		it("max 1 learning piece", () => {
+		it("max 2 learning pieces", () => {
 			const pieces = [
 				makePiece({ id: "p1", state: "learning" }),
 				makePiece({ id: "p2", state: "learning" }),
@@ -65,19 +65,20 @@ describe("suggestPieces", () => {
 			const learning = result.suggestions.filter(
 				(s) => s.piece.state === "learning",
 			);
-			expect(learning).toHaveLength(1);
+			expect(learning).toHaveLength(2);
 		});
 
-		it("max 1 stabilizing piece", () => {
+		it("max 2 stabilizing pieces", () => {
 			const pieces = [
 				makePiece({ id: "p1", state: "stabilizing" }),
 				makePiece({ id: "p2", state: "stabilizing" }),
+				makePiece({ id: "p3", state: "stabilizing" }),
 			];
 			const result = suggestPieces(pieces, [], NOW);
 			const stab = result.suggestions.filter(
 				(s) => s.piece.state === "stabilizing",
 			);
-			expect(stab).toHaveLength(1);
+			expect(stab).toHaveLength(2);
 		});
 
 		it("max 2 performance pieces", () => {
@@ -234,6 +235,171 @@ describe("suggestPieces", () => {
 				"screen.overview.pieceReason.daysSince",
 			);
 			expect(result.suggestions[0].reasonParams.days).toBe(2);
+		});
+	});
+
+	describe("breadth-first selection", () => {
+		const learningPiece = (id: string) =>
+			makePiece({ id, state: "learning", targetTempoBpm: 120 });
+
+		it("suggests two sections of one piece when nothing else is waiting", () => {
+			const pieces = [learningPiece("p1")];
+			const sections = [
+				makeSection({ id: "s1", pieceId: "p1", lastPracticed: TWO_DAYS_AGO }),
+				makeSection({ id: "s2", pieceId: "p1", lastPracticed: TWO_DAYS_AGO }),
+			];
+			const result = suggestPieces(pieces, sections, NOW);
+			expect(result.suggestions.map((s) => s.section?.id)).toEqual([
+				"s1",
+				"s2",
+			]);
+		});
+
+		it("gives the second slot to an unrepresented piece, not to a second section", () => {
+			// p1 has two never-practised sections, each outscoring p2's only one.
+			// Pure score order would hand p1 both slots.
+			const pieces = [learningPiece("p1"), learningPiece("p2")];
+			const sections = [
+				makeSection({ id: "s1", pieceId: "p1" }),
+				makeSection({ id: "s2", pieceId: "p1" }),
+				makeSection({ id: "s3", pieceId: "p2", lastPracticed: TWO_DAYS_AGO }),
+			];
+			const result = suggestPieces(pieces, sections, NOW);
+			expect(result.suggestions.map((s) => s.section?.id)).toEqual([
+				"s1",
+				"s3",
+			]);
+		});
+
+		it("ranks pieces by their best candidate before taking one each", () => {
+			const pieces = [learningPiece("p1"), learningPiece("p2")];
+			const sections = [
+				makeSection({ id: "s1", pieceId: "p1", lastPracticed: TWO_DAYS_AGO }),
+				makeSection({ id: "s2", pieceId: "p2" }), // never practised, wins
+			];
+			const result = suggestPieces(pieces, sections, NOW);
+			expect(result.suggestions.map((s) => s.piece.id)).toEqual(["p2", "p1"]);
+		});
+
+		it("says everything is practised only once no candidate remains", () => {
+			const pieces = [learningPiece("p1")];
+			const sections = [
+				makeSection({
+					id: "s1",
+					pieceId: "p1",
+					byMode: { HT: { lastPracticed: TODAY } },
+				}),
+			];
+			expect(suggestPieces(pieces, sections, NOW).emptyStateKey).toBe(
+				"screen.overview.emptyState.allPracticedToday",
+			);
+
+			const partly = [
+				makeSection({
+					id: "s1",
+					pieceId: "p1",
+					byMode: { HT: { lastPracticed: TODAY } },
+				}),
+				makeSection({ id: "s2", pieceId: "p1", lastPracticed: TWO_DAYS_AGO }),
+			];
+			const result = suggestPieces(pieces, partly, NOW);
+			expect(result.emptyStateKey).toBeNull();
+			expect(result.suggestions.map((s) => s.section?.id)).toEqual(["s2"]);
+		});
+
+		it("keeps a section whose piece was practised today for a mode that was not", () => {
+			// The piece-level filter used to hide this; the per-mode one must not.
+			const pieces = [
+				makePiece({
+					id: "p1",
+					state: "learning",
+					targetTempoBpm: 120,
+					lastPracticed: TODAY,
+				}),
+			];
+			const sections = [
+				makeSection({
+					id: "s1",
+					pieceId: "p1",
+					lastPracticed: TODAY,
+					byMode: {
+						LH: { bpm: 90, lastPracticed: TODAY },
+						RH: { bpm: 90, lastPracticed: TWO_DAYS_AGO },
+					},
+				}),
+			];
+			const result = suggestPieces(pieces, sections, NOW);
+			expect(result.suggestions).toHaveLength(1);
+			expect(result.suggestions[0].modeKey).toBe("RH");
+			expect(result.suggestions[0].section?.id).toBe("s1");
+		});
+	});
+
+	describe("the reason follows the winning mode", () => {
+		it("counts days from the winning mode, not from the section rollup", () => {
+			const pieces = [makePiece({ id: "p1", state: "learning" })];
+			const sections = [
+				makeSection({
+					id: "s1",
+					pieceId: "p1",
+					lastPracticed: TODAY, // rollup says "today"
+					byMode: {
+						LH: { lastPracticed: TODAY },
+						RH: { lastPracticed: new Date(NOW.getTime() - 5 * 86_400_000) },
+					},
+				}),
+			];
+			const result = suggestPieces(pieces, sections, NOW);
+			expect(result.suggestions[0].modeKey).toBe("RH");
+			expect(result.suggestions[0].reasonKey).toBe(
+				"screen.overview.pieceReason.daysSince",
+			);
+			expect(result.suggestions[0].reasonParams.days).toBe(5);
+		});
+
+		it("measures a hands-separate gap against the hands-separate target", () => {
+			const pieces = [
+				makePiece({ id: "p1", state: "learning", targetTempoBpm: 120 }),
+			];
+			const sections = [
+				makeSection({
+					id: "s1",
+					pieceId: "p1",
+					lastPracticed: TWO_DAYS_AGO,
+					byMode: { LH: { bpm: 10, lastPracticed: TWO_DAYS_AGO } },
+				}),
+			];
+			const result = suggestPieces(pieces, sections, NOW);
+			expect(result.suggestions[0].reasonKey).toBe(
+				"screen.overview.pieceReason.bpmGap",
+			);
+			// 120 × 1.15 = 138, not the 120 the rollup would have used.
+			expect(result.suggestions[0].reasonParams.gap).toBe(128);
+		});
+
+		it("reads quality and effort from the winning mode", () => {
+			const pieces = [makePiece({ id: "p1", state: "learning" })];
+			const sections = [
+				makeSection({
+					id: "s1",
+					pieceId: "p1",
+					phase: "maintenance",
+					lastPracticed: new Date(NOW.getTime() - 86_400_000),
+					lastQuality: 5, // rollup is clean...
+					lastEffort: 1,
+					byMode: {
+						HT: {
+							quality: 1, // ...the mode that scored is not
+							effort: 5,
+							lastPracticed: new Date(NOW.getTime() - 86_400_000),
+						},
+					},
+				}),
+			];
+			const result = suggestPieces(pieces, sections, NOW);
+			expect(result.suggestions[0].reasonKey).toBe(
+				"screen.overview.pieceReason.lastResultPoor",
+			);
 		});
 	});
 
