@@ -51,6 +51,13 @@ async function save(page: Page, label: string) {
 async function choose(page: Page, label: string, option: string) {
 	await page.getByRole("combobox", { name: label, exact: true }).click();
 	await page.getByRole("menuitem", { name: option, exact: true }).click();
+	// Paper's Menu fades out, and until it has, its full-screen dismiss scrim
+	// still takes the pointer: the next click on Save is either intercepted
+	// until the test times out, or spent closing the scrim and never reaches
+	// the button, leaving the form unsaved and a later assertion to fail.
+	await expect(
+		page.getByRole("button", { name: "Close menu", exact: true }),
+	).toHaveCount(0, { timeout: 10_000 });
 }
 
 /** Creates a piece and lands on its detail page, returning that page's URL. */
@@ -147,6 +154,14 @@ async function practiceSection(
 	await page.goto(
 		`${pieceUrl}/practice?sectionId=${sectionId}&from=overview${modeParam}`,
 	);
+
+	// The hand chips render only once the section itself has loaded, and until
+	// then the BPM box is the piece-level one: a value typed before that is
+	// dropped when the screen switches to the section's own draft, and the log
+	// is saved with no tempo at all.
+	await expect(
+		page.getByText(t("screen.practice.modes.hands.RH"), { exact: true }),
+	).toBeVisible({ timeout: 10_000 });
 
 	if (opts.bpm) {
 		await page.getByPlaceholder(t("common.bpm.placeholder")).fill(opts.bpm);
@@ -319,8 +334,13 @@ test("A learning section inside a stabilizing piece is chipped Learning on the o
 	await expect(
 		page.getByText(barRange(170, 174), { exact: false }),
 	).toBeVisible({ timeout: 10_000 });
+	// Scoped to the card: `section.phase.learning` and `piece.state.learning` are
+	// both "Learning", so a page-wide match is satisfied by another card's state chip.
 	await expect(
-		page.getByText(t("section.phase.learning"), { exact: true }).first(),
+		cardContaining(page, barRange(170, 174)).getByText(
+			t("section.phase.learning"),
+			{ exact: true },
+		),
 	).toBeVisible({ timeout: 10_000 });
 });
 
@@ -356,9 +376,10 @@ test("A section practised left hand today is suggested again the same day for ri
 		page.getByText(barRange(121, 128), { exact: false }),
 	).toBeVisible({ timeout: 10_000 });
 	await expect(
-		page
-			.getByText(t("screen.practice.modes.handsLong.RH"), { exact: false })
-			.first(),
+		cardContaining(page, barRange(121, 128)).getByText(
+			t("screen.practice.modes.handsLong.RH"),
+			{ exact: false },
+		),
 	).toBeVisible({ timeout: 10_000 });
 });
 
@@ -375,7 +396,10 @@ test("The Practice button on a section card opens that section with its scored h
 		.click();
 
 	await expect(page).toHaveURL(/mode=RH/);
+	// The BPM prefill arrives with the section's practice history, so it is
+	// late rather than absent — every other wait in this file allows 10s.
 	await expect(page.getByPlaceholder(t("common.bpm.placeholder"))).toHaveValue(
 		"65",
+		{ timeout: 10_000 },
 	);
 });
