@@ -205,26 +205,93 @@ phase**, using `piece.lastPracticed` and `piece.lastAchievedTempoBpm`.
 ## 7. Overview suggestions
 
 `utils/overview-suggestions.ts` renders one flat list per section — no
-per-category sub-headers, because the cards already carry a lifecycle state chip.
+per-category sub-headers, because the cards already carry a chip.
 
-### Pieces
+### Pieces are suggested as passages
 
 Order: Learning → Stabilizing → Performance → Maintenance, by score within each.
-Caps (not fixed counts; empty categories are silently omitted): **1** learning,
-**1** stabilizing, **2** performance, **2** maintenance.
+Caps (not fixed counts; empty categories are silently omitted): **2** per
+category.
 
-`on_hold` and `shelved` pieces are filtered out first, then pieces practised
-today. Learning and stabilizing are scored section-aware via
-`buildSectionCandidates` → `bestCandidateByPiece`; performance and maintenance via
-`scoreMaintenancePiece`.
+Learning and stabilizing pieces are suggested **by section**. The card names the
+passage, chips the *section's* phase, and its Practice button opens that section
+in the hand that scored it. One piece may hold more than one card. Performance
+and maintenance stay whole-piece via `scoreMaintenancePiece` and keep the piece's
+lifecycle chip — they have no section to name.
 
-Empty states, checked before scoring:
+They used to be collapsed to one card per piece. `sectionBasedSuggestions` built
+the full `SectionCandidate` — phase, mode, BPM gap, the lot — and
+`bestCandidateByPiece` threw the section away, so the card that reached the
+student read "Chopin Op. 10/4", which as an instruction means *play the whole
+étude*: a twenty-two-minute job, when the app knew perfectly well it meant bars
+33–40. The "only one thing per piece" rule that collapse implied was never
+pedagogy, only de-duplication mistaken for it — the coach never had it, because
+`stillAvailable` dedupes on `usedSectionIds` and several sections of one piece
+already share a session.
+
+A stabilizing piece can hold a learning section, and it is the learning section
+that put the card on screen; chipping the piece's lifecycle state there would
+tell the student to run that passage at tempo.
+
+`on_hold` and `shelved` pieces are filtered out first. Whole-piece suggestions
+then drop pieces practised today, but **section suggestions filter per
+candidate** (`candidate.practicedToday`), so a passage drilled left hand at 08:00
+comes back at 19:00 for the right.
+
+Empty states, checked before scoring except the second:
 
 | Condition | Message |
 | --- | --- |
 | no pieces at all | "Start by adding a piece to your repertoire." |
-| every active piece practised today | "Wow! You have practiced all your pieces today. Take a rest or add new pieces to practice!" |
+| no candidate survives, yet active pieces exist | "Wow! You have practiced all your pieces today. Take a rest or add new pieces to practice!" |
 | every active piece is maintenance/performance | "All your pieces are in maintenance. Consider adding a new piece to learn!" |
+
+### Breadth before depth
+
+`breadthFirst` fills each cap in rounds: pass one takes every piece's best
+candidate in score order, pass two spends what is left on second passages of
+pieces already shown.
+
+Sorting purely by score is the smaller code and the wrong behaviour. Every
+unpractised section of a learning piece accrues 10/day on its own, so a finely
+sectioned piece out-scores a coarsely sectioned neighbour for as long as it has
+untouched sections: a Ligeti in six sections takes both learning slots for three
+or four days while the Kurtág vanishes from the day's list. It self-corrects, but
+the lag scales with how finely the student happened to section the piece, which
+is the wrong thing for a daily menu to depend on. The coverage the old collapse
+provided by accident is now deliberate.
+
+**The coach disagrees on purpose.** `learningLinePool` orders *every* candidate
+of the top piece ahead of the second piece's, so you warm into new bars through
+the ones before them in one sitting. That is depth, and it is right inside a
+session. The Overview is a menu across the whole repertoire, and its job is
+breadth.
+
+### The card
+
+| Slot | Section card | Whole-piece card |
+| --- | --- | --- |
+| Title | `piece.title` | `piece.title` |
+| Subtitle | `Composer · Bars 33–40` | `piece.composer` |
+| Chip and accent stripe | `section.phase` | `piece.state` |
+| Reason | winning mode's stats, hand named | piece stats |
+| Practice | `?sectionId=…&mode=…&from=overview` | `?from=overview` |
+
+The subtitle reuses the `·` idiom `formatComposerLine` already establishes, and
+`formatBarRange` (`utils/piece-display.ts`) formats the range. A section with no
+bar range falls back to `section.label`: a bare `B` is poor vocabulary, but
+dropping it makes two cards for one piece identical at arm's length, and being
+tellable apart matters more than reading well.
+
+**No suggestion card shows a section count**, whole-piece ones included. On a card
+naming one passage it reads as three things to do; on a maintenance card it is
+decoration. The `piece.sectionCount` string still exists — the pieces list uses
+it.
+
+The `mode` param is what makes "opens the hand that scored it" true; without it
+the practice screen re-picks through the BPM-gap heuristic and can land on a
+different hand than the card named. See
+[`practice-logging.md`](practice-logging.md) §5.
 
 ### Techniques
 
@@ -249,6 +316,23 @@ claim something the ranking did not do:
 For maintenance pieces the comparison is the mistakes term against
 `stateWeight · days` → `pieceReason.mistakes` or `pieceReason.daysSince`.
 Techniques get never-practised / effort-or-quality / days-since.
+
+For a section, `reasonForCandidate` reads **`section.byMode[candidate.modeKey]`**
+— the very entry `scoreSectionModes` scored — and measures the gap against
+`targetForMode(hands, effectiveTarget)`. It used to read the section rollup, and
+the piece-level practised-today filter hid the disagreement, because a section
+touched today never came back. Per-mode filtering exposes it: a passage drilled
+left hand in the morning returns in the evening and, on the rollup, would have
+said "0 day(s) since last practice". Advice a student cannot audit is advice they
+stop following.
+
+The reason line therefore **names the hand** on every card a mode scored, as
+`pieceReason.withMode` — `{{mode}} · {{reason}}`, with `modeLabelLong` yielding
+Left hand / Right hand / Hands together. It wraps the five reason keys rather than
+duplicating each. Naming it on every such card and not only the ambiguous ones is
+the point: wording that changes with state the student cannot see is its own kind
+of unauditable, and without the hand a same-day return reads as the app having
+forgotten what was just logged.
 
 Because the reason mirrors the formula, **any weight change here must be
 re-checked against `reasonForCandidate` and `reasonForMaintenancePiece`.**

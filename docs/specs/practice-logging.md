@@ -161,9 +161,12 @@ The readiness rule is **BPM-only, deliberately not gated on quality**. Quality h
 no default (§6), so a quality gate would stall the nudge indefinitely on any mode
 where the student skipped it.
 
-Inside the coach, `PlannedBlock.modeKey` — the mode that made the block worth
-planning — takes precedence, so the student lands on the hand that drove the
-pick. The drill chip always defaults to `normal`. Techniques with `handsMode:
+A caller may name the mode instead, via the `preselectMode` prop, and it takes
+precedence so the student lands on the hand that drove the pick: the coach passes
+`PlannedBlock.modeKey`, and an Overview section card passes its `mode` query param
+([`planner-scoring.md`](planner-scoring.md) §7). `reachablePreselect` drops a mode
+the item cannot offer, so a stale or hand-edited param degrades to the rule above
+rather than erroring. The drill chip always defaults to `normal`. Techniques with `handsMode:
 "separate"` have no `HT`, so no readiness rule and no hint.
 
 Preselection is derived live from `byMode` when the screen opens, never baked
