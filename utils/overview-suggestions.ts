@@ -1,8 +1,8 @@
 import type { Piece } from "@/models/piece";
+import type { ModeKey } from "@/models/practice";
 import type { Section } from "@/models/section";
 import type { TechniqueItem } from "@/models/technique";
 import { isPracticedToday } from "./day-boundary";
-import { bestCandidateByPiece } from "./piece-scoring";
 import {
 	BPM_GAP_WEIGHT,
 	bpmGap,
@@ -15,9 +15,14 @@ import {
 	scoreMaintenancePiece,
 	scoreTechnique,
 } from "./planner-scoring";
+import { parseModeKey, targetForMode } from "./practice-modes";
 
 export interface SuggestedPiece {
 	piece: Piece;
+	/** The passage the card names; `null` for whole-piece suggestions. */
+	section: Section | null;
+	/** The mode that won the score, so the card can open that hand. */
+	modeKey: ModeKey | null;
 	score: number;
 	reasonKey: string;
 	reasonParams: Record<string, unknown>;
@@ -40,43 +45,71 @@ export interface TechniqueSuggestions {
 	emptyStateKey: string | null;
 }
 
+/** Caps per category — not fixed counts; an empty category is omitted. */
+const PIECE_CAP = 2;
+
+/**
+ * Mirrors `scoreSectionModes`: the reason reads the very stats the winning mode
+ * was scored from, so a section drilled left hand this morning can come back for
+ * the right hand this evening and still explain itself honestly.
+ */
 function reasonForCandidate(
 	candidate: SectionCandidate,
 	now: Date,
-): { reasonKey: string; reasonParams: Record<string, unknown> } {
-	if (!candidate.lastPracticed) {
+): {
+	modeKey: ModeKey | null;
+	reasonKey: string;
+	reasonParams: Record<string, unknown>;
+} {
+	const modeKey = candidate.modeKey;
+	const stats = modeKey ? candidate.section?.byMode?.[modeKey] : null;
+	const effectiveTarget =
+		candidate.section?.targetBpmOverride ?? candidate.piece.targetTempoBpm;
+
+	const lastPracticed = stats
+		? (stats.lastPracticed ?? null)
+		: candidate.lastPracticed;
+	const currentBpm = stats ? (stats.bpm ?? null) : candidate.currentBpm;
+	const quality = stats ? (stats.quality ?? null) : candidate.lastQuality;
+	const effort = stats ? (stats.effort ?? null) : candidate.lastEffort;
+	const target =
+		stats && modeKey
+			? targetForMode(parseModeKey(modeKey).hands, effectiveTarget ?? null)
+			: effectiveTarget;
+
+	if (!lastPracticed) {
 		return {
+			modeKey,
 			reasonKey: "screen.overview.pieceReason.neverPracticed",
 			reasonParams: {},
 		};
 	}
-	const days = daysSince(candidate.lastPracticed, now);
+	const days = daysSince(lastPracticed, now);
 
 	// Mirrors the three terms of `scoreSectionCandidate`: whichever contributed
-	// most is the honest answer to "why this piece".
+	// most is the honest answer to "why this passage".
 	const phase = candidate.phase;
-	const target =
-		candidate.section?.targetBpmOverride ?? candidate.piece.targetTempoBpm;
-	const gap = bpmGap(target, candidate.currentBpm);
+	const gap = bpmGap(target, currentBpm);
 	const daysTerm = PHASE_SCORE[phase] * days;
 	const bpmTerm = BPM_GAP_WEIGHT[phase] * gap;
-	const workTerm =
-		NEEDS_WORK_WEIGHT[phase] *
-		needsWorkTerm(candidate.lastQuality, candidate.lastEffort);
+	const workTerm = NEEDS_WORK_WEIGHT[phase] * needsWorkTerm(quality, effort);
 
 	if (workTerm > daysTerm && workTerm >= bpmTerm) {
 		return {
+			modeKey,
 			reasonKey: "screen.overview.pieceReason.lastResultPoor",
 			reasonParams: {},
 		};
 	}
 	if (bpmTerm > daysTerm) {
 		return {
+			modeKey,
 			reasonKey: "screen.overview.pieceReason.bpmGap",
 			reasonParams: { gap },
 		};
 	}
 	return {
+		modeKey,
 		reasonKey: "screen.overview.pieceReason.daysSince",
 		reasonParams: { days },
 	};
@@ -109,20 +142,53 @@ function reasonForMaintenancePiece(
 	};
 }
 
+/** Every candidate, not one per piece — the overview is a menu of passages. */
 function sectionBasedSuggestions(
 	pieces: Piece[],
 	sections: Section[],
 	now: Date,
 ): SuggestedPiece[] {
 	if (pieces.length === 0) return [];
-	const candidates = buildSectionCandidates(pieces, sections, now);
-	const bestByPiece = bestCandidateByPiece(candidates);
+	return buildSectionCandidates(pieces, sections, now)
+		.filter((c) => !c.practicedToday)
+		.map((c) => ({
+			piece: c.piece,
+			section: c.section,
+			score: c.score,
+			...reasonForCandidate(c, now),
+		}));
+}
 
-	return Array.from(bestByPiece.values()).map((c) => ({
-		piece: c.piece,
-		score: c.score,
-		...reasonForCandidate(c, now),
-	}));
+/**
+ * Breadth before depth: pass one takes each piece's best candidate in piece
+ * order, pass two spends what is left on second passages of pieces already
+ * shown. Pure score order would hand a finely sectioned piece every slot for
+ * days, because each of its untouched sections accrues neglect on its own.
+ * The session coach anchors on the piece instead, and disagrees on purpose.
+ */
+function breadthFirst(
+	suggestions: SuggestedPiece[],
+	cap: number,
+): SuggestedPiece[] {
+	const byPiece = new Map<string, SuggestedPiece[]>();
+	for (const s of suggestions) {
+		const id = s.piece.id ?? "";
+		byPiece.set(id, [...(byPiece.get(id) ?? []), s]);
+	}
+	const queues = Array.from(byPiece.values())
+		.map((q) => q.sort((a, b) => b.score - a.score))
+		.sort((a, b) => b[0].score - a[0].score);
+
+	const out: SuggestedPiece[] = [];
+	for (let round = 0; out.length < cap; round++) {
+		const before = out.length;
+		for (const queue of queues) {
+			if (out.length >= cap) break;
+			if (queue[round]) out.push(queue[round]);
+		}
+		if (out.length === before) break;
+	}
+	return out;
 }
 
 function maintenanceBasedSuggestions(
@@ -131,6 +197,8 @@ function maintenanceBasedSuggestions(
 ): SuggestedPiece[] {
 	return pieces.map((piece) => ({
 		piece,
+		section: null,
+		modeKey: null,
 		score: scoreMaintenancePiece(piece, now),
 		...reasonForMaintenancePiece(piece, now),
 	}));
@@ -152,16 +220,6 @@ export function suggestPieces(
 		};
 	}
 
-	if (
-		activePieces.length > 0 &&
-		activePieces.every((p) => isPracticedToday(p.lastPracticed ?? null, now))
-	) {
-		return {
-			suggestions: [],
-			emptyStateKey: "screen.overview.emptyState.allPracticedToday",
-		};
-	}
-
 	const allMaintenance =
 		activePieces.length > 0 &&
 		activePieces.every(
@@ -171,46 +229,35 @@ export function suggestPieces(
 	const notPracticedToday = (s: SuggestedPiece) =>
 		!isPracticedToday(s.piece.lastPracticed ?? null, now);
 
-	const learnSuggestions = sectionBasedSuggestions(
-		activePieces.filter((p) => p.state === "learning"),
-		sections,
-		now,
-	)
-		.filter(notPracticedToday)
-		.sort((a, b) => b.score - a.score)
-		.slice(0, 1);
+	const inState = (state: Piece["state"]) =>
+		activePieces.filter((p) => p.state === state);
 
-	const stabSuggestions = sectionBasedSuggestions(
-		activePieces.filter((p) => p.state === "stabilizing"),
-		sections,
-		now,
-	)
-		.filter(notPracticedToday)
-		.sort((a, b) => b.score - a.score)
-		.slice(0, 1);
+	const bySection = (state: Piece["state"]) =>
+		breadthFirst(
+			sectionBasedSuggestions(inState(state), sections, now),
+			PIECE_CAP,
+		);
 
-	const perfSuggestions = maintenanceBasedSuggestions(
-		activePieces.filter((p) => p.state === "performance"),
-		now,
-	)
-		.filter(notPracticedToday)
-		.sort((a, b) => b.score - a.score)
-		.slice(0, 2);
-
-	const maintSuggestions = maintenanceBasedSuggestions(
-		activePieces.filter((p) => p.state === "maintenance"),
-		now,
-	)
-		.filter(notPracticedToday)
-		.sort((a, b) => b.score - a.score)
-		.slice(0, 2);
+	const byPiece = (state: Piece["state"]) =>
+		maintenanceBasedSuggestions(inState(state), now)
+			.filter(notPracticedToday)
+			.sort((a, b) => b.score - a.score)
+			.slice(0, PIECE_CAP);
 
 	const suggestions = [
-		...learnSuggestions,
-		...stabSuggestions,
-		...perfSuggestions,
-		...maintSuggestions,
+		...bySection("learning"),
+		...bySection("stabilizing"),
+		...byPiece("performance"),
+		...byPiece("maintenance"),
 	];
+
+	// Nothing left to suggest, yet pieces are alive: they were all practised.
+	if (suggestions.length === 0 && activePieces.length > 0) {
+		return {
+			suggestions: [],
+			emptyStateKey: "screen.overview.emptyState.allPracticedToday",
+		};
+	}
 
 	return {
 		suggestions,

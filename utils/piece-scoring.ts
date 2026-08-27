@@ -1,10 +1,6 @@
 import type { Piece } from "@/models/piece";
 import type { Section } from "@/models/section";
-import {
-	type SectionCandidate,
-	scoreMaintenancePiece,
-	scoreSectionModes,
-} from "./planner-scoring";
+import { scoreMaintenancePiece, scoreSectionModes } from "./planner-scoring";
 
 /**
  * The single place a piece is boiled down to one number.
@@ -26,24 +22,6 @@ export function groupSectionsByPiece(
 		byPiece.set(section.pieceId, arr);
 	}
 	return byPiece;
-}
-
-/**
- * Highest-scoring candidate per piece — the section that needs work most is
- * what makes the whole piece worth practising.
- */
-export function bestCandidateByPiece(
-	candidates: SectionCandidate[],
-): Map<string, SectionCandidate> {
-	const best = new Map<string, SectionCandidate>();
-	for (const candidate of candidates) {
-		const id = candidate.piece.id ?? "";
-		const existing = best.get(id);
-		if (!existing || candidate.score > existing.score) {
-			best.set(id, candidate);
-		}
-	}
-	return best;
 }
 
 /**
