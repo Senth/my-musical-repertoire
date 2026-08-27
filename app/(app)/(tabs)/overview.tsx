@@ -59,7 +59,11 @@ import {
 	readInstallPromptDismissed,
 	writeInstallPromptDismissed,
 } from "@/utils/session-storage";
-import { pieceStateVisual, techniqueStateVisual } from "@/utils/state-colors";
+import {
+	pieceStateVisual,
+	sectionPhaseVisual,
+	techniqueStateVisual,
+} from "@/utils/state-colors";
 
 /** MD3 one-line list item with supporting trailing text. */
 const SESSION_ROW_HEIGHT = 56;
@@ -221,7 +225,9 @@ export default function OverviewScreen() {
 							mode="elevated"
 							onPress={() => router.push(`/piece/${s.piece.id}`)}
 							style={accentBorderStyle(
-								pieceStateVisual(s.piece.state, theme.dark),
+								s.section
+									? sectionPhaseVisual(s.section.phase, theme.dark)
+									: pieceStateVisual(s.piece.state, theme.dark),
 							)}
 						>
 							<Card.Title
