@@ -10,6 +10,7 @@ import {
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import type { Section, SectionPhase } from "@/models/section";
 import { formatDaysAgo } from "@/utils/date";
+import { formatBarRange } from "@/utils/piece-display";
 import { deriveCurrentBpm } from "@/utils/practice-modes";
 
 type AppTheme = MD3Theme & {
@@ -57,18 +58,7 @@ export function SectionDetailRow({
 				? theme.colors.warning
 				: theme.colors.success;
 
-	const barRangeText = (() => {
-		if (section.startBar != null && section.endBar != null) {
-			return t("screen.pieceSections.barRange", {
-				start: section.startBar,
-				end: section.endBar,
-			});
-		}
-		if (section.startBar != null) {
-			return t("screen.pieceSections.barFrom", { start: section.startBar });
-		}
-		return null;
-	})();
+	const barRangeText = formatBarRange(section, t);
 
 	const bpmText = (() => {
 		if (currentBpm == null) return null;
