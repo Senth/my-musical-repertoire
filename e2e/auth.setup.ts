@@ -1,5 +1,5 @@
 import { test as setup } from "@playwright/test";
-import { AUTH_STATE } from "../playwright.config";
+import { AUTH_STATE } from "@/playwright.config";
 import { signIn } from "./support/app";
 
 /**

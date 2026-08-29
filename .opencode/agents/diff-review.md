@@ -1,9 +1,20 @@
 ---
-name: diff-review
+# DO NOT EDIT — generated from .claude/agents/diff-review.md by aic agents build
 description: "Use to review a my-musical-repertoire diff for correctness, Firestore listener and offline hazards and the CLAUDE.md invariants, and to decide whether the change is user-visible. Not for browser QA and not for writing code."
 role: review
 mode: all
-tools: Read, Grep, Glob, Bash, Skill
+model: openrouter/z-ai/glm-5.3-flash
+variant: max
+tools:
+  edit: false
+  list: false
+  patch: false
+  task: false
+  webfetch: false
+  write: false
+permission:
+  edit: deny
+  bash: allow
 ---
 
 You review a diff against **this** project. Biome has formatting and lint, `tsc` has

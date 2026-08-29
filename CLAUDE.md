@@ -1,9 +1,9 @@
 # CLAUDE.md
 
 My Musical Repertoire: an Expo / React Native web-first practice app on Firebase.
-[Setup and scripts](../README.md) · [Vision and architecture](../docs/PROJECT.md) ·
-[Infra, ports and deploys](../docs/OPERATIONS.md) · [Personas](../docs/PERSONAS.md) ·
-[Feature specs](../docs/specs/INDEX.md)
+[Setup and scripts](README.md) · [Vision and architecture](docs/PROJECT.md) ·
+[Infra, ports and deploys](docs/OPERATIONS.md) · [Personas](docs/PERSONAS.md) ·
+[Feature specs](docs/specs/INDEX.md)
 
 - Package manager is **yarn**, not npm; imports use the `@/` alias, never `../`;
   platform splits are `.web.tsx` / `.native.tsx`.
@@ -26,28 +26,37 @@ My Musical Repertoire: an Expo / React Native web-first practice app on Firebase
 - Changing `firestore.rules` means `yarn deploy:dev`. An undeployed rule is not a rule,
   and it is the usual cause of "Missing or insufficient permissions".
 - Local e2e runs against the **Firebase emulators**, never the dev project. This repo
-  owns ports **8050-8056**; see [OPERATIONS.md](../docs/OPERATIONS.md) for which is
-  which and how to boot the stack.
+  owns ports **8050-8056**; see [OPERATIONS.md](docs/OPERATIONS.md) for which is which
+  and how to boot the stack.
 - After implementing: `yarn lint --write`, `yarn invariants`, `yarn typecheck`,
   `yarn test` — fix everything they report, including pre-existing failures. `yarn e2e`
-  is the fifth gate, run by `/review` and by CI, and needs `scripts/dev-stack.sh up`.
-- `yarn invariants` ([`scripts/check-invariants.sh`](../scripts/check-invariants.sh)) is
+  is the fifth gate, run by the review stage and by CI, and needs
+  `scripts/dev-stack.sh up`.
+- `yarn invariants` ([`scripts/check-invariants.sh`](scripts/check-invariants.sh)) is
   where the greppable rules above are enforced. Silence a false positive with a trailing
-  `// invariants:allow`, never by widening the pattern. A new rule a regex could decide
-  goes in that script too.
-- Work runs as five stages, **each in a fresh session** so no stage inherits the last
-  one's context: [`/new-feature`](skills/new-feature/SKILL.md) ·
-  [`/cleanup`](skills/cleanup/SKILL.md) · [`/bug`](skills/bug/SKILL.md)
-  → [`/implement`](skills/implement/SKILL.md)
-  → [`/review`](skills/review/SKILL.md)
-  → [`/ship`](skills/ship/SKILL.md).
+  `// invariants:allow`, never by widening the pattern; the script drops those lines in
+  `drop_allowed()`. A new rule a regex could decide goes in that script too. CI passes
+  `--base`, and a named base it cannot resolve is a hard error rather than a pass.
+- Work runs in **two sessions**. A kickoff — [`/new-feature`](.claude/skills/new-feature/SKILL.md)
+  · [`/cleanup`](.claude/skills/cleanup/SKILL.md) · [`/bug`](.claude/skills/bug/SKILL.md) —
+  ends at a confirmed spec under `docs/specs/wip/` and writes no code. Then
+  [`/continue-work`](.claude/skills/continue-work/SKILL.md) takes it to a draft PR:
+  [`/implement`](.claude/skills/implement/SKILL.md) →
+  [`/review`](.claude/skills/review/SKILL.md) → [`/ship`](.claude/skills/ship/SKILL.md),
+  checkpointed in `.tmp/continue-work.state.json`. All three remain callable standalone.
+- Everything that writes code is dispatched to GLM through `oc-task`; the spec, the
+  dispatch and the PASS/FAIL stay with Claude. `pianist-review` is the exception and
+  stays an Opus subagent, because its product is the concreteness.
+- `.ai/config.toml` is what a stage reads for the gate commands, what counts as
+  user-visible, and the report and checkpoint paths.
+- A spec's `[test]` acceptance claims become `e2e/` specs whose titles **start with the
+  claim's number** — `test("3: …")`. `yarn invariants` fails until each one has one.
 - Ship only on a PASS — the session that wrote the code never signs it off, and `/ship`
-  folds the wip spec into [`docs/specs/`](../docs/specs/INDEX.md) and opens a **draft**
-  PR.
+  folds the wip spec into [`docs/specs/`](docs/specs/INDEX.md) and opens a **draft** PR.
 - Work lives in **GitHub Issues + the Kanban board** (project 3), not markdown — labels
-  `bug` / `feature` / `idea` / `cleanup`, branches are `#<nn>-<slug>`, and the PR closes
-  the issue with `Closes #NN`. [`TODO.md`](../TODO.md) is a generated mirror; never
-  hand-edit it, regenerate with `scripts/sync-todo.sh`.
+  `bug` / `feature` / `cleanup` / `idea` / `ai`, an `idea` moves to the Idea column,
+  branches are `feat/<nn>-<slug>` · `bug/<nn>-<slug>` · `cleanup/<nn>-<slug>`, and the
+  PR closes the issue with `Closes #NN`.
 - Merging a PR deploys to production, so gate every merge on green CI.
 
 ## Privacy Policy & Terms of Service

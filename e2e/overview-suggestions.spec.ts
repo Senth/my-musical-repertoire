@@ -8,7 +8,7 @@ import { t } from "./support/app";
  * Runs on its own throwaway account (`overview-suggestions.setup.ts`), never
  * `SEED_USER` — see `OVERVIEW_AUTH_STATE` in `playwright.config.ts` for why.
  * Tests run in file order, serially: later tests build on pieces the earlier
- * ones created (`piece1Url` and friends), the way `fixture.setup.ts` drives
+ * ones created (`piece1Url` and friends), the way `fixture.build.ts` drives
  * the app instead of writing Firestore directly. Serial mode is required —
  * these tests mutate the same account's practice-today state, and a parallel
  * run would race itself.
