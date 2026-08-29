@@ -11,7 +11,7 @@ import base from "./playwright.config";
 export default defineConfig({
 	...base,
 	testIgnore: undefined,
-	testMatch: /fixture\.setup\.ts/,
+	testMatch: /fixture\.build\.ts/,
 	retries: 0,
 	projects: [{ name: "fixture", use: { ...devices["Desktop Chrome"] } }],
 });

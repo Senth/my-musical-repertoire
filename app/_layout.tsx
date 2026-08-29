@@ -1,4 +1,4 @@
-import "../global.css";
+import "@/global.css";
 import "@/i18n";
 
 import { Slot, useRouter, useSegments } from "expo-router";

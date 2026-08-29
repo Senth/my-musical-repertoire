@@ -1,5 +1,5 @@
 import { expect, test as setup } from "@playwright/test";
-import { OVERVIEW_AUTH_STATE } from "../playwright.config";
+import { OVERVIEW_AUTH_STATE } from "@/playwright.config";
 import { t } from "./support/app";
 
 /**

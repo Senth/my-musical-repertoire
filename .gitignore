@@ -52,7 +52,5 @@ emulator-data
 
 expo-env.d.ts
 # @end expo-cli
-/.repowise
 /.firebase
 /.playwright-cli
-/TODO.md

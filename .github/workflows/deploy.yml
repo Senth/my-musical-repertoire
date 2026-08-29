@@ -57,7 +57,7 @@ jobs:
           service_account: github-actions-deploy@my-musical-repertoire.iam.gserviceaccount.com
 
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools@13
+        run: npm install -g firebase-tools@15
 
       - name: Deploy to Firebase
         # firebase-tools authenticates via Application Default Credentials, i.e.

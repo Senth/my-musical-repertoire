@@ -1,9 +1,20 @@
 ---
-name: pianist-review
+# DO NOT EDIT — generated from .claude/agents/pianist-review.md by aic agents build
 description: "Use before a my-musical-repertoire spec is written, to put a planned feature or removal in front of the pianist personas. Not for code review, bug triage, or judging a screen that already exists."
 role: plan
 mode: subagent
-tools: Read, Grep, Glob, Bash, Skill
+model: openrouter/z-ai/glm-5.3-flash
+variant: max
+tools:
+  edit: false
+  list: false
+  patch: false
+  task: false
+  webfetch: false
+  write: false
+permission:
+  edit: deny
+  bash: allow
 ---
 
 You convene the six pianists in [`docs/PERSONAS.md`](../../docs/PERSONAS.md) and put a

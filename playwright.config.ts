@@ -25,7 +25,7 @@ export const OVERVIEW_AUTH_STATE = ".tmp/e2e/overview-suggestions-auth.json";
 export default defineConfig({
 	testDir: "./e2e",
 	// The fixture builder is not part of a run — it has its own config.
-	testIgnore: /fixture\.setup\.ts/,
+	testIgnore: /fixture\.build\.ts/,
 	outputDir: ".tmp/e2e/results",
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,

@@ -1,34 +1,25 @@
 ---
 name: implement
-description: "Works a my-musical-repertoire spec's phases to green, one sub-agent per phase, verifying each phase itself rather than trusting the agent's word. Use in a fresh session after /new-feature, /cleanup or /bug has written a spec. Stops before review. Not for planning and not for shipping."
+description: "Works a my-musical-repertoire spec's phases to green, one dispatch per phase, verifying each phase itself rather than trusting the report. Use in a fresh session after /new-feature, /cleanup or /bug has written a spec, or standalone inside /continue-work. Stops before review."
 ---
 
 # Implement skill
 
 Runs the **Phases** of a spec, in order, and nothing else. Planning happened in
 `/new-feature`, `/cleanup` or `/bug`. Review happens in `/review`. Shipping happens in
-`/ship`. Each is a fresh session, and that is the point: this one holds the spec, the
-phase list and a section map, not five phases of accumulated implementation.
+`/ship`. [`/continue-work`](../continue-work/SKILL.md) runs all three in one session and is
+the normal way in; this file is what it invokes, and it stays callable on its own.
+
+The dispatch mechanics — the `oc-task` call shape, the report contract, the escalation
+ladder — live in the global **`glm-dispatch`** skill. Read it first. They are not restated
+here, and they are not copied into this repo.
 
 Talk to the user in **unslop** prose.
 
-## Why sub-agents
-
-One session working five phases carries every earlier phase into every later turn, so
-its cost grows with roughly the square of the phase count. Handing each phase to its
-own agent flattens that, at the price of one context re-load per phase. Break-even is
-around three phases.
-
-**Below three phases, do the work yourself** — under `ponytail` in `full` mode, the
-same as an agent would. The handoff costs more than it saves, and a two-phase spec is
-one sitting.
-
 ## Step 0: input
 
-A spec path, usually `docs/specs/wip/<nn>-<slug>.md`. Read it whole — it is short, it
-is the contract, and it is the only thing you are carrying.
-
-Confirm the branch is the feature's own, not `main`:
+A spec path, usually `docs/specs/wip/<nn>-<slug>.md`. Read it whole — it is short, it is the
+contract, and it is the only thing you are carrying.
 
 ```bash
 GIT_VANILLA=1 git branch --show-current
@@ -38,8 +29,8 @@ If it is `main`, stop and say so. Merging to `main` deploys to production.
 
 ## Step 1: the section map
 
-Build it once and hand the same map to every phase agent, so no agent reads a 540-line
-area spec to change forty lines:
+Build it once and hand the same map to every phase, so no dispatch reads a 540-line area
+spec to change forty lines:
 
 ```bash
 grep -n '^## ' docs/specs/<area>.md
@@ -52,61 +43,81 @@ touches, and pass them as `<file> <start>-<end> <heading>`.
 
 For each phase, in order:
 
-1. **Dispatch.** `feature-small` for a tightly-scoped slice, `feature-large` for a
-   multi-file one with real design in it; `bug-small` / `bug-large` when the spec came
-   from `/bug`. The spec says which per phase; if it does not, judge from the phase's
-   scope and say what you chose. Hand over: the spec path, **which phase**, the section
-   map, the instruction to **invoke the `ponytail` skill in `full` mode**, and the
-   instruction to respond and think in **caveman ultra**.
+1. **Dispatch it.** Every phase goes to GLM, including the ones that change how a screen
+   looks — what a screen should look like was decided in `docs/DESIGN.md` and in the spec's
+   **Surface brief**, both written before any phase ran. A spec that still names
+   `feature-small` or `feature-large` on a phase is carrying a stale hint; ignore it.
 
-   Ponytail is not optional. The spec decided *what* to build; ponytail decides how
-   much code that takes. Catching an unnecessary abstraction at write time is a
-   deletion; catching it in `diff-review` is a rewrite.
+   The prompt carries the spec path and **which phase** (not the spec's contents), the
+   section map, the gate commands by pointing at `.ai/config.toml`, and **`ponytail` in
+   `full` mode**. Ponytail is not optional and there is no short path out of it: the spec
+   decided *what* to build, ponytail decides how much code that takes. Catching an
+   unnecessary abstraction at write time is a deletion; catching it in `diff-review` is a
+   rewrite, and this repo has paid for the rewrite version.
 
-2. **Verify it yourself.** Never take the agent's word for green:
+   When the phase touches `[review] visible_paths`, the prompt also carries `docs/DESIGN.md`
+   and the Surface brief, plus design-apply's `references/principles.md`,
+   `references/anti-patterns.md` and `references/checklist.md`, with that skill's Steps 1, 2
+   and 5 skipped and **no browser**.
+
+   When the phase adds a user-owned Firestore collection or a device storage key, the prompt
+   says it must land in `utils/delete-account.ts` and in `clearLocalUserData`, children
+   before parents.
+
+   **A spec with fewer than three phases** is not an exemption from any of that. Doing the
+   work yourself is allowed when the handoff would cost more than it saves — but it runs
+   under `ponytail` in `full` mode exactly as a dispatch would.
+
+2. **Verify it yourself.** Never take the report's word for green:
 
    ```bash
    yarn lint --write && yarn invariants && yarn typecheck && yarn test
    ```
 
-   A phase that touches user-visible surface also owes its `e2e/` tests — the spec's
-   Acceptance claims tagged `[test]` become real specs in the phase that builds the
-   screen, not later, and `yarn invariants` fails until the test titles match the
-   claims. Run them when the phase adds them:
+   `yarn invariants` fails until every `[test]` claim has a test whose title starts with its
+   number — `test("3: …")`. It therefore stays red for claims a later phase owns. Read which
+   claims it names: those are the spec's phasing and you carry them forward; a claim **this**
+   phase owns is yours now. Say which of the two when you report, and never rename a claim to
+   silence it.
+
+   A phase that builds a screen also owes its `e2e/` tests, in the same phase:
 
    ```bash
    scripts/dev-stack.sh up && yarn e2e
    ```
 
-3. **Red?** Send the failure back to the **same agent** with the output, and let it fix
-   its own phase. Two rounds. Still red after that, stop and report — do not start
-   fixing another agent's phase yourself, and do not move to the next phase on red.
+   If the phase touched `firestore.rules`, `yarn deploy:dev` — an undeployed rule is not a
+   rule.
 
-4. **Commit.** One commit per phase, once it is green. The agent commits its own phase;
-   if it did not, do it:
+3. **Red?** Send the failure output back for another round, `--round <n>` from the second on.
+   Two rounds. Still red, stop and report — do not move to the next phase on red.
+
+4. **Commit.** One commit per phase, once it is green. The dispatch commits its own phase; if
+   it did not, do it:
 
    ```bash
    GIT_VANILLA=1 git commit -m "<type>(<scope>): <phase summary>"
    ```
 
-5. Report the phase in one line and move on.
+   A phase that is not committed is not done, whatever the report says.
+
+5. Report the phase in one line and move on. A phase boundary is not a stop.
 
 ## Step 3: stop
 
-When the last implementation phase is green and committed, **stop**. Do not review your
-own work, do not fold the spec, do not open a PR.
+When the last phase is green and committed, **stop**. Do not review your own work, do not
+fold the spec, do not open a PR.
 
-Tell the user: run **`/review`** in a fresh session. Say which phases landed, which
-commits, whether `firestore.rules` changed and therefore needs `yarn deploy:dev`, and
-anything the spec left as an open decision.
+Say which phases landed, which commits, whether `firestore.rules` changed and therefore needs
+`yarn deploy:dev`, whether the emulators were pristine, and anything the spec left as an open
+decision. Then: run **`/review`** in a fresh session.
 
 ## What does not belong here
 
-- **Reviewing.** The session that wrote the code never signs it off, and dispatching
-  agents still counts as writing it.
+- **Reviewing.** The session that wrote the code never signs it off, and dispatching still
+  counts as writing it.
 - **Folding the wip spec into `docs/specs/`.** That is `/ship`, after a PASS.
-- **Deciding scope.** If a phase turns out to be wrong or the spec is ambiguous, stop
-  and ask. Do not redesign mid-run; a spec changed silently during implementation is a
-  spec nobody agreed to.
-- **Committing anything outside the phase list.** Drive-by fixes belong in their own
-  issue.
+- **Editing `docs/DESIGN.md`.** Nobody edits the contract mid-run.
+- **Deciding scope.** If a phase turns out to be wrong or the spec is ambiguous, stop and
+  ask. A spec changed silently during implementation is a spec nobody agreed to.
+- **Committing anything outside the phase list.** Drive-by fixes belong in their own issue.
