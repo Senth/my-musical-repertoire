@@ -73,6 +73,10 @@
 		},
 		"bpm": {
 			"placeholder": "e.g. 80",
+			"decreaseOne": "Decrease BPM by 1",
+			"increaseOne": "Increase BPM by 1",
+			"decreaseFive": "Decrease BPM by 5",
+			"increaseFive": "Increase BPM by 5",
 			"half": "½",
 			"double": "×2"
 		},
