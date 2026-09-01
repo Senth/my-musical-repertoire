@@ -130,6 +130,9 @@ export default function CoachScreen() {
 	// Play cue once when block timer first hits 0
 	useEffect(() => {
 		if (!session || !currentBlock || !currentBlockState) return;
+		// Paused (about to resume): the block anchor is stale, elapsed counts the
+		// away gap until resumeSession re-anchors it — never cue off that.
+		if (session.pausedAt) return;
 		const idx = session.currentBlockIndex;
 		if (blockTotalSeconds > 0 && blockElapsedSeconds >= blockTotalSeconds) {
 			if (!cueFiredForIndexRef.current.has(idx)) {
