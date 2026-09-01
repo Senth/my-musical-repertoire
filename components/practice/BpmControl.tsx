@@ -76,8 +76,20 @@ export function BpmControl({
 						value=""
 						onValueChange={(v) => adjust(v === "minus" ? -1 : 1)}
 						buttons={[
-							{ value: "minus", label: "−1", disabled: off, style: BTN },
-							{ value: "plus", label: "+1", disabled: off, style: BTN },
+							{
+								value: "minus",
+								icon: "chevron-down",
+								accessibilityLabel: t("common.bpm.decreaseOne"),
+								disabled: off,
+								style: BTN,
+							},
+							{
+								value: "plus",
+								icon: "chevron-up",
+								accessibilityLabel: t("common.bpm.increaseOne"),
+								disabled: off,
+								style: BTN,
+							},
 						]}
 					/>
 				</View>
@@ -87,8 +99,20 @@ export function BpmControl({
 						value=""
 						onValueChange={(v) => adjust(v === "minus" ? -5 : 5)}
 						buttons={[
-							{ value: "minus", label: "−5", disabled: off, style: BTN },
-							{ value: "plus", label: "+5", disabled: off, style: BTN },
+							{
+								value: "minus",
+								icon: "chevron-double-down",
+								accessibilityLabel: t("common.bpm.decreaseFive"),
+								disabled: off,
+								style: BTN,
+							},
+							{
+								value: "plus",
+								icon: "chevron-double-up",
+								accessibilityLabel: t("common.bpm.increaseFive"),
+								disabled: off,
+								style: BTN,
+							},
 						]}
 					/>
 				</View>
