@@ -25,6 +25,7 @@
 	},
 	"section": {
 		"phase": {
+			"not_started": "Not started",
 			"learning": "Learning",
 			"stabilizing": "Stabilizing",
 			"maintenance": "Maintenance"
@@ -1001,7 +1002,9 @@
 			"addNextNudge": {
 				"title": "Ready for the next passage?",
 				"body": "Section {{section}} is {{phase}} — ready to add the next passage of {{piece}}?",
+				"transitionBody": "Section {{section}} of {{piece}} is not started — ready to start learning it?",
 				"add": "Add section",
+				"transition": "Move to learning",
 				"noMore": "No more sections"
 			}
 		}

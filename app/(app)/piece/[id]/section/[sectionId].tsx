@@ -24,6 +24,7 @@ import {
 } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { SECTION_PHASES, type SectionPhase } from "@/models/section";
+import { defaultSectionPhase } from "@/utils/default-section-phase";
 
 export default function SectionEditScreen() {
 	const { t } = useTranslation();
@@ -37,7 +38,7 @@ export default function SectionEditScreen() {
 
 	const { pieces } = usePieces();
 	const piece = pieces.find((p) => p.id === pieceId);
-	const { sections } = useSections(pieceId ?? "");
+	const { sections, loading: sectionsLoading } = useSections(pieceId ?? "");
 	const section = isNew
 		? null
 		: (sections.find((s) => s.id === sectionId) ?? null);
@@ -58,6 +59,8 @@ export default function SectionEditScreen() {
 	const [archiveDialogVisible, setArchiveDialogVisible] = useState(false);
 	const [archiveLoading, setArchiveLoading] = useState(false);
 	const hasSeeded = useRef(false);
+	const hasDefaulted = useRef(false);
+	const phaseTouched = useRef(false);
 	const labelTouched = useRef(false);
 	const labelInputRef = useAutoFocusOnMount(isNew);
 
@@ -90,6 +93,23 @@ export default function SectionEditScreen() {
 		setNotes(section.notes ?? "");
 		hasSeeded.current = true;
 	}, [isNew, section]);
+
+	// A new section opens on the phase the piece's state suggests, computed once
+	// the piece and its sections have arrived so the learning-section check is
+	// real. A pick already made from the dropdown wins — Firestore data can
+	// arrive after it.
+	useEffect(() => {
+		if (
+			!isNew ||
+			hasDefaulted.current ||
+			phaseTouched.current ||
+			sectionsLoading ||
+			!piece
+		)
+			return;
+		setPhase(defaultSectionPhase(piece, sections));
+		hasDefaulted.current = true;
+	}, [isNew, sectionsLoading, piece, sections]);
 
 	const parseOptionalInt = (text: string): number | null => {
 		const trimmed = text.trim();
@@ -167,7 +187,10 @@ export default function SectionEditScreen() {
 				label={t("screen.pieceSections.form.phaseLabel")}
 				value={phase}
 				options={phaseOptions}
-				onChange={(v) => setPhase((v as SectionPhase) ?? "learning")}
+				onChange={(v) => {
+					phaseTouched.current = true;
+					setPhase((v as SectionPhase) ?? "learning");
+				}}
 			/>
 
 			<View className="gap-1">

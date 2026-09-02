@@ -22,6 +22,7 @@ import {
 
 /** `M` — how fast a section of this phase decays per day untouched. */
 export const PHASE_SCORE: Record<SectionPhase, number> = {
+	not_started: 10,
 	learning: 10,
 	stabilizing: 3,
 	maintenance: 1,
@@ -34,6 +35,7 @@ export const PHASE_SCORE: Record<SectionPhase, number> = {
  * every phase instead of dominating one and vanishing from another.
  */
 export const BPM_GAP_WEIGHT: Record<SectionPhase, number> = {
+	not_started: 0.25,
 	learning: 0.25,
 	stabilizing: 0.5,
 	maintenance: 1,
@@ -42,6 +44,7 @@ export const BPM_GAP_WEIGHT: Record<SectionPhase, number> = {
 /** `P` — weight on the squared needs-work term. Halved for learning, where a
  * rough attempt is expected rather than alarming. */
 export const NEEDS_WORK_WEIGHT: Record<SectionPhase, number> = {
+	not_started: 0.5,
 	learning: 0.5,
 	stabilizing: 1,
 	maintenance: 1,
@@ -349,6 +352,9 @@ export function buildSectionCandidates(
 			});
 		} else {
 			for (const section of pieceSections) {
+				// A not-started section is parked material — never planned, never
+				// suggested, and moved to learning by the add-section nudge instead.
+				if (section.phase === "not_started") continue;
 				const effectiveTarget =
 					section.targetBpmOverride ?? piece.targetTempoBpm ?? null;
 				const { score, modeKey } = scoreSectionModes(

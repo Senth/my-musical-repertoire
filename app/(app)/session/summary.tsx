@@ -9,11 +9,11 @@ import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveSession } from "@/hooks/use-active-session";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
+import { useChangeSectionPhase } from "@/hooks/use-section-phase";
 import { useAllSections } from "@/hooks/use-sections";
 import type { Piece } from "@/models/piece";
-import type { Section } from "@/models/section";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
-import { addSectionNudgeSection } from "@/utils/add-section-nudge";
+import { sectionNudge } from "@/utils/add-section-nudge";
 import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
 import { planTotalMinutes } from "@/utils/session-planner";
 import { clearActiveSession } from "@/utils/session-storage";
@@ -27,6 +27,7 @@ export default function SessionSummaryScreen() {
 	const { pieces } = usePieces();
 	const { sections } = useAllSections();
 	const { updatePiece } = useUpdatePiece();
+	const { changeSectionPhase } = useChangeSectionPhase();
 	const [busyPieceId, setBusyPieceId] = useState<string | null>(null);
 
 	const handleDone = async () => {
@@ -58,12 +59,40 @@ export default function SessionSummaryScreen() {
 		);
 		return pieces
 			.filter((p) => p.id && practisedIds.has(p.id))
-			.map((p) => ({ piece: p, section: addSectionNudgeSection(p, sections) }))
+			.map((p) => ({ piece: p, nudge: sectionNudge(p, sections) }))
 			.filter(
-				(entry): entry is { piece: Piece; section: Section } =>
-					entry.section != null,
+				(
+					entry,
+				): entry is {
+					piece: Piece;
+					nudge: NonNullable<ReturnType<typeof sectionNudge>>;
+				} => entry.nudge != null,
 			);
 	}, [session, pieces, sections]);
+
+	const handleMoveToLearning = async (
+		pieceId: string,
+		nudge: NonNullable<ReturnType<typeof sectionNudge>>,
+	) => {
+		if (!nudge.section.id) return;
+		setBusyPieceId(pieceId);
+		try {
+			await changeSectionPhase({
+				pieceId,
+				sectionId: nudge.section.id,
+				fromPhase: nudge.section.phase,
+				toPhase: "learning",
+				trigger: "advance-button",
+				achievedBpmAtEvent: nudge.section.byMode?.HT?.bpm ?? null,
+				qualityAtEvent: nudge.section.byMode?.HT?.quality ?? null,
+				priorPhaseChangedAt: nudge.section.phaseChangedAt ?? null,
+			});
+		} catch {
+			// Non-fatal: the nudge simply stays until the next session.
+		} finally {
+			setBusyPieceId(null);
+		}
+	};
 
 	if (!loaded) {
 		return <LoadingScreen />;
@@ -140,14 +169,18 @@ export default function SessionSummaryScreen() {
 					);
 				})}
 
-				{nudges.map(({ piece, section }) => (
+				{nudges.map(({ piece, nudge }) => (
 					<AddNextSectionNudge
 						key={piece.id}
 						pieceTitle={piece.title}
-						sectionLabel={section.label}
-						phaseLabel={t(`section.phase.${section.phase}`)}
+						sectionLabel={nudge.section.label}
+						phaseLabel={t(`section.phase.${nudge.section.phase}`)}
+						kind={nudge.kind}
 						busy={busyPieceId === piece.id}
 						onAddSection={() => router.push(`/piece/${piece.id}/section/new`)}
+						onMoveToLearning={() =>
+							handleMoveToLearning(piece.id as string, nudge)
+						}
 						onNoMoreSections={() => handleNoMoreSections(piece.id as string)}
 					/>
 				))}

@@ -73,6 +73,7 @@ const TECHNIQUE_STATE_VISUALS: Record<TechniqueState, StateVisualPair> = {
 };
 
 const SECTION_PHASE_VISUALS: Record<SectionPhase, StateVisualPair> = {
+	not_started: visual("dormant", "dormant"),
 	learning: visual("learning", "learning"),
 	stabilizing: visual("stabilizing", "stabilizing"),
 	maintenance: visual("maintenance", "maintenance"),
