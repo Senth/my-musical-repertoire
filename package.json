@@ -78,7 +78,7 @@
 		"@types/jest": "~30",
 		"@types/node": "^26.3.0",
 		"@types/react": "19.2.14",
-		"fallow": "^2.88.3",
+		"fallow": "^3.0.0",
 		"firebase-admin": "^14.2.0",
 		"firebase-tools": "^15.28.1",
 		"jest": "^29",
