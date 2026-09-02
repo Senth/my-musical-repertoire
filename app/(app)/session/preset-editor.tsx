@@ -11,6 +11,7 @@ import {
 	Text,
 	useTheme,
 } from "react-native-paper";
+import Animated, { FadeInDown, FadeOutDown } from "react-native-reanimated";
 import { FormScaffold } from "@/components/ui/FormScaffold";
 import { FormTextField } from "@/components/ui/FormTextField";
 import {
@@ -63,8 +64,12 @@ export default function PresetEditorScreen() {
 	const [error, setError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 	// Tap pins the explanation open; hover (web) reveals it while pointing.
+	// A pinned row closes on click even under the pointer, and hover stays
+	// dismissed until the pointer actually leaves, so boundary jitter cannot
+	// flick the panel back open.
 	const [pinnedInfo, setPinnedInfo] = useState<PresetLineKey | null>(null);
 	const [hoveredInfo, setHoveredInfo] = useState<PresetLineKey | null>(null);
+	const [hoverDismissed, setHoverDismissed] = useState(false);
 
 	// Fill the form as soon as the document shows up, and stop once the user has
 	// touched anything. A one-shot "hydrate when loaded" prefill would race the
@@ -87,6 +92,25 @@ export default function PresetEditorScreen() {
 			...prev,
 			[key]: prev[key] == null ? PRESET_LINE_LIMITS[key].floor : null,
 		}));
+	};
+
+	const toggleInfo = (key: PresetLineKey) => {
+		if (pinnedInfo === key) {
+			setPinnedInfo(null);
+			setHoverDismissed(true);
+		} else {
+			setPinnedInfo(key);
+			setHoverDismissed(false);
+		}
+	};
+
+	const hoverInfo = (key: PresetLineKey, hovering: boolean) => {
+		if (hovering) {
+			setHoveredInfo(key);
+		} else {
+			setHoveredInfo((prev) => (prev === key ? null : prev));
+			setHoverDismissed(false);
+		}
 	};
 
 	const setLineMinutes = (key: PresetLineKey, value: number) => {
@@ -170,15 +194,11 @@ export default function PresetEditorScreen() {
 						key={key}
 						lineKey={key}
 						minutes={lines[key] ?? null}
-						infoOpen={pinnedInfo === key || hoveredInfo === key}
-						onToggleInfo={() =>
-							setPinnedInfo((prev) => (prev === key ? null : key))
+						infoOpen={
+							pinnedInfo === key || (hoveredInfo === key && !hoverDismissed)
 						}
-						onHoverInfo={(hovering) =>
-							setHoveredInfo((prev) =>
-								hovering ? key : prev === key ? null : prev,
-							)
-						}
+						onToggleInfo={() => toggleInfo(key)}
+						onHoverInfo={(hovering) => hoverInfo(key, hovering)}
 						onToggle={() => toggleLine(key)}
 						onChange={(v) => setLineMinutes(key, v)}
 					/>
@@ -357,17 +377,24 @@ function LineRow({
 				})}
 			/>
 			{infoOpen && (
-				<Text
-					variant="bodySmall"
-					// Indented to line up under the row label, not the checkbox.
-					style={{
-						color: theme.colors.onSurfaceVariant,
-						paddingLeft: LABEL_INDENT,
-						paddingTop: 4,
-					}}
+				// FadeInDown/FadeOutDown default to ReduceMotion.System, so the
+				// OS reduce-motion setting turns them off.
+				<Animated.View
+					entering={FadeInDown.duration(150)}
+					exiting={FadeOutDown.duration(150)}
 				>
-					{t(`screen.session.editor.info.${lineKey}` as const)}
-				</Text>
+					<Text
+						variant="bodySmall"
+						// Indented to line up under the row label, not the checkbox.
+						style={{
+							color: theme.colors.onSurfaceVariant,
+							paddingLeft: LABEL_INDENT,
+							paddingTop: 4,
+						}}
+					>
+						{t(`screen.session.editor.info.${lineKey}` as const)}
+					</Text>
+				</Animated.View>
 			)}
 		</View>
 	);
