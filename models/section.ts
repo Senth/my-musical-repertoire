@@ -1,8 +1,13 @@
 import type { ByMode } from "./practice";
 
-export type SectionPhase = "learning" | "stabilizing" | "maintenance";
+export type SectionPhase =
+	| "not_started"
+	| "learning"
+	| "stabilizing"
+	| "maintenance";
 
 export const SECTION_PHASES: SectionPhase[] = [
+	"not_started",
 	"learning",
 	"stabilizing",
 	"maintenance",

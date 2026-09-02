@@ -30,7 +30,7 @@ import { useChangeSectionPhase } from "@/hooks/use-section-phase";
 import { useReorderSections, useSections } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { Section } from "@/models/section";
-import { addSectionNudgeSection } from "@/utils/add-section-nudge";
+import { sectionNudge } from "@/utils/add-section-nudge";
 import { formatDaysAgo } from "@/utils/date";
 import { formatBarRange, formatComposerLine } from "@/utils/piece-display";
 
@@ -61,13 +61,35 @@ export default function PieceDetailScreen() {
 	const [reordering, setReordering] = useState(false);
 	const [nudgeBusy, setNudgeBusy] = useState(false);
 
-	const nudgeSection = addSectionNudgeSection(piece, sections);
+	const nudge = sectionNudge(piece, sections);
 
 	const handleNoMoreSections = async () => {
 		if (!id) return;
 		setNudgeBusy(true);
 		try {
 			await updatePiece(id, { allSectionsAdded: true });
+		} catch {
+			setError(t("error.firebase"));
+		} finally {
+			setNudgeBusy(false);
+		}
+	};
+
+	const handleMoveToLearning = async () => {
+		const section = nudge?.section;
+		if (!id || !section?.id) return;
+		setNudgeBusy(true);
+		try {
+			await changeSectionPhase({
+				pieceId: id,
+				sectionId: section.id,
+				fromPhase: section.phase,
+				toPhase: "learning",
+				trigger: "advance-button",
+				achievedBpmAtEvent: section.byMode?.HT?.bpm ?? null,
+				qualityAtEvent: section.byMode?.HT?.quality ?? null,
+				priorPhaseChangedAt: section.phaseChangedAt ?? null,
+			});
 		} catch {
 			setError(t("error.firebase"));
 		} finally {
@@ -355,14 +377,16 @@ export default function PieceDetailScreen() {
 						)}
 					</View>
 
-					{nudgeSection && (
+					{nudge && (
 						<View className="px-4 pb-2">
 							<AddNextSectionNudge
 								pieceTitle={piece.title}
-								sectionLabel={nudgeSection.label}
-								phaseLabel={t(`section.phase.${nudgeSection.phase}`)}
+								sectionLabel={nudge.section.label}
+								phaseLabel={t(`section.phase.${nudge.section.phase}`)}
+								kind={nudge.kind}
 								busy={nudgeBusy}
 								onAddSection={() => router.push(`/piece/${id}/section/new`)}
+								onMoveToLearning={handleMoveToLearning}
 								onNoMoreSections={handleNoMoreSections}
 							/>
 						</View>
