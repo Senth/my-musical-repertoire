@@ -70,7 +70,14 @@
 			"stop": "Stop Metronome",
 			"paused": "Metronome Paused",
 			"enterBpmToEnable": "Enter a BPM to enable the metronome",
-			"enterBpmToResume": "Enter a BPM to resume the metronome"
+			"enterBpmToResume": "Enter a BPM to resume the metronome",
+			"timeSignatures": {
+				"fourFour": "4/4",
+				"threeFour": "3/4",
+				"sixEight": "6/8",
+				"twoFour": "2/4"
+			},
+			"timeSignatureA11y": "Time signature {{signature}}"
 		},
 		"bpm": {
 			"placeholder": "e.g. 80",
