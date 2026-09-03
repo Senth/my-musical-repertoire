@@ -1,8 +1,18 @@
 import type { MutableRefObject } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { HelperText, SegmentedButtons, TextInput } from "react-native-paper";
 import { MetronomeButton } from "./MetronomeButton";
+
+const SIGNATURES = [
+	{ key: "fourFour", beats: 4 },
+	{ key: "threeFour", beats: 3 },
+	{ key: "sixEight", beats: 6 },
+	{ key: "twoFour", beats: 2 },
+] as const;
+
+type SignatureKey = (typeof SIGNATURES)[number]["key"];
 
 interface BpmControlProps {
 	value: string;
@@ -33,6 +43,7 @@ export function BpmControl({
 	const { t } = useTranslation();
 	const parsed = Number.parseInt(value.trim(), 10);
 	const isValid = !Number.isNaN(parsed);
+	const [signature, setSignature] = useState<SignatureKey>("fourFour");
 
 	function adjust(delta: number) {
 		if (!isValid) return;
@@ -66,7 +77,14 @@ export function BpmControl({
 					/>
 				</View>
 				{stopRef !== undefined && (
-					<MetronomeButton bpm={value} disabled={!!error} stopRef={stopRef} />
+					<MetronomeButton
+						bpm={value}
+						beatsPerBar={
+							SIGNATURES.find((s) => s.key === signature)?.beats ?? 4
+						}
+						disabled={!!error}
+						stopRef={stopRef}
+					/>
 				)}
 			</View>
 			<View className="flex-row gap-4 w-full">
@@ -141,6 +159,20 @@ export function BpmControl({
 					/>
 				</View>
 			</View>
+			<SegmentedButtons
+				style={FULL}
+				value={signature}
+				onValueChange={(v) => setSignature(v as SignatureKey)}
+				buttons={SIGNATURES.map(({ key }) => ({
+					value: key,
+					label: t(`common.metronome.timeSignatures.${key}`),
+					accessibilityLabel: t("common.metronome.timeSignatureA11y", {
+						signature: t(`common.metronome.timeSignatures.${key}`),
+					}),
+					disabled: off,
+					style: BTN,
+				}))}
+			/>
 			<HelperText type="error" visible={!!error}>
 				{error ?? ""}
 			</HelperText>

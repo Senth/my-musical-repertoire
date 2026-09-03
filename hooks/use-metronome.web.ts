@@ -9,28 +9,37 @@ export interface UseMetronomeReturn {
 const SCHEDULER_INTERVAL_MS = 25;
 const SCHEDULE_AHEAD_S = 0.1;
 const CLICK_FREQ_HZ = 880;
+const ACCENT_FREQ_HZ = 1320;
 const CLICK_DUR_S = 0.03;
 const CLICK_GAIN_PEAK = 4.0; // above 1.0 is safe — DynamicsCompressorNode prevents hard clipping
 
-export function useMetronome(bpm: number): UseMetronomeReturn {
+export function useMetronome(bpm: number, beatsPerBar = 4): UseMetronomeReturn {
 	const [isRunning, setIsRunning] = useState(false);
 	const audioCtxRef = useRef<AudioContext | null>(null);
 	const compressorRef = useRef<DynamicsCompressorNode | null>(null);
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	const nextNoteTimeRef = useRef(0);
 	const bpmRef = useRef(bpm);
+	const beatsPerBarRef = useRef(beatsPerBar);
+	const beatInBarRef = useRef(0);
 
 	useEffect(() => {
 		bpmRef.current = bpm;
 	}, [bpm]);
 
-	const scheduleClick = useCallback((time: number) => {
+	// A meter change starts a new bar, so the next click is beat 1 again.
+	useEffect(() => {
+		beatsPerBarRef.current = beatsPerBar;
+		beatInBarRef.current = 0;
+	}, [beatsPerBar]);
+
+	const scheduleClick = useCallback((time: number, accent: boolean) => {
 		const ctx = audioCtxRef.current;
 		if (!ctx) return;
 		const osc = ctx.createOscillator();
 		const gain = ctx.createGain();
 		osc.type = "triangle";
-		osc.frequency.value = CLICK_FREQ_HZ;
+		osc.frequency.value = accent ? ACCENT_FREQ_HZ : CLICK_FREQ_HZ;
 		gain.gain.setValueAtTime(0.0001, time);
 		gain.gain.exponentialRampToValueAtTime(CLICK_GAIN_PEAK, time + 0.002);
 		gain.gain.exponentialRampToValueAtTime(0.0001, time + CLICK_DUR_S);
@@ -44,9 +53,11 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
 		const ctx = audioCtxRef.current;
 		if (!ctx) return;
 		while (nextNoteTimeRef.current < ctx.currentTime + SCHEDULE_AHEAD_S) {
-			scheduleClick(nextNoteTimeRef.current);
+			scheduleClick(nextNoteTimeRef.current, beatInBarRef.current === 0);
 			const interval = 60 / Math.max(1, bpmRef.current);
 			nextNoteTimeRef.current += interval;
+			beatInBarRef.current =
+				(beatInBarRef.current + 1) % Math.max(1, beatsPerBarRef.current);
 		}
 	}, [scheduleClick]);
 
@@ -88,6 +99,7 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
 			void ctx.resume();
 		}
 		nextNoteTimeRef.current = ctx.currentTime + 0.05;
+		beatInBarRef.current = 0;
 		intervalRef.current = setInterval(scheduler, SCHEDULER_INTERVAL_MS);
 		setIsRunning(true);
 	}, [scheduler, stop]);

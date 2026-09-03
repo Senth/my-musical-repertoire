@@ -6,7 +6,10 @@ export interface UseMetronomeReturn {
 	stop: () => void;
 }
 
-export function useMetronome(_bpm: number): UseMetronomeReturn {
+export function useMetronome(
+	_bpm: number,
+	_beatsPerBar = 4,
+): UseMetronomeReturn {
 	return {
 		isRunning: false,
 		toggle: () => {},
