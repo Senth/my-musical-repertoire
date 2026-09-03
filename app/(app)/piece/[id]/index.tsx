@@ -239,217 +239,219 @@ export default function PieceDetailScreen() {
 				</GestureHandlerRootView>
 			) : (
 				<ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
-					{/* Piece header info */}
-					<View className="px-4 pt-4 gap-2">
-						<View className="flex-row items-center gap-2 flex-wrap">
+					<View className="w-full max-w-xl self-center">
+						{/* Piece header info */}
+						<View className="px-4 pt-4 gap-2">
+							<View className="flex-row items-center gap-2 flex-wrap">
+								<Text
+									variant="titleMedium"
+									style={{ color: theme.colors.onSurfaceVariant }}
+								>
+									{formatComposerLine(piece.composer, piece.collectionName)}
+								</Text>
+								<PieceStateChip state={piece.state} />
+							</View>
+						</View>
+
+						{/* Practice button (promoted above metadata) */}
+						<View className="px-4 pt-4">
+							<Button
+								mode="contained"
+								onPress={() =>
+									router.push(`/piece/${id}/practice?from=piece-detail`)
+								}
+								contentStyle={{ paddingVertical: 4 }}
+							>
+								{t("screen.pieceDetail.practice")}
+							</Button>
+						</View>
+
+						{/* Compact meta line */}
+						<View className="px-4 pt-2">
 							<Text
-								variant="titleMedium"
+								variant="bodyMedium"
 								style={{ color: theme.colors.onSurfaceVariant }}
 							>
-								{formatComposerLine(piece.composer, piece.collectionName)}
+								{metaLine}
 							</Text>
-							<PieceStateChip state={piece.state} />
 						</View>
-					</View>
 
-					{/* Practice button (promoted above metadata) */}
-					<View className="px-4 pt-4">
-						<Button
-							mode="contained"
-							onPress={() =>
-								router.push(`/piece/${id}/practice?from=piece-detail`)
-							}
-							contentStyle={{ paddingVertical: 4 }}
-						>
-							{t("screen.pieceDetail.practice")}
-						</Button>
-					</View>
+						<Divider className="mt-6" />
 
-					{/* Compact meta line */}
-					<View className="px-4 pt-2">
-						<Text
-							variant="bodyMedium"
-							style={{ color: theme.colors.onSurfaceVariant }}
-						>
-							{metaLine}
-						</Text>
-					</View>
+						{/* Notes section */}
+						<View className="px-4 pt-4 gap-2">
+							<View className="flex-row items-center justify-between">
+								<Text
+									variant="titleSmall"
+									style={{ color: theme.colors.onSurfaceVariant }}
+								>
+									{t("screen.pieceDetail.notes")}
+								</Text>
+								{!notesEditing && (
+									<IconButton
+										icon="pencil"
+										size={18}
+										accessibilityLabel={t("screen.pieceDetail.editNotes")}
+										onPress={() => setNotesEditing(true)}
+										style={{ margin: 0 }}
+									/>
+								)}
+							</View>
 
-					<Divider className="mt-6" />
+							{notesEditing ? (
+								<View className="gap-2">
+									<TextInput
+										value={notesText}
+										onChangeText={setNotesText}
+										mode="outlined"
+										multiline
+										numberOfLines={4}
+										autoFocus
+									/>
+									<View className="flex-row gap-2 justify-end">
+										<Button
+											onPress={() => {
+												setNotesText(piece.notes ?? "");
+												setNotesEditing(false);
+											}}
+											disabled={notesSaving}
+										>
+											{t("screen.pieceSections.archiveDialog.cancel")}
+										</Button>
+										<Button
+											mode="contained"
+											onPress={handleNotesSave}
+											loading={notesSaving}
+											disabled={notesSaving}
+										>
+											{t("screen.editPiece.save")}
+										</Button>
+									</View>
+								</View>
+							) : (
+								<Text
+									variant="bodyMedium"
+									style={{
+										color: piece.notes
+											? theme.colors.onSurface
+											: theme.colors.onSurfaceVariant,
+									}}
+								>
+									{piece.notes ?? t("screen.pieceDetail.noNotes")}
+								</Text>
+							)}
+						</View>
 
-					{/* Notes section */}
-					<View className="px-4 pt-4 gap-2">
-						<View className="flex-row items-center justify-between">
+						<Divider className="mt-6" />
+
+						{/* Sections header */}
+						<View className="flex-row items-center justify-between px-4 pt-4">
 							<Text
 								variant="titleSmall"
 								style={{ color: theme.colors.onSurfaceVariant }}
 							>
-								{t("screen.pieceDetail.notes")}
+								{t("screen.pieceDetail.sections")}
 							</Text>
-							{!notesEditing && (
-								<IconButton
-									icon="pencil"
-									size={18}
-									accessibilityLabel={t("screen.pieceDetail.editNotes")}
-									onPress={() => setNotesEditing(true)}
-									style={{ margin: 0 }}
-								/>
+							{sections.length > 0 && (
+								<Menu
+									visible={sectionsMenuVisible}
+									onDismiss={() => setSectionsMenuVisible(false)}
+									anchor={
+										<IconButton
+											icon="dots-vertical"
+											size={20}
+											accessibilityLabel={t("a11y.menu.options")}
+											onPress={() => setSectionsMenuVisible(true)}
+											style={{ margin: 0 }}
+										/>
+									}
+								>
+									<Menu.Item
+										leadingIcon="reorder-horizontal"
+										title={t("screen.pieceDetail.reorderSections")}
+										onPress={() => {
+											setSectionsMenuVisible(false);
+											setReordering(true);
+										}}
+									/>
+								</Menu>
 							)}
 						</View>
 
-						{notesEditing ? (
-							<View className="gap-2">
-								<TextInput
-									value={notesText}
-									onChangeText={setNotesText}
-									mode="outlined"
-									multiline
-									numberOfLines={4}
-									autoFocus
+						{nudge && (
+							<View className="px-4 pb-2">
+								<AddNextSectionNudge
+									pieceTitle={piece.title}
+									sectionLabel={nudge.section.label}
+									phaseLabel={t(`section.phase.${nudge.section.phase}`)}
+									kind={nudge.kind}
+									busy={nudgeBusy}
+									onAddSection={() => router.push(`/piece/${id}/section/new`)}
+									onMoveToLearning={handleMoveToLearning}
+									onNoMoreSections={handleNoMoreSections}
 								/>
-								<View className="flex-row gap-2 justify-end">
-									<Button
-										onPress={() => {
-											setNotesText(piece.notes ?? "");
-											setNotesEditing(false);
-										}}
-										disabled={notesSaving}
-									>
-										{t("screen.pieceSections.archiveDialog.cancel")}
-									</Button>
-									<Button
-										mode="contained"
-										onPress={handleNotesSave}
-										loading={notesSaving}
-										disabled={notesSaving}
-									>
-										{t("screen.editPiece.save")}
-									</Button>
-								</View>
+							</View>
+						)}
+
+						{/* Sections list / empty state */}
+						{!sectionsLoading && sections.length === 0 ? (
+							<View className="items-center py-8 gap-4 px-4">
+								<IconButton
+									icon="music-note-outline"
+									size={48}
+									disabled
+									style={{ margin: 0, opacity: 0.6 }}
+								/>
+								<Text variant="titleMedium">
+									{t("screen.pieceDetail.sectionsEmpty.title")}
+								</Text>
+								<Text
+									variant="bodyMedium"
+									style={{
+										textAlign: "center",
+										color: theme.colors.onSurfaceVariant,
+									}}
+								>
+									{t("screen.pieceDetail.sectionsEmpty.body")}
+								</Text>
+								<Button
+									mode="outlined"
+									onPress={() => router.push(`/piece/${id}/section/new`)}
+								>
+									{t("screen.pieceDetail.sectionsEmpty.addButton")}
+								</Button>
 							</View>
 						) : (
-							<Text
-								variant="bodyMedium"
-								style={{
-									color: piece.notes
-										? theme.colors.onSurface
-										: theme.colors.onSurfaceVariant,
-								}}
-							>
-								{piece.notes ?? t("screen.pieceDetail.noNotes")}
-							</Text>
-						)}
-					</View>
-
-					<Divider className="mt-6" />
-
-					{/* Sections header */}
-					<View className="flex-row items-center justify-between px-4 pt-4">
-						<Text
-							variant="titleSmall"
-							style={{ color: theme.colors.onSurfaceVariant }}
-						>
-							{t("screen.pieceDetail.sections")}
-						</Text>
-						{sections.length > 0 && (
-							<Menu
-								visible={sectionsMenuVisible}
-								onDismiss={() => setSectionsMenuVisible(false)}
-								anchor={
-									<IconButton
-										icon="dots-vertical"
-										size={20}
-										accessibilityLabel={t("a11y.menu.options")}
-										onPress={() => setSectionsMenuVisible(true)}
-										style={{ margin: 0 }}
+							<View className="pt-1">
+								{sections.map((s) => (
+									<SectionDetailRow
+										key={s.id}
+										section={s}
+										pieceTargetBpm={piece.targetTempoBpm}
+										onPress={() => router.push(`/piece/${id}/section/${s.id}`)}
+										onPracticePress={() =>
+											router.push(
+												`/piece/${id}/practice?sectionId=${s.id}&from=piece-detail`,
+											)
+										}
+										onChangePhase={(phase) => {
+											if (!id || !s.id || phase === s.phase) return;
+											changeSectionPhase({
+												pieceId: id,
+												sectionId: s.id,
+												fromPhase: s.phase,
+												toPhase: phase,
+												trigger: "phase-chip",
+												achievedBpmAtEvent: s.byMode?.HT?.bpm ?? null,
+												qualityAtEvent: s.byMode?.HT?.quality ?? null,
+												priorPhaseChangedAt: s.phaseChangedAt ?? null,
+											}).catch(() => setError(t("error.firebase")));
+										}}
 									/>
-								}
-							>
-								<Menu.Item
-									leadingIcon="reorder-horizontal"
-									title={t("screen.pieceDetail.reorderSections")}
-									onPress={() => {
-										setSectionsMenuVisible(false);
-										setReordering(true);
-									}}
-								/>
-							</Menu>
+								))}
+							</View>
 						)}
 					</View>
-
-					{nudge && (
-						<View className="px-4 pb-2">
-							<AddNextSectionNudge
-								pieceTitle={piece.title}
-								sectionLabel={nudge.section.label}
-								phaseLabel={t(`section.phase.${nudge.section.phase}`)}
-								kind={nudge.kind}
-								busy={nudgeBusy}
-								onAddSection={() => router.push(`/piece/${id}/section/new`)}
-								onMoveToLearning={handleMoveToLearning}
-								onNoMoreSections={handleNoMoreSections}
-							/>
-						</View>
-					)}
-
-					{/* Sections list / empty state */}
-					{!sectionsLoading && sections.length === 0 ? (
-						<View className="items-center py-8 gap-4 px-4">
-							<IconButton
-								icon="music-note-outline"
-								size={48}
-								disabled
-								style={{ margin: 0, opacity: 0.6 }}
-							/>
-							<Text variant="titleMedium">
-								{t("screen.pieceDetail.sectionsEmpty.title")}
-							</Text>
-							<Text
-								variant="bodyMedium"
-								style={{
-									textAlign: "center",
-									color: theme.colors.onSurfaceVariant,
-								}}
-							>
-								{t("screen.pieceDetail.sectionsEmpty.body")}
-							</Text>
-							<Button
-								mode="outlined"
-								onPress={() => router.push(`/piece/${id}/section/new`)}
-							>
-								{t("screen.pieceDetail.sectionsEmpty.addButton")}
-							</Button>
-						</View>
-					) : (
-						<View className="pt-1">
-							{sections.map((s) => (
-								<SectionDetailRow
-									key={s.id}
-									section={s}
-									pieceTargetBpm={piece.targetTempoBpm}
-									onPress={() => router.push(`/piece/${id}/section/${s.id}`)}
-									onPracticePress={() =>
-										router.push(
-											`/piece/${id}/practice?sectionId=${s.id}&from=piece-detail`,
-										)
-									}
-									onChangePhase={(phase) => {
-										if (!id || !s.id || phase === s.phase) return;
-										changeSectionPhase({
-											pieceId: id,
-											sectionId: s.id,
-											fromPhase: s.phase,
-											toPhase: phase,
-											trigger: "phase-chip",
-											achievedBpmAtEvent: s.byMode?.HT?.bpm ?? null,
-											qualityAtEvent: s.byMode?.HT?.quality ?? null,
-											priorPhaseChangedAt: s.phaseChangedAt ?? null,
-										}).catch(() => setError(t("error.firebase")));
-									}}
-								/>
-							))}
-						</View>
-					)}
 				</ScrollView>
 			)}
 

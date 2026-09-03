@@ -71,70 +71,72 @@ export default function TechniqueDetailScreen() {
 			</Appbar.Header>
 
 			<ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-				{/* Header info */}
-				<View className="px-4 pt-4 gap-2">
-					<View className="flex-row items-center gap-2 flex-wrap">
-						<TechniqueStateChip state={item.state} />
-						{item.type && (
-							<MetaChip
-								label={t(
-									`technique.type.${item.type}` as Parameters<typeof t>[0],
-								)}
-							/>
-						)}
-					</View>
-					<Text
-						variant="bodyMedium"
-						style={{ color: theme.colors.onSurfaceVariant }}
-					>
-						{t("screen.techniqueDetail.lastPracticed", {
-							when: formatDaysAgo(item.lastPracticedAt, t),
-						})}
-					</Text>
-					{item.targetTempoBpm != null && (
+				<View className="w-full max-w-xl self-center">
+					{/* Header info */}
+					<View className="px-4 pt-4 gap-2">
+						<View className="flex-row items-center gap-2 flex-wrap">
+							<TechniqueStateChip state={item.state} />
+							{item.type && (
+								<MetaChip
+									label={t(
+										`technique.type.${item.type}` as Parameters<typeof t>[0],
+									)}
+								/>
+							)}
+						</View>
 						<Text
 							variant="bodyMedium"
 							style={{ color: theme.colors.onSurfaceVariant }}
 						>
-							{t("screen.techniqueDetail.targetBpm", {
-								bpm: item.targetTempoBpm,
+							{t("screen.techniqueDetail.lastPracticed", {
+								when: formatDaysAgo(item.lastPracticedAt, t),
 							})}
 						</Text>
-					)}
-				</View>
-
-				{/* Practice button */}
-				<View className="px-4 pt-4">
-					<Button
-						mode="contained"
-						onPress={() =>
-							router.push(`/technique/${id}/practice?from=technique-detail`)
-						}
-						contentStyle={{ paddingVertical: 4 }}
-					>
-						{t("screen.techniqueDetail.practice")}
-					</Button>
-				</View>
-
-				{item.notes && (
-					<>
-						<Divider className="mt-6" />
-						<View className="px-4 pt-4 gap-2">
-							<Text
-								variant="titleSmall"
-								style={{ color: theme.colors.onSurfaceVariant }}
-							>
-								{t("screen.techniqueDetail.notes")}
-							</Text>
+						{item.targetTempoBpm != null && (
 							<Text
 								variant="bodyMedium"
-								style={{ color: theme.colors.onSurface }}
+								style={{ color: theme.colors.onSurfaceVariant }}
 							>
-								{item.notes}
+								{t("screen.techniqueDetail.targetBpm", {
+									bpm: item.targetTempoBpm,
+								})}
 							</Text>
-						</View>
-					</>
-				)}
+						)}
+					</View>
+
+					{/* Practice button */}
+					<View className="px-4 pt-4">
+						<Button
+							mode="contained"
+							onPress={() =>
+								router.push(`/technique/${id}/practice?from=technique-detail`)
+							}
+							contentStyle={{ paddingVertical: 4 }}
+						>
+							{t("screen.techniqueDetail.practice")}
+						</Button>
+					</View>
+
+					{item.notes && (
+						<>
+							<Divider className="mt-6" />
+							<View className="px-4 pt-4 gap-2">
+								<Text
+									variant="titleSmall"
+									style={{ color: theme.colors.onSurfaceVariant }}
+								>
+									{t("screen.techniqueDetail.notes")}
+								</Text>
+								<Text
+									variant="bodyMedium"
+									style={{ color: theme.colors.onSurface }}
+								>
+									{item.notes}
+								</Text>
+							</View>
+						</>
+					)}
+				</View>
 			</ScrollView>
 
 			<DeleteTechniqueDialog
