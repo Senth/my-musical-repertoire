@@ -19,6 +19,8 @@ export interface NormalizedLastLog {
 	achievedBpm?: number | null;
 	hands?: HandsMode | null;
 	drill?: PracticeDrill | null;
+	/** Free-text "note for next time" left with the log (#16). */
+	note?: string | null;
 }
 
 type PieceScope = { type: "piece"; pieceId: string };
@@ -54,6 +56,7 @@ export function normalizeLastLog(
 			technicalMistakes: (data.technicalMistakes as PracticeMistakes) ?? null,
 			memoryMistakes: (data.memoryMistakes as PracticeMistakes) ?? null,
 			achievedBpm: (data.achievedBpm as number) ?? null,
+			note: (data.note as string) ?? null,
 		};
 	}
 	return {
@@ -63,6 +66,7 @@ export function normalizeLastLog(
 		achievedBpm: (data.achievedBpm as number) ?? null,
 		hands: (data.hands as HandsMode) ?? null,
 		drill: (data.drill as PracticeDrill) ?? null,
+		note: (data.note as string) ?? null,
 	};
 }
 

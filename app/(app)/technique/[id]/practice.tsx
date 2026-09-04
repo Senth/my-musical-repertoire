@@ -3,7 +3,14 @@ import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { Appbar, Button, Menu, Text, useTheme } from "react-native-paper";
+import {
+	Appbar,
+	Button,
+	Menu,
+	Text,
+	TextInput,
+	useTheme,
+} from "react-native-paper";
 import { BpmControl } from "@/components/practice/BpmControl";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
@@ -116,6 +123,7 @@ export function TechniquePracticeContent({
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
+	const [note, setNote] = useState("");
 	const [saved, setSaved] = useState(false);
 	const [savedEntries, setSavedEntries] = useState<ModeEntry[]>([]);
 	const metronomeStopRef = useRef<(() => void) | null>(null);
@@ -162,7 +170,10 @@ export function TechniquePracticeContent({
 		setError(null);
 		try {
 			const sessionId = coach.sessionId ?? standaloneSessionId.current;
-			await saveTechniqueLog(techniqueId, modes.entries, { sessionId });
+			await saveTechniqueLog(techniqueId, modes.entries, {
+				sessionId,
+				note: note || null,
+			});
 			setSavedEntries(modes.entries);
 			return { ok: true };
 		} catch {
@@ -175,6 +186,7 @@ export function TechniquePracticeContent({
 		techniqueId,
 		validateBpm,
 		saveTechniqueLog,
+		note,
 		modes.drafts,
 		modes.entries,
 		modes.blockingKey,
@@ -349,6 +361,16 @@ export function TechniquePracticeContent({
 						value={modes.draft.effort}
 						onChange={modes.setEffort}
 						options={effortOptions(t)}
+					/>
+
+					<TextInput
+						label={t("screen.practice.noteForNextTimeLabel")}
+						aria-label={t("screen.practice.noteForNextTimeLabel")}
+						value={note}
+						onChangeText={setNote}
+						mode="outlined"
+						multiline
+						numberOfLines={3}
 					/>
 
 					{!inCoach && (

@@ -197,11 +197,15 @@ export function useDeleteTechnique() {
 export function useSaveTechniqueLog() {
 	const { user } = useAuth();
 
-	/** Writes one practice log per mode, then folds them all into `byMode`. */
+	/**
+	 * Writes one practice log per mode, then folds them all into `byMode`.
+	 * The note is screen-level, not per-mode: every log of the save carries it,
+	 * so whichever mode the student opens next shows the same reminder (#16).
+	 */
 	const saveTechniqueLog = async (
 		techniqueId: string,
 		entries: ModeEntry[],
-		options: { sessionId?: string | null } = {},
+		options: { sessionId?: string | null; note?: string | null } = {},
 	) => {
 		if (!user) throw new Error("Not authenticated");
 		if (entries.length === 0) return;
@@ -221,6 +225,7 @@ export function useSaveTechniqueLog() {
 						hands: entry.hands,
 						drill: entry.drill ?? null,
 						sessionId: options.sessionId ?? null,
+						note: options.note ?? null,
 					}),
 				),
 			),

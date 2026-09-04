@@ -148,6 +148,7 @@ async function practiceSection(
 		bpm?: string;
 		quality?: string;
 		effort?: string;
+		note?: string;
 	} = {},
 ) {
 	const modeParam = opts.mode ? `&mode=${opts.mode}` : "";
@@ -165,6 +166,14 @@ async function practiceSection(
 
 	if (opts.bpm) {
 		await page.getByPlaceholder(t("common.bpm.placeholder")).fill(opts.bpm);
+	}
+	if (opts.note) {
+		await page
+			.getByRole("textbox", {
+				name: t("screen.practice.noteForNextTimeLabel"),
+				exact: true,
+			})
+			.fill(opts.note);
 	}
 	await page
 		.getByRole("button", { name: opts.quality ?? "OK", exact: true })
@@ -402,4 +411,30 @@ test("The Practice button on a section card opens that section with its scored h
 		"65",
 		{ timeout: 10_000 },
 	);
+});
+
+/**
+ * Rides along on this suite's throwaway account and section helpers (#16):
+ * the note saved with a log must come back as the reference card's headline
+ * the next time the same mode is opened.
+ */
+test("A note saved with a practice log headlines the reference card on the next visit", async ({
+	page,
+}) => {
+	test.setTimeout(45_000);
+	const NOTE = "E2E note: ease the thumb at bar 124";
+	// Forwards only, as `twoDaysPass` demands — the last right-hand log sits
+	// two days ahead of the real clock, and the new note must top it.
+	await twoDaysPass(page);
+	await practiceSection(page, piece3Url, piece3SectionId, {
+		mode: "RH",
+		note: NOTE,
+	});
+
+	await page.goto(
+		`${piece3Url}/practice?sectionId=${piece3SectionId}&from=overview&mode=RH`,
+	);
+	await expect(page.getByText(NOTE, { exact: false })).toBeVisible({
+		timeout: 10_000,
+	});
 });
