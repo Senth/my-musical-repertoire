@@ -1,5 +1,5 @@
-# What this repo considers proof, and where its stage logic lives.
-# Written by `aic init`; the rest is my-musical-repertoire's own.
+# What this repo considers proof, and how to boot it.
+# The stage logic lives in the global agents; this file and `docs/` are all the repo carries.
 
 [gates]
 # Ordered, cheapest first. Every one runs, every time.
@@ -18,7 +18,7 @@ commands = [
 # Globs that make a change user-visible, and whether this repo has a browser stage.
 #
 # These are the paths where a player or a teacher could notice. They are the floor,
-# not the verdict: `diff-review` reads the diff and answers `User-visible: yes | no`,
+# not the verdict: the reviewer reads the diff and answers `User-visible: yes | no`,
 # and a scoring change under `utils/` or `models/` that alters which section gets
 # suggested is user-visible even though no glob here matches it. A new component
 # nothing routes to yet is not.
@@ -34,26 +34,42 @@ visible_paths = [
 ]
 browser = true
 
-[design]
-# The contract and the values it is written against. The token source is ground
-# truth: when the contract and the file disagree, the file is right and the
-# contract is stale. Nobody edits the contract mid-run — a finding cites a rule in
-# it or is flagged a taste call, and proposed rule changes go to the human as one
-# diff.
+[dev]
+# How a browser review brings the app up. Nothing else boots anything.
 #
-# Both files arrive after this one: `docs/DESIGN.md` is written before the refactor
-# that has to conform to it, and `theme/tokens.ts` is what that refactor converts
-# the app's NativeWind classes onto.
+# Ports are per checkout, not per worktree pool: the emulators come from
+# `firebase.json` and are shared, the web server is 8055 in the main checkout and
+# 8056 in a worktree. `ports` prints the one for the checkout you are in, and `up`
+# prints `WEB_URL=` on its last line. Never assume 8055.
+start = "scripts/dev-stack.sh up"
+url = "http://localhost:$(scripts/dev-stack.sh ports)"
+# Sign-in is an **email and password form** against the Auth emulator, not a
+# redirect: type pianist@example.com / practice123, then "Sign in with Email".
+# The account and the readiness marker are a contract with `.emulator-seed/`, and
+# they live in `e2e/support/app.ts`. `.tmp/e2e/auth.json` does not shortcut this:
+# it is a Playwright storage state including IndexedDB, and `state-load` restores
+# cookies and `localStorage` only.
+auth = "type pianist@example.com / practice123 -> click 'Sign in with Email'"
+ready = "Suggested Practices"
+
+# What `.emulator-seed` holds, so an empty screen is judged and not reported:
+# four pieces, two techniques, and **no practice history at all**. Every piece
+# therefore reads as never practised, and anything ranking by recency or by a BPM
+# gap is legitimately empty. That is the fixture's cold-start shape. Whether an
+# empty state explains itself is still fair game; reporting the emptiness as data
+# loss is not. A change whose behaviour needs a warm history is a finding that the
+# fixture needs extending, not a bug in the screen.
+
+[design]
+# The contract and the values it is written against. `theme/tokens.ts` is ground
+# truth: when the contract and the file disagree, the file is right and the contract
+# is stale. Nobody edits the contract mid-run — a finding cites a rule in it or is
+# flagged a taste call, and proposed rule changes go to the human as one diff.
+# Personal repo: the product-specific taste lives in `docs/DESIGN.md` sections, not
+# in a repo design skill.
+#
+# `theme/tokens.ts` does not exist yet. It arrives with #127, which converts the
+# app's NativeWind classes onto it; until then the contract is what holds, and a
+# new style prop is written against the scale the contract names.
 contract = "docs/DESIGN.md"
 tokens = "theme/tokens.ts"
-
-[stages]
-implement = "implement"
-review = "review"
-ship = "ship"
-
-[paths]
-specs = "docs/specs"
-dispatch = ".tmp/dispatch"
-prompts = ".tmp/prompts"
-checkpoint = ".tmp/continue-work.state.json"

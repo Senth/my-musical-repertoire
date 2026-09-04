@@ -3,7 +3,8 @@
 One spec per feature area, describing the behaviour as it currently ships. Specs
 carry the *why* — the pedagogy and the rejected alternatives — so decisions are
 not re-litigated. They are not implementation plans: while work is in flight the
-plan lives in [`wip/`](wip/README.md), and `/ship` folds it in here and deletes it.
+plan lives in untracked `.tmp/<source>-PLAN.md`, and its finished behaviour is folded
+in here when the work lands.
 
 | Spec | Description | Tags |
 | ---- | ----------- | ---- |

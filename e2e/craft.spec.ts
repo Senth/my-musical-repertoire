@@ -6,7 +6,7 @@ import { collectConsoleErrors, ROUTES } from "./support/app";
  * review. Written once, walks every route, and never grows with features —
  * feature behaviour belongs in that feature's own spec.
  *
- * Everything asserted here is off-limits to `browser-review`, which exists to
+ * Everything asserted here is off-limits to the browser review, which exists to
  * judge what a machine cannot. If a finding can be measured, it belongs in this
  * file instead.
  *

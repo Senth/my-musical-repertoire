@@ -3,18 +3,18 @@
 # The grep-shaped half of the CLAUDE.md invariants, run deterministically.
 #
 # Every check here is greppable by definition — a rule that needs reading
-# belongs to diff-review, not to this script. When a check produces a false
+# belongs to the review, not to this script. When a check produces a false
 # positive, append `// invariants:allow` to the offending line rather than
 # widening the pattern; a widened pattern stops catching the real thing.
 #
 # Usage:   yarn invariants [--base <ref>]
 # Exit:    0 = all pass, 1 = an invariant failed, 2 = the script could not run
 #
-# Checks 1-6 read the whole working tree — tracked files *and* untracked ones
+# Checks 1-4 read the whole working tree — tracked files *and* untracked ones
 # that git would add, because the moment you most want this run is right after
 # writing a new file, and a new file has not been staged yet.
 #
-# Check 7 is diff-shaped and needs a base ref. Auto-detected, it reports `skip`
+# Check 6 is diff-shaped and needs a base ref. Auto-detected, it reports `skip`
 # when there is nothing to diff against; named explicitly with `--base` and
 # unresolvable, it is a hard error — a CI expression that evaluates to an empty
 # string must never read as a pass.
@@ -146,7 +146,7 @@ fi
 # pattern cannot tell a user-facing string from a testID, so it only looks at
 # the four props that are always user-facing. The wider rule — a literal held
 # in a variable, or built by interpolation — needs reading, and belongs to
-# diff-review.
+# the review.
 # ---------------------------------------------------------------------------
 PATTERN='(^|[[:space:]])(label|title|placeholder|accessibilityLabel)="[A-Za-z][^"]{2,}"'
 hits=$(scan app components 2>/dev/null | drop_allowed | strip_comments)
@@ -163,7 +163,7 @@ fi
 # Account deletion is a promise in the privacy policy, not a feature. A
 # collection or a device key that nothing deletes makes that promise false.
 # Whether the *walk order* is right — children before parents — is judgement,
-# and belongs to diff-review.
+# and belongs to the review.
 # ---------------------------------------------------------------------------
 missing=""
 while read -r name; do
@@ -190,47 +190,11 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 5. Every [test] acceptance claim has a matching e2e test
-#
-# A wip spec's Acceptance section numbers what the change must do and tags each
-# claim `[test]` (assertable in a browser) or `[eye]` (a judgement, left to
-# browser-review). A `[test]` claim is a promise that an `e2e/` spec asserts it.
-#
-# The check matches the claim *number*, as `test("<n>: ...")`, not the wording.
-# Matching the text breaks the gate on any edit to the sentence and produces
-# unreadable test titles; whether the test asserts the claim rather than
-# something adjacent is judgement, and belongs to diff-review.
-#
-# Only wip specs are checked. `/ship` deletes the Acceptance section when it
-# folds a spec into docs/specs/, because by then the tests are the record.
-# ---------------------------------------------------------------------------
-wip_specs=$(git ls-files --cached --others --exclude-standard 'docs/specs/wip/*.md' \
-	| grep -v '/README\.md$' || true)
-missing=""
-for spec in $wip_specs; do
-	[[ -f "$spec" ]] || continue
-	claims=$(sed -n '/^##[[:space:]].*Acceptance/,/^##[[:space:]]/p' "$spec" \
-		| grep -oE '^[[:space:]]*([0-9]+)\.[[:space:]]*`?\[test\]`?' \
-		| grep -oE '[0-9]+' || true)
-	for n in $claims; do
-		if ! grep -rqE "test\(\s*[\"'\`]${n}[:.]?[[:space:]]" e2e/ 2>/dev/null; then
-			missing+="${spec}: claim ${n} is tagged [test] but no e2e test is named for it"$'\n'
-		fi
-	done
-done
-if [[ -n "$missing" ]]; then
-	report 5 "[test] claims have e2e tests" FAIL "${missing%$'\n'}" \
-		"Name the e2e test after the claim number — test(\"3: a section on hold is not suggested\") — or retag the claim [eye]."
-else
-	report 5 "[test] claims have e2e tests" ok
-fi
-
-# ---------------------------------------------------------------------------
 # 6. Firestore rules and indexes are deployed by hand
 #
 # This is the diff-shaped one, and it never fails: an undeployed rule is not a
 # rule, but no grep can tell whether `yarn deploy:dev` was run. What it does is
-# answer diff-review's `Rules deploy needed: yes | no` header for free, so that
+# answer the review's `Rules deploy needed: yes | no` header for free, so that
 # field stops being a judgement call.
 # ---------------------------------------------------------------------------
 if [[ -z "$BASE" ]]; then

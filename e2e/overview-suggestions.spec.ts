@@ -2,7 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 import { t } from "./support/app";
 
 /**
- * The seven `[test]` acceptance claims of `docs/specs/wip/111-suggest-sections.md`
+ * The seven acceptance claims of #111, suggest-sections
  * §9 — the two `[eye]` claims are for the browser reviewer, not for a script.
  *
  * Runs on its own throwaway account (`overview-suggestions.setup.ts`), never

@@ -91,7 +91,7 @@ jobs:
         run: yarn playwright install --with-deps chromium
 
       # Boots the emulator suite from the committed fixture plus an
-      # emulator-backed web server, the same stack `/review` runs against.
+      # emulator-backed web server, the same stack the review runs against.
       - name: Start the e2e stack
         run: scripts/dev-stack.sh up
 
