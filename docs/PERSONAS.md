@@ -1,8 +1,8 @@
 # Personas
 
-> The cast used by the [`pianist-review`](../.claude/agents/pianist-review.md) agent,
-> and the reference for anyone writing a spec, a `t()` string, or a reason line the
-> app shows a student.
+> The cast a review judges as, and the reference for anyone writing a spec, a `t()`
+> string, or a reason line the app shows a student. A browser review picks the one
+> persona the change most affects; a plan is checked against the whole cast.
 
 These are a **review instrument**, not market research. Each persona exists to stress
 one thing this app can plausibly fail at, and no two of them can produce the same
@@ -143,7 +143,7 @@ whether a logging form can be completed between two run-throughs.
 
 ## Margit's standing positions
 
-The pedagogy this product is built on. `pianist-review` cites these by name; a feature
+The pedagogy this product is built on. A review cites these by name; a feature
 that contradicts one is a finding, not a preference.
 
 1. **Concrete blocks, never "practise this piece."** An assignment names what is being

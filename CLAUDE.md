@@ -7,9 +7,13 @@ My Musical Repertoire: an Expo / React Native web-first practice app on Firebase
 
 - Package manager is **yarn**, not npm; imports use the `@/` alias, never `../`;
   platform splits are `.web.tsx` / `.native.tsx`.
-- Reach for a **react-native-paper** component first, else a NativeWind class, and only
-  then a style prop. Colours come from `useTheme()` — never a literal outside a theme
-  file.
+- Reach for a **react-native-paper** component first, else a style prop built from
+  `theme/tokens.ts` — no `StyleSheet.create`, and deliberately no NativeWind or Tailwind.
+  Colours come from `useTheme()` — never a literal outside a theme file.
+  - The app has not got there yet: 163 `className` uses across 40 files, and
+    `theme/tokens.ts` arrives with the conversion in #127. The rule is still the rule —
+    new code is written on the target stack, so the conversion never has to catch up
+    with itself.
 - Every user-facing string goes through `t()`, with `i18n/locales/en-US.json` updated in
   the same change.
 - Domain modules in `utils/` and `models/` have sibling tests. Snapshot tests and
@@ -31,28 +35,28 @@ My Musical Repertoire: an Expo / React Native web-first practice app on Firebase
 - After implementing: `yarn lint --write`, `yarn invariants`, `yarn typecheck`,
   `yarn test` — fix everything they report, including pre-existing failures. `yarn e2e`
   is the fifth gate, run by the review stage and by CI, and needs
-  `scripts/dev-stack.sh up`.
+  `scripts/dev-stack.sh up`. The ordered list is `[gates]` in
+  [`.ai/config.toml`](.ai/config.toml), and that list is what a green report is
+  measured against.
 - `yarn invariants` ([`scripts/check-invariants.sh`](scripts/check-invariants.sh)) is
   where the greppable rules above are enforced. Silence a false positive with a trailing
   `// invariants:allow`, never by widening the pattern; the script drops those lines in
   `drop_allowed()`. A new rule a regex could decide goes in that script too. CI passes
   `--base`, and a named base it cannot resolve is a hard error rather than a pass.
-- Work runs in **two sessions**. A kickoff — [`/new-feature`](.claude/skills/new-feature/SKILL.md)
-  · [`/cleanup`](.claude/skills/cleanup/SKILL.md) · [`/bug`](.claude/skills/bug/SKILL.md) —
-  ends at a confirmed spec under `docs/specs/wip/` and writes no code. Then
-  [`/continue-work`](.claude/skills/continue-work/SKILL.md) takes it to a draft PR:
-  [`/implement`](.claude/skills/implement/SKILL.md) →
-  [`/review`](.claude/skills/review/SKILL.md) → [`/ship`](.claude/skills/ship/SKILL.md),
-  checkpointed in `.tmp/continue-work.state.json`. All three remain callable standalone.
-- Everything that writes code is dispatched to GLM through `oc-task`; the spec, the
-  dispatch and the PASS/FAIL stay with Claude. `pianist-review` is the exception and
-  stays an Opus subagent, because its product is the concreteness.
-- `.ai/config.toml` is what a stage reads for the gate commands, what counts as
-  user-visible, and the report and checkpoint paths.
-- A spec's `[test]` acceptance claims become `e2e/` specs whose titles **start with the
-  claim's number** — `test("3: …")`. `yarn invariants` fails until each one has one.
-- Ship only on a PASS — the session that wrote the code never signs it off, and `/ship`
-  folds the wip spec into [`docs/specs/`](docs/specs/INDEX.md) and opens a **draft** PR.
+- **The workflow is not in this repo.** The stage logic, the dispatch rules and the review
+  loop live in the global agents. This repo carries `.ai/config.toml` plus the `docs/`
+  addons and nothing else — there are no repo skills and no repo agents, and adding one is
+  the wrong fix.
+  - [`.ai/config.toml`](.ai/config.toml): the ordered gates, what counts as user-visible,
+    how to boot the stack and sign in (`[dev]`), and the design contract.
+  - The `docs/` addons, read when present: [`PROJECT.md`](docs/PROJECT.md) (what this is),
+    [`PERSONAS.md`](docs/PERSONAS.md) (who it is for), [`DESIGN.md`](docs/DESIGN.md) (how
+    it looks), and [`specs/`](docs/specs/INDEX.md) (how each area already behaves).
+- Work you want carried to a PR starts with the `dispatcher` agent. Work that needs more
+  than one phase goes to `planner` first, in its own session, which writes
+  `.tmp/<source>-PLAN.md` — untracked, and pasted onto the issue.
+- Ship only on a green review — the session that wrote the code never signs it off, and
+  the `ship` skill opens a **draft** PR. The merge is the human's.
 - Work lives in **GitHub Issues + the Kanban board** (project 3), not markdown — labels
   `bug` / `feature` / `cleanup` / `idea` / `ai`, an `idea` moves to the Idea column,
   branches are `feat/<nn>-<slug>` · `bug/<nn>-<slug>` · `cleanup/<nn>-<slug>`, and the

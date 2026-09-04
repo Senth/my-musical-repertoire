@@ -1,7 +1,7 @@
 # Operations
 
 > Infrastructure, local stacks, the review fixture, and deploys.
-> Rules for writing code live in [`.claude/CLAUDE.md`](../.claude/CLAUDE.md);
+> Rules for writing code live in [`CLAUDE.md`](../CLAUDE.md);
 > vision and architecture in [`PROJECT.md`](PROJECT.md).
 
 ## Two stacks, and why
@@ -9,7 +9,7 @@
 | Stack | Web port | Backend | Started by | Used for |
 | --- | --- | --- | --- | --- |
 | Hand-driven dev | 8053 (main) · 8054 (worktree) | real `my-musical-repertoire-dev` | you | day-to-day development, hand-driven `playwright-cli` checks |
-| e2e | 8055 (main) · 8056 (worktree) | Firebase emulators | `scripts/dev-stack.sh` | `yarn e2e`, the `/review` browser pass, CI |
+| e2e | 8055 (main) · 8056 (worktree) | Firebase emulators | `scripts/dev-stack.sh` | `yarn e2e`, the browser review, CI |
 
 They exist separately so a test run cannot disturb the app you are looking at, and
 so `yarn e2e` never writes into the dev project. The port pairs follow the same
@@ -110,7 +110,7 @@ the cross-cutting things a person would otherwise re-check by eye every review: 
 untranslated `t()` key on screen, no horizontal overflow, a clean console against a
 closed allow list, and WCAG AA contrast in both colour schemes.
 
-Everything it measures is **off-limits to `browser-review`**, which exists to judge
+Everything it measures is **off-limits to the browser review**, which exists to judge
 what a machine cannot.
 
 **Touch targets are the deliberate omission.** react-native-paper's controls all

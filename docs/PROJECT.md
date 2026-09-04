@@ -99,9 +99,9 @@ The core problem: _"I often don't know what I should practice, and I want the ap
 | Actionable tasks (bugs, features, ideas, cleanup) | GitHub Issues + Kanban board |
 | Prioritized "what's next" mirror | [`TODO.md`](../TODO.md) (generated) |
 | Per-feature deep specs | [`docs/specs/`](specs/) |
-| In-flight implementation plans | [`docs/specs/wip/`](specs/wip/README.md) |
+| In-flight implementation plans | `.tmp/<source>-PLAN.md` (untracked, pasted onto the issue) |
 | Review personas, and Margit's teaching positions | [`docs/PERSONAS.md`](PERSONAS.md) |
 | Emulators, ports, the review fixture, deploys | [`docs/OPERATIONS.md`](OPERATIONS.md) |
 | Tech stack, setup, web-first workflow, RN cheat sheet | [`README.md`](../README.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md) |
 | Vision, requirements, decisions, architecture | this file |
-| Agent coding rules and the five-stage workflow | [`.claude/CLAUDE.md`](../.claude/CLAUDE.md) |
+| Agent coding rules, and where the workflow lives | [`CLAUDE.md`](../CLAUDE.md), [`.ai/config.toml`](../.ai/config.toml) |
