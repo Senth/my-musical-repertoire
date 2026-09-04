@@ -560,6 +560,7 @@
 			"memoryMistakes": "Memory Mistakes",
 			"save": "Save",
 			"achievedBpmLabel": "Achieved BPM",
+			"noteForNextTimeLabel": "Note for next time (optional)",
 			"lastSession": {
 				"header": "Last session · {{when}}",
 				"headerAfterBreak": "Last session · {{when}} · after a break",
@@ -570,6 +571,7 @@
 				"effort": "Effort",
 				"technical": "Technical",
 				"memory": "Memory",
+				"note": "Note: {{note}}",
 				"firstPractice": "First practice — no reference yet"
 			},
 			"sectionsPanel": {

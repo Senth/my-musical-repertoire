@@ -38,6 +38,8 @@ export interface SavePracticeInput {
 	flaggedSectionIds?: string[] | null;
 	triggeredFrom?: PracticeTrigger;
 	sessionId?: string | null;
+	/** Free-text note for next time; stored on the piece log only (#16). */
+	note?: string | null;
 }
 
 export interface SavePracticeResult {
@@ -68,6 +70,7 @@ export function useSavePractice() {
 		flaggedSectionIds,
 		triggeredFrom,
 		sessionId,
+		note,
 	}: SavePracticeInput): Promise<SavePracticeResult> => {
 		if (!user) throw new Error("Not authenticated");
 		const pieceId = piece.id;
@@ -85,6 +88,7 @@ export function useSavePractice() {
 			flaggedSectionIds: flaggedSectionIds ?? null,
 			triggeredFrom: triggeredFrom ?? null,
 			sessionId: sessionId ?? null,
+			note: note ?? null,
 		});
 
 		batch.update(pieceRef, {
@@ -159,6 +163,9 @@ export function useSaveSectionPractice() {
 	 * Writes one practice log per mode, then folds them all into `byMode`.
 	 * Returns the merged map so the caller can evaluate the progression nudges
 	 * against what was just written rather than the stale snapshot.
+	 *
+	 * The note is screen-level, not per-mode: every log of the save carries it,
+	 * so whichever mode the student opens next shows the same reminder (#16).
 	 */
 	const saveSectionPractice = async (
 		pieceId: string,
@@ -167,6 +174,7 @@ export function useSaveSectionPractice() {
 		entries: ModeEntry[],
 		triggeredFrom?: PracticeTrigger,
 		sessionId?: string | null,
+		note?: string | null,
 	): Promise<ByMode | null> => {
 		if (!user) throw new Error("Not authenticated");
 		if (entries.length === 0) return null;
@@ -194,6 +202,7 @@ export function useSaveSectionPractice() {
 						drill: entry.drill ?? null,
 						triggeredFrom: triggeredFrom ?? null,
 						sessionId: sessionId ?? null,
+						note: note ?? null,
 					}),
 				),
 			),

@@ -30,6 +30,7 @@ describe("normalizeLastLog", () => {
 					technicalMistakes: PracticeMistakes.few,
 					memoryMistakes: PracticeMistakes.some,
 					achievedBpm: 120,
+					note: "ease the thumb at bar 40",
 				},
 				"piece",
 			);
@@ -37,6 +38,7 @@ describe("normalizeLastLog", () => {
 			expect(log.technicalMistakes).toBe(PracticeMistakes.few);
 			expect(log.memoryMistakes).toBe(PracticeMistakes.some);
 			expect(log.achievedBpm).toBe(120);
+			expect(log.note).toBe("ease the thumb at bar 40");
 		});
 
 		it("maps missing piece fields to null", () => {
@@ -44,6 +46,7 @@ describe("normalizeLastLog", () => {
 			expect(log.technicalMistakes).toBeNull();
 			expect(log.memoryMistakes).toBeNull();
 			expect(log.achievedBpm).toBeNull();
+			expect(log.note).toBeNull();
 		});
 
 		it("returns the most-recent log's fields (limit(1) orderBy desc gives latest)", () => {
@@ -97,15 +100,17 @@ describe("normalizeLastLog", () => {
 			expect(log.quality).toBeNull();
 			expect(log.effort).toBeNull();
 			expect(log.achievedBpm).toBeNull();
+			expect(log.note).toBeNull();
 		});
 
 		it("reads the hands and drill tags", () => {
 			const log = normalizeLastLog(
-				{ date: ts, hands: "LH", drill: "staccato" },
+				{ date: ts, hands: "LH", drill: "staccato", note: "slow LH" },
 				"technique",
 			);
 			expect(log.hands).toBe("LH");
 			expect(log.drill).toBe("staccato");
+			expect(log.note).toBe("slow LH");
 		});
 	});
 });

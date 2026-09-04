@@ -100,9 +100,9 @@ All three are subcollections and additive; none required a rules change.
 
 | Path | Fields |
 | --- | --- |
-| `users/{uid}/pieces/{pid}/practiceLogs/{id}` | `date`, `technicalMistakes`, `memoryMistakes`, `achievedBpm`, `flaggedSectionIds`, `triggeredFrom`, `sessionId` |
-| `users/{uid}/pieces/{pid}/sections/{sid}/practiceLogs/{id}` | `date`, `quality`, `effort`, `achievedBpm`, `hands`, `drill`, `triggeredFrom`, `sessionId`, `source?` |
-| `users/{uid}/techniques/{tid}/practiceLogs/{id}` | `date`, `quality`, `effort`, `achievedBpm`, `hands`, `drill`, `triggeredFrom`, `sessionId` |
+| `users/{uid}/pieces/{pid}/practiceLogs/{id}` | `date`, `technicalMistakes`, `memoryMistakes`, `achievedBpm`, `flaggedSectionIds`, `triggeredFrom`, `sessionId`, `note?` |
+| `users/{uid}/pieces/{pid}/sections/{sid}/practiceLogs/{id}` | `date`, `quality`, `effort`, `achievedBpm`, `hands`, `drill`, `triggeredFrom`, `sessionId`, `source?`, `note?` |
+| `users/{uid}/techniques/{tid}/practiceLogs/{id}` | `date`, `quality`, `effort`, `achievedBpm`, `hands`, `drill`, `triggeredFrom`, `sessionId`, `note?` |
 
 Whole-piece logs have **no hands axis** — a run-through is hands-together by
 definition. `source: "run-through"` appears only on section logs written as
@@ -258,6 +258,9 @@ fields. Section-only work surfaces on each section's own screen.
 
 Body, in pedagogical priority order:
 
+- **Note (all):** the previous log's `note` for next time, as the card's
+  headline line — `bodyMedium` on `onSurface`, italic, so it outranks every
+  metric below. Absent when the last log carries none ([#16](https://github.com/Senth/my-musical-repertoire/issues/16)).
 - **Tempo (all):** `{achievedBpm} BPM` plus `(target {n})` when one exists; `—`
   when no BPM was logged.
 - **Section / technique:** `Quality` then `Effort` (effort de-emphasized).
@@ -388,6 +391,7 @@ noise.
 | `byMode[key].lastPracticed` | Section, TechniqueItem | per-mode recency; drives the per-mode same-day filter |
 | `flaggedSectionIds` | whole-piece log | which sections failed the run-through |
 | `triggeredFrom`, `sessionId` | every log | proactive vs error-driven drill; joins a session to its logs |
+| `note` | every practice log | free-text "note for next time"; the reference card's headline; feeds future recommendation signals |
 
 Signals this unlocks for later work: per-mode BPM-bump suggestions,
 hands-separate→hands-together nudges surfaced outside the practice screen,
@@ -421,8 +425,6 @@ fallback** — the script is the single source of truth.
 - **Hands tracking on whole-piece practice.**
 - **`PlannedBlock.suggestedHands`** — preselection is derived live (§5).
 - **Reading `hands` / `drill` back out** in any history or chart view.
-- **Per-log "note for next time" free-text field** →
-  [#16](https://github.com/Senth/my-musical-repertoire/issues/16).
 - **Multi-log trend / sparkline** in the reference card; realtime updates of it.
 - **Regression verdict, colouring or arrows** in the reference card.
 - **Per-section-row last log** inside the sections panel.
