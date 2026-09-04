@@ -86,7 +86,9 @@
 			"decreaseFive": "Decrease BPM by 5",
 			"increaseFive": "Increase BPM by 5",
 			"half": "½",
-			"double": "×2"
+			"double": "×2",
+			"tap": "Tap",
+			"tapTempo": "Tap tempo: tap 4 to 8 times to set the BPM"
 		},
 		"offline": {
 			"banner": "Offline — changes will sync when you reconnect."

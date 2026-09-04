@@ -1,8 +1,9 @@
 import type { MutableRefObject } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { HelperText, SegmentedButtons, TextInput } from "react-native-paper";
+import { addTap, bpmFromTaps } from "@/utils/tap-tempo";
 import { MetronomeButton } from "./MetronomeButton";
 
 const SIGNATURES = [
@@ -44,10 +45,17 @@ export function BpmControl({
 	const parsed = Number.parseInt(value.trim(), 10);
 	const isValid = !Number.isNaN(parsed);
 	const [signature, setSignature] = useState<SignatureKey>("fourFour");
+	const tapsRef = useRef<number[]>([]);
 
 	function adjust(delta: number) {
 		if (!isValid) return;
 		onChangeText(clamp(parsed + delta).toString());
+	}
+
+	function tap() {
+		tapsRef.current = addTap(tapsRef.current, Date.now());
+		const bpm = bpmFromTaps(tapsRef.current);
+		if (bpm !== null) onChangeText(clamp(bpm).toString());
 	}
 
 	function halve() {
@@ -140,6 +148,7 @@ export function BpmControl({
 						value=""
 						onValueChange={(v) => {
 							if (v === "half") halve();
+							else if (v === "tap") tap();
 							else doDouble();
 						}}
 						buttons={[
@@ -153,6 +162,12 @@ export function BpmControl({
 								value: "double",
 								label: t("common.bpm.double"),
 								disabled: off,
+								style: BTN,
+							},
+							{
+								value: "tap",
+								label: t("common.bpm.tap"),
+								accessibilityLabel: t("common.bpm.tapTempo"),
 								style: BTN,
 							},
 						]}
