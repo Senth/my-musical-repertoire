@@ -65,4 +65,4 @@ Tailwind classes are the same via NativeWind: `<View className="flex-1 p-4 bg-wh
 - [`TODO.md`](TODO.md) is a generated mirror of the board; regenerate with
   `scripts/sync-todo.sh` (auto-runs on branch checkout). Do not hand-edit it.
 - Vision, requirements, decisions, and architecture live in [`docs/PROJECT.md`](docs/PROJECT.md);
-  per-feature specs in [`docs/specs/`](docs/specs/).
+  how it looks in [`docs/DESIGN.md`](docs/DESIGN.md).

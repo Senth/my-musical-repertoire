@@ -64,7 +64,6 @@ assets/           # Images, fonts, etc.
 | What | Where |
 | --- | --- |
 | Vision, requirements, key decisions, architecture | [`docs/PROJECT.md`](docs/PROJECT.md) |
-| Per-feature deep specs | [`docs/specs/`](docs/specs/) |
 | Development workflow + React Native cheat sheet | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | Tasks (bugs / features / ideas / cleanup) | [GitHub Issues](https://github.com/Senth/my-musical-repertoire/issues) + Kanban board |
 | Prioritized "what's next" mirror | [`TODO.md`](TODO.md) _(generated — do not hand-edit)_ |
