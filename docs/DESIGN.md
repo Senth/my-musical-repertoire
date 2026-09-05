@@ -1,437 +1,299 @@
----
-name: My Musical Repertoire
-source_of_truth: theme/tokens.ts, theme/index.ts
-colors:
-  light:
-    primary: "#7B1FA2"
-    onPrimary: "#FFFFFF"
-    primaryContainer: "#E1BEE7"
-    onPrimaryContainer: "#21005D"
-    secondary: "#9C27B0"
-    onSecondary: "#FFFFFF"
-    secondaryContainer: "#E8DEF8"
-    onSecondaryContainer: "#1D192B"
-    tertiary: "#7D5260"
-    onTertiary: "#FFFFFF"
-    tertiaryContainer: "#FFD8E4"
-    onTertiaryContainer: "#31111D"
-    error: "#B3261E"
-    onError: "#FFFFFF"
-    errorContainer: "#F9DEDC"
-    onErrorContainer: "#410E0B"
-    warning: "#B45309"
-    onWarning: "#FFFFFF"
-    warningContainer: "#FEF3C7"
-    onWarningContainer: "#78350F"
-    success: "#047857"
-    onSuccess: "#FFFFFF"
-    successContainer: "#D1FAE5"
-    onSuccessContainer: "#064E3B"
-    background: "#FFFBFE"
-    onBackground: "#1C1B1F"
-    surface: "#FFFBFE"
-    onSurface: "#1C1B1F"
-    surfaceVariant: "#E7E0EC"
-    onSurfaceVariant: "#49454F"
-    outline: "#79747E"
-    outlineVariant: "#CAC4D0"
-    inverseSurface: "#313033"
-    inverseOnSurface: "#F4EFF4"
-    inversePrimary: "#D0BCFF"
-    surfaceDisabled: "rgba(28, 27, 31, 0.12)"
-    onSurfaceDisabled: "rgba(28, 27, 31, 0.38)"
-    backdrop: "rgba(50, 47, 55, 0.4)"
-    elevation: { level1: "#F7F3F9", level2: "#F3EDF6", level3: "#EEE8F4" }
-  dark:
-    primary: "#CE93D8"
-    onPrimary: "#381E72"
-    primaryContainer: "#4A148C"
-    onPrimaryContainer: "#EADDFF"
-    secondary: "#BA68C8"
-    onSecondary: "#332D41"
-    secondaryContainer: "#4A4458"
-    onSecondaryContainer: "#E8DEF8"
-    tertiary: "#EFB8C8"
-    onTertiary: "#492532"
-    tertiaryContainer: "#633B48"
-    onTertiaryContainer: "#FFD8E4"
-    error: "#F2B8B5"
-    onError: "#601410"
-    errorContainer: "#8C1D18"
-    onErrorContainer: "#F2B8B5"
-    warning: "#FCD34D"
-    onWarning: "#78350F"
-    warningContainer: "#92400E"
-    onWarningContainer: "#FEF3C7"
-    success: "#34D399"
-    onSuccess: "#064E3B"
-    successContainer: "#065F46"
-    onSuccessContainer: "#D1FAE5"
-    background: "#1C1B1F"
-    onBackground: "#E6E1E5"
-    surface: "#1C1B1F"
-    onSurface: "#E6E1E5"
-    surfaceVariant: "#49454F"
-    onSurfaceVariant: "#CAC4D0"
-    outline: "#938F99"
-    outlineVariant: "#49454F"
-    inverseSurface: "#E6E1E5"
-    inverseOnSurface: "#313033"
-    inversePrimary: "#6750A4"
-    surfaceDisabled: "rgba(230, 225, 229, 0.12)"
-    onSurfaceDisabled: "rgba(230, 225, 229, 0.38)"
-    backdrop: "rgba(50, 47, 55, 0.4)"
-    elevation: { level1: "#25232A", level2: "#2C2831", level3: "#312C38" }
-# The lifecycle ladder. `accent` is chip text and the card's left stripe; `tint`
-# is that accent composited over the surface at this alpha for the chip fill.
-lifecycle:
-  performance: { light: "#8A5300", dark: "#F0B75B", tintLight: 0.18, tintDark: 0.26 }
-  learning:    { light: "#6A3EA1", dark: "#D3A9F0", tintLight: 0.13, tintDark: 0.20 }
-  stabilizing: { light: "#1B5E8C", dark: "#8FC6EE", tintLight: 0.10, tintDark: 0.16 }
-  maintenance: { light: "#1B5E3F", dark: "#7FD1A8", tintLight: 0.08, tintDark: 0.13 }
-  dormant:     { light: "#49454F", dark: "#CAC4D0", tintLight: 0.07, tintDark: 0.11 }
-  retired:     { light: "#6E6A75", dark: "#98939E", tintLight: 0.00, tintDark: 0.00 }
-typography:
-  headlineSmall: { fontFamily: &sans 'Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif', fontSize: 24, lineHeight: 32, fontWeight: 400, letterSpacing: 0 }
-  titleLarge:   { fontFamily: *sans, fontSize: 22, lineHeight: 28, fontWeight: 400, letterSpacing: 0 }
-  titleMedium:  { fontFamily: *sans, fontSize: 16, lineHeight: 24, fontWeight: 500, letterSpacing: 0.15 }
-  titleSmall:   { fontFamily: *sans, fontSize: 14, lineHeight: 20, fontWeight: 500, letterSpacing: 0.1 }
-  bodyLarge:    { fontFamily: *sans, fontSize: 16, lineHeight: 24, fontWeight: 400, letterSpacing: 0.15 }
-  bodyMedium:   { fontFamily: *sans, fontSize: 14, lineHeight: 20, fontWeight: 400, letterSpacing: 0.25 }
-  bodySmall:    { fontFamily: *sans, fontSize: 12, lineHeight: 16, fontWeight: 400, letterSpacing: 0.4 }
-  labelLarge:   { fontFamily: *sans, fontSize: 14, lineHeight: 20, fontWeight: 500, letterSpacing: 0.1 }
-  labelMedium:  { fontFamily: *sans, fontSize: 12, lineHeight: 16, fontWeight: 500, letterSpacing: 0.5 }
-  labelSmall:   { fontFamily: *sans, fontSize: 11, lineHeight: 16, fontWeight: 500, letterSpacing: 0.5 }
-spacing: { none: 0, xxs: 4, xs: 8, sm: 12, md: 16, lg: 24, xl: 32, xxl: 48 }
-radius: { none: 0, xs: 4, sm: 6, md: 8, lg: 12, full: 999 }
-elevation: { none: 0, low: 2, high: 4 }
-contentWidth: { form: 448, page: 576 }
-size:
-  progressBar: 6
-  dot: 10
-  titleOnlyCard: 50
-  listRowMin: 56
-  fabOffset: 24
-  scrollTail: 96
-icon: { sm: 18, md: 20, action: 24, tab: 28, hero: 48 }
-border: { hairline: 1, accent: 4 }
-touchTarget: 48
-breakpoints: { compact: 600 }
-density: comfortable
-components:
-  page-frame:
-    file: components/ui/ScreenContent.tsx
-    paddingHorizontalCompact: "{spacing.md}"
-    paddingHorizontalRoomy: "{spacing.lg}"
-    paddingTop: "{spacing.lg}"
-    maxWidth: "{contentWidth.page}"
-  state-chip:
-    file: components/ui/StateChip.tsx
-    typography: "{typography.labelSmall}"
-    letterSpacing: 0.3
-    rounded: "{radius.sm}"
-    textMarginHorizontal: 9
-    textMarginVertical: 3
-    backgroundColor: "lifecycle accent at its tint alpha"
-    textColor: "lifecycle accent"
-    borderColor: "{colors.outlineVariant} when outlined, else none"
-  piece-card:
-    file: components/ui/card-style.ts
-    borderLeftWidth: "{border.accent}"
-    borderLeftColor: "lifecycle accent (0.35 alpha when retired)"
-    titleFontSize: 17
-    titleFontWeight: 500
-    subtitleColor: "onSurfaceVariant, both schemes"
-  progress-bar:
-    file: components/ui/PieceProgressBar.tsx
-    height: "{size.progressBar}"
-    rounded: "{radius.full}"
----
-
 # Design contract
 
-**`theme/tokens.ts` and `theme/index.ts` are the source of truth. This file is the rules.**
-Neither file exists yet: they arrive with the NativeWind removal (#127), and this contract
-was written first so that refactor has a scale to convert 163 `className` uses *to* rather
-than inventing one halfway through. Every number in the front matter above was read out of
-the app as it stands today — the Tailwind classes resolved to their computed pixels, the
-palette resolved through `react-native-paper`'s MD3 baseline and the overrides in
-`app/_layout.tsx`. Once `theme/tokens.ts` exists it is right and this file is the
-transcription; when they disagree, say the contract is stale rather than editing the code
-to match.
+## Overview
 
-The front matter mirrors those files' key names on purpose, so the two can be diffed by eye,
-and that costs it a clean `npx @google/design.md lint`. Four findings are expected and are
-not to be "fixed": `colors` is split into `light` and `dark` because the app has two palettes
-and neither is derived from the other; the scale is `radius`, not the schema's `rounded`,
-because that is what the code will call it; `lifecycle`, `size`, `border` and `contentWidth`
-are extension keys the schema does not resolve `{…}` references into; and every colour role
-is reported as orphaned because an MD3 role palette is not referenced component-by-component.
-Read the code, not the linter, on those four.
+My Musical Repertoire decides what a pianist should practise next, then gets out of the way
+while they practise it. One person at a time, most days, in short bursts between
+run-throughs. The main screen's job is to answer **"why this now?"** before anything else.
 
-**Nobody edits this file mid-run.** A review finding cites a rule here or says in words that
-it is a taste call. Proposed rule changes are collected as one diff for the human. Widening
-a rule so that the change in front of you passes is the failure this sentence exists to
-prevent.
+Every rule below follows from that. The screen is read at arm's length, on a phone in a
+stand above the keys, by someone with one hand free at most: a title has to survive a
+glance, a control has to survive a thumb, and anything decorative costs practice time. The
+cast that stresses this is in [`PERSONAS.md`](PERSONAS.md).
 
-## 1. Identity
+## Character
 
-My Musical Repertoire decides what a pianist should practise next, and then gets out of the
-way while they practise it. The screen is read at arm's length, on a phone in a stand above
-the keys, by someone with one hand free at most — and read in short bursts between
-run-throughs, not browsed. Every judgement below follows from that: a title must survive a
-glance, a control must survive a thumb, and anything decorative is costing a beat of
-practice time. The cast that stresses this is in [`PERSONAS.md`](PERSONAS.md); Rasmus is
-the one who fails a design decision fastest, and Margit is the one who decides whether the
-words on it are true.
+**Quiet, honest, fast.** Quiet because David has sixty pieces alive at once. Honest because
+Margit stops trusting every recommendation after one she would not have made. Fast because
+Rasmus is mid-session and the app is not the point.
 
-## 2. Direction
+**This must never look like:**
 
-Material 3 through `react-native-paper`, in a purple that is the app's own rather than
-Material's stock `#6750A4`, and deliberately low-chrome: flat surfaces, hairline dividers,
-one elevated card style, no gradients, no decorative iconography. It departs from stock MD3
-in exactly one place, and does it on purpose — colour is spent almost entirely on the
-lifecycle ladder in `utils/state-colors.ts`, so that a list of sixty pieces reads
-title-first and the state chips stay complementary rather than competing. That restraint is
-the design. An app for David's sixty live pieces cannot afford six equally loud badges.
+- **A streak app.** No streak counters, flames, badges, XP, levels, confetti, or any praise
+  the practice did not earn. Lena is doing the honest thing by showing up, and an app that
+  celebrates or scolds her for it is one she deletes on a bad week.
+- **A fitness dashboard.** No progress rings, radial gauges, metric tiles, sparklines,
+  scores out of a hundred, or week-over-week deltas. Progress here is one bar and a word.
+- **An enterprise tool.** No dense toolbars, no nested tabs, no settings drawer per screen —
+  and not its vocabulary: never "task", "item", "entry", "allocation".
+- **A landing page.** No hero sections, gradient meshes, decorative illustration, display
+  type, or cards that exist only to look like cards.
 
-## 3. Colour
+## Where the values live
 
-- **Primary** (`#7B1FA2` / `#CE93D8`) marks the single primary action on a screen — Practice,
-  Start session, Sign in — plus links and the focus ring. Never decoration, never status,
-  never a large fill behind text. One filled primary button per screen; a second action on
-  the same screen is `mode="outlined"` or `mode="text"`.
-- **Secondary and tertiary** are Paper's, and are effectively unused. Reaching for them is a
-  sign the screen wants a hierarchy it has not earned; use `onSurfaceVariant` instead.
-- **`onSurfaceVariant`** is the app's muted role: composer lines, bar ranges, "Never
-  practiced", helper text, every piece of metadata under a title. If text is not the thing
-  being read first, it is this colour.
-- **`outlineVariant`** is the single border colour, at `border.hairline`. One weight
-  throughout. `outline` is for non-text borders only — at 4.44:1 on light surface it clears
-  the 3:1 non-text floor and does not clear 4.5:1, so it may never carry a glyph or a label.
-- **Warning and success** are non-MD3 roles this app adds (`app/_layout.tsx`) and exist for
-  two things only: the offline bar (`warningContainer`) and a mistake-count trend
-  (`SectionDetailRow`). Always paired with an icon or a word, never colour alone. Because
-  they are not in Paper's `MD3Theme`, both files today re-declare their own `AppTheme`
-  intersection type to reach them — **that duplication is what `theme/index.ts` exists to
-  end**: one typed `useAppTheme()`, and the two schemes defined beside it rather than inline
-  in `app/_layout.tsx`.
-- **Error** is Paper's, and is for a failed write or an invalid field — not for "you have
-  not practised this in six weeks". Decay is not an error; it is the app's normal subject.
+`theme/tokens.ts` is ground truth, and **does not exist yet** — it arrives with #127, the
+change that moves this app off NativeWind. Until then the values live in two files that do:
+[`app/_layout.tsx`](../app/_layout.tsx) for the palette, and
+[`utils/state-colors.ts`](../utils/state-colors.ts) for the lifecycle set.
 
-Surfaces separate from the background by **elevation, not by border** — `background` and
-`surface` are the same colour in both schemes, so a card is legible because it is lifted, and
-the `elevation.level1–3` tints are what does the lifting. A card with both a shadow and a
-full outline is a defect; the left accent stripe is not an outline and is allowed.
+When a value file and this document disagree, **the file is right and this document is
+stale**. Say so rather than editing code to match prose.
 
-### The lifecycle ladder
+**The accent is provisional.** The current purple was a first pick, not a decision, and a
+colour investigation is still owed — so this document says what the accent *does* and what a
+replacement must clear, never which purple it is. Two constraints on a candidate: it clears
+the app's lowest shipped text pair against its own on-colour, and it stays visibly distinct
+from the `learning` hue, which today sits close enough to the brand purple that a chip and a
+button can be mistaken for each other.
 
-Six states share three hues across pieces, techniques and section phases, so a phase and a
-piece state that mean the same thing look the same. Tint alpha, not hue, encodes how much
-attention the state deserves: performance `0.18` → dormant `0.07` in light, `0.26` → `0.11`
-in dark, because a dark surface needs more alpha to read as the same amount of colour.
-Retired and shelved drop the fill entirely and take a hairline, so they stay hindmost.
+## Token roles
 
-Every accent-on-tint pair clears WCAG AA as text (measured: 4.75:1 at the loudest, 8.14:1 at
-the quietest). **The tints may not be raised without re-measuring** — `0.18` is already the
-ceiling that keeps performance readable on its own fill.
+- **surface** — where the page sits. Identical to the background in both schemes, on
+  purpose; see *Surfaces*.
+- **surface-raised** — cards, menus, sheets. An elevation tint, not a different colour.
+- **outline / outlineVariant** — `outlineVariant` is the hairline divider, and is too faint
+  to carry meaning: it may never be the only thing marking a control's edge. `outline` is
+  the border that can. Neither ever carries a glyph or a label.
+- **onSurface** — the thing being read first. Titles, values, body copy.
+- **onSurfaceVariant** — the app's muted role, and its workhorse: composer lines, bar
+  ranges, "Never practiced", helper text, every piece of metadata under a title. If text is
+  not what gets read first, it is this.
+- **primary** — the single primary action on a screen (Practice, Start session, Sign in),
+  plus links and the focus ring. Never decoration, never status, never a large fill behind
+  running text. One filled primary button per screen; a second action is outlined or text.
+- **secondary / tertiary** — Paper's, and effectively unused. Reaching for one means the
+  screen wants a hierarchy it has not earned. Use `onSurfaceVariant`.
+- **success / warning** — non-MD3 roles this app adds. They exist for the offline bar and
+  for a mistake-count trend, and for nothing else. Always paired with an icon or a word.
+- **error** — a failed write or an invalid field. **Decay is not an error.** "You have not
+  practised this in six weeks" is the app's normal subject, not a fault condition.
 
-### Dark mode
+### The lifecycle set
 
-Two palettes, not an inversion: MD3's baseline dark roles with the purple identity swapped
-for its light-on-dark counterpart (`#CE93D8` on `#4A148C`). `onPrimary` stays MD3's
-`#381E72`, inherited rather than chosen — it measures 5.50:1 against the override, which is
-the lowest text pair the app ships and the floor any future primary must also clear.
+Six states shared across pieces, sections and techniques, so that a section and a piece
+meaning the same thing look the same. Two rules, both binding:
 
-## 4. Typography
+1. **Hue identifies the state.** One hue per state, the same hue wherever that state
+   appears. A new state takes a hue from this set or extends it deliberately; it never
+   borrows the accent.
+2. **Tint alpha encodes attention, and its order is fixed.** The chip fill is the state's
+   own hue over the card at a low alpha, descending
+   `performance → learning → stabilizing → maintenance → dormant`, with the quietest states
+   dropping the fill for a hairline. The **values are tunable** — raising performance and
+   learning together is fine. The **ordering is not**: performance may never sit at or below
+   learning, and so on down. That ordering is what keeps sixty cards reading title-first
+   instead of as confetti.
 
-**Use Paper's `variant` prop. A `fontSize` in a style prop is a defect** with exactly one
-sanctioned exception, and the front matter names it.
+Every accent-on-tint pair is text and must clear the text floor on the surface it sits on.
+Raising an alpha means re-measuring that pair, not assuming it still passes.
 
-`bodySmall` is the workhorse — every metadata line under a title. `bodyMedium` and
-`bodyLarge` are body copy. `titleMedium` and `titleSmall` are section headings inside a
-screen; `headlineSmall` is a screen's own title in its content, and `titleLarge` belongs to
-the app bar. `labelLarge` / `labelMedium` are button and control labels; `labelSmall` is the
-chip.
+**Themes.** Both, as two palettes rather than an inversion. Dark is not light with the
+lightness flipped: it takes MD3's dark roles, and the lifecycle alphas run higher throughout,
+because a dark surface swallows colour at the alpha a light one needs.
 
-The exception: **`CARD_TITLE_STYLE` at 17/500** (`components/ui/card-style.ts`). Paper's
-`Card.Title` renders title and subtitle at the same weight and colour, which flattens a
-piece card into two equal lines. 17 is a half-step above `titleMedium` and is what makes the
-piece title beat its composer. It lives in one file and is the only place it may live.
+## Surfaces and elevation
 
-Two weights: 400 for body, 500 for titles, labels and chips. There is no third.
+**Surfaces separate by elevation, not by border.** Background and surface are the same
+colour in both schemes, so a card is legible because it is lifted. A card carrying both a
+shadow and a full outline is a defect. The left accent stripe is not an outline and is
+allowed.
 
-## 5. Layout and spacing
+One level of nesting. **No card inside a card.** Menus, dialogs, sheets and snackbars float;
+static content does not.
 
-**The horizontal page inset is 16 compact / 24 roomy, chosen once per screen, and
-[`ScreenContent`](../components/ui/ScreenContent.tsx) is its canonical implementation.** A
-screen that renders its own page padding is a defect; a screen that renders none is the
-defect this rule exists to catch.
+## Typography
 
-**The one exception is the full-bleed list.** A `FlatList` with `ItemSeparatorComponent`
-cannot sit inside `ScreenContent`'s `ScrollView` without breaking virtualisation, so it opts
-out — and then pays the same 16/24 inset **inside the row**, so its text lines up with every
-other screen while the divider runs edge to edge. `app/(app)/(tabs)/piece.tsx` is the
-reference for this; a full-bleed list that also insets its dividers, or a row that pays a
-different number, is wrong.
+- **Families** — the system sans, one family across two weights. No display face, no second
+  family, and no mono role: there is no code, no ID and no numeric column here, and a BPM
+  reads fine in the body face.
+- **Sizes** — Paper's MD3 variants, via the `variant` prop. **A `fontSize` in a style prop
+  is a defect**, with one sanctioned exception that lives in
+  [`card-style.ts`](../components/ui/card-style.ts) and may live nowhere else: Paper's
+  `Card.Title` renders title and subtitle at the same weight and colour, which flattens a
+  piece card into two equal lines, and that half-step is what makes the title beat its
+  composer.
+- **On one surface** — three variants, four at the outside.
+- **Weights** — two: regular for body, medium for titles, labels and chips.
+- **The muted line is the small body variant.** Every metadata line under a title uses it.
 
-Content clamps at `contentWidth.page` (576) and centres — a practice log stretched across a
-monitor is a log nobody can scan. Auth screens clamp tighter at `contentWidth.form` (448).
+## Space and density
 
-The scale is a 4pt grid — **4 · 8 · 12 · 16 · 24 · 32 · 48** — named `xxs` through `xxl`. It
-has one step more than the sibling repo's, because 12 is load-bearing here: roughly two dozen
-call sites use it as the gap inside a group of related rows. So the names start a step lower
-and `md` lands on 16, which is the page inset and the app's most common padding. The two
-repos share this vocabulary and never the numbers; read the value, not the key, when moving
-between them.
+- **Base** — a 4pt grid, named `xxs` through `xxl` in the token file. Extend the scale
+  rather than inlining a number between two steps.
+- **Density** — comfortable, with one deliberate step down below the compact breakpoint.
+  Below it, lists are full-bleed rows with hairline dividers; above it, elevated cards in the
+  centred band. Those are two densities of one design, not two designs.
+- **Page** — one horizontal inset, chosen once per screen from the compact/roomy pair, with
+  [`ScreenContent`](../components/ui/ScreenContent.tsx) as its canonical implementation.
+  Content clamps to the page width and centres; auth screens clamp tighter to the form width.
+  A practice log stretched across a monitor is a log nobody can scan.
+  - **A screen that renders its own page padding is a defect. A screen that renders none is
+    the defect this rule exists to catch.**
+  - **The one exception is the full-bleed list.** A `FlatList` with a separator cannot sit
+    inside the frame's `ScrollView` without breaking virtualisation, so it opts out and pays
+    the same inset *inside the row* — text lines up with every other screen while the
+    divider runs edge to edge. `app/(app)/(tabs)/piece.tsx` is the reference.
+- **Layout** — flow plus a max width. No column grid.
 
-Proximity is the rule that settles spacing arguments: **the gap between groups is visibly
-larger than the gap within one.** In practice that is `xs` (8) inside a row, `sm` (12)
-between related rows, `lg` (24) between sections of a screen. A screen that uses one value
-for two of those has lost its structure.
+**Proximity settles every spacing argument: the gap between groups is visibly larger than
+the gap within one** — the smallest step inside a row, one step up between related rows, a
+large step between sections. A screen using one value for two of those has lost its
+structure.
 
-`size.scrollTail` (96) is the bottom padding a scroll view needs when a FAB floats over it.
-**A FAB overlapping the last item is a defect** — visible today on Overview.
+A scroll view with a FAB over it pays the scroll-tail padding. **A FAB overlapping the last
+item is a defect.**
 
-## 6. Components
+## Shape
 
-New work extends these. Restyling a copy is a defect.
+- **Radius** — four steps, chosen by what the thing is, not by taste: the smallest for the
+  progress bar and hairline wells, one step up for chips, the card step for cards, sheets
+  and dialogs, and full for buttons, the FAB and the search field. Nothing between steps.
+- **Borders** — one weight, `outlineVariant`, and only where elevation cannot do the job.
+- **Texture** — none. No grain, noise, gradient or pattern. Stated flatly so adding one
+  later is not a judgement call.
 
-| Component | Canonical file | Notes |
-|---|---|---|
-| Page frame | `components/ui/ScreenContent.tsx` | 16/24 inset, 576 band, `paddingTop` 24 |
-| Form frame | `components/ui/FormScaffold.tsx` | the frame plus save/cancel |
-| Lifecycle chip | `components/ui/StateChip.tsx` | `StateChip` for state, `MetaChip` for a colourless tag |
-| Piece card | `components/ui/card-style.ts` | accent stripe, 17/500 title |
-| Progress | `components/ui/PieceProgressBar.tsx` | 6 tall, pill |
-| Loading / empty | `components/ui/CenteredScreen.tsx` | never a bare `ActivityIndicator` |
-| Errors | `components/ui/ErrorSnackbar.tsx` | one per screen |
-| Text field | `components/ui/FormTextField.tsx` | Paper `TextInput`, with `HelperText` |
-| Row overflow | `components/ui/RowActionsMenu.tsx` | three-dot menu on a row |
+## Components
 
-Chip geometry is shared on purpose so that a state chip and a meta chip never look like two
-different components side by side. Both are `labelSmall` at `radius.sm`, and both take the
-same 9/3 text insets — those two numbers are what shrink Paper's `compact` Chip to the
-height this app wants, and they are component values, not scale values. Letter-spacing is
-`0.3` rather than `labelSmall`'s `0.5`: the one deliberate deviation, kept because widening
-it pushes a six-character state label past the title's left edge.
+The canonical implementation owns the styling. Extend it. **Restyling a copy is a defect.**
 
-## 7. Hierarchy: the title always wins
+| Component | Canonical file |
+|---|---|
+| Page frame | [`components/ui/ScreenContent.tsx`](../components/ui/ScreenContent.tsx) |
+| Form frame | [`components/ui/FormScaffold.tsx`](../components/ui/FormScaffold.tsx) |
+| Lifecycle chip | [`components/ui/StateChip.tsx`](../components/ui/StateChip.tsx) |
+| Piece card | [`components/ui/card-style.ts`](../components/ui/card-style.ts) |
+| Progress | [`components/ui/PieceProgressBar.tsx`](../components/ui/PieceProgressBar.tsx) |
+| Loading / empty | [`components/ui/CenteredScreen.tsx`](../components/ui/CenteredScreen.tsx) |
+| Errors | [`components/ui/ErrorSnackbar.tsx`](../components/ui/ErrorSnackbar.tsx) |
+| Text field | [`components/ui/FormTextField.tsx`](../components/ui/FormTextField.tsx) |
+| Row overflow | [`components/ui/RowActionsMenu.tsx`](../components/ui/RowActionsMenu.tsx) |
 
-One dominant element per surface, and on a piece card that is the title. Reading order is
-fixed: **title → composer → state → progress → recency**. Anything that would out-weigh the
-title — a bigger chip, a saturated fill, a second 17px line — is wrong even when it is
-individually pretty.
+- **Reach for a `react-native-paper` component first.** A style prop built from the token
+  file is the second choice. There is no third.
+- **Buttons** — filled for the one primary action, outlined for a real second action, text
+  for anything tertiary, and Paper's error colour for destructive. One filled button per
+  screen.
+- **Control height** — one shared minimum for anything pressable, and Paper does not give it
+  for free: its buttons, icon buttons and app-bar actions render below it, dialog actions
+  lower still. Pass `contentStyle` to a Paper button, set it explicitly on a custom
+  pressable. A chip with an `onPress` is a control and owes the minimum; a chip without one
+  is a label and does not.
+- **Forms** — Paper's `TextInput` with its floating label, helper text below the field,
+  errors below in the error role. Required is the norm here, so mark the optional ones.
+- **Focus ring** — in the accent, and it has to clear both schemes: the accent that reads on
+  a light card is not automatically visible on a dark one.
+- **Icons** — **MaterialCommunityIcons only**, via Paper's `icon="…"` prop wherever a Paper
+  component takes one. It is what Paper resolves to already and the only set carrying this
+  app's domain glyphs. A second set is as visible as a second typeface and gets noticed
+  less; the direct `MaterialIcons` imports in the tree are drift, not precedent.
+- **Empty states** — say what the screen is for and offer the action that fills it. "No
+  pieces yet" on its own is not an empty state. Text and one icon; never an illustration.
+- **Charts** — none, and the anti-references say why. When #24 lands, it inherits the
+  lifecycle hues and the status roles, not a new palette.
 
-Density is comfortable, with one deliberate step down at the compact breakpoint (600): below
-it, lists render as full-bleed rows with hairline dividers; above it, as elevated cards in
-the centred band. Those are two densities of one design, not two designs.
+## Motion
 
-A screen answers "why this now?" before it answers anything else. A suggestion card that
-shows what to practise without the one-line reason is incomplete — that line is Margit's
-fourth standing position, and it is a design requirement, not copy.
+Functional. Paper's defaults and almost nothing else, on transform and opacity only.
 
-## 8. States
+**Animates:** the FAB, snackbar entry, menu and dialog transitions, the progress bar.
+**Never animates:** lists, cards, chips, screen content. Nothing the user asked for animates
+on entry — a suggestion card that fades in is a suggestion arriving late.
 
-- **Empty** states say what the screen is for and offer the action that fills it. "No pieces
-  yet" alone is not an empty state. `icon.hero` (48) is the only place a 48px glyph belongs.
-- **Loading** is `LoadingScreen`, full-screen and centred, on the theme background.
-- **Offline** is the persistent `OfflineBar` in `warningContainer` above every screen,
-  including login. This app is used where there is no wifi, so offline is a normal state and
-  must never read as an error.
-- **Error** messages say what failed and what to do next, in a `Snackbar`, in `t()`.
-- **Overflow**: a title truncates to one line with an ellipsis; a chip row wraps. **The page
-  never scrolls sideways** — `e2e/craft.spec.ts` measures this on every route. A
-  `SegmentedButtons` row with five options does not fit 390px and must not be used there.
+The metronome beat pulse (#39) is the one custom animation with a case, and the one that
+most needs `prefers-reduced-motion`: it runs while somebody is trying to concentrate.
 
-## 9. Motion
+## Voice
 
-Paper's defaults, and almost nothing else. What animates: the FAB, snackbar entry, menu and
-dialog transitions, the progress bar. What does not: lists, cards, chips, screen content.
-A metronome beat animation is the one place a custom animation is warranted (#39) and it
-must honour `prefers-reduced-motion`, because it is the one thing on screen while somebody
-is trying to concentrate.
+- **Register** — plain, specific, active. Say the thing.
+- **Capitalisation** — **sentence case throughout**: headings, buttons, labels, menu items.
+  Proper nouns and document titles keep their capitals (Privacy Policy, Terms of Service),
+  and so do initialisms (BPM).
+- **Banned** — the enterprise register ("task", "item", "entry", "allocation") and the
+  streak register (any copy that praises, scolds, or counts days missed).
+- **Every recommendation answers "why this now?" in one line a student can read.** That is a
+  design requirement, not copy: a suggestion card without it is incomplete.
+- **Errors** say what failed and what to do next. **Offline is not an error** — this app is
+  used where there is no wifi, so it is a normal state, in the warning role.
+- Labels must survive translation. A width that fits the English is a bug in every other
+  locale.
 
-## 10. Accessibility
+## Robustness
 
-- **Contrast floor is WCAG AA** (4.5:1 text, 3:1 non-text). Every pair in the front matter is
-  measured and passes; the lowest is `onPrimary` on dark `primary` at 5.50:1.
-- **Touch target minimum is 48dp**, and this is a rule, not an aspiration. Paper does not
-  give it for free: `Button` renders 40dp, `IconButton` and `Appbar.Action` 40dp, and the
-  buttons inside `Dialog.Actions` 38dp. Pass `contentStyle={{ minHeight: touchTarget }}` to
-  a Paper button, and set `minWidth`/`minHeight` on a custom pressable. A `StateChip` with
-  an `onPress` is a control and must meet the floor; a chip without one is a label and need
-  not. **The app fails this today on every route** — that is #113's job, and the assertion
-  in `e2e/craft.spec.ts` turns on inside that PR rather than being tuned to today's
-  shortfall. Rasmus taps one-handed at arm's length; this is the rule his review cites.
-- **Colour is never the only signal.** Every lifecycle state carries its name in the chip.
-- **Every user-facing string goes through `t()`.** An untranslated key on screen is measured.
-- Keyboard operation and a visible focus ring are required on web.
+- **Breakpoints** — one, `breakpoints.compact`, and it breaks on content rather than on a
+  device name. Below it: full-bleed rows, the tab bar, one column.
+- **Overflow** — a title truncates to one line with an ellipsis; a chip row wraps. **The page
+  never scrolls sideways**, and `e2e/craft.spec.ts` measures that on every route. A control
+  with five options does not fit a phone and must not be used there.
 
-## 11. Anti-patterns
+## Do
 
-- **No NativeWind, no Tailwind class, no `className`.** The utility layer, `global.css`,
-  the metro and postcss wiring and the three dependencies all come out; reintroducing any
-  of them is a defect regardless of how small.
-- **No `StyleSheet.create`.** Style props built from tokens, as Paper components take them.
-- **No numeric literal in a style prop, and no colour literal outside `theme/`.** Extend the
-  scale rather than inlining. `yarn invariants` is where this becomes greppable.
-- No `fontSize` outside `CARD_TITLE_STYLE` and the chip.
-- No card inside a card. No outline on an elevated surface.
-- No second filled primary button on a screen.
-- No emoji in the UI. `session/summary.tsx` currently renders `⤬ ✓ ·` as text — those are
-  glyphs standing in for icons and should be icons.
-- No progress ring, sparkline or metric tile. Progress here is one 6px bar and a number.
-- No nagging copy. Lena deletes an app that opens by telling her she is doing it wrong.
-- No screen that renders its own page padding instead of using the frame.
+- Answer "why this now?" before anything else on a screen.
+- Let the title win. Reading order on a piece card is fixed: title, composer, state,
+  progress, recency.
+- Extend the canonical component. If it does not fit, change it there.
+- Carry the state's name in the chip. **Colour is never the only signal.**
 
-## 12. Verification
+## Don't
 
-- **Run the app:** `scripts/dev-stack.sh up` → `http://localhost:8055` (emulator-backed,
-  fixture account `pianist@example.com` / `practice123`). The hand-driven dev server is
-  `yarn web` → `http://localhost:8053` and talks to the real dev project — use the emulator
-  stack for design checks.
-- **Representative routes:** `/overview` (the ladder, the suggestion card, the FAB overlap),
-  `/piece` (both densities either side of 600), `/piece/<id>` (the frame, and the screen
-  that currently has none), `/piece/<id>/practice` (the logging form, at-the-piano), `/login`.
-- **Viewports:** 390 phone, 1280 desktop.
-- **Schemes:** light and dark, both.
-- **Measured, not judged:** `e2e/craft.spec.ts` walks every route in `e2e/support/app.ts`
-  and asserts horizontal overflow, untranslated keys and a clean console. Anything a machine
-  can measure belongs there rather than in a review.
+- Don't add a colour literal outside the value files, or a bare number in a style prop.
+- Don't use `StyleSheet.create`, and don't add a `className` — NativeWind is on its way out
+  under #127, and reintroducing it anywhere is a defect regardless of how small.
+- Don't ship an emoji as a glyph. `session/summary.tsx` renders `⤬ ✓ ·` as text today; those
+  are icons wearing a costume.
+- Don't put a second filled primary button on a screen.
+- Don't nag. Not in a nudge, not in an empty state, not in a summary.
+
+## Components people get wrong
+
+- **`ScreenContent`** — the frame is the inset. Screens keep re-implementing `px-4` beside
+  it instead of wrapping in it, which is exactly how piece detail ended up with none at all.
+- **`StateChip` vs `MetaChip`** — `StateChip` carries lifecycle meaning and colour,
+  `MetaChip` is a colourless tag. They share geometry so the two never look like different
+  components side by side, and a tag reaching for `StateChip` steals the ladder's colour.
+- **`Card.Title`** — pair it with `CARD_TITLE_STYLE`, or title and composer come out the
+  same weight and the card flattens.
+- **Paper buttons** — they miss the touch minimum on their own. `contentStyle`, every time.
+
+## Verification
+
+**Run it:** `scripts/dev-stack.sh up`, then the URL it prints last. Emulator-backed; the
+fixture account is in [`.ai/config.toml`](../.ai/config.toml). The fixture holds four pieces,
+two techniques and **no practice history**, so every piece reads as never practised and
+anything ranking by recency is legitimately empty.
+
+**Look at these,** both schemes, phone and desktop:
+
+- `/overview` — the suggestion card and its reason line, the ladder in context, and whether
+  the FAB clears the last card.
+- `/piece` — both densities, either side of the compact breakpoint. The clearest test of
+  whether the full-bleed list still lines up with the framed screens.
+- `/piece/<id>/practice` — the logging form, judged as Rasmus: one hand, arm's length,
+  between two run-throughs.
+
+Anything a machine can measure belongs in `e2e/craft.spec.ts` rather than in a review.
 
 ## Known drift
 
-The contract describes the target. What the app does not yet do, as of this file:
+The contract describes the target. What the app does not do yet, measured today:
 
-- Piece detail (`app/(app)/piece/[id]/index.tsx`) renders no page inset at all — text sits
-  flush on the screen edge and the Practice button runs edge to edge. (#31)
-- Desktop screens that do not clamp to `contentWidth.page`. (#26)
-- Touch targets below 48dp on every route. (#113)
-- The FAB overlaps the last card on Overview.
-- `SegmentedButtons` overflows the right edge at 390px on the practice screen.
-- 163 `className` uses across 40 files, and `theme/tokens.ts` does not exist. (#127)
+- **Piece detail renders no inset and no max width** — composer at x=0 where the pieces list
+  is at 16; the `px-4` in source never reaches the DOM. (#31)
+- **The loudest lifecycle chip fails the text floor in light mode**, 4.46:1, the only pair
+  that does (next worst 4.74:1). Darken the hue or lower its alpha; the ordering rule
+  survives either.
+- **Touch targets are below the minimum on every route.** (#113) The assertion is
+  deliberately absent from `e2e/craft.spec.ts` and turns on inside that PR.
+- **Five-option controls on the practice screen overflow the right edge at phone width.**
+- **On desktop the search field is full-bleed while the cards below it clamp.**
+- **165 `className` uses across 40 files, and `theme/tokens.ts` does not exist.** (#127)
+- **Capitalisation is mixed** — roughly 75 title-case strings against 214 sentence-case.
+- **Two icon sets** — four files import `MaterialIcons` directly.
 
-None of this is fixed here. Each is an issue, and the gates that measure them turn green
-inside the PR that pays them off — not by loosening a rule.
+None of this is fixed by this document. Each is an issue, and the gate that measures it goes
+green inside the PR that pays it off, never by loosening a rule here.
 
 ## Decisions
 
-Append-only. Date, decision, rationale, and which surface prompted it.
-
-- **2026-08-30** — Scale derived from the resolved Tailwind classes rather than designed
-  fresh: 4 · 8 · 12 · 16 · 24 · 32 · 48. The refactor that removes NativeWind is then a
-  mapping, not a redesign. It needs one name more than home-backlog's scale, so the t-shirt
-  sizes start at `xxs` and `md` lands on the 16 page inset — rather than wedging an awkward
-  half-step name into the middle to keep the two files numerically aligned. They were never
-  meant to be: the repos share the vocabulary, not the values. (from: the whole app)
-- **2026-08-30** — 48dp touch target stated as binding although the app fails it everywhere.
-  A contract tuned to today's shortfall cannot be cited against tomorrow's. (from: #113)
-- **2026-08-30** — The page inset is stated as a number with `ScreenContent` as its canonical
-  implementation, rather than as "wrap every screen in `ScreenContent`". A full-bleed list
-  must opt out of the frame's `ScrollView` to keep virtualisation, so the rule has to be
-  something the list can still obey. (from: /piece, /piece/<id>)
-- **2026-08-30** — Chip geometry kept at 9/3 insets and `letterSpacing: 0.3` rather than
-  normalised onto the scale. The values are what shrink Paper's compact Chip to this app's
-  height; normalising them would change how every list looks inside a refactor that is
-  meant to change nothing visually. (from: /piece, /overview)
+Empty, and that is correct. An entry is added only after a rule here has been **contested** —
+reverted, argued against, or broken twice — and survived anyway. Record the rule, the
+argument, and why it stands. Routine choices edit the rules above instead.

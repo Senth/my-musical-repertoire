@@ -2,8 +2,7 @@
 
 My Musical Repertoire: an Expo / React Native web-first practice app on Firebase.
 [Setup and scripts](README.md) · [Vision and architecture](docs/PROJECT.md) ·
-[Infra, ports and deploys](docs/OPERATIONS.md) · [Personas](docs/PERSONAS.md) ·
-[Feature specs](docs/specs/INDEX.md)
+[Infra, ports and deploys](docs/OPERATIONS.md) · [Personas](docs/PERSONAS.md)
 
 - Package manager is **yarn**, not npm; imports use the `@/` alias, never `../`;
   platform splits are `.web.tsx` / `.native.tsx`.
@@ -50,8 +49,8 @@ My Musical Repertoire: an Expo / React Native web-first practice app on Firebase
   - [`.ai/config.toml`](.ai/config.toml): the ordered gates, what counts as user-visible,
     how to boot the stack and sign in (`[dev]`), and the design contract.
   - The `docs/` addons, read when present: [`PROJECT.md`](docs/PROJECT.md) (what this is),
-    [`PERSONAS.md`](docs/PERSONAS.md) (who it is for), [`DESIGN.md`](docs/DESIGN.md) (how
-    it looks), and [`specs/`](docs/specs/INDEX.md) (how each area already behaves).
+    [`PERSONAS.md`](docs/PERSONAS.md) (who it is for), and [`DESIGN.md`](docs/DESIGN.md)
+    (how it looks).
 - Work you want carried to a PR starts with the `dispatcher` agent. Work that needs more
   than one phase goes to `planner` first, in its own session, which writes
   `.tmp/<source>-PLAN.md` — untracked, and pasted onto the issue.

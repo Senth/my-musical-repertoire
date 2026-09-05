@@ -2,8 +2,8 @@
 
 > Vision, requirements, key decisions, and architecture principles.
 > **Tasks live in GitHub Issues + the Kanban board, not here** (see [TODO.md](../TODO.md)).
-> Per-feature deep specs live in [`docs/specs/`](specs/), the review cast in
-> [`PERSONAS.md`](PERSONAS.md), and infrastructure in [`OPERATIONS.md`](OPERATIONS.md).
+> The review cast is in [`PERSONAS.md`](PERSONAS.md), infrastructure in
+> [`OPERATIONS.md`](OPERATIONS.md), and the design contract in [`DESIGN.md`](DESIGN.md).
 
 ## Background & Context
 
@@ -98,7 +98,6 @@ The core problem: _"I often don't know what I should practice, and I want the ap
 | --- | --- |
 | Actionable tasks (bugs, features, ideas, cleanup) | GitHub Issues + Kanban board |
 | Prioritized "what's next" mirror | [`TODO.md`](../TODO.md) (generated) |
-| Per-feature deep specs | [`docs/specs/`](specs/) |
 | In-flight implementation plans | `.tmp/<source>-PLAN.md` (untracked, pasted onto the issue) |
 | Review personas, and Margit's teaching positions | [`docs/PERSONAS.md`](PERSONAS.md) |
 | Emulators, ports, the review fixture, deploys | [`docs/OPERATIONS.md`](OPERATIONS.md) |
