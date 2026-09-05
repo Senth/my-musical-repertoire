@@ -85,6 +85,21 @@ export function LastSessionCard({
 				{headerText}
 			</Text>
 
+			{lastLog.note ? (
+				// The teacher's "where we were last time" — the note outranks the
+				// metrics below it, hence bodyMedium on onSurface against their
+				// bodySmall on onSurfaceVariant. Italic marks it as a quotation.
+				<Text
+					variant="bodyMedium"
+					style={{
+						color: theme.colors.onSurface,
+						fontStyle: "italic",
+					}}
+				>
+					{t("screen.practice.lastSession.note", { note: lastLog.note })}
+				</Text>
+			) : null}
+
 			<Text
 				variant="bodySmall"
 				style={{ color: theme.colors.onSurfaceVariant }}

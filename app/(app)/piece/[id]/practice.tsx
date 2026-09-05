@@ -10,6 +10,7 @@ import {
 	Menu,
 	Snackbar,
 	Text,
+	TextInput,
 	useTheme,
 } from "react-native-paper";
 import { BpmControl } from "@/components/practice/BpmControl";
@@ -150,6 +151,7 @@ export function PiecePracticeContent({
 	);
 	const [flaggedSectionIds, setFlaggedSectionIds] = useState<string[]>([]);
 	const [achievedBpm, setAchievedBpm] = useState<string>("");
+	const [note, setNote] = useState("");
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -291,6 +293,7 @@ export function PiecePracticeContent({
 					modes.entries,
 					triggeredFrom,
 					sessionId,
+					note || null,
 				);
 				setSavedEntries(modes.entries);
 
@@ -333,6 +336,7 @@ export function PiecePracticeContent({
 					flaggedSectionIds,
 					triggeredFrom,
 					sessionId,
+					note: note || null,
 				});
 				if (demotedCount > 0) {
 					const message = t("screen.practice.demoted", { count: demotedCount });
@@ -368,6 +372,7 @@ export function PiecePracticeContent({
 		saveSectionPractice,
 		technicalMistakes,
 		memoryMistakes,
+		note,
 		modes.drafts,
 		modes.entries,
 		modes.blockingKey,
@@ -692,6 +697,16 @@ export function PiecePracticeContent({
 							}}
 						/>
 					)}
+
+					<TextInput
+						label={t("screen.practice.noteForNextTimeLabel")}
+						aria-label={t("screen.practice.noteForNextTimeLabel")}
+						value={note}
+						onChangeText={setNote}
+						mode="outlined"
+						multiline
+						numberOfLines={3}
+					/>
 
 					{!inCoach && (
 						<Button
