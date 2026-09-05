@@ -159,5 +159,14 @@ otherwise fail on `import "./global.css"` in a file nobody touched.
 - **Hosting** deploys from CI on every push to `main`
   (`.github/workflows/deploy.yml`). **Merging a PR deploys to production**, so
   merge on green CI and not before.
+- **The `github-actions-deploy` service account** is deliberately minimal. It
+  holds four roles on the production project: `firebasehosting.admin`,
+  `firebaserules.admin`, `datastore.indexAdmin` and
+  `serviceusage.serviceUsageViewer`. The last one is read-only but load-bearing:
+  firebase-tools 15+ runs a required-API preflight that calls Service Usage
+  (`serviceusage.services.get`) before any deploy, and without the role every
+  prod deploy fails at that check. If a firebase-tools upgrade starts demanding
+  another permission, the failure mode is a 403 in the first seconds of the
+  deploy step.
 
 PRs are opened as drafts. Marking one ready and merging it is a human decision.
