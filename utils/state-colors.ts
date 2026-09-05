@@ -26,12 +26,12 @@ interface StateVisualPair {
 
 /** Shared hues, so a phase and a piece state that mean the same thing look the same. */
 const HUE = {
-	performance: { light: "#8A5300", dark: "#F0B75B" },
-	learning: { light: "#6A3EA1", dark: "#D3A9F0" },
-	stabilizing: { light: "#1B5E8C", dark: "#8FC6EE" },
-	maintenance: { light: "#1B5E3F", dark: "#7FD1A8" },
-	dormant: { light: "#49454F", dark: "#CAC4D0" },
-	retired: { light: "#6E6A75", dark: "#98939E" },
+	performance: { light: "#794800", dark: "#F7BE83" },
+	learning: { light: "#60438D", dark: "#D6B9FF" },
+	stabilizing: { light: "#155A88", dark: "#91D2FF" },
+	maintenance: { light: "#326234", dark: "#A6DBA7" },
+	dormant: { light: "#56545B", dark: "#CBC9D1" },
+	retired: { light: "#6A676F", dark: "#A5A3AB" },
 } as const;
 
 type HueName = keyof typeof HUE;

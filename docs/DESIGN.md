@@ -39,12 +39,13 @@ change that moves this app off NativeWind. Until then the values live in two fil
 When a value file and this document disagree, **the file is right and this document is
 stale**. Say so rather than editing code to match prose.
 
-**The accent is provisional.** The current purple was a first pick, not a decision, and a
-colour investigation is still owed — so this document says what the accent *does* and what a
-replacement must clear, never which purple it is. Two constraints on a candidate: it clears
-the app's lowest shipped text pair against its own on-colour, and it stays visibly distinct
-from the `learning` hue, which today sits close enough to the brand purple that a chip and a
-button can be mistaken for each other.
+**The accent is teal, and it was chosen to get out of the ladder's way.** The purple it
+replaced sat 12° from the `learning` hue, so a learning chip and a filled button read as the
+same colour. Teal is the far side of the wheel from every state in the set, which is the
+whole reason it was picked — so the rule a replacement must clear is that one: it stays
+visibly distinct from all four ladder hues at once, and it clears the app's lowest shipped
+text pair against its own on-colour. This document still says what the accent *does*, never
+which teal it is; the value lives in the file.
 
 ## Token roles
 
@@ -61,8 +62,10 @@ button can be mistaken for each other.
 - **primary** — the single primary action on a screen (Practice, Start session, Sign in),
   plus links and the focus ring. Never decoration, never status, never a large fill behind
   running text. One filled primary button per screen; a second action is outlined or text.
-- **secondary / tertiary** — Paper's, and effectively unused. Reaching for one means the
-  screen wants a hierarchy it has not earned. Use `onSurfaceVariant`.
+- **secondary / tertiary** — never reached for directly; reaching for one means the screen
+  wants a hierarchy it has not earned. `secondaryContainer` is the exception, and not by
+  choice: Paper renders `mode="contained-tonal"` from it, so it is defined as a muted tint of
+  the accent. Retint it with the accent or tonal buttons silently keep the old brand.
 - **success / warning** — non-MD3 roles this app adds. They exist for the offline bar and
   for a mistake-count trend, and for nothing else. Always paired with an icon or a word.
 - **error** — a failed write or an invalid field. **Decay is not an error.** "You have not
@@ -278,9 +281,6 @@ The contract describes the target. What the app does not do yet, measured today:
 
 - **Piece detail renders no inset and no max width** — composer at x=0 where the pieces list
   is at 16; the `px-4` in source never reaches the DOM. (#31)
-- **The loudest lifecycle chip fails the text floor in light mode**, 4.46:1, the only pair
-  that does (next worst 4.74:1). Darken the hue or lower its alpha; the ordering rule
-  survives either.
 - **Touch targets are below the minimum on every route.** (#113) The assertion is
   deliberately absent from `e2e/craft.spec.ts` and turns on inside that PR.
 - **Five-option controls on the practice screen overflow the right edge at phone width.**
