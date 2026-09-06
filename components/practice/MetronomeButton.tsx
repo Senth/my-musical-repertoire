@@ -7,6 +7,7 @@ import { useMetronome } from "@/hooks/use-metronome";
 interface MetronomeButtonProps {
 	bpm: string;
 	beatsPerBar: number;
+	volume?: number;
 	disabled?: boolean;
 	stopRef?: React.MutableRefObject<(() => void) | null>;
 }
@@ -22,6 +23,7 @@ const GHOST = { height: 0, overflow: "hidden" } as const;
 export function MetronomeButton({
 	bpm,
 	beatsPerBar,
+	volume,
 	disabled,
 	stopRef,
 }: MetronomeButtonProps) {
@@ -43,7 +45,11 @@ export function MetronomeButton({
 		};
 	}, [parsed, valid]);
 
-	const { isRunning, toggle, stop } = useMetronome(debouncedBpm, beatsPerBar);
+	const { isRunning, toggle, stop } = useMetronome(
+		debouncedBpm,
+		beatsPerBar,
+		volume,
+	);
 	const [paused, setPaused] = useState(false);
 
 	// Pause — rather than stop — when the BPM turns invalid mid-edit (or when
