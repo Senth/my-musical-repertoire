@@ -202,6 +202,16 @@ async function practiceWholePiece(page: Page, pieceUrl: string) {
 	).toBeVisible({ timeout: 10_000 });
 }
 
+/** Opens a piece by title from the pieces list and logs a whole-piece practice. */
+async function practiceWholePieceByTitle(page: Page, title: string) {
+	await page.goto("/piece");
+	await page.getByText(title, { exact: true }).first().click();
+	await expect(
+		page.getByText(t("screen.pieceDetail.sections"), { exact: true }),
+	).toBeVisible({ timeout: 10_000 });
+	await practiceWholePiece(page, page.url());
+}
+
 /**
  * The overview card containing `uniqueText` (a bar range, never repeated
  * across this suite) — the lowest element that has both the text and a
@@ -442,12 +452,20 @@ test("A note saved with a practice log headlines the reference card on the next 
 test("A learning piece with no passages that keeps being suggested is offered to split it into passages", async ({
 	page,
 }) => {
-	test.setTimeout(90_000);
+	test.setTimeout(120_000);
 	const soloTitle = "E2E Split Candidate";
+	const controlTitle = "E2E Unstarted Solo";
 	const soloUrl = await addPiece(page, { title: soloTitle, state: "learning" });
 	await practiceWholePiece(page, soloUrl);
+	await addPiece(page, { title: controlTitle, state: "learning" });
 	// Played through once, then a day passes: the card returns, and with it the offer.
 	await twoDaysPass(page);
+
+	// Earlier tests left learning, unsectioned pieces behind, and the overview
+	// shows only two learning suggestions — the never-practised ones would win
+	// both slots. Practised today, they leave the menu to the two cards here.
+	await practiceWholePieceByTitle(page, "E2E Fresh Arrival");
+	await practiceWholePieceByTitle(page, "E2E Practised Solo");
 
 	await page.goto("/overview");
 	const card = cardContaining(page, soloTitle);
@@ -459,10 +477,7 @@ test("A learning piece with no passages that keeps being suggested is offered to
 
 	// A piece never practised has not earned the offer yet — it is still
 	// unstarted, not in rotation.
-	const unstartedCard = cardContaining(
-		page,
-		t("screen.overview.pieceReason.neverPracticed"),
-	);
+	const unstartedCard = cardContaining(page, controlTitle);
 	await expect(unstartedCard).toBeVisible({ timeout: 10_000 });
 	await expect(
 		unstartedCard.getByRole("button", {
