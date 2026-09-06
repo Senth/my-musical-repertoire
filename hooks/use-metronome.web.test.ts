@@ -10,12 +10,24 @@ class FakeOscillator {
 	stop() {}
 }
 
+class FakeGain {
+	values: number[] = [];
+	gain = {
+		setValueAtTime() {},
+		exponentialRampToValueAtTime: (v: number) => {
+			this.values.push(v);
+		},
+	};
+	connect() {}
+}
+
 class FakeContext {
 	static instances: FakeContext[] = [];
 	currentTime = 0;
 	state = "running";
 	destination = {};
 	oscillators: FakeOscillator[] = [];
+	gains: FakeGain[] = [];
 
 	constructor() {
 		FakeContext.instances.push(this);
@@ -28,13 +40,9 @@ class FakeContext {
 	}
 
 	createGain() {
-		return {
-			gain: {
-				setValueAtTime() {},
-				exponentialRampToValueAtTime() {},
-			},
-			connect() {},
-		};
+		const gain = new FakeGain();
+		this.gains.push(gain);
+		return gain;
 	}
 
 	createDynamicsCompressor() {
@@ -55,6 +63,11 @@ class FakeContext {
 
 function scheduledFrequencies(): number[] {
 	return FakeContext.instances[0].oscillators.map((o) => o.frequency.value);
+}
+
+// Peak gain each scheduled click ramps to — what the volume setting scales.
+function scheduledGains(): number[] {
+	return FakeContext.instances[0].gains.map((g) => Math.max(...g.values));
 }
 
 // Pushes the fake clock forward and lets the scheduler drain what is due.
@@ -108,5 +121,29 @@ describe("useMetronome time signature", () => {
 		const freqs = scheduledFrequencies();
 		expect(freqs.slice(0, 3)).toEqual([1320, 880, 880]);
 		expect(freqs.slice(3)).toEqual([1320, 880, 880, 1320]);
+	});
+
+	describe("volume", () => {
+		it("scales the click gain with the volume setting", () => {
+			const { result } = renderHook(() => useMetronome(120, 4, 0.5));
+			act(() => {
+				result.current.toggle();
+			});
+			const ctx = FakeContext.instances[0];
+			runTo(ctx, 0.6);
+
+			expect(scheduledGains()).toEqual([2, 2]);
+		});
+
+		it("silences clicks when volume is 0", () => {
+			const { result } = renderHook(() => useMetronome(120, 4, 0));
+			act(() => {
+				result.current.toggle();
+			});
+			const ctx = FakeContext.instances[0];
+			runTo(ctx, 0.6);
+
+			expect(scheduledGains()).toEqual([0.0001, 0.0001]);
+		});
 	});
 });

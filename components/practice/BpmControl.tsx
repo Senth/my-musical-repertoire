@@ -15,6 +15,16 @@ const SIGNATURES = [
 
 type SignatureKey = (typeof SIGNATURES)[number]["key"];
 
+// Click gain multipliers per volume level; 0 is the muted level.
+const VOLUME_LEVELS = [
+	{ key: "mute", gain: 0 },
+	{ key: "soft", gain: 0.5 },
+	{ key: "normal", gain: 1 },
+	{ key: "loud", gain: 1.5 },
+] as const;
+
+type VolumeKey = (typeof VOLUME_LEVELS)[number]["key"];
+
 interface BpmControlProps {
 	value: string;
 	onChangeText: (text: string) => void;
@@ -45,6 +55,7 @@ export function BpmControl({
 	const parsed = Number.parseInt(value.trim(), 10);
 	const isValid = !Number.isNaN(parsed);
 	const [signature, setSignature] = useState<SignatureKey>("fourFour");
+	const [volumeLevel, setVolumeLevel] = useState<VolumeKey>("normal");
 	const tapsRef = useRef<number[]>([]);
 
 	function adjust(delta: number) {
@@ -90,6 +101,7 @@ export function BpmControl({
 						beatsPerBar={
 							SIGNATURES.find((s) => s.key === signature)?.beats ?? 4
 						}
+						volume={VOLUME_LEVELS.find((v) => v.key === volumeLevel)?.gain ?? 1}
 						disabled={!!error}
 						stopRef={stopRef}
 					/>
@@ -183,6 +195,20 @@ export function BpmControl({
 					label: t(`common.metronome.timeSignatures.${key}`),
 					accessibilityLabel: t("common.metronome.timeSignatureA11y", {
 						signature: t(`common.metronome.timeSignatures.${key}`),
+					}),
+					disabled: off,
+					style: BTN,
+				}))}
+			/>
+			<SegmentedButtons
+				style={FULL}
+				value={volumeLevel}
+				onValueChange={(v) => setVolumeLevel(v as VolumeKey)}
+				buttons={VOLUME_LEVELS.map(({ key }) => ({
+					value: key,
+					label: t(`common.metronome.volumeLevels.${key}`),
+					accessibilityLabel: t("common.metronome.volumeA11y", {
+						level: t(`common.metronome.volumeLevels.${key}`),
 					}),
 					disabled: off,
 					style: BTN,

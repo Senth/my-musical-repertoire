@@ -77,7 +77,14 @@
 				"sixEight": "6/8",
 				"twoFour": "2/4"
 			},
-			"timeSignatureA11y": "Time signature {{signature}}"
+			"timeSignatureA11y": "Time signature {{signature}}",
+			"volumeLevels": {
+				"mute": "Mute",
+				"soft": "Soft",
+				"normal": "Normal",
+				"loud": "Loud"
+			},
+			"volumeA11y": "Metronome click volume: {{level}}"
 		},
 		"bpm": {
 			"placeholder": "e.g. 80",
