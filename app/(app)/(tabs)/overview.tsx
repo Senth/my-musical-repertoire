@@ -266,6 +266,25 @@ export default function OverviewScreen() {
 									>
 										{t("screen.overview.practice")}
 									</Button>
+									{/* The whole-piece card is where an unsectioned piece is
+									    suggested, so the offer to split it rides here: earned
+									    once it has been played through, and silenced by the
+									    same "no more sections" answer the piece page respects. */}
+									{!s.section &&
+										s.piece.state === "learning" &&
+										s.piece.lastPracticed != null &&
+										!s.piece.allSectionsAdded && (
+											<Button
+												mode="text"
+												compact
+												icon="call-split"
+												onPress={() =>
+													router.push(`/piece/${s.piece.id}/section/new`)
+												}
+											>
+												{t("screen.overview.splitIntoPassages")}
+											</Button>
+										)}
 								</View>
 							</Card.Content>
 						</Card>

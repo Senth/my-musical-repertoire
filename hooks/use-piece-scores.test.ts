@@ -25,6 +25,7 @@ import {
 } from "./use-piece-scores";
 
 const NOW = new Date("2026-06-01T12:00:00Z").getTime();
+const DAY_MS = 86_400_000;
 
 describe("shouldRecomputeScores", () => {
 	const cache = { scores: { p1: 12 }, computedAt: NOW - 60_000 };
@@ -44,6 +45,10 @@ describe("shouldRecomputeScores", () => {
 		expect(
 			shouldRecomputeScores(cache, pieces, cache.computedAt + 1, NOW),
 		).toBe(true);
+	});
+
+	it("ignores a practice stamped in the future instead of recomputing forever", () => {
+		expect(shouldRecomputeScores(cache, pieces, NOW + DAY_MS, NOW)).toBe(false);
 	});
 
 	it("recomputes once the cache passes its max age", () => {

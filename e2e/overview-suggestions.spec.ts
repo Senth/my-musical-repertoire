@@ -438,3 +438,45 @@ test("A note saved with a practice log headlines the reference card on the next 
 		timeout: 10_000,
 	});
 });
+
+test("A learning piece with no passages that keeps being suggested is offered to split it into passages", async ({
+	page,
+}) => {
+	test.setTimeout(90_000);
+	const soloTitle = "E2E Split Candidate";
+	const soloUrl = await addPiece(page, { title: soloTitle, state: "learning" });
+	await practiceWholePiece(page, soloUrl);
+	// Played through once, then a day passes: the card returns, and with it the offer.
+	await twoDaysPass(page);
+
+	await page.goto("/overview");
+	const card = cardContaining(page, soloTitle);
+	const splitButton = card.getByRole("button", {
+		name: t("screen.overview.splitIntoPassages"),
+		exact: true,
+	});
+	await expect(splitButton).toBeVisible({ timeout: 10_000 });
+
+	// A piece never practised has not earned the offer yet — it is still
+	// unstarted, not in rotation.
+	const unstartedCard = cardContaining(
+		page,
+		t("screen.overview.pieceReason.neverPracticed"),
+	);
+	await expect(unstartedCard).toBeVisible({ timeout: 10_000 });
+	await expect(
+		unstartedCard.getByRole("button", {
+			name: t("screen.overview.splitIntoPassages"),
+			exact: true,
+		}),
+	).toHaveCount(0);
+
+	await splitButton.click();
+	await expect(page).toHaveURL(/\/section\/new$/);
+	await expect(
+		page.getByRole("textbox", {
+			name: t("screen.pieceSections.form.labelLabel"),
+			exact: true,
+		}),
+	).toBeVisible({ timeout: 10_000 });
+});

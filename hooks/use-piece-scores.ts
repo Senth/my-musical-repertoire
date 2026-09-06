@@ -43,7 +43,10 @@ export function shouldRecomputeScores(
 	now: number,
 ): boolean {
 	if (!cache) return true;
-	if (latestPractice > cache.computedAt) return true;
+	// A practice stamped in the future (clock skew, or an e2e clock wound
+	// forward) never stops being "newer than the cache", so counting it would
+	// recompute and re-cache on every pass until React hits its update limit.
+	if (latestPractice > cache.computedAt && latestPractice <= now) return true;
 	if (now - cache.computedAt > PIECE_SCORE_MAX_AGE_MS) return true;
 	// A piece added since the last computation has no score to sort by.
 	return pieces.some((p) => p.id && cache.scores[p.id] === undefined);
