@@ -19,6 +19,10 @@ const COMPOSER = "E2E Composer";
 const PIECE1 = "E2E Stabilizing Solo";
 const PIECE2 = "E2E Stabilizing Twin";
 const PIECE3 = "E2E Learning Hands";
+// Created inside the all-practised test, then practised again by the split-offer
+// test to clear the two learning slots it needs.
+const PRACTISED_SOLO = "E2E Practised Solo";
+const FRESH_ARRIVAL = "E2E Fresh Arrival";
 
 let piece1Url = "";
 let piece2Url = "";
@@ -236,7 +240,7 @@ test("The all-practised message appears only when no suggestion remains", async 
 	test.setTimeout(60_000);
 	// This account is otherwise empty — no seeded fixture to neutralize — so
 	// one piece, practised, is already the whole repertoire "done for today".
-	const soloTitle = "E2E Practised Solo";
+	const soloTitle = PRACTISED_SOLO;
 	const soloUrl = await addPiece(page, { title: soloTitle, state: "learning" });
 	await practiceWholePiece(page, soloUrl);
 
@@ -247,7 +251,7 @@ test("The all-practised message appears only when no suggestion remains", async 
 		}),
 	).toBeVisible({ timeout: 10_000 });
 
-	const freshTitle = "E2E Fresh Arrival";
+	const freshTitle = FRESH_ARRIVAL;
 	await addPiece(page, { title: freshTitle, state: "learning" });
 
 	await page.goto("/overview");
@@ -464,8 +468,8 @@ test("A learning piece with no passages that keeps being suggested is offered to
 	// Earlier tests left learning, unsectioned pieces behind, and the overview
 	// shows only two learning suggestions — the never-practised ones would win
 	// both slots. Practised today, they leave the menu to the two cards here.
-	await practiceWholePieceByTitle(page, "E2E Fresh Arrival");
-	await practiceWholePieceByTitle(page, "E2E Practised Solo");
+	await practiceWholePieceByTitle(page, FRESH_ARRIVAL);
+	await practiceWholePieceByTitle(page, PRACTISED_SOLO);
 
 	await page.goto("/overview");
 	const card = cardContaining(page, soloTitle);
