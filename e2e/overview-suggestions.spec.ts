@@ -19,6 +19,10 @@ const COMPOSER = "E2E Composer";
 const PIECE1 = "E2E Stabilizing Solo";
 const PIECE2 = "E2E Stabilizing Twin";
 const PIECE3 = "E2E Learning Hands";
+// Created inside the all-practised test, then practised again by the split-offer
+// test to clear the two learning slots it needs.
+const PRACTISED_SOLO = "E2E Practised Solo";
+const FRESH_ARRIVAL = "E2E Fresh Arrival";
 
 let piece1Url = "";
 let piece2Url = "";
@@ -202,6 +206,16 @@ async function practiceWholePiece(page: Page, pieceUrl: string) {
 	).toBeVisible({ timeout: 10_000 });
 }
 
+/** Opens a piece by title from the pieces list and logs a whole-piece practice. */
+async function practiceWholePieceByTitle(page: Page, title: string) {
+	await page.goto("/piece");
+	await page.getByText(title, { exact: true }).first().click();
+	await expect(
+		page.getByText(t("screen.pieceDetail.sections"), { exact: true }),
+	).toBeVisible({ timeout: 10_000 });
+	await practiceWholePiece(page, page.url());
+}
+
 /**
  * The overview card containing `uniqueText` (a bar range, never repeated
  * across this suite) — the lowest element that has both the text and a
@@ -226,7 +240,7 @@ test("The all-practised message appears only when no suggestion remains", async 
 	test.setTimeout(60_000);
 	// This account is otherwise empty — no seeded fixture to neutralize — so
 	// one piece, practised, is already the whole repertoire "done for today".
-	const soloTitle = "E2E Practised Solo";
+	const soloTitle = PRACTISED_SOLO;
 	const soloUrl = await addPiece(page, { title: soloTitle, state: "learning" });
 	await practiceWholePiece(page, soloUrl);
 
@@ -237,7 +251,7 @@ test("The all-practised message appears only when no suggestion remains", async 
 		}),
 	).toBeVisible({ timeout: 10_000 });
 
-	const freshTitle = "E2E Fresh Arrival";
+	const freshTitle = FRESH_ARRIVAL;
 	await addPiece(page, { title: freshTitle, state: "learning" });
 
 	await page.goto("/overview");
@@ -437,4 +451,51 @@ test("A note saved with a practice log headlines the reference card on the next 
 	await expect(page.getByText(NOTE, { exact: false })).toBeVisible({
 		timeout: 10_000,
 	});
+});
+
+test("A learning piece with no passages that keeps being suggested is offered to split it into passages", async ({
+	page,
+}) => {
+	test.setTimeout(120_000);
+	const soloTitle = "E2E Split Candidate";
+	const controlTitle = "E2E Unstarted Solo";
+	const soloUrl = await addPiece(page, { title: soloTitle, state: "learning" });
+	await practiceWholePiece(page, soloUrl);
+	await addPiece(page, { title: controlTitle, state: "learning" });
+	// Played through once, then a day passes: the card returns, and with it the offer.
+	await twoDaysPass(page);
+
+	// Earlier tests left learning, unsectioned pieces behind, and the overview
+	// shows only two learning suggestions — the never-practised ones would win
+	// both slots. Practised today, they leave the menu to the two cards here.
+	await practiceWholePieceByTitle(page, FRESH_ARRIVAL);
+	await practiceWholePieceByTitle(page, PRACTISED_SOLO);
+
+	await page.goto("/overview");
+	const card = cardContaining(page, soloTitle);
+	const splitButton = card.getByRole("button", {
+		name: t("screen.overview.splitIntoPassages"),
+		exact: true,
+	});
+	await expect(splitButton).toBeVisible({ timeout: 10_000 });
+
+	// A piece never practised has not earned the offer yet — it is still
+	// unstarted, not in rotation.
+	const unstartedCard = cardContaining(page, controlTitle);
+	await expect(unstartedCard).toBeVisible({ timeout: 10_000 });
+	await expect(
+		unstartedCard.getByRole("button", {
+			name: t("screen.overview.splitIntoPassages"),
+			exact: true,
+		}),
+	).toHaveCount(0);
+
+	await splitButton.click();
+	await expect(page).toHaveURL(/\/section\/new$/);
+	await expect(
+		page.getByRole("textbox", {
+			name: t("screen.pieceSections.form.labelLabel"),
+			exact: true,
+		}),
+	).toBeVisible({ timeout: 10_000 });
 });

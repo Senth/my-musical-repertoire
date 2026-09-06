@@ -517,6 +517,7 @@
 			"techniqueToday": "Suggested Techniques",
 			"seeAllTechniques": "See all techniques",
 			"practice": "Practice",
+			"splitIntoPassages": "Split into passages",
 			"techniqueReason": {
 				"activeLastPracticed": "Active · {{when}}",
 				"maintenanceDue": "Maintenance · due for review",
