@@ -1,5 +1,9 @@
 import type { TFunction } from "i18next";
-import { formatBarRange, formatComposerLine } from "./piece-display";
+import {
+	formatBarRange,
+	formatComposerLine,
+	formatSectionPassage,
+} from "./piece-display";
 
 const t = ((key: string, params?: Record<string, unknown>) =>
 	params ? `${key}:${JSON.stringify(params)}` : key) as unknown as TFunction;
@@ -39,5 +43,33 @@ describe("formatBarRange", () => {
 
 	it("returns null when there is no start bar", () => {
 		expect(formatBarRange({ startBar: null, endBar: null }, t)).toBeNull();
+	});
+});
+
+describe("formatSectionPassage", () => {
+	it("joins the label and the bar range with a middle dot", () => {
+		expect(
+			formatSectionPassage(
+				{ label: "Middle entries", startBar: 7, endBar: 14 },
+				t,
+			),
+		).toBe(
+			'Middle entries · screen.pieceSections.barRange:{"start":7,"end":14}',
+		);
+	});
+
+	it("falls back to the bare bar range when the label is blank", () => {
+		expect(
+			formatSectionPassage({ label: "  ", startBar: 7, endBar: 14 }, t),
+		).toBe('screen.pieceSections.barRange:{"start":7,"end":14}');
+	});
+
+	it("falls back to the bare label when no bars are set", () => {
+		expect(
+			formatSectionPassage(
+				{ label: "Middle entries", startBar: null, endBar: null },
+				t,
+			),
+		).toBe("Middle entries");
 	});
 });
