@@ -238,13 +238,11 @@ export default function OverviewScreen() {
 							/>
 							<Card.Content>
 								<View className="gap-2">
-									<View className="flex-row items-center gap-2 flex-wrap">
-										{s.section ? (
-											<SectionPhaseChip phase={s.section.phase} />
-										) : (
-											<PieceStateChip state={s.piece.state} />
-										)}
-									</View>
+									{s.section ? (
+										<SectionPhaseChip phase={s.section.phase} />
+									) : (
+										<PieceStateChip state={s.piece.state} />
+									)}
 									<PieceProgressBar
 										technicalMistakes={s.piece.lastTechnicalMistakes}
 										memoryMistakes={s.piece.lastMemoryMistakes}

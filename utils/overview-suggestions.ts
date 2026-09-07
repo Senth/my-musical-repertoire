@@ -173,7 +173,9 @@ function breadthFirst(
 	const byPiece = new Map<string, SuggestedPiece[]>();
 	for (const s of suggestions) {
 		const id = s.piece.id ?? "";
-		byPiece.set(id, [...(byPiece.get(id) ?? []), s]);
+		const queue = byPiece.get(id);
+		if (queue) queue.push(s);
+		else byPiece.set(id, [s]);
 	}
 	const queues = Array.from(byPiece.values())
 		.map((q) => q.sort((a, b) => b.score - a.score))
