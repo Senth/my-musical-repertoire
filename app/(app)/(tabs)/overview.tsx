@@ -51,7 +51,10 @@ import { displayMinutes } from "@/utils/format-minutes";
 import { shouldOfferInstall } from "@/utils/install-gating";
 import { modeLabelLong } from "@/utils/mode-label";
 import { suggestPieces, suggestTechniques } from "@/utils/overview-suggestions";
-import { formatBarRange, formatComposerLine } from "@/utils/piece-display";
+import {
+	formatComposerLine,
+	formatSectionPassage,
+} from "@/utils/piece-display";
 import { planTotalMinutes } from "@/utils/session-planner";
 import {
 	clearActiveSession,
@@ -195,9 +198,11 @@ export default function OverviewScreen() {
 				)}
 
 				{pieceSuggestions.suggestions.map((s) => {
-					const barRange = s.section ? formatBarRange(s.section, t) : null;
 					const subtitle = s.section
-						? formatComposerLine(s.piece.composer, barRange ?? s.section.label)
+						? formatComposerLine(
+								s.piece.composer,
+								formatSectionPassage(s.section, t),
+							)
 						: s.piece.composer;
 					const reasonText = t(
 						s.reasonKey as Parameters<typeof t>[0],

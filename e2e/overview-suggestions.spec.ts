@@ -265,7 +265,7 @@ test("The all-practised message appears only when no suggestion remains", async 
 	);
 });
 
-test("A stabilizing piece is suggested by section and the card names that section's bars", async ({
+test("A stabilizing piece is suggested by section and the card names that passage", async ({
 	page,
 }) => {
 	test.setTimeout(60_000);
@@ -279,6 +279,9 @@ test("A stabilizing piece is suggested by section and the card names that sectio
 
 	await page.goto("/overview");
 	await expect(page.getByText(PIECE1, { exact: true }).first()).toBeVisible({
+		timeout: 10_000,
+	});
+	await expect(page.getByText("First pass", { exact: false })).toBeVisible({
 		timeout: 10_000,
 	});
 	await expect(
