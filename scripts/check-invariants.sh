@@ -22,9 +22,6 @@
 # Not here yet, deliberately:
 #   * style literals and colour literals — the app is still on NativeWind, and
 #     both checks turn on green in the PR that moves it to theme/tokens.ts.
-#   * domain modules have a sibling test — see #125. Eleven modules have none,
-#     and a gate turns on green inside the PR that earns it, never behind a
-#     baseline file.
 #
 # Requires: git, grep, jq, and bash 4.4+ for `mapfile -d`.
 set -uo pipefail
@@ -34,18 +31,35 @@ set -uo pipefail
 export LC_ALL=C
 
 top=$(git rev-parse --show-toplevel 2>/dev/null) || {
-	echo "check-invariants: not inside a git repository" >&2; exit 2; }
-cd "$top" || { echo "check-invariants: cannot enter $top" >&2; exit 2; }
+	echo "check-invariants: not inside a git repository" >&2
+	exit 2
+}
+cd "$top" || {
+	echo "check-invariants: cannot enter $top" >&2
+	exit 2
+}
 
 BASE=""
 BASE_EXPLICIT=0
 while [[ $# -gt 0 ]]; do
 	case "$1" in
-		--base)
-			[[ $# -ge 2 ]] || { echo "check-invariants: --base needs a ref" >&2; exit 2; }
-			BASE="$2"; BASE_EXPLICIT=1; shift 2 ;;
-		-h|--help) sed -n '3,29p' "$0" | sed 's/^# \?//'; exit 0 ;;
-		*) echo "check-invariants: unknown argument: $1" >&2; exit 2 ;;
+	--base)
+		[[ $# -ge 2 ]] || {
+			echo "check-invariants: --base needs a ref" >&2
+			exit 2
+		}
+		BASE="$2"
+		BASE_EXPLICIT=1
+		shift 2
+		;;
+	-h | --help)
+		sed -n '3,26p' "$0" | sed 's/^# \?//'
+		exit 0
+		;;
+	*)
+		echo "check-invariants: unknown argument: $1" >&2
+		exit 2
+		;;
 	esac
 done
 
@@ -58,10 +72,11 @@ done
 # the app should be reading from somewhere.
 # ---------------------------------------------------------------------------
 mapfile -t -d '' TREE < <(
-	git ls-files -z --cached --others --exclude-standard '*.ts' '*.tsx')
+	git ls-files -z --cached --others --exclude-standard '*.ts' '*.tsx'
+)
 
-SRC=()      # app code
-ALL_TS=()   # every TypeScript file the alias rule applies to
+SRC=()    # app code
+ALL_TS=() # every TypeScript file the alias rule applies to
 for f in "${TREE[@]}"; do
 	[[ "$f" =~ ^(dist|node_modules)/ ]] && continue
 	ALL_TS+=("$f")
@@ -99,7 +114,8 @@ strip_comments() { grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)' || true; }
 
 # report <number> <name> <status> [detail-blocks...]
 report() {
-	local num="$1" name="$2" status="$3"; shift 3
+	local num="$1" name="$2" status="$3"
+	shift 3
 	RESULTS+=("$(printf '%2s|%s|%s' "$num" "$name" "$status")")
 	if [[ "$status" == "FAIL" ]]; then
 		FAILED=1
@@ -168,25 +184,50 @@ fi
 missing=""
 while read -r name; do
 	[[ -z "$name" || "$name" == "users" ]] && continue
-	grep -q "\"$name\"" utils/delete-account.ts \
-		|| missing+="collection \"$name\" is never deleted by utils/delete-account.ts"$'\n'
-done < <(printf '%s\0' "${SRC[@]}" \
-	| xargs -0 -r grep -hoE 'collection\([^,]+, *"[a-zA-Z]+"' 2>/dev/null \
-	| sed 's/.*"\(.*\)"/\1/' | sort -u)
+	grep -q "\"$name\"" utils/delete-account.ts ||
+		missing+="collection \"$name\" is never deleted by utils/delete-account.ts"$'\n'
+done < <(printf '%s\0' "${SRC[@]}" |
+	xargs -0 -r grep -hoE 'collection\([^,]+, *"[a-zA-Z]+"' 2>/dev/null |
+	sed 's/.*"\(.*\)"/\1/' | sort -u)
 
 clear_body="$(sed -n '/export async function clearLocalUserData/,/^}/p' utils/session-storage.ts)"
 while read -r fn; do
 	[[ -z "$fn" ]] && continue
-	grep -q "$fn(uid)" <<<"$clear_body" \
-		|| missing+="$fn is never cleared by clearLocalUserData"$'\n'
-done < <(grep -oE '^function [a-zA-Z]+Key\(' utils/session-storage.ts \
-	| sed 's/^function //; s/(//')
+	grep -q "$fn(uid)" <<<"$clear_body" ||
+		missing+="$fn is never cleared by clearLocalUserData"$'\n'
+done < <(grep -oE '^function [a-zA-Z]+Key\(' utils/session-storage.ts |
+	sed 's/^function //; s/(//')
 
 if [[ -n "$missing" ]]; then
 	report 4 "deletion covers every store" FAIL "${missing%$'\n'}" \
 		"Add it to utils/delete-account.ts and to clearLocalUserData, children before parents."
 else
 	report 4 "deletion covers every store" ok
+fi
+
+# ---------------------------------------------------------------------------
+# 5. Domain modules have a sibling test
+#
+# models/ and utils/ are the app's common core, and every module there gets a
+# test beside it. The four model files excluded below are pure type
+# declarations — types and const arrays, no functions — so there is nothing
+# to assert and they carry no test. See #125.
+# ---------------------------------------------------------------------------
+no_test=""
+while IFS= read -r f; do
+	case "$f" in
+	models/piece.ts | models/practice.ts | models/section.ts | models/technique.ts)
+		continue
+		;;
+	esac
+	[[ -f "${f%.ts}.test.ts" ]] || no_test+="$f has no sibling <name>.test.ts"$'\n'
+done < <(find models utils -name '*.ts' ! -name '*.test.ts' | sort)
+
+if [[ -n "$no_test" ]]; then
+	report 5 "domain modules have sibling tests" FAIL "${no_test%$'\n'}" \
+		"Write the test, or — for a module with no logic of its own — name it in this check's exclusion."
+else
+	report 5 "domain modules have sibling tests" ok
 fi
 
 # ---------------------------------------------------------------------------
@@ -199,7 +240,10 @@ fi
 # ---------------------------------------------------------------------------
 if [[ -z "$BASE" ]]; then
 	for candidate in origin/main main; do
-		if git rev-parse --verify --quiet "$candidate" >/dev/null; then BASE="$candidate"; break; fi
+		if git rev-parse --verify --quiet "$candidate" >/dev/null; then
+			BASE="$candidate"
+			break
+		fi
 	done
 fi
 merge_base=""
