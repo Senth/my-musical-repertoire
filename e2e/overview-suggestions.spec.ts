@@ -160,13 +160,9 @@ async function practiceSection(
 		`${pieceUrl}/practice?sectionId=${sectionId}&from=overview${modeParam}`,
 	);
 
-	// The hand chips render only once the section itself has loaded, and until
-	// then the BPM box is the piece-level one: a value typed before that is
-	// dropped when the screen switches to the section's own draft, and the log
-	// is saved with no tempo at all.
-	await expect(
-		page.getByText(t("screen.practice.modes.hands.RH"), { exact: true }),
-	).toBeVisible({ timeout: 10_000 });
+	// No wait for the hand chips here: the BPM box exists before the section
+	// loads, and #121 made a tempo typed in that window carry across instead of
+	// being dropped. Quality and effort below auto-wait for the section fields.
 
 	if (opts.bpm) {
 		await page.getByPlaceholder(t("common.bpm.placeholder")).fill(opts.bpm);

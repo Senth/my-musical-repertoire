@@ -194,6 +194,7 @@ export function PiecePracticeContent({
 		effectiveTarget,
 		preselect: preselectMode,
 		ready: !!scopedSection,
+		carryBpm: achievedBpm,
 	});
 	const htReady = isHtReady(scopedSection?.byMode, effectiveTarget);
 
@@ -202,11 +203,13 @@ export function PiecePracticeContent({
 	};
 
 	// The whole-piece screen keeps its single BPM field; sections use per-mode drafts.
+	// A section deep link never auto-fills it: a tempo typed during the load goes
+	// across as carryBpm instead of being mixed with the piece's stored tempo.
 	useEffect(() => {
-		if (!scopedSection) {
+		if (!scopedSection && !sectionIdProp) {
 			setAchievedBpm(piece?.lastAchievedTempoBpm?.toString() ?? "");
 		}
-	}, [scopedSection, piece]);
+	}, [scopedSection, sectionIdProp, piece]);
 
 	// A run-through of a piece the student is holding: unticked sections earn
 	// credit, so the checkboxes must be offered however well the run went.
