@@ -13,19 +13,31 @@ interface ProbeProps {
 	available: HandsMode[];
 	drills: PracticeDrill[];
 	preselect?: ModeKey | null;
+	carryBpm?: string | null;
 	onKey: (key: ModeKey) => void;
+	onBpm: (bpm: string) => void;
 }
 
-function Probe({ byMode, available, drills, preselect, onKey }: ProbeProps) {
+function Probe({
+	byMode,
+	available,
+	drills,
+	preselect,
+	carryBpm,
+	onKey,
+	onBpm,
+}: ProbeProps) {
 	const modes = useModeDrafts({
 		byMode,
 		available,
 		drills,
 		effectiveTarget: 100,
 		preselect,
+		carryBpm,
 		ready: true,
 	});
 	onKey(modes.currentKey);
+	onBpm(modes.draft.bpm);
 	return <Text>probe</Text>;
 }
 
@@ -46,9 +58,9 @@ const BY_MODE: ByMode = {
 	},
 };
 
-function lastKey(props: Omit<ProbeProps, "onKey">): ModeKey {
+function lastKey(props: Omit<ProbeProps, "onKey" | "onBpm">): ModeKey {
 	const onKey = jest.fn();
-	render(<Probe {...props} onKey={onKey} />);
+	render(<Probe {...props} onKey={onKey} onBpm={() => {}} />);
 	return onKey.mock.calls[onKey.mock.calls.length - 1][0];
 }
 
@@ -105,5 +117,37 @@ describe("useModeDrafts preselect", () => {
 				preselect: "LH",
 			}),
 		).toBe("HT");
+	});
+});
+
+describe("useModeDrafts carryBpm", () => {
+	function seededBpm(props: Omit<ProbeProps, "onKey" | "onBpm">): {
+		key: ModeKey;
+		bpm: string;
+	} {
+		const onKey = jest.fn();
+		const onBpm = jest.fn();
+		render(<Probe {...props} onKey={onKey} onBpm={onBpm} />);
+		return {
+			key: onKey.mock.calls[onKey.mock.calls.length - 1][0],
+			bpm: onBpm.mock.calls[onBpm.mock.calls.length - 1][0],
+		};
+	}
+
+	it("carries a tempo typed before the section loaded into the opened mode", () => {
+		expect(
+			seededBpm({
+				byMode: BY_MODE,
+				available: ["LH", "RH"],
+				drills: [],
+				carryBpm: "72",
+			}),
+		).toEqual({ key: "LH", bpm: "72" });
+	});
+
+	it("seeds from the stored tempo when nothing was typed", () => {
+		expect(
+			seededBpm({ byMode: BY_MODE, available: ["LH", "RH"], drills: [] }),
+		).toEqual({ key: "LH", bpm: "60" });
 	});
 });

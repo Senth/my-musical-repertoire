@@ -35,6 +35,12 @@ interface UseModeDraftsArgs {
 	preselect?: ModeKey | null;
 	/** Seed once the item has loaded — seeding runs a single time. */
 	ready: boolean;
+	/**
+	 * A tempo typed into the piece-level field before the item finished loading
+	 * (#121). Seeding writes it into the opened mode's draft instead of the
+	 * stored value, so the student's entry survives the scope switch.
+	 */
+	carryBpm?: string | null;
 }
 
 /** A preselect only wins when the chips can actually reach it. */
@@ -92,6 +98,7 @@ export function useModeDrafts({
 	effectiveTarget,
 	preselect,
 	ready,
+	carryBpm,
 }: UseModeDraftsArgs) {
 	const [drafts, setDrafts] = useState<Record<ModeKey, ModeDraft>>({});
 	const [dirty, setDirty] = useState<Set<ModeKey>>(() => new Set());
@@ -101,17 +108,21 @@ export function useModeDrafts({
 
 	useEffect(() => {
 		if (!ready || seeded.current) return;
-		setDrafts(seedDrafts(byMode, available, drills));
 		const forced = reachablePreselect(preselect, available, drills);
-		if (forced) {
-			setHands(forced.hands);
-			setDrill(forced.drill);
-		} else {
-			setHands(pickPreselectedHands(byMode, available, effectiveTarget));
-			setDrill(null);
+		const openHands = forced
+			? forced.hands
+			: pickPreselectedHands(byMode, available, effectiveTarget);
+		const openDrill = forced ? forced.drill : null;
+		const seededDrafts = seedDrafts(byMode, available, drills);
+		if (carryBpm) {
+			const key = modeKey(openHands, openDrill);
+			seededDrafts[key] = { ...seededDrafts[key], bpm: carryBpm };
 		}
+		setDrafts(seededDrafts);
+		setHands(openHands);
+		setDrill(openDrill);
 		seeded.current = true;
-	}, [ready, byMode, available, drills, effectiveTarget, preselect]);
+	}, [ready, byMode, available, drills, effectiveTarget, preselect, carryBpm]);
 
 	const currentKey = modeKey(hands, drill);
 	const draft = drafts[currentKey] ?? EMPTY_DRAFT;
