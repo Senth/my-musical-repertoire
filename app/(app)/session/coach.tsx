@@ -448,9 +448,8 @@ export default function CoachScreen() {
 			saving={coachValue.saving}
 		>
 			<CoachShell
-				currentBlock={currentBlock}
-				currentBlockIndex={session.currentBlockIndex}
-				totalBlocks={session.plan.blocks.length}
+				blocks={session.plan.blocks}
+				blockStates={session.blockStates}
 				sessionElapsedSeconds={sessionElapsedSeconds}
 				sessionTotalSeconds={sessionTotalSeconds}
 				blockElapsedSeconds={blockElapsedSeconds}

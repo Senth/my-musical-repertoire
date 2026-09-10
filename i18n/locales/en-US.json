@@ -901,8 +901,8 @@
 			},
 			"coach": {
 				"title": "Coach",
-				"sessionLabel": "Session",
-				"blockLabel": "Block {{current}}/{{total}}",
+				"timeLeft": "{{elapsed}} · {{time}} left",
+				"timeOver": "{{elapsed}} · {{time}} over",
 				"saveAndNext": "Save & next",
 				"skip": "Skip",
 				"extend": "+2 min",
