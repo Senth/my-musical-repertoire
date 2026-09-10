@@ -20,8 +20,10 @@ export function StandingNote({ value, onSave }: StandingNoteProps) {
 	const [editing, setEditing] = useState(false);
 	const [draft, setDraft] = useState(value ?? "");
 
-	const commit = () => {
+	/** Close, saving when the draft differs from what is already stored. */
+	const close = (save: boolean) => {
 		setEditing(false);
+		if (!save) return;
 		const trimmed = draft.trim();
 		if (trimmed === (value ?? "")) return;
 		onSave(trimmed || null);
@@ -35,8 +37,14 @@ export function StandingNote({ value, onSave }: StandingNoteProps) {
 				</Text>
 				<Pressable
 					onPress={() => {
-						setDraft(value ?? "");
-						setEditing(true);
+						// The pencil toggles: an explicit close saves what changed;
+						// an open seeds the draft from the stored note.
+						if (editing) {
+							close(true);
+						} else {
+							setDraft(value ?? "");
+							setEditing(true);
+						}
 					}}
 					accessibilityRole="button"
 					accessibilityLabel={t("screen.practice.standingNote.editA11y")}
@@ -56,7 +64,13 @@ export function StandingNote({ value, onSave }: StandingNoteProps) {
 					onChangeText={setDraft}
 					multiline
 					autoFocus
-					onBlur={commit}
+					onBlur={() => {
+						// A blur with nothing typed is a focus flicker, not a
+						// decision — closing here yanks the field before the first
+						// keystroke lands on a slow runner (#163 CI). Blur commits
+						// only what was actually written.
+						if (draft.trim() !== (value ?? "")) close(true);
+					}}
 					placeholder={t("screen.practice.standingNote.placeholder")}
 					accessibilityLabel={t("screen.practice.standingNote.editA11y")}
 				/>

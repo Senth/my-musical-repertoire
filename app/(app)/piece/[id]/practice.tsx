@@ -473,7 +473,11 @@ export function PiecePracticeContent({
 		return <MessageScreen message={t("screen.practice.pieceNotFound")} />;
 	}
 
-	if (sectionIdProp && sectionsLoading) {
+	// A section URL must not render the whole-piece body for a beat while the
+	// section is in flight: the two bodies diverge structurally, and the swap
+	// remounts everything after the first differing child — the open note
+	// editor included (#163 CI).
+	if (sectionIdProp && (sectionsLoading || !scopedSection)) {
 		return <LoadingScreen />;
 	}
 
