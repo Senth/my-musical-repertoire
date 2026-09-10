@@ -27,12 +27,12 @@ export default function Root({ children }: PropsWithChildren) {
 				{/* Matches the `primary` colours in app/_layout.tsx. */}
 				<meta
 					name="theme-color"
-					content="#7B1FA2"
+					content="#006566"
 					media="(prefers-color-scheme: light)"
 				/>
 				<meta
 					name="theme-color"
-					content="#CE93D8"
+					content="#7BDAD9"
 					media="(prefers-color-scheme: dark)"
 				/>
 
