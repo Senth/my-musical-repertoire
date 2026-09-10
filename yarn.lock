@@ -3464,14 +3464,14 @@
     postcss "^8.5.10"
     tailwindcss "4.3.0"
 
-"@testing-library/react-native@~13":
-  version "13.3.3"
-  resolved "https://registry.yarnpkg.com/@testing-library/react-native/-/react-native-13.3.3.tgz#4bf02911c4e18075df40b5de0e029c209fb45bda"
-  integrity sha512-k6Mjsd9dbZgvY4Bl7P1NIpePQNi+dfYtlJ5voi9KQlynxSyQkfOgJmYGCYmw/aSgH/rUcFvG8u5gd4npzgRDyg==
+"@testing-library/react-native@~14.0.0":
+  version "14.0.1"
+  resolved "https://registry.yarnpkg.com/@testing-library/react-native/-/react-native-14.0.1.tgz#3f6c64f7174715818190f283e12c375eb9e7bc0a"
+  integrity sha512-2r2e2y8SkUNRWKRXlUGqDYunB+AkbdXUPn49Bs5rpv9oxRb0K3USBVugbPbAKJjfj4w5Ba91NJ8LcQCZyopUZA==
   dependencies:
-    jest-matcher-utils "^30.0.5"
+    jest-matcher-utils "^30.4.1"
     picocolors "^1.1.1"
-    pretty-format "^30.0.5"
+    pretty-format "^30.4.1"
     redent "^3.0.0"
 
 "@tootallnate/once@2":
@@ -7622,7 +7622,7 @@ jest-leak-detector@30.5.1:
     "@jest/get-type" "30.5.0"
     pretty-format "30.5.1"
 
-jest-matcher-utils@30.4.1, jest-matcher-utils@^30.0.5:
+jest-matcher-utils@30.4.1:
   version "30.4.1"
   resolved "https://registry.yarnpkg.com/jest-matcher-utils/-/jest-matcher-utils-30.4.1.tgz#3fee8c89dbd8fc6e60eb590def9897e18f110ec4"
   integrity sha512-zvYfX5CaeEkFrrLS9suWe9rvJrm9J1Iv3ua8kIBv9GEPzcnsfBf0bob37la7s67fs0nlBC3EuvkOLnXQKxtx4A==
@@ -7632,7 +7632,7 @@ jest-matcher-utils@30.4.1, jest-matcher-utils@^30.0.5:
     jest-diff "30.4.1"
     pretty-format "30.4.1"
 
-jest-matcher-utils@30.5.1:
+jest-matcher-utils@30.5.1, jest-matcher-utils@^30.4.1:
   version "30.5.1"
   resolved "https://registry.yarnpkg.com/jest-matcher-utils/-/jest-matcher-utils-30.5.1.tgz#93e64fa4362c44d68cdc7a5590a2ccf6972083f4"
   integrity sha512-aroZVqwOz/wC2y6pC+obgFWKV9viaQWQTTSB6W5H55+egtUczIfXR/rxExTv92xD/ADYwpqaYfVWx1aqwKg7FA==
@@ -9862,7 +9862,7 @@ postgres-interval@^1.1.0:
   dependencies:
     xtend "^4.0.0"
 
-pretty-format@30.4.1, pretty-format@^30.0.0, pretty-format@^30.0.5:
+pretty-format@30.4.1, pretty-format@^30.0.0:
   version "30.4.1"
   resolved "https://registry.yarnpkg.com/pretty-format/-/pretty-format-30.4.1.tgz#0911652e92e1e91f475e3e6a16e628e50649ea69"
   integrity sha512-K6KiKMHTL4jjX4u3Kir2EW07nRfcqVTXIImx50wbjHQTcZPgg+gjVeNTIT3l3L1Rd4UefxfogquC9J37SoFyyw==
@@ -9872,7 +9872,7 @@ pretty-format@30.4.1, pretty-format@^30.0.0, pretty-format@^30.0.5:
     react-is-18 "npm:react-is@^18.3.1"
     react-is-19 "npm:react-is@^19.2.5"
 
-pretty-format@30.5.1:
+pretty-format@30.5.1, pretty-format@^30.4.1:
   version "30.5.1"
   resolved "https://registry.yarnpkg.com/pretty-format/-/pretty-format-30.5.1.tgz#0dda910a75d12346b771977b1f328517b9e846d4"
   integrity sha512-byhRAPguVKMQIj4kjJwJ5lAskVhfuiSdiYl/aLTWpgkGEmic2jYhJh1yE9ih8Ox44Xg9ccCT11/S6QrzSJuNrg==
