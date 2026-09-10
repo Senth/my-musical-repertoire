@@ -13,7 +13,6 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
-import { BpmControl } from "@/components/practice/BpmControl";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import { ModeSelector } from "@/components/practice/ModeSelector";
@@ -23,6 +22,7 @@ import {
 } from "@/components/practice/PhaseOfferCard";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
+import { TempoControl } from "@/components/practice/TempoControl";
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
@@ -60,7 +60,6 @@ import {
 } from "@/utils/phase-offer";
 import { formatBarRange } from "@/utils/piece-display";
 import {
-	hsTarget,
 	isHtReady,
 	type ModeEntry,
 	modeKey,
@@ -627,49 +626,24 @@ export function PiecePracticeContent({
 						</Text>
 					)}
 
-					<View className="gap-2">
-						<Text variant="titleSmall">
-							{t("screen.practice.achievedBpmLabel")}
-						</Text>
-						{effectiveTarget != null &&
-							(scopedSection ? (
-								<>
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{t("screen.practice.modes.targetHandsSeparate", {
-											bpm: hsTarget(effectiveTarget),
-										})}
-									</Text>
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{t("screen.practice.modes.targetHandsTogether", {
-											bpm: effectiveTarget,
-										})}
-									</Text>
-								</>
-							) : (
-								<Text
-									variant="bodySmall"
-									style={{ color: theme.colors.onSurfaceVariant }}
-								>
-									{t("screen.practiceTechnique.targetBpm", {
-										bpm: effectiveTarget,
-									})}
-								</Text>
-							))}
-						<BpmControl
-							value={scopedSection ? modes.draft.bpm : achievedBpm}
-							onChangeText={scopedSection ? modes.setBpm : setAchievedBpm}
-							error={bpmError}
-							onBlur={handleBpmBlur}
-							stopRef={metronomeStopRef}
-							accent={accent}
-						/>
-					</View>
+					<TempoControl
+						value={scopedSection ? modes.draft.bpm : achievedBpm}
+						onChangeText={scopedSection ? modes.setBpm : setAchievedBpm}
+						error={bpmError}
+						onBlur={handleBpmBlur}
+						stopRef={metronomeStopRef}
+						accent={accent}
+						target={
+							scopedSection
+								? targetForMode(modes.hands, effectiveTarget)
+								: effectiveTarget
+						}
+						last={
+							scopedSection
+								? (scopedSection.byMode?.[modes.currentKey]?.bpm ?? null)
+								: (piece?.lastAchievedTempoBpm ?? null)
+						}
+					/>
 					<Divider />
 
 					{scopedSection ? (

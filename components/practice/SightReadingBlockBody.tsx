@@ -8,7 +8,7 @@ import {
 	writeSightReadingBpm,
 } from "@/utils/session-storage";
 import { validateBpm } from "@/utils/validation";
-import { BpmControl } from "./BpmControl";
+import { TempoControl } from "./TempoControl";
 
 interface SightReadingBlockBodyProps {
 	stopRef: React.MutableRefObject<(() => void) | null>;
@@ -52,6 +52,8 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 		};
 	}, []);
 
+	const parsedBpm = Number.parseInt(bpm.trim(), 10);
+
 	return (
 		<ScreenContent gap={4}>
 			<Text
@@ -60,12 +62,14 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 			>
 				{t("screen.session.coach.sightReadingBody")}
 			</Text>
-			<BpmControl
+			<TempoControl
 				value={bpm}
 				onChangeText={handleChange}
 				error={bpmError}
 				onBlur={() => setBpmError(validateBpm(bpm, t))}
 				stopRef={stopRef}
+				fullRange
+				last={Number.isNaN(parsedBpm) ? null : parsedBpm}
 			/>
 		</ScreenContent>
 	);

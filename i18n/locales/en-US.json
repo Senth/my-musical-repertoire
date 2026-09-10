@@ -92,10 +92,16 @@
 			"increaseOne": "Increase BPM by 1",
 			"decreaseFive": "Decrease BPM by 5",
 			"increaseFive": "Increase BPM by 5",
-			"half": "½",
-			"double": "×2",
 			"tap": "Tap",
 			"tapTempo": "Tap tempo: tap 4 to 8 times to set the BPM"
+		},
+		"tempo": {
+			"heading": "Tempo",
+			"last": "last {{bpm}}",
+			"target": "target {{bpm}}",
+			"unit": "BPM",
+			"sliderA11y": "Tempo slider",
+			"editA11y": "Edit tempo"
 		},
 		"offline": {
 			"banner": "Offline — changes will sync when you reconnect."
@@ -569,7 +575,6 @@
 			"technicalMistakes": "Technical Mistakes",
 			"memoryMistakes": "Memory Mistakes",
 			"save": "Save",
-			"achievedBpmLabel": "Achieved BPM",
 			"noteForNextTimeLabel": "Note for next time (optional)",
 			"lastSession": {
 				"header": "Last session · {{when}}",
@@ -616,8 +621,6 @@
 				"summaryEntry": "{{mode}} {{bpm}}",
 				"summaryTargetBoth": "(target {{separate}}/{{together}})",
 				"summaryTargetOne": "(target {{bpm}})",
-				"targetHandsSeparate": "Target {{bpm}} BPM (hands separate)",
-				"targetHandsTogether": "{{bpm}} BPM (hands together)",
 				"targetSingle": "Target {{bpm}} BPM",
 				"htReadyHint": "Both hands reached {{bpm}} BPM — try hands together",
 				"a11ySelectHands": "Practice {{mode}}",
@@ -818,8 +821,6 @@
 			"notFound": "Technique item not found",
 			"qualityLabel": "Quality",
 			"effortLabel": "Effort",
-			"tempoAchievedLabel": "Tempo Achieved (BPM)",
-			"targetBpm": "Target: {{bpm}} BPM",
 			"save": "Save",
 			"comparison": {
 				"title": "Practice Results",

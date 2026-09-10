@@ -11,10 +11,10 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
-import { BpmControl } from "@/components/practice/BpmControl";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import { ModeSelector } from "@/components/practice/ModeSelector";
+import { TempoControl } from "@/components/practice/TempoControl";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
@@ -36,7 +36,6 @@ import type { ModeKey } from "@/models/practice";
 import { effortOptions, qualityOptions } from "@/utils/estimation-options";
 import {
 	availableHandsModes,
-	hsTarget,
 	isHtReady,
 	type ModeEntry,
 	modeKey,
@@ -307,67 +306,31 @@ export function TechniquePracticeContent({
 						targetBpm={targetForMode(modes.hands, effectiveTarget)}
 					/>
 
-					<View className="gap-2">
-						<Text variant="titleSmall">
-							{t("screen.practiceTechnique.tempoAchievedLabel")}
-						</Text>
-						{effectiveTarget != null &&
-							(available.length > 1 ? (
-								<>
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{t("screen.practice.modes.targetHandsSeparate", {
-											bpm: hsTarget(effectiveTarget),
-										})}
-									</Text>
-									{available.includes("HT") && (
-										<Text
-											variant="bodySmall"
-											style={{ color: theme.colors.onSurfaceVariant }}
-										>
-											{t("screen.practice.modes.targetHandsTogether", {
-												bpm: effectiveTarget,
-											})}
-										</Text>
-									)}
-								</>
-							) : (
-								<Text
-									variant="bodySmall"
-									style={{ color: theme.colors.onSurfaceVariant }}
-								>
-									{t("screen.practiceTechnique.targetBpm", {
-										bpm: targetForMode(modes.hands, effectiveTarget),
-									})}
-								</Text>
-							))}
-						<BpmControl
-							value={modes.draft.bpm}
-							onChangeText={modes.setBpm}
-							error={bpmError}
-							onBlur={handleBpmBlur}
-							stopRef={metronomeStopRef}
-							accent={
-								technique
-									? {
-											signature: technique.timeSignature ?? null,
-											planFor: (next) =>
-												planTimeSignatureWrite(next, null, null),
-											onChange: (next) =>
-												void updateTechnique(techniqueId, {
-													timeSignature: next,
-												}),
-											onClear: () =>
-												void updateTechnique(techniqueId, {
-													timeSignature: null,
-												}),
-										}
-									: undefined
-							}
-						/>
-					</View>
+					<TempoControl
+						value={modes.draft.bpm}
+						onChangeText={modes.setBpm}
+						error={bpmError}
+						onBlur={handleBpmBlur}
+						stopRef={metronomeStopRef}
+						accent={
+							technique
+								? {
+										signature: technique.timeSignature ?? null,
+										planFor: (next) => planTimeSignatureWrite(next, null, null),
+										onChange: (next) =>
+											void updateTechnique(techniqueId, {
+												timeSignature: next,
+											}),
+										onClear: () =>
+											void updateTechnique(techniqueId, {
+												timeSignature: null,
+											}),
+									}
+								: undefined
+						}
+						target={targetForMode(modes.hands, effectiveTarget)}
+						last={technique?.byMode?.[modes.currentKey]?.bpm ?? null}
+					/>
 
 					<EstimationField
 						label={t("screen.practiceTechnique.qualityLabel")}

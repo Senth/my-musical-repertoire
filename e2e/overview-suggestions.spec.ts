@@ -165,6 +165,10 @@ async function practiceSection(
 	// being dropped. Quality and effort below auto-wait for the section fields.
 
 	if (opts.bpm) {
+		// The tempo value is plain text until tapped; tapping it opens the input.
+		await page
+			.getByRole("button", { name: t("common.tempo.editA11y"), exact: true })
+			.click();
 		await page.getByPlaceholder(t("common.bpm.placeholder")).fill(opts.bpm);
 	}
 	if (opts.note) {
@@ -420,6 +424,10 @@ test("The Practice button on a section card opens that section with its scored h
 	await expect(page).toHaveURL(/mode=RH/);
 	// The BPM prefill arrives with the section's practice history, so it is
 	// late rather than absent — every other wait in this file allows 10s.
+	// It renders as text; tapping the value opens the input holding it.
+	await page
+		.getByRole("button", { name: t("common.tempo.editA11y"), exact: true })
+		.click();
 	await expect(page.getByPlaceholder(t("common.bpm.placeholder"))).toHaveValue(
 		"65",
 		{ timeout: 10_000 },
