@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Piece, PieceState } from "@/models/piece";
 import type { PracticeMistakes } from "@/models/practice";
 import { awaitWrite } from "@/utils/firestore-write";
+import { timeSignatureFromFirestore } from "@/utils/time-signature";
 
 interface FirestorePiece {
 	title: string;
@@ -32,6 +33,7 @@ interface FirestorePiece {
 	notes?: string | null;
 	durationSeconds?: number | null;
 	allSectionsAdded?: boolean;
+	timeSignature?: unknown;
 }
 
 export function fromFirestore(
@@ -56,6 +58,7 @@ export function fromFirestore(
 		notes: data.notes ?? null,
 		durationSeconds: data.durationSeconds ?? null,
 		allSectionsAdded: data.allSectionsAdded ?? false,
+		timeSignature: timeSignatureFromFirestore(data.timeSignature),
 	};
 }
 

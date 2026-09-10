@@ -140,7 +140,7 @@ export function AccentSheet({
 								>
 									<SegmentedButtons
 										value=""
-										onValueChange={() => adjustBeats(-5)}
+										onValueChange={(v) => adjustBeats(v === "minus5" ? -5 : -1)}
 										buttons={[
 											{
 												value: "minus5",
@@ -159,7 +159,7 @@ export function AccentSheet({
 									<Text variant="headlineSmall">{beats}</Text>
 									<SegmentedButtons
 										value=""
-										onValueChange={() => adjustBeats(5)}
+										onValueChange={(v) => adjustBeats(v === "plus5" ? 5 : 1)}
 										buttons={[
 											{
 												value: "plus1",

@@ -37,7 +37,12 @@ interface TempoControlProps {
 	value: string;
 	onChangeText: (text: string) => void;
 	error: string | null;
-	onBlur: () => void;
+	/**
+	 * Called with the text actually committed on blur — the clamped value when
+	 * an out-of-range entry was pulled into range — so validation never reads
+	 * the pre-clamp snapshot.
+	 */
+	onBlur: (committed: string) => void;
 	stopRef?: MutableRefObject<(() => void) | null>;
 	accent?: AccentControl;
 	/** The passage's target tempo, drawn as a marker when present. */
@@ -57,17 +62,23 @@ function clamp(n: number): number {
 	return Math.max(BPM_MIN, Math.min(BPM_MAX, n));
 }
 
-type MarkerShift = "center" | "left" | "right";
+/**
+ * Which part of the label sits at `percent`: centered on it, or held inside
+ * the track's edge by its leading ("start") or trailing ("end") edge — an
+ * absolutely-positioned box shrinks to the space right of `left`, so a
+ * centered marker near an edge would wrap and lose its chevron.
+ */
+type MarkerAnchor = "start" | "center" | "end";
 
 function TempoMarker({
 	label,
 	percent,
-	shift,
+	anchor,
 	color,
 }: {
 	label: string;
 	percent: number;
-	shift: MarkerShift;
+	anchor: MarkerAnchor;
 	color: string;
 }) {
 	return (
@@ -76,20 +87,17 @@ function TempoMarker({
 			style={{
 				position: "absolute",
 				bottom: 0,
-				left: `${Math.min(94, Math.max(6, percent))}%`,
-				transform: [
-					{
-						translateX:
-							shift === "center" ? "-50%" : shift === "left" ? "-100%" : "0%",
-					},
-				],
+				...(anchor === "end"
+					? { right: `${Math.max(0, 100 - percent)}%` }
+					: { left: `${Math.min(100, Math.max(0, percent))}%` }),
+				transform: [{ translateX: anchor === "center" ? "-50%" : "0%" }],
 				alignItems:
-					shift === "left"
+					anchor === "end"
 						? "flex-end"
-						: shift === "right"
+						: anchor === "start"
 							? "flex-start"
 							: "center",
-				paddingHorizontal: shift === "center" ? 0 : 4,
+				paddingHorizontal: anchor === "center" ? 0 : 4,
 			}}
 		>
 			<Text variant="labelSmall" style={{ color }}>
@@ -155,15 +163,17 @@ export function TempoControl({
 		if (bpm !== null) onChangeText(clamp(bpm).toString());
 	}
 
-	// Typing commits on blur: an out-of-range number is clamped into range
-	// before the screens' validation runs, so the error never outlives the
-	// value it was about.
+	// Typing commits on blur: an out-of-range number is clamped into range,
+	// and validation runs on the value actually kept.
 	const handleBlur = () => {
 		setEditing(false);
 		if (isValid && (parsed < BPM_MIN || parsed > BPM_MAX)) {
-			onChangeText(clamp(parsed).toString());
+			const clamped = clamp(parsed).toString();
+			onChangeText(clamped);
+			onBlur(clamped);
+			return;
 		}
-		onBlur();
+		onBlur(value);
 	};
 
 	const percent = (bpm: number) =>
@@ -182,6 +192,13 @@ export function TempoControl({
 	const accentTint = theme.colors.onSurfaceVariant;
 	const beatsPerBar =
 		accentOn && accent?.signature ? accent.signature.beats : null;
+	// Near an edge the marker holds inside the track by that edge instead of
+	// centering — a centered box at 94% has only 6% of width left and wraps.
+	const edgeAnchor = (percent: number): MarkerAnchor => {
+		if (percent > 88) return "end";
+		if (percent < 12) return "start";
+		return "center";
+	};
 
 	return (
 		<View style={{ gap: 12 }}>
@@ -192,7 +209,7 @@ export function TempoControl({
 					<TempoMarker
 						label={t("common.tempo.last", { bpm: last })}
 						percent={close && mid != null ? mid : lastPos}
-						shift={close ? "left" : "center"}
+						anchor={close ? "end" : edgeAnchor(lastPos)}
 						color={accentTint}
 					/>
 				)}
@@ -200,7 +217,7 @@ export function TempoControl({
 					<TempoMarker
 						label={t("common.tempo.target", { bpm: target })}
 						percent={close && mid != null ? mid : targetPos}
-						shift={close ? "right" : "center"}
+						anchor={close ? "start" : edgeAnchor(targetPos)}
 						color={accentTint}
 					/>
 				)}

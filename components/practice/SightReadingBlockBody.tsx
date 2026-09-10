@@ -75,7 +75,7 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 					value={bpm}
 					onChangeText={handleChange}
 					error={bpmError}
-					onBlur={() => setBpmError(validateBpm(bpm, t))}
+					onBlur={(text) => setBpmError(validateBpm(text, t))}
 					stopRef={stopRef}
 					fullRange
 					last={savedBpm}

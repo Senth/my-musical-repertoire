@@ -5,6 +5,7 @@ import {
 	PRESETS,
 	planTimeSignatureWrite,
 	resolveTimeSignature,
+	timeSignatureFromFirestore,
 	writesFromPlan,
 } from "./time-signature";
 
@@ -164,5 +165,26 @@ describe("writesFromPlan", () => {
 	it("carries nothing for technique and no-op plans", () => {
 		expect(writesFromPlan({ target: "technique" })).toEqual({});
 		expect(writesFromPlan({ target: "none" })).toEqual({});
+	});
+});
+
+describe("timeSignatureFromFirestore", () => {
+	it("reads back what a write stored — the full round trip", () => {
+		// updateDoc stores `{ beats, noteValue }` as a plain object; this is
+		// the read half of that round trip, which no test used to cover.
+		const stored = JSON.parse(JSON.stringify(SEVEN_EIGHT));
+		expect(timeSignatureFromFirestore(stored)).toEqual(SEVEN_EIGHT);
+		expect(timeSignatureFromFirestore({ beats: 4, noteValue: 4 })).toEqual(
+			FOUR_FOUR,
+		);
+	});
+
+	it("reads absent and malformed fields as null", () => {
+		expect(timeSignatureFromFirestore(undefined)).toBeNull();
+		expect(timeSignatureFromFirestore(null)).toBeNull();
+		expect(timeSignatureFromFirestore("4/4")).toBeNull();
+		expect(timeSignatureFromFirestore({ beats: 4 })).toBeNull();
+		expect(timeSignatureFromFirestore({ beats: 4, noteValue: 3 })).toBeNull();
+		expect(timeSignatureFromFirestore({ beats: "4", noteValue: 4 })).toBeNull();
 	});
 });

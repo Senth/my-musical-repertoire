@@ -133,8 +133,8 @@ export function TechniquePracticeContent({
 		[t],
 	);
 
-	const handleBpmBlur = () => {
-		setBpmError(validateBpm(modes.draft.bpm));
+	const handleBpmBlur = (text: string) => {
+		setBpmError(validateBpm(text));
 	};
 	const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);

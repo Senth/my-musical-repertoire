@@ -18,6 +18,7 @@ import { usePieces } from "@/hooks/use-pieces";
 import type { Section, SectionPhase } from "@/models/section";
 import { awaitWrite } from "@/utils/firestore-write";
 import { byModeFromFirestore } from "@/utils/practice-modes";
+import { timeSignatureFromFirestore } from "@/utils/time-signature";
 
 interface FirestoreSection {
 	label: string;
@@ -34,6 +35,7 @@ interface FirestoreSection {
 	lastEffort?: 1 | 2 | 3 | 4 | 5 | null;
 	byMode?: unknown;
 	phaseChangedAt?: { toDate: () => Date } | null;
+	timeSignatureOverride?: unknown;
 }
 
 function fromFirestore(
@@ -60,6 +62,9 @@ function fromFirestore(
 		lastEffort: data.lastEffort ?? null,
 		byMode: byModeFromFirestore(data.byMode),
 		phaseChangedAt: data.phaseChangedAt?.toDate() ?? null,
+		timeSignatureOverride: timeSignatureFromFirestore(
+			data.timeSignatureOverride,
+		),
 	};
 }
 

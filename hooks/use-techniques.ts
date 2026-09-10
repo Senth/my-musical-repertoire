@@ -25,6 +25,7 @@ import {
 	type ModeEntry,
 	mergeByMode,
 } from "@/utils/practice-modes";
+import { timeSignatureFromFirestore } from "@/utils/time-signature";
 
 interface FirestoreTechnique {
 	title: string;
@@ -40,6 +41,7 @@ interface FirestoreTechnique {
 	byMode?: unknown;
 	handsMode?: TechniqueHandsMode | null;
 	activeDrills?: PracticeDrill[] | null;
+	timeSignature?: unknown;
 }
 
 function fromFirestore(
@@ -63,6 +65,7 @@ function fromFirestore(
 		byMode: byModeFromFirestore(data.byMode),
 		handsMode: data.handsMode ?? "separate",
 		activeDrills: data.activeDrills ?? [],
+		timeSignature: timeSignatureFromFirestore(data.timeSignature),
 	};
 }
 

@@ -233,8 +233,8 @@ export function PiecePracticeContent({
 		carryBpm: achievedBpm,
 	});
 
-	const handleBpmBlur = () => {
-		setBpmError(validateBpm(scopedSection ? modes.draft.bpm : achievedBpm));
+	const handleBpmBlur = (text: string) => {
+		setBpmError(validateBpm(text));
 	};
 
 	// The whole-piece screen keeps its single BPM field; sections use per-mode drafts.
@@ -580,7 +580,13 @@ export function PiecePracticeContent({
 								numberOfLines={1}
 								style={{ color: theme.colors.onSurfaceVariant }}
 							>
-								{[piece.title, piece.composer, barRangeText]
+								{[
+									// The name line above already carries the piece on a
+									// whole-piece block — r8's frame 5 repeats only the composer.
+									...(scopedSection ? [piece.title] : []),
+									piece.composer,
+									barRangeText,
+								]
 									.filter(Boolean)
 									.join(" · ")}
 							</Text>

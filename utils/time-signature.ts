@@ -7,6 +7,25 @@ export interface TimeSignature {
 
 export const NOTE_VALUES: NoteValue[] = [1, 2, 4, 8, 16, 32, 64, 128];
 
+/**
+ * Firestore stores the signature as a plain `{ beats, noteValue }` object;
+ * anything else on the field — absent, malformed, a string from an older
+ * experiment — reads as null rather than poisoning the metronome.
+ */
+export function timeSignatureFromFirestore(
+	value: unknown,
+): TimeSignature | null {
+	if (typeof value !== "object" || value === null) return null;
+	const { beats, noteValue } = value as Record<string, unknown>;
+	if (
+		typeof beats !== "number" ||
+		!NOTE_VALUES.includes(noteValue as NoteValue)
+	) {
+		return null;
+	}
+	return { beats, noteValue: noteValue as NoteValue };
+}
+
 export const PRESETS: TimeSignature[] = [
 	{ beats: 2, noteValue: 4 },
 	{ beats: 3, noteValue: 4 },
