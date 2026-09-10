@@ -25,6 +25,7 @@ import {
 	type ModeEntry,
 	mergeByMode,
 } from "@/utils/practice-modes";
+import { timeSignatureFromFirestore } from "@/utils/time-signature";
 
 interface FirestoreTechnique {
 	title: string;
@@ -40,6 +41,7 @@ interface FirestoreTechnique {
 	byMode?: unknown;
 	handsMode?: TechniqueHandsMode | null;
 	activeDrills?: PracticeDrill[] | null;
+	timeSignature?: unknown;
 }
 
 function fromFirestore(
@@ -63,6 +65,7 @@ function fromFirestore(
 		byMode: byModeFromFirestore(data.byMode),
 		handsMode: data.handsMode ?? "separate",
 		activeDrills: data.activeDrills ?? [],
+		timeSignature: timeSignatureFromFirestore(data.timeSignature),
 	};
 }
 
@@ -161,6 +164,7 @@ export function useUpdateTechnique() {
 				| "state"
 				| "type"
 				| "targetTempoBpm"
+				| "timeSignature"
 				| "notes"
 				| "lastPracticedAt"
 				| "lastQuality"
@@ -199,13 +203,11 @@ export function useSaveTechniqueLog() {
 
 	/**
 	 * Writes one practice log per mode, then folds them all into `byMode`.
-	 * The note is screen-level, not per-mode: every log of the save carries it,
-	 * so whichever mode the student opens next shows the same reminder (#16).
 	 */
 	const saveTechniqueLog = async (
 		techniqueId: string,
 		entries: ModeEntry[],
-		options: { sessionId?: string | null; note?: string | null } = {},
+		options: { sessionId?: string | null } = {},
 	) => {
 		if (!user) throw new Error("Not authenticated");
 		if (entries.length === 0) return;
@@ -225,7 +227,6 @@ export function useSaveTechniqueLog() {
 						hands: entry.hands,
 						drill: entry.drill ?? null,
 						sessionId: options.sessionId ?? null,
-						note: options.note ?? null,
 					}),
 				),
 			),

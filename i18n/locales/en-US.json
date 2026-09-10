@@ -66,25 +66,25 @@
 			}
 		},
 		"metronome": {
-			"start": "Start Metronome",
-			"stop": "Stop Metronome",
-			"paused": "Metronome Paused",
+			"start": "Start",
+			"stop": "Stop",
+			"paused": "Paused",
 			"enterBpmToEnable": "Enter a BPM to enable the metronome",
 			"enterBpmToResume": "Enter a BPM to resume the metronome",
-			"timeSignatures": {
-				"fourFour": "4/4",
-				"threeFour": "3/4",
-				"sixEight": "6/8",
-				"twoFour": "2/4"
-			},
-			"timeSignatureA11y": "Time signature {{signature}}",
-			"volumeLevels": {
-				"mute": "Mute",
-				"soft": "Soft",
-				"normal": "Normal",
-				"loud": "Loud"
-			},
-			"volumeA11y": "Metronome click volume: {{level}}"
+			"accent": {
+				"title": "Accent",
+				"off": "no accent",
+				"none": "None",
+				"custom": "Custom",
+				"beats": "Beats",
+				"noteValue": "Note value",
+				"toggleA11y": "Toggle accent",
+				"editA11y": "Accent options",
+				"landsPiece": "Saved with the piece",
+				"landsSection": "Saved with this passage",
+				"landsTechnique": "Saved with the technique",
+				"landsNone": "Already the piece's signature"
+			}
 		},
 		"bpm": {
 			"placeholder": "e.g. 80",
@@ -92,10 +92,16 @@
 			"increaseOne": "Increase BPM by 1",
 			"decreaseFive": "Decrease BPM by 5",
 			"increaseFive": "Increase BPM by 5",
-			"half": "½",
-			"double": "×2",
 			"tap": "Tap",
 			"tapTempo": "Tap tempo: tap 4 to 8 times to set the BPM"
+		},
+		"tempo": {
+			"heading": "Tempo",
+			"last": "last {{bpm}}",
+			"target": "target {{bpm}}",
+			"unit": "BPM",
+			"sliderA11y": "Tempo slider",
+			"editA11y": "Edit tempo"
 		},
 		"offline": {
 			"banner": "Offline — changes will sync when you reconnect."
@@ -562,15 +568,12 @@
 			}
 		},
 		"practice": {
-			"title": "Practice",
 			"pieceNotFound": "Piece not found",
 			"dateLabel": "Date",
 			"lastPracticed": "Last practiced: {{when}}",
-			"technicalMistakes": "Technical Mistakes",
-			"memoryMistakes": "Memory Mistakes",
+			"technicalMistakes": "Wrong notes?",
+			"memoryMistakes": "Memory slips?",
 			"save": "Save",
-			"achievedBpmLabel": "Achieved BPM",
-			"noteForNextTimeLabel": "Note for next time (optional)",
 			"lastSession": {
 				"header": "Last session · {{when}}",
 				"headerAfterBreak": "Last session · {{when}} · after a break",
@@ -581,7 +584,6 @@
 				"effort": "Effort",
 				"technical": "Technical",
 				"memory": "Memory",
-				"note": "Note: {{note}}",
 				"firstPractice": "First practice — no reference yet"
 			},
 			"sectionsPanel": {
@@ -596,8 +598,6 @@
 			"demoted_one": "{{count}} section moved back to stabilizing",
 			"demoted_other": "{{count}} sections moved back to stabilizing",
 			"modes": {
-				"handsLabel": "Hands",
-				"drillLabel": "Drill",
 				"hands": {
 					"LH": "LH",
 					"RH": "RH",
@@ -613,13 +613,7 @@
 					"staccato": "Staccato"
 				},
 				"summarySeparator": " · ",
-				"summaryEntry": "{{mode}} {{bpm}}",
-				"summaryTargetBoth": "(target {{separate}}/{{together}})",
-				"summaryTargetOne": "(target {{bpm}})",
-				"targetHandsSeparate": "Target {{bpm}} BPM (hands separate)",
-				"targetHandsTogether": "{{bpm}} BPM (hands together)",
 				"targetSingle": "Target {{bpm}} BPM",
-				"htReadyHint": "Both hands reached {{bpm}} BPM — try hands together",
 				"a11ySelectHands": "Practice {{mode}}",
 				"a11ySelectDrill": "Drill: {{drill}}",
 				"incompleteMode": "{{mode}} needs quality and effort"
@@ -695,6 +689,17 @@
 					"yesterday": "Moved to {{phase}} yesterday — change it again?",
 					"daysAgo": "Moved to {{phase}} {{count}} days ago — change it again?"
 				}
+			},
+			"notRated": "not rated yet",
+			"standingNote": {
+				"heading": "Note",
+				"editA11y": "Edit note",
+				"placeholder": "Add a note"
+			},
+			"tally": {
+				"prefix": "Saving: {{tally}}",
+				"saved": "{{mode}} {{bpm}} {{quality}}",
+				"inProgress": "{{mode}} in progress"
 			}
 		},
 		"editPiece": {
@@ -814,12 +819,9 @@
 			}
 		},
 		"practiceTechnique": {
-			"title": "Log Technique",
 			"notFound": "Technique item not found",
-			"qualityLabel": "Quality",
-			"effortLabel": "Effort",
-			"tempoAchievedLabel": "Tempo Achieved (BPM)",
-			"targetBpm": "Target: {{bpm}} BPM",
+			"qualityLabel": "How clean?",
+			"effortLabel": "How hard?",
 			"save": "Save",
 			"comparison": {
 				"title": "Practice Results",
@@ -899,11 +901,11 @@
 			},
 			"coach": {
 				"title": "Coach",
-				"sessionLabel": "Session",
-				"blockLabel": "Block {{current}}/{{total}}",
-				"saveAndNext": "Save & next block",
+				"timeLeft": "{{elapsed}} · {{time}} left",
+				"timeOver": "{{elapsed}} · {{time}} over",
+				"saveAndNext": "Save & next",
 				"skip": "Skip",
-				"extend": "Extend +2 min",
+				"extend": "+2 min",
 				"sightReadingBody": "Sight-reading — pick your material",
 				"warmupBody": "Warmup — gentle scales of your choice",
 				"done": "Done",

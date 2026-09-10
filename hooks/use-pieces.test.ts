@@ -64,3 +64,32 @@ describe("fromFirestore collectionName mapping", () => {
 		expect(piece.collectionName).toBeNull();
 	});
 });
+
+describe("fromFirestore timeSignature mapping", () => {
+	it("maps a stored signature through", () => {
+		const piece = fromFirestore(
+			"id1",
+			{
+				title: "A",
+				composer: "C",
+				timeSignature: { beats: 7, noteValue: 8 },
+			},
+			"user1",
+		);
+		expect(piece.timeSignature).toEqual({ beats: 7, noteValue: 8 });
+	});
+
+	it("reads a malformed signature as null instead of poisoning the metronome", () => {
+		const piece = fromFirestore(
+			"id1",
+			{ title: "A", composer: "C", timeSignature: "7/8" },
+			"user1",
+		);
+		expect(piece.timeSignature).toBeNull();
+	});
+
+	it("defaults a missing signature to null", () => {
+		const piece = fromFirestore("id1", { title: "A", composer: "C" }, "user1");
+		expect(piece.timeSignature).toBeNull();
+	});
+});

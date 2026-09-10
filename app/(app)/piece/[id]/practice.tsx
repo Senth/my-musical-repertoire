@@ -5,24 +5,24 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import {
 	Appbar,
-	Button,
 	Divider,
 	Menu,
 	Snackbar,
 	Text,
-	TextInput,
 	useTheme,
 } from "react-native-paper";
-import { BpmControl } from "@/components/practice/BpmControl";
 import { EstimationField } from "@/components/practice/EstimationField";
+import { HandTabs } from "@/components/practice/HandTabs";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
-import { ModeSelector } from "@/components/practice/ModeSelector";
 import {
 	PhaseOfferCard,
 	PhaseStatusLine,
 } from "@/components/practice/PhaseOfferCard";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
+import { PracticeFooter } from "@/components/practice/PracticeFooter";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
+import { StandingNote } from "@/components/practice/StandingNote";
+import { TempoControl } from "@/components/practice/TempoControl";
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
@@ -32,14 +32,14 @@ import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useCoach } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { parseBpm, useModeDrafts } from "@/hooks/use-mode-drafts";
-import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
+import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { usePracticeSave } from "@/hooks/use-practice-save";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
 import {
 	useChangeSectionPhase,
 	useSectionPhaseHistory,
 } from "@/hooks/use-section-phase";
-import { useSections } from "@/hooks/use-sections";
+import { useSections, useUpdateSection } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import {
@@ -60,13 +60,17 @@ import {
 } from "@/utils/phase-offer";
 import { formatBarRange } from "@/utils/piece-display";
 import {
-	hsTarget,
-	isHtReady,
 	type ModeEntry,
 	modeKey,
 	parseModeKey,
 	targetForMode,
 } from "@/utils/practice-modes";
+import {
+	planTimeSignatureWrite,
+	resolveTimeSignature,
+	type TimeSignature,
+	writesFromPlan,
+} from "@/utils/time-signature";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
 
 /** Sections always have all three hand modes and never have drills. */
@@ -99,6 +103,8 @@ export function PiecePracticeContent({
 	const { saveSectionPractice } = useSaveSectionPractice();
 	const { deletePiece } = useDeletePiece();
 	const { changeSectionPhase, dismissPhaseOffer } = useChangeSectionPhase();
+	const { updatePiece } = useUpdatePiece();
+	const { updateSection } = useUpdateSection();
 	const standaloneSessionId = useRef(randomUUID());
 
 	const piece = pieces.find((p) => p.id === pieceId);
@@ -151,7 +157,6 @@ export function PiecePracticeContent({
 	);
 	const [flaggedSectionIds, setFlaggedSectionIds] = useState<string[]>([]);
 	const [achievedBpm, setAchievedBpm] = useState<string>("");
-	const [note, setNote] = useState("");
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -183,6 +188,37 @@ export function PiecePracticeContent({
 		? (sections.find((s) => s.id === sectionIdProp) ?? null)
 		: null;
 
+	const accent = useMemo(() => {
+		if (!piece) return undefined;
+		return {
+			signature: resolveTimeSignature(scopedSection, piece),
+			planFor: (next: TimeSignature) =>
+				planTimeSignatureWrite(next, piece, scopedSection),
+			onChange: (next: TimeSignature) => {
+				const writes = writesFromPlan(
+					planTimeSignatureWrite(next, piece, scopedSection),
+				);
+				if (writes.piece) {
+					void updatePiece(pieceId, { timeSignature: writes.piece });
+				}
+				if (scopedSection?.id && writes.sectionOverride !== undefined) {
+					void updateSection(pieceId, scopedSection.id, {
+						timeSignatureOverride: writes.sectionOverride,
+					});
+				}
+			},
+			onClear: () => {
+				if (scopedSection?.id && scopedSection.timeSignatureOverride) {
+					void updateSection(pieceId, scopedSection.id, {
+						timeSignatureOverride: null,
+					});
+				} else {
+					void updatePiece(pieceId, { timeSignature: null });
+				}
+			},
+		};
+	}, [piece, scopedSection, pieceId, updatePiece, updateSection]);
+
 	const effectiveTarget = scopedSection
 		? (scopedSection.targetBpmOverride ?? piece?.targetTempoBpm ?? null)
 		: (piece?.targetTempoBpm ?? null);
@@ -196,10 +232,9 @@ export function PiecePracticeContent({
 		ready: !!scopedSection,
 		carryBpm: achievedBpm,
 	});
-	const htReady = isHtReady(scopedSection?.byMode, effectiveTarget);
 
-	const handleBpmBlur = () => {
-		setBpmError(validateBpm(scopedSection ? modes.draft.bpm : achievedBpm));
+	const handleBpmBlur = (text: string) => {
+		setBpmError(validateBpm(text));
 	};
 
 	// The whole-piece screen keeps its single BPM field; sections use per-mode drafts.
@@ -296,7 +331,6 @@ export function PiecePracticeContent({
 					modes.entries,
 					triggeredFrom,
 					sessionId,
-					note || null,
 				);
 				setSavedEntries(modes.entries);
 
@@ -339,7 +373,6 @@ export function PiecePracticeContent({
 					flaggedSectionIds,
 					triggeredFrom,
 					sessionId,
-					note: note || null,
 				});
 				if (demotedCount > 0) {
 					const message = t("screen.practice.demoted", { count: demotedCount });
@@ -375,7 +408,6 @@ export function PiecePracticeContent({
 		saveSectionPractice,
 		technicalMistakes,
 		memoryMistakes,
-		note,
 		modes.drafts,
 		modes.entries,
 		modes.blockingKey,
@@ -441,13 +473,16 @@ export function PiecePracticeContent({
 		return <MessageScreen message={t("screen.practice.pieceNotFound")} />;
 	}
 
-	if (sectionIdProp && sectionsLoading) {
+	// A section URL must not render the whole-piece body for a beat while the
+	// section is in flight: the two bodies diverge structurally, and the swap
+	// remounts everything after the first differing child — the open note
+	// editor included (#163 CI).
+	if (sectionIdProp && (sectionsLoading || !scopedSection)) {
 		return <LoadingScreen />;
 	}
 
 	const mistakes = mistakeOptions(t);
 
-	const titleSuffix = scopedSection ? ` — ${scopedSection.label}` : "";
 	const barRangeText = scopedSection ? formatBarRange(scopedSection, t) : null;
 
 	return (
@@ -458,13 +493,7 @@ export function PiecePracticeContent({
 			{!inCoach && (
 				<Appbar.Header>
 					<Appbar.BackAction onPress={goBack} />
-					<Appbar.Content
-						title={
-							piece?.title
-								? `${piece.title}${titleSuffix}`
-								: t("screen.practice.title")
-						}
-					/>
+					<Appbar.Content title="" />
 					<Menu
 						visible={headerMenuVisible}
 						onDismiss={() => setHeaderMenuVisible(false)}
@@ -539,189 +568,168 @@ export function PiecePracticeContent({
 					backLabel={getBackLabel()}
 				/>
 			) : (
-				<ScreenContent paddingBottom={40}>
-					<View className="gap-1">
-						<Text variant="headlineSmall">
-							{piece.title}
-							{titleSuffix}
-						</Text>
-						<Text
-							variant="bodyLarge"
-							style={{ color: theme.colors.onSurfaceVariant }}
-						>
-							{piece.composer}
-						</Text>
-						{scopedSection && <SectionPhaseChip phase={scopedSection.phase} />}
-					</View>
+				<View style={{ flex: 1 }}>
+					<ScreenContent
+						gap={4}
+						paddingTop={12}
+						paddingBottom={12}
+						style={{ flex: 1 }}
+					>
+						<View style={{ gap: 2 }}>
+							<Text variant="titleMedium" numberOfLines={1}>
+								{scopedSection ? scopedSection.label : piece.title}
+							</Text>
+							<Text
+								variant="bodySmall"
+								numberOfLines={1}
+								style={{ color: theme.colors.onSurfaceVariant }}
+							>
+								{[
+									// The name line above already carries the piece on a
+									// whole-piece block — r8's frame 5 repeats only the composer.
+									...(scopedSection ? [piece.title] : []),
+									piece.composer,
+									barRangeText,
+								]
+									.filter(Boolean)
+									.join(" · ")}
+							</Text>
+						</View>
 
-					{scopedSection && (
-						<ModeSelector
-							available={HANDS_MODES}
-							hands={modes.hands}
-							onChangeHands={modes.setHands}
-							drills={NO_DRILLS}
-							drill={modes.drill}
-							onChangeDrill={modes.setDrill}
-							byMode={scopedSection.byMode ?? {}}
-							effectiveTarget={effectiveTarget}
-							htReady={htReady}
+						{scopedSection && (
+							<HandTabs
+								available={HANDS_MODES}
+								hands={modes.hands}
+								onChangeHands={modes.setHands}
+								drafts={modes.drafts}
+								drills={NO_DRILLS}
+								chip={<SectionPhaseChip phase={scopedSection.phase} />}
+							/>
+						)}
+
+						<LastSessionCard
+							lastLog={
+								scopedSection ? (logsByMode[modes.currentKey] ?? null) : lastLog
+							}
+							loading={lastLogLoading}
+							scope={scopedSection ? "section" : "piece"}
+							targetBpm={
+								scopedSection
+									? targetForMode(modes.hands, effectiveTarget)
+									: effectiveTarget
+							}
 						/>
-					)}
 
-					<LastSessionCard
-						lastLog={
-							scopedSection ? (logsByMode[modes.currentKey] ?? null) : lastLog
-						}
-						loading={lastLogLoading}
-						scope={scopedSection ? "section" : "piece"}
-						targetBpm={
-							scopedSection
-								? targetForMode(modes.hands, effectiveTarget)
-								: effectiveTarget
-						}
-					/>
-
-					<Divider />
-
-					{barRangeText != null && (
-						<Text
-							variant="bodyMedium"
-							style={{ color: theme.colors.onSurfaceVariant }}
-						>
-							{barRangeText}
-						</Text>
-					)}
-
-					<View className="gap-2">
-						<Text variant="titleSmall">
-							{t("screen.practice.achievedBpmLabel")}
-						</Text>
-						{effectiveTarget != null &&
-							(scopedSection ? (
-								<>
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{t("screen.practice.modes.targetHandsSeparate", {
-											bpm: hsTarget(effectiveTarget),
-										})}
-									</Text>
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{t("screen.practice.modes.targetHandsTogether", {
-											bpm: effectiveTarget,
-										})}
-									</Text>
-								</>
-							) : (
-								<Text
-									variant="bodySmall"
-									style={{ color: theme.colors.onSurfaceVariant }}
-								>
-									{t("screen.practiceTechnique.targetBpm", {
-										bpm: effectiveTarget,
-									})}
-								</Text>
-							))}
-						<BpmControl
+						<TempoControl
 							value={scopedSection ? modes.draft.bpm : achievedBpm}
 							onChangeText={scopedSection ? modes.setBpm : setAchievedBpm}
 							error={bpmError}
 							onBlur={handleBpmBlur}
 							stopRef={metronomeStopRef}
-						/>
-					</View>
-					<Divider />
-
-					{scopedSection ? (
-						<>
-							<EstimationField
-								label={t("screen.practiceTechnique.qualityLabel")}
-								value={modes.draft.quality}
-								onChange={modes.setQuality}
-								options={qualityOptions(t)}
-							/>
-							<EstimationField
-								label={t("screen.practiceTechnique.effortLabel")}
-								value={modes.draft.effort}
-								onChange={modes.setEffort}
-								options={effortOptions(t)}
-							/>
-						</>
-					) : (
-						<>
-							<EstimationField
-								label={t("screen.practice.technicalMistakes")}
-								value={technicalMistakes}
-								onChange={setTechnicalMistakes}
-								options={mistakes}
-							/>
-							<EstimationField
-								label={t("screen.practice.memoryMistakes")}
-								value={memoryMistakes}
-								onChange={setMemoryMistakes}
-								options={mistakes}
-							/>
-						</>
-					)}
-
-					{!scopedSection && (
-						<SectionsPracticePanel
-							sections={activeSections}
-							piece={piece}
-							mistakeLevel={
-								showCheckboxes
-									? isRunThrough
-										? "run-through"
-										: "checkbox"
-									: "normal"
+							accent={accent}
+							target={
+								scopedSection
+									? targetForMode(modes.hands, effectiveTarget)
+									: effectiveTarget
 							}
-							flaggedIds={flaggedSectionIds}
-							flaggableIds={flaggableIds}
-							onToggleFlag={handleToggleFlag}
-							onPractice={handlePracticeSection}
-							onChangePhase={(sectionId, phase) => {
-								const target = activeSections.find((s) => s.id === sectionId);
-								if (!target || phase === target.phase) return;
-								changeSectionPhase({
-									pieceId,
-									sectionId,
-									fromPhase: target.phase,
-									toPhase: phase,
-									trigger: "phase-chip",
-									achievedBpmAtEvent: target.byMode?.HT?.bpm ?? null,
-									qualityAtEvent: target.byMode?.HT?.quality ?? null,
-									priorPhaseChangedAt: target.phaseChangedAt ?? null,
-									sessionId: coach.sessionId ?? standaloneSessionId.current,
-								}).catch(() => setError(t("error.firebase")));
+							last={
+								scopedSection
+									? (scopedSection.byMode?.[modes.currentKey]?.bpm ?? null)
+									: (piece?.lastAchievedTempoBpm ?? null)
+							}
+						/>
+						<Divider />
+
+						{scopedSection ? (
+							<>
+								<EstimationField
+									label={t("screen.practiceTechnique.qualityLabel")}
+									value={modes.draft.quality}
+									onChange={modes.setQuality}
+									options={qualityOptions(t)}
+								/>
+								<EstimationField
+									label={t("screen.practiceTechnique.effortLabel")}
+									value={modes.draft.effort}
+									onChange={modes.setEffort}
+									options={effortOptions(t)}
+								/>
+							</>
+						) : (
+							<>
+								<EstimationField
+									label={t("screen.practice.technicalMistakes")}
+									value={technicalMistakes}
+									onChange={setTechnicalMistakes}
+									options={mistakes}
+								/>
+								<EstimationField
+									label={t("screen.practice.memoryMistakes")}
+									value={memoryMistakes}
+									onChange={setMemoryMistakes}
+									options={mistakes}
+								/>
+							</>
+						)}
+
+						{!scopedSection && (
+							<SectionsPracticePanel
+								sections={activeSections}
+								piece={piece}
+								mistakeLevel={
+									showCheckboxes
+										? isRunThrough
+											? "run-through"
+											: "checkbox"
+										: "normal"
+								}
+								flaggedIds={flaggedSectionIds}
+								flaggableIds={flaggableIds}
+								onToggleFlag={handleToggleFlag}
+								onPractice={handlePracticeSection}
+								onChangePhase={(sectionId, phase) => {
+									const target = activeSections.find((s) => s.id === sectionId);
+									if (!target || phase === target.phase) return;
+									changeSectionPhase({
+										pieceId,
+										sectionId,
+										fromPhase: target.phase,
+										toPhase: phase,
+										trigger: "phase-chip",
+										achievedBpmAtEvent: target.byMode?.HT?.bpm ?? null,
+										qualityAtEvent: target.byMode?.HT?.quality ?? null,
+										priorPhaseChangedAt: target.phaseChangedAt ?? null,
+										sessionId: coach.sessionId ?? standaloneSessionId.current,
+									}).catch(() => setError(t("error.firebase")));
+								}}
+							/>
+						)}
+
+						<StandingNote
+							value={scopedSection ? scopedSection.notes : piece.notes}
+							onSave={(text) => {
+								if (scopedSection?.id) {
+									void updateSection(pieceId, scopedSection.id, {
+										notes: text,
+									});
+								} else {
+									void updatePiece(pieceId, { notes: text });
+								}
 							}}
 						/>
-					)}
-
-					<TextInput
-						label={t("screen.practice.noteForNextTimeLabel")}
-						aria-label={t("screen.practice.noteForNextTimeLabel")}
-						value={note}
-						onChangeText={setNote}
-						mode="outlined"
-						multiline
-						numberOfLines={3}
+					</ScreenContent>
+					<PracticeFooter
+						primaryLabel={
+							inCoach
+								? t("screen.session.coach.saveAndNext")
+								: t("screen.practice.save")
+						}
+						onPrimary={inCoach ? coach.saveAndNext : handleSave}
+						primaryLoading={inCoach ? coach.saving : loading}
+						onSkip={inCoach ? coach.skipBlock : undefined}
+						onExtend={inCoach ? coach.extendBlock : undefined}
 					/>
-
-					{!inCoach && (
-						<Button
-							mode="contained"
-							onPress={handleSave}
-							loading={loading}
-							disabled={loading}
-						>
-							{t("screen.practice.save")}
-						</Button>
-					)}
-				</ScreenContent>
+				</View>
 			)}
 
 			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />

@@ -9,11 +9,13 @@ import {
 	clearActiveSession,
 	clearLocalUserData,
 	readActiveSession,
+	readMetronomeAccent,
 	readPieceListPrefs,
 	readPieceScores,
 	readSightReadingBpm,
 	readTechniqueListPrefs,
 	writeActiveSession,
+	writeMetronomeAccent,
 	writePieceListPrefs,
 	writePieceScores,
 	writeSightReadingBpm,
@@ -116,6 +118,15 @@ describe("session-storage", () => {
 		expect(await readSightReadingBpm("u1")).toBe("120");
 	});
 
+	it("round trips the metronome accent flag per uid", async () => {
+		expect(await readMetronomeAccent("u1")).toBe(false);
+		await writeMetronomeAccent("u1", true);
+		expect(await readMetronomeAccent("u1")).toBe(true);
+		expect(await readMetronomeAccent("u2")).toBe(false);
+		await writeMetronomeAccent("u1", false);
+		expect(await readMetronomeAccent("u1")).toBe(false);
+	});
+
 	it("round trips cached piece scores per uid", async () => {
 		expect(await readPieceScores("u1")).toBeNull();
 		const cache = { scores: { p1: 42, p2: 0 }, computedAt: 1_700_000_000_000 };
@@ -168,6 +179,7 @@ describe("session-storage", () => {
 			"active-session",
 			"sight-reading-bpm",
 			"installPromptDismissed",
+			"metronome-accent",
 			"piece-scores",
 			"pieces-list-prefs",
 			"technique-list-prefs",

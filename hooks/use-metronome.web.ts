@@ -15,8 +15,7 @@ const CLICK_GAIN_PEAK = 4.0; // above 1.0 is safe — DynamicsCompressorNode pre
 
 export function useMetronome(
 	bpm: number,
-	beatsPerBar = 4,
-	volume = 1,
+	beatsPerBar: number | null = null,
 ): UseMetronomeReturn {
 	const [isRunning, setIsRunning] = useState(false);
 	const audioCtxRef = useRef<AudioContext | null>(null);
@@ -26,15 +25,10 @@ export function useMetronome(
 	const bpmRef = useRef(bpm);
 	const beatsPerBarRef = useRef(beatsPerBar);
 	const beatInBarRef = useRef(0);
-	const volumeRef = useRef(volume);
 
 	useEffect(() => {
 		bpmRef.current = bpm;
 	}, [bpm]);
-
-	useEffect(() => {
-		volumeRef.current = volume;
-	}, [volume]);
 
 	// A meter change starts a new bar, so the next click is beat 1 again.
 	useEffect(() => {
@@ -45,14 +39,12 @@ export function useMetronome(
 	const scheduleClick = useCallback((time: number, accent: boolean) => {
 		const ctx = audioCtxRef.current;
 		if (!ctx) return;
-		// 0 (muted) clamps up to the ramp floor, since exponential ramps need > 0.
-		const peak = Math.max(0.0001, CLICK_GAIN_PEAK * volumeRef.current);
 		const osc = ctx.createOscillator();
 		const gain = ctx.createGain();
 		osc.type = "triangle";
 		osc.frequency.value = accent ? ACCENT_FREQ_HZ : CLICK_FREQ_HZ;
 		gain.gain.setValueAtTime(0.0001, time);
-		gain.gain.exponentialRampToValueAtTime(peak, time + 0.002);
+		gain.gain.exponentialRampToValueAtTime(CLICK_GAIN_PEAK, time + 0.002);
 		gain.gain.exponentialRampToValueAtTime(0.0001, time + CLICK_DUR_S);
 		osc.connect(gain);
 		gain.connect(compressorRef.current ?? ctx.destination);
@@ -64,11 +56,14 @@ export function useMetronome(
 		const ctx = audioCtxRef.current;
 		if (!ctx) return;
 		while (nextNoteTimeRef.current < ctx.currentTime + SCHEDULE_AHEAD_S) {
-			scheduleClick(nextNoteTimeRef.current, beatInBarRef.current === 0);
+			scheduleClick(
+				nextNoteTimeRef.current,
+				beatsPerBarRef.current != null && beatInBarRef.current === 0,
+			);
 			const interval = 60 / Math.max(1, bpmRef.current);
 			nextNoteTimeRef.current += interval;
 			beatInBarRef.current =
-				(beatInBarRef.current + 1) % Math.max(1, beatsPerBarRef.current);
+				(beatInBarRef.current + 1) % Math.max(1, beatsPerBarRef.current ?? 1);
 		}
 	}, [scheduleClick]);
 

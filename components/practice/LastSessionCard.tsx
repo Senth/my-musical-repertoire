@@ -27,6 +27,11 @@ interface LastSessionCardProps {
 	targetBpm?: number | null;
 }
 
+/**
+ * Previous-session facts as quiet rows — no box, no note line: the standing
+ * note on screen carries the note now, and the tally under the hand tabs
+ * carries what this save holds.
+ */
 export function LastSessionCard({
 	lastLog,
 	loading,
@@ -70,35 +75,13 @@ export function LastSessionCard({
 			: t("screen.practice.lastSession.tempoNone");
 
 	return (
-		<View
-			style={{
-				backgroundColor: theme.colors.surfaceVariant,
-				borderRadius: 12,
-				padding: 12,
-				gap: 4,
-			}}
-		>
+		<View style={{ gap: 4 }}>
 			<Text
-				variant="labelLarge"
+				variant="bodySmall"
 				style={{ color: theme.colors.onSurfaceVariant }}
 			>
 				{headerText}
 			</Text>
-
-			{lastLog.note ? (
-				// The teacher's "where we were last time" — the note outranks the
-				// metrics below it, hence bodyMedium on onSurface against their
-				// bodySmall on onSurfaceVariant. Italic marks it as a quotation.
-				<Text
-					variant="bodyMedium"
-					style={{
-						color: theme.colors.onSurface,
-						fontStyle: "italic",
-					}}
-				>
-					{t("screen.practice.lastSession.note", { note: lastLog.note })}
-				</Text>
-			) : null}
 
 			<Text
 				variant="bodySmall"

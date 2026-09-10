@@ -68,6 +68,25 @@ export async function writeInstallPromptDismissed(uid: string): Promise<void> {
 }
 
 /**
+ * The metronome accent on/off flag is a device preference; the signature itself
+ * lives on the piece / section / technique.
+ */
+function metronomeAccentKey(uid: string): string {
+	return `metronome-accent:${uid}`;
+}
+
+export async function readMetronomeAccent(uid: string): Promise<boolean> {
+	return (await AsyncStorage.getItem(metronomeAccentKey(uid))) === "1";
+}
+
+export async function writeMetronomeAccent(
+	uid: string,
+	accent: boolean,
+): Promise<void> {
+	await AsyncStorage.setItem(metronomeAccentKey(uid), accent ? "1" : "0");
+}
+
+/**
  * Cached derived piece scores, so a cold open can sort by score before the
  * per-piece section listeners have delivered anything.
  */
@@ -167,6 +186,7 @@ export async function clearLocalUserData(uid: string): Promise<void> {
 		activeSessionKey(uid),
 		sightReadingBpmKey(uid),
 		installPromptDismissedKey(uid),
+		metronomeAccentKey(uid),
 		pieceScoresKey(uid),
 		pieceListPrefsKey(uid),
 		techniqueListPrefsKey(uid),

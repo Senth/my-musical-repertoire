@@ -31,6 +31,15 @@ export interface CoachContextValue {
 	 * the block advances, so a snackbar it owns would never be seen.
 	 */
 	notify: (message: string) => void;
+	/**
+	 * Block controls for the body's pinned footer. The footer owns the buttons;
+	 * the coach owns what they do. No-ops outside the coach.
+	 */
+	saveAndNext: () => void;
+	skipBlock: () => void;
+	extendBlock: () => void;
+	/** True while the coach's save-and-advance is in flight. */
+	saving: boolean;
 }
 
 const CoachContext = createContext<CoachContextValue | null>(null);
@@ -42,6 +51,10 @@ export function CoachProvider({
 	validateHandlerRef,
 	phaseOfferRef,
 	notify,
+	saveAndNext,
+	skipBlock,
+	extendBlock,
+	saving,
 	children,
 }: {
 	inCoach: boolean;
@@ -50,6 +63,10 @@ export function CoachProvider({
 	validateHandlerRef: MutableRefObject<ValidateFn | null>;
 	phaseOfferRef: MutableRefObject<PendingPhaseOffer | null>;
 	notify: (message: string) => void;
+	saveAndNext: () => void;
+	skipBlock: () => void;
+	extendBlock: () => void;
+	saving: boolean;
 	children: ReactNode;
 }) {
 	const value = useMemo<CoachContextValue>(
@@ -60,6 +77,10 @@ export function CoachProvider({
 			validateHandlerRef,
 			phaseOfferRef,
 			notify,
+			saveAndNext,
+			skipBlock,
+			extendBlock,
+			saving,
 		}),
 		[
 			inCoach,
@@ -68,6 +89,10 @@ export function CoachProvider({
 			validateHandlerRef,
 			phaseOfferRef,
 			notify,
+			saveAndNext,
+			skipBlock,
+			extendBlock,
+			saving,
 		],
 	);
 	return (
@@ -83,6 +108,7 @@ const NOOP_OFFER_REF: MutableRefObject<PendingPhaseOffer | null> = {
 	current: null,
 };
 const NOOP_NOTIFY = () => {};
+const NOOP_BLOCK_CONTROL = () => {};
 
 export function useCoach(): CoachContextValue {
 	const ctx = useContext(CoachContext);
@@ -94,6 +120,10 @@ export function useCoach(): CoachContextValue {
 		validateHandlerRef: NOOP_VALIDATE_REF,
 		phaseOfferRef: NOOP_OFFER_REF,
 		notify: NOOP_NOTIFY,
+		saveAndNext: NOOP_BLOCK_CONTROL,
+		skipBlock: NOOP_BLOCK_CONTROL,
+		extendBlock: NOOP_BLOCK_CONTROL,
+		saving: false,
 	};
 }
 

@@ -5,16 +5,18 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import {
 	Appbar,
-	Button,
+	Divider,
 	Menu,
+	SegmentedButtons,
 	Text,
-	TextInput,
 	useTheme,
 } from "react-native-paper";
-import { BpmControl } from "@/components/practice/BpmControl";
 import { EstimationField } from "@/components/practice/EstimationField";
+import { HandTabs } from "@/components/practice/HandTabs";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
-import { ModeSelector } from "@/components/practice/ModeSelector";
+import { PracticeFooter } from "@/components/practice/PracticeFooter";
+import { StandingNote } from "@/components/practice/StandingNote";
+import { TempoControl } from "@/components/practice/TempoControl";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
@@ -28,20 +30,20 @@ import {
 	useDeleteTechnique,
 	useSaveTechniqueLog,
 	useTechniques,
+	useUpdateTechnique,
 } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
-import type { ModeKey } from "@/models/practice";
+import type { ModeKey, PracticeDrill } from "@/models/practice";
 import { effortOptions, qualityOptions } from "@/utils/estimation-options";
 import {
 	availableHandsModes,
-	hsTarget,
-	isHtReady,
 	type ModeEntry,
 	modeKey,
 	parseModeKey,
 	targetForMode,
 } from "@/utils/practice-modes";
+import { planTimeSignatureWrite } from "@/utils/time-signature";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
 
 export interface TechniquePracticeContentProps {
@@ -64,6 +66,7 @@ export function TechniquePracticeContent({
 	const { techniques, loading: techniquesLoading } = useTechniques();
 	const { saveTechniqueLog } = useSaveTechniqueLog();
 	const { deleteTechnique } = useDeleteTechnique();
+	const { updateTechnique } = useUpdateTechnique();
 
 	const standaloneSessionId = useRef(randomUUID());
 	const technique = techniques.find((tn) => tn.id === techniqueId);
@@ -91,8 +94,6 @@ export function TechniquePracticeContent({
 		preselect: preselectMode,
 		ready: !!technique,
 	});
-	const htReady =
-		available.includes("HT") && isHtReady(technique?.byMode, effectiveTarget);
 
 	const getBackDestination = (): string => {
 		if (from === "overview") return "/(app)/(tabs)/overview";
@@ -123,7 +124,6 @@ export function TechniquePracticeContent({
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
-	const [note, setNote] = useState("");
 	const [saved, setSaved] = useState(false);
 	const [savedEntries, setSavedEntries] = useState<ModeEntry[]>([]);
 	const metronomeStopRef = useRef<(() => void) | null>(null);
@@ -133,8 +133,8 @@ export function TechniquePracticeContent({
 		[t],
 	);
 
-	const handleBpmBlur = () => {
-		setBpmError(validateBpm(modes.draft.bpm));
+	const handleBpmBlur = (text: string) => {
+		setBpmError(validateBpm(text));
 	};
 	const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
@@ -172,7 +172,6 @@ export function TechniquePracticeContent({
 			const sessionId = coach.sessionId ?? standaloneSessionId.current;
 			await saveTechniqueLog(techniqueId, modes.entries, {
 				sessionId,
-				note: note || null,
 			});
 			setSavedEntries(modes.entries);
 			return { ok: true };
@@ -186,7 +185,6 @@ export function TechniquePracticeContent({
 		techniqueId,
 		validateBpm,
 		saveTechniqueLog,
-		note,
 		modes.drafts,
 		modes.entries,
 		modes.blockingKey,
@@ -227,9 +225,7 @@ export function TechniquePracticeContent({
 			{!inCoach && (
 				<Appbar.Header>
 					<Appbar.BackAction onPress={goBack} />
-					<Appbar.Content
-						title={technique?.title ?? t("screen.practiceTechnique.title")}
-					/>
+					<Appbar.Content title="" />
 					<Menu
 						visible={headerMenuVisible}
 						onDismiss={() => setHeaderMenuVisible(false)}
@@ -282,108 +278,127 @@ export function TechniquePracticeContent({
 					backLabel={getBackLabel()}
 				/>
 			) : (
-				<ScreenContent>
-					<Text variant="headlineSmall">{technique.title}</Text>
-
-					<ModeSelector
-						available={available}
-						hands={modes.hands}
-						onChangeHands={modes.setHands}
-						drills={drills}
-						drill={modes.drill}
-						onChangeDrill={modes.setDrill}
-						byMode={technique.byMode ?? {}}
-						effectiveTarget={effectiveTarget}
-						htReady={htReady}
-					/>
-
-					<LastSessionCard
-						lastLog={logsByMode[modes.currentKey] ?? null}
-						loading={lastLogLoading}
-						scope="technique"
-						targetBpm={targetForMode(modes.hands, effectiveTarget)}
-					/>
-
-					<View className="gap-2">
-						<Text variant="titleSmall">
-							{t("screen.practiceTechnique.tempoAchievedLabel")}
+				<View style={{ flex: 1 }}>
+					<ScreenContent
+						gap={4}
+						paddingTop={12}
+						paddingBottom={12}
+						style={{ flex: 1 }}
+					>
+						<Text variant="titleMedium" numberOfLines={1}>
+							{technique.title}
 						</Text>
-						{effectiveTarget != null &&
-							(available.length > 1 ? (
-								<>
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{t("screen.practice.modes.targetHandsSeparate", {
-											bpm: hsTarget(effectiveTarget),
-										})}
-									</Text>
-									{available.includes("HT") && (
-										<Text
-											variant="bodySmall"
-											style={{ color: theme.colors.onSurfaceVariant }}
-										>
-											{t("screen.practice.modes.targetHandsTogether", {
-												bpm: effectiveTarget,
-											})}
-										</Text>
-									)}
-								</>
-							) : (
-								<Text
-									variant="bodySmall"
-									style={{ color: theme.colors.onSurfaceVariant }}
-								>
-									{t("screen.practiceTechnique.targetBpm", {
-										bpm: targetForMode(modes.hands, effectiveTarget),
-									})}
-								</Text>
-							))}
-						<BpmControl
+
+						<HandTabs
+							available={available}
+							hands={modes.hands}
+							onChangeHands={modes.setHands}
+							drafts={modes.drafts}
+							drills={drills}
+						/>
+
+						{drills.length > 0 && (
+							<SegmentedButtons
+								value={modes.drill ?? "normal"}
+								onValueChange={(v) =>
+									modes.setDrill(v === "normal" ? null : (v as PracticeDrill))
+								}
+								buttons={[
+									{
+										value: "normal",
+										label: t("screen.practice.modes.drill.normal"),
+										accessibilityLabel: t(
+											"screen.practice.modes.a11ySelectDrill",
+											{
+												drill: t("screen.practice.modes.drill.normal"),
+											},
+										),
+										style: { minWidth: 0 },
+										labelStyle: { fontSize: 11, marginHorizontal: 0 },
+									},
+									...drills.map((d) => ({
+										value: d,
+										label: t(`screen.practice.modes.drill.${d}`),
+										accessibilityLabel: t(
+											"screen.practice.modes.a11ySelectDrill",
+											{ drill: t(`screen.practice.modes.drill.${d}`) },
+										),
+										style: { minWidth: 0 },
+										labelStyle: { fontSize: 11, marginHorizontal: 0 },
+									})),
+								]}
+							/>
+						)}
+
+						<LastSessionCard
+							lastLog={logsByMode[modes.currentKey] ?? null}
+							loading={lastLogLoading}
+							scope="technique"
+							targetBpm={targetForMode(modes.hands, effectiveTarget)}
+						/>
+
+						<TempoControl
 							value={modes.draft.bpm}
 							onChangeText={modes.setBpm}
 							error={bpmError}
 							onBlur={handleBpmBlur}
 							stopRef={metronomeStopRef}
+							accent={
+								technique
+									? {
+											signature: technique.timeSignature ?? null,
+											planFor: (next) =>
+												planTimeSignatureWrite(next, null, null),
+											onChange: (next) =>
+												void updateTechnique(techniqueId, {
+													timeSignature: next,
+												}),
+											onClear: () =>
+												void updateTechnique(techniqueId, {
+													timeSignature: null,
+												}),
+										}
+									: undefined
+							}
+							target={targetForMode(modes.hands, effectiveTarget)}
+							last={technique?.byMode?.[modes.currentKey]?.bpm ?? null}
 						/>
-					</View>
 
-					<EstimationField
-						label={t("screen.practiceTechnique.qualityLabel")}
-						value={modes.draft.quality}
-						onChange={modes.setQuality}
-						options={qualityOptions(t)}
+						<Divider />
+
+						<EstimationField
+							label={t("screen.practiceTechnique.qualityLabel")}
+							value={modes.draft.quality}
+							onChange={modes.setQuality}
+							options={qualityOptions(t)}
+						/>
+
+						<EstimationField
+							label={t("screen.practiceTechnique.effortLabel")}
+							value={modes.draft.effort}
+							onChange={modes.setEffort}
+							options={effortOptions(t)}
+						/>
+
+						<StandingNote
+							value={technique.notes}
+							onSave={(text) => {
+								void updateTechnique(techniqueId, { notes: text });
+							}}
+						/>
+					</ScreenContent>
+					<PracticeFooter
+						primaryLabel={
+							inCoach
+								? t("screen.session.coach.saveAndNext")
+								: t("screen.practiceTechnique.save")
+						}
+						onPrimary={inCoach ? coach.saveAndNext : handleSave}
+						primaryLoading={inCoach ? coach.saving : loading}
+						onSkip={inCoach ? coach.skipBlock : undefined}
+						onExtend={inCoach ? coach.extendBlock : undefined}
 					/>
-
-					<EstimationField
-						label={t("screen.practiceTechnique.effortLabel")}
-						value={modes.draft.effort}
-						onChange={modes.setEffort}
-						options={effortOptions(t)}
-					/>
-
-					<TextInput
-						label={t("screen.practice.noteForNextTimeLabel")}
-						aria-label={t("screen.practice.noteForNextTimeLabel")}
-						value={note}
-						onChangeText={setNote}
-						mode="outlined"
-						multiline
-						numberOfLines={3}
-					/>
-
-					{!inCoach && (
-						<Button
-							mode="contained"
-							onPress={handleSave}
-							loading={loading}
-							disabled={loading}
-						>
-							{t("screen.practiceTechnique.save")}
-						</Button>
-					)}
-				</ScreenContent>
+				</View>
 			)}
 
 			{/* Shown in the coach too: the save gate blocks the block from advancing,

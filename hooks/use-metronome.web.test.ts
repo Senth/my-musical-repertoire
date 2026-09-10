@@ -65,11 +65,6 @@ function scheduledFrequencies(): number[] {
 	return FakeContext.instances[0].oscillators.map((o) => o.frequency.value);
 }
 
-// Peak gain each scheduled click ramps to — what the volume setting scales.
-function scheduledGains(): number[] {
-	return FakeContext.instances[0].gains.map((g) => Math.max(...g.values));
-}
-
 // Pushes the fake clock forward and lets the scheduler drain what is due.
 function runTo(ctx: FakeContext, time: number) {
 	ctx.currentTime = time;
@@ -123,27 +118,17 @@ describe("useMetronome time signature", () => {
 		expect(freqs.slice(3)).toEqual([1320, 880, 880, 1320]);
 	});
 
-	describe("volume", () => {
-		it("scales the click gain with the volume setting", () => {
-			const { result } = renderHook(() => useMetronome(120, 4, 0.5));
-			act(() => {
-				result.current.toggle();
-			});
-			const ctx = FakeContext.instances[0];
-			runTo(ctx, 0.6);
-
-			expect(scheduledGains()).toEqual([2, 2]);
+	it("clicks evenly with no accented beat when beatsPerBar is null", () => {
+		const { result } = renderHook(() => useMetronome(120, null));
+		act(() => {
+			result.current.toggle();
 		});
+		const ctx = FakeContext.instances[0];
+		runTo(ctx, 0);
+		runTo(ctx, 2.0);
 
-		it("silences clicks when volume is 0", () => {
-			const { result } = renderHook(() => useMetronome(120, 4, 0));
-			act(() => {
-				result.current.toggle();
-			});
-			const ctx = FakeContext.instances[0];
-			runTo(ctx, 0.6);
-
-			expect(scheduledGains()).toEqual([0.0001, 0.0001]);
-		});
+		const freqs = scheduledFrequencies();
+		expect(freqs.length).toBeGreaterThan(0);
+		expect(freqs).not.toContain(1320);
 	});
 });

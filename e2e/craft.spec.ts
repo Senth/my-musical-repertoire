@@ -158,6 +158,10 @@ function contrastAudit(): string[] {
 		// say "decorative" rather than to silence a finding.
 		if (el.closest('[aria-hidden="true"]')) continue;
 
+		// WCAG 1.4.3 exempts inactive user interface components: a disabled
+		// control is dimmed by design, and its label carries no requirement.
+		if (el.closest('[aria-disabled="true"], [disabled]')) continue;
+
 		const style = getComputedStyle(el);
 		if (style.visibility === "hidden" || style.display === "none") continue;
 		if (Number.parseFloat(style.opacity) === 0) continue;

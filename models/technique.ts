@@ -1,3 +1,4 @@
+import type { TimeSignature } from "@/utils/time-signature";
 import type { ByMode, PracticeDrill, TechniqueHandsMode } from "./practice";
 
 export type TechniqueState = "active" | "maintenance" | "retired";
@@ -34,6 +35,8 @@ export interface TechniqueItem {
 	state: TechniqueState;
 	type?: TechniqueType | null;
 	targetTempoBpm?: number | null;
+	/** The metronome signature; techniques have no override axis. */
+	timeSignature?: TimeSignature | null;
 	notes?: string | null;
 	dateIntroduced: Date;
 	lastPracticedAt?: Date | null;

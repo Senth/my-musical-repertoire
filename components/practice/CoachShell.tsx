@@ -1,28 +1,24 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import {
-	Appbar,
-	Button,
-	IconButton,
-	ProgressBar,
-	Text,
-	useTheme,
-} from "react-native-paper";
-import type { PlannedBlock } from "@/models/session";
+import type { MD3Theme } from "react-native-paper";
+import { Appbar, Text, useTheme } from "react-native-paper";
+import type { BlockExecutionState, PlannedBlock } from "@/models/session";
+import { coachSegments } from "@/utils/coach-progress";
+
+type AppTheme = MD3Theme & {
+	colors: MD3Theme["colors"] & {
+		warning: string;
+	};
+};
 
 export interface CoachShellProps {
-	currentBlock: PlannedBlock | null;
-	currentBlockIndex: number;
-	totalBlocks: number;
+	blocks: PlannedBlock[];
+	blockStates: BlockExecutionState[];
 	sessionElapsedSeconds: number;
 	sessionTotalSeconds: number;
 	blockElapsedSeconds: number;
 	blockTotalSeconds: number;
-	saving: boolean;
-	onSaveAndNext: () => void;
-	onSkip: () => void;
-	onExtend: () => void;
 	onExit: () => void;
 	children: ReactNode;
 }
@@ -35,40 +31,27 @@ export function formatMMSS(seconds: number): string {
 	return `${sign}${m}:${s.toString().padStart(2, "0")}`;
 }
 
+/**
+ * The strip above the block body: back action, the two time rows right-aligned
+ * in the app bar, and one segmented bar — one segment per block, drawn to its
+ * real length. Read-only; the body beneath owns every control.
+ */
 export function CoachShell({
-	currentBlock,
-	currentBlockIndex,
-	totalBlocks,
+	blocks,
+	blockStates,
 	sessionElapsedSeconds,
 	sessionTotalSeconds,
 	blockElapsedSeconds,
 	blockTotalSeconds,
-	saving,
-	onSaveAndNext,
-	onSkip,
-	onExtend,
 	onExit,
 	children,
 }: CoachShellProps) {
 	const { t } = useTranslation();
-	const theme = useTheme();
+	const theme = useTheme<AppTheme>();
 
-	const sessionRemaining = sessionTotalSeconds - sessionElapsedSeconds;
-	const blockRemaining = blockTotalSeconds - blockElapsedSeconds;
-	const sessionProgress = Math.min(
-		1,
-		Math.max(0, sessionElapsedSeconds / Math.max(1, sessionTotalSeconds)),
-	);
-	const blockProgress = Math.min(
-		1,
-		Math.max(0, blockElapsedSeconds / Math.max(1, blockTotalSeconds)),
-	);
-	const blockWarn = blockRemaining < 0;
-
-	const blockKindLabel = currentBlock
-		? t(`screen.session.block.${currentBlock.kind}` as const)
-		: "";
-	const blockTitle = currentBlock?.title ?? blockKindLabel;
+	const sessionOver = sessionElapsedSeconds > sessionTotalSeconds;
+	const segments = coachSegments(blocks, blockStates, blockElapsedSeconds);
+	const blockOver = blockElapsedSeconds > blockTotalSeconds;
 
 	return (
 		<View
@@ -80,94 +63,89 @@ export function CoachShell({
 					onPress={onExit}
 					accessibilityLabel={t("screen.session.resume.end")}
 				/>
-				<Appbar.Content title={t("screen.session.coach.title")} />
-			</Appbar.Header>
-
-			<View
-				style={{
-					paddingHorizontal: 16,
-					paddingTop: 8,
-					paddingBottom: 8,
-					backgroundColor: theme.colors.surfaceVariant,
-				}}
-			>
-				<View className="flex-row items-center justify-between">
-					<Text variant="labelMedium">
-						{t("screen.session.coach.sessionLabel")}
-					</Text>
-					<Text variant="labelMedium">
-						{formatMMSS(sessionElapsedSeconds)} {formatMMSS(-sessionRemaining)}
-					</Text>
-				</View>
-				<View style={{ marginTop: 4, marginBottom: 8 }}>
-					<ProgressBar
-						progress={sessionProgress}
-						color={theme.colors.primary}
-					/>
-				</View>
-				<View className="flex-row items-center justify-between">
-					<Text variant="labelMedium">
-						{t("screen.session.coach.blockLabel", {
-							current: currentBlockIndex + 1,
-							total: totalBlocks,
-						})}
-						{"  "}
-						{blockTitle}
+				<Appbar.Content title="" />
+				<View style={{ alignItems: "flex-end", paddingRight: 4 }}>
+					<Text
+						variant="labelMedium"
+						style={{
+							color: sessionOver
+								? theme.colors.warning
+								: theme.colors.onSurfaceVariant,
+						}}
+					>
+						{sessionOver
+							? t("screen.session.coach.timeOver", {
+									elapsed: formatMMSS(sessionElapsedSeconds),
+									time: formatMMSS(sessionElapsedSeconds - sessionTotalSeconds),
+								})
+							: t("screen.session.coach.timeLeft", {
+									elapsed: formatMMSS(sessionElapsedSeconds),
+									time: formatMMSS(sessionTotalSeconds - sessionElapsedSeconds),
+								})}
 					</Text>
 					<Text
 						variant="labelMedium"
 						style={{
-							color: blockWarn ? theme.colors.error : theme.colors.onSurface,
+							color: blockOver
+								? theme.colors.warning
+								: theme.colors.onSurfaceVariant,
 						}}
 					>
-						{formatMMSS(blockElapsedSeconds)} {formatMMSS(-blockRemaining)}
+						{blockOver
+							? t("screen.session.coach.timeOver", {
+									elapsed: formatMMSS(blockElapsedSeconds),
+									time: formatMMSS(blockElapsedSeconds - blockTotalSeconds),
+								})
+							: t("screen.session.coach.timeLeft", {
+									elapsed: formatMMSS(blockElapsedSeconds),
+									time: formatMMSS(
+										Math.max(0, blockTotalSeconds - blockElapsedSeconds),
+									),
+								})}
 					</Text>
 				</View>
-				<View style={{ marginTop: 4 }}>
-					<ProgressBar
-						progress={blockProgress}
-						color={blockWarn ? theme.colors.error : theme.colors.primary}
-					/>
+			</Appbar.Header>
+
+			<View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+				<View style={{ flexDirection: "row", gap: 3, height: 6 }}>
+					{segments.map((segment) => (
+						<View
+							key={segment.id}
+							style={{
+								flex: Math.max(segment.minutes, 0.5),
+								height: 6,
+								borderRadius: 3,
+								backgroundColor: theme.colors.outlineVariant,
+								overflow: "hidden",
+							}}
+						>
+							{segment.fill > 0 && (
+								<View
+									style={{
+										width: `${segment.fill * 100}%`,
+										height: "100%",
+										backgroundColor: theme.colors.primary,
+									}}
+								/>
+							)}
+							{segment.over > 0 && (
+								<View
+									style={{
+										position: "absolute",
+										left: 0,
+										top: 0,
+										bottom: 0,
+										width: `${segment.over * 100}%`,
+										backgroundColor: theme.colors.warning,
+									}}
+								/>
+							)}
+						</View>
+					))}
 				</View>
 			</View>
 
 			<View className="flex-1">{children}</View>
-
-			<View
-				style={{
-					flexDirection: "row",
-					alignItems: "center",
-					gap: 8,
-					paddingHorizontal: 16,
-					paddingVertical: 12,
-					borderTopWidth: 1,
-					borderTopColor: theme.colors.outlineVariant,
-					backgroundColor: theme.colors.background,
-				}}
-			>
-				<IconButton
-					mode="contained-tonal"
-					icon="skip-next"
-					onPress={onSkip}
-					accessibilityLabel={t("screen.session.coach.skip")}
-				/>
-				<IconButton
-					mode="contained-tonal"
-					icon="plus"
-					onPress={onExtend}
-					accessibilityLabel={t("screen.session.coach.extend")}
-				/>
-				<View style={{ flex: 1 }}>
-					<Button
-						mode="contained"
-						onPress={onSaveAndNext}
-						loading={saving}
-						disabled={saving}
-					>
-						{t("screen.session.coach.saveAndNext")}
-					</Button>
-				</View>
-			</View>
 		</View>
 	);
 }

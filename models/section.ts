@@ -1,3 +1,4 @@
+import type { TimeSignature } from "@/utils/time-signature";
 import type { ByMode } from "./practice";
 
 export type SectionPhase =
@@ -23,6 +24,8 @@ export interface Section {
 	startBar?: number | null;
 	endBar?: number | null;
 	targetBpmOverride?: number | null;
+	/** Beats the piece's own signature when the passage differs from it. */
+	timeSignatureOverride?: TimeSignature | null;
 	notes?: string | null;
 	archived: boolean;
 	createdAt?: Date | null;

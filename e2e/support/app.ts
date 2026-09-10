@@ -69,6 +69,22 @@ export const ROUTES: { path: string; ready: string }[] = [
 	{ path: "/technique", ready: t("screen.techniques.title") },
 	{ path: "/piece/add", ready: t("screen.addPiece.title") },
 	{ path: "/technique/add", ready: t("screen.addTechnique.title") },
+	// Practice routes. The ids are read off the Balanced session the seed
+	// produces: piece Sa8Ub1cHaGRDMWeoF5AU, its section hRsrYuP0jnyDjIfev6W5
+	// (of piece jcJQY9qV1R5kVoc2SdMx), technique IG3UUL73rWTEUHFfR3X0.
+	// Regenerating `.emulator-seed` means re-reading them and updating here.
+	{
+		path: "/piece/Sa8Ub1cHaGRDMWeoF5AU/practice",
+		ready: t("common.tempo.heading"),
+	},
+	{
+		path: "/piece/jcJQY9qV1R5kVoc2SdMx/practice?sectionId=hRsrYuP0jnyDjIfev6W5",
+		ready: t("common.tempo.heading"),
+	},
+	{
+		path: "/technique/IG3UUL73rWTEUHFfR3X0/practice",
+		ready: t("common.tempo.heading"),
+	},
 	{ path: "/privacy", ready: t("screen.privacy.title") },
 	{ path: "/terms", ready: t("screen.terms.title") },
 ];

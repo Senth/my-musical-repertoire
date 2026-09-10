@@ -8,8 +8,7 @@ export interface UseMetronomeReturn {
 
 export function useMetronome(
 	_bpm: number,
-	_beatsPerBar = 4,
-	_volume = 1,
+	_beatsPerBar: number | null = null,
 ): UseMetronomeReturn {
 	return {
 		isRunning: false,

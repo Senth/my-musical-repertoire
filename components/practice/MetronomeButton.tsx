@@ -6,8 +6,7 @@ import { useMetronome } from "@/hooks/use-metronome";
 
 interface MetronomeButtonProps {
 	bpm: string;
-	beatsPerBar: number;
-	volume?: number;
+	beatsPerBar: number | null;
 	disabled?: boolean;
 	stopRef?: React.MutableRefObject<(() => void) | null>;
 }
@@ -18,12 +17,17 @@ const DEBOUNCE_MS = 150;
 // always as wide as its longest state and never resizes when the label changes.
 const LABEL_KEYS = ["start", "stop", "paused"] as const;
 
+const STATE_ICONS: Record<(typeof LABEL_KEYS)[number], string> = {
+	start: "play",
+	stop: "stop",
+	paused: "pause",
+};
+
 const GHOST = { height: 0, overflow: "hidden" } as const;
 
 export function MetronomeButton({
 	bpm,
 	beatsPerBar,
-	volume,
 	disabled,
 	stopRef,
 }: MetronomeButtonProps) {
@@ -45,11 +49,7 @@ export function MetronomeButton({
 		};
 	}, [parsed, valid]);
 
-	const { isRunning, toggle, stop } = useMetronome(
-		debouncedBpm,
-		beatsPerBar,
-		volume,
-	);
+	const { isRunning, toggle, stop } = useMetronome(debouncedBpm, beatsPerBar);
 	const [paused, setPaused] = useState(false);
 
 	// Pause — rather than stop — when the BPM turns invalid mid-edit (or when
@@ -90,7 +90,7 @@ export function MetronomeButton({
 	const button = (
 		<Button
 			mode="outlined"
-			icon="metronome"
+			icon={STATE_ICONS[labelKey]}
 			onPress={toggle}
 			disabled={disabled || !valid}
 		>
@@ -105,7 +105,7 @@ export function MetronomeButton({
 					<Button
 						key={key}
 						mode="outlined"
-						icon="metronome"
+						icon={STATE_ICONS[key]}
 						disabled
 						focusable={false}
 					>

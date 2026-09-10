@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCoach } from "@/contexts/CoachContext";
 import {
 	readSightReadingBpm,
 	writeSightReadingBpm,
 } from "@/utils/session-storage";
 import { validateBpm } from "@/utils/validation";
-import { BpmControl } from "./BpmControl";
+import { PracticeFooter } from "./PracticeFooter";
+import { TempoControl } from "./TempoControl";
 
 interface SightReadingBlockBodyProps {
 	stopRef: React.MutableRefObject<(() => void) | null>;
@@ -21,6 +24,8 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 	const theme = useTheme();
 	const { user } = useAuth();
 	const [bpm, setBpm] = useState("");
+	/** The value as it was on mount — the `last` marker must not follow the thumb. */
+	const [savedBpm, setSavedBpm] = useState<number | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -28,7 +33,10 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 		if (!user) return;
 		let active = true;
 		readSightReadingBpm(user.uid).then((saved) => {
-			if (active && saved) setBpm(saved);
+			if (!active || !saved) return;
+			setBpm(saved);
+			const parsed = Number.parseInt(saved, 10);
+			if (!Number.isNaN(parsed)) setSavedBpm(parsed);
 		});
 		return () => {
 			active = false;
@@ -52,21 +60,34 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 		};
 	}, []);
 
+	const coach = useCoach();
+
 	return (
-		<ScreenContent gap={4}>
-			<Text
-				variant="bodyLarge"
-				style={{ color: theme.colors.onSurfaceVariant }}
-			>
-				{t("screen.session.coach.sightReadingBody")}
-			</Text>
-			<BpmControl
-				value={bpm}
-				onChangeText={handleChange}
-				error={bpmError}
-				onBlur={() => setBpmError(validateBpm(bpm, t))}
-				stopRef={stopRef}
+		<View style={{ flex: 1 }}>
+			<ScreenContent gap={4} paddingBottom={12} style={{ flex: 1 }}>
+				<Text
+					variant="bodyLarge"
+					style={{ color: theme.colors.onSurfaceVariant }}
+				>
+					{t("screen.session.coach.sightReadingBody")}
+				</Text>
+				<TempoControl
+					value={bpm}
+					onChangeText={handleChange}
+					error={bpmError}
+					onBlur={(text) => setBpmError(validateBpm(text, t))}
+					stopRef={stopRef}
+					fullRange
+					last={savedBpm}
+				/>
+			</ScreenContent>
+			<PracticeFooter
+				primaryLabel={t("screen.session.coach.saveAndNext")}
+				onPrimary={coach.saveAndNext}
+				primaryLoading={coach.saving}
+				onSkip={coach.skipBlock}
+				onExtend={coach.extendBlock}
 			/>
-		</ScreenContent>
+		</View>
 	);
 }
