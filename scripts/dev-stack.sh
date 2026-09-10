@@ -9,6 +9,13 @@
 #   scripts/dev-stack.sh ports                     the e2e web port for this checkout
 #   scripts/dev-stack.sh dev-port                  the hand-driven web port
 #
+# `up` returns only once the web URL actually answers an HTTP request — the
+# port binding well before the first bundle is compiled is exactly how a CI
+# runner loses its whole suite to a 30s navigation timeout. The first bundle
+# on a cold runner takes minutes, so the poll allows minutes; a stack that is
+# already serving returns immediately. `DEV_STACK_WEB_TIMEOUT` overrides the
+# deadline in seconds.
+#
 #   --no-web   emulators only; for seeding and for anything that never renders
 #   --fresh    boot the emulators empty rather than importing .emulator-seed
 #
@@ -59,7 +66,7 @@ started_by_us() {
 	[[ -f "$RUN_DIR/$1.pid" ]] && kill -0 "$(cat "$RUN_DIR/$1.pid")" 2>/dev/null
 }
 
-wait_for() {  # port, label, seconds
+wait_for() { # port, label, seconds
 	local port="$1" label="$2" deadline=$((SECONDS + ${3:-90}))
 	until listening "$port"; do
 		if ((SECONDS >= deadline)); then
@@ -70,7 +77,28 @@ wait_for() {  # port, label, seconds
 	done
 }
 
-start_emulators() {  # $1 = 1 to import .emulator-seed, 0 for a fresh suite
+wait_http() { # url, label, seconds
+	local url="$1" label="$2" deadline=$((SECONDS + ${3:-${DEV_STACK_WEB_TIMEOUT:-420}}))
+	local tries=0 code=""
+	# The port binding is not the same as the server answering: Expo binds and
+	# only then compiles the bundle, and that first compile is the slow part.
+	# A request that times out is a still-compiling server, not a dead one.
+	until code="$(curl -s -o /dev/null --max-time 10 -w "%{http_code}" "$url" 2>/dev/null)" && [[ "$code" == "200" ]]; do
+		if ((SECONDS >= deadline)); then
+			echo "dev-stack: $label never answered at $url (last status: ${code:-none})" >&2
+			echo "dev-stack: last lines of the web log:" >&2
+			tail -5 "$RUN_DIR/web.log" >&2 2>/dev/null || true
+			return 1
+		fi
+		if ((tries % 8 == 7)); then
+			echo "dev-stack: still waiting for $url to answer (last status: ${code:-none}, ${SECONDS}s elapsed)..."
+		fi
+		tries=$((tries + 1))
+		sleep 2
+	done
+}
+
+start_emulators() { # $1 = 1 to import .emulator-seed, 0 for a fresh suite
 	# Both, not either. A suite half up — auth dead, Firestore alive — reads as
 	# reusable and then fails every sign-in with ERR_CONNECTION_REFUSED, which
 	# surfaces as a test that hangs on a form rather than as an infra error.
@@ -108,6 +136,8 @@ start_emulators() {  # $1 = 1 to import .emulator-seed, 0 for a fresh suite
 start_web() {
 	if listening "$WEB_PORT"; then
 		echo "web: reused (already listening on $WEB_PORT)"
+		wait_http "http://localhost:$WEB_PORT" "reused web server" "${DEV_STACK_WEB_TIMEOUT:-420}"
+		echo "web: serving on http://localhost:$WEB_PORT (emulator-backed)"
 		return
 	fi
 	# stdin from /dev/null, not CI=1, to keep Expo non-interactive. CI=1 also
@@ -121,13 +151,14 @@ start_web() {
 		</dev/null >"$RUN_DIR/web.log" 2>&1 &
 	echo $! >"$RUN_DIR/web.pid"
 	wait_for "$WEB_PORT" "expo web server" 180
+	wait_http "http://localhost:$WEB_PORT" "expo web server (first bundle)" "${DEV_STACK_WEB_TIMEOUT:-420}"
 	echo "web: started on http://localhost:$WEB_PORT (emulator-backed)"
 }
 
 # `setsid` puts each service in its own process group, so one signal takes the
 # whole tree down. Signalling the yarn wrapper alone leaves the node process it
 # spawned holding the port, which then reads as "reused" on the next `up`.
-stop_one() {  # name, port to wait on
+stop_one() { # name, port to wait on
 	local pidfile="$RUN_DIR/$1.pid"
 	[[ -f "$pidfile" ]] || return 0
 	local pid pgid
