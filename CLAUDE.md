@@ -57,8 +57,9 @@ My Musical Repertoire: an Expo / React Native web-first practice app on Firebase
 - Ship only on a green review — the session that wrote the code never signs it off, and
   the `ship` skill opens a **draft** PR. The merge is the human's.
 - Work lives in **GitHub Issues + the Kanban board** (project 3), not markdown — labels
-  `bug` / `feature` / `cleanup` / `idea` / `ai`, an `idea` moves to the Idea column,
-  branches are `feat/<nn>-<slug>` · `bug/<nn>-<slug>` · `cleanup/<nn>-<slug>`, and the
+  `bug` / `feature` / `cleanup` / `idea` / `ai`, the board's Status columns are
+  `Backlog` / `Next Up` / `In progress` / `Done`, branches are
+  `feat/<nn>-<slug>` · `bug/<nn>-<slug>` · `cleanup/<nn>-<slug>`, and the
   PR closes the issue with `Closes #NN`.
 - Merging a PR deploys to production, so gate every merge on green CI.
 
