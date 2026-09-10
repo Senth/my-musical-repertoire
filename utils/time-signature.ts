@@ -71,3 +71,27 @@ export function planTimeSignatureWrite(
 		? { target: "section", sectionOverride: next }
 		: { target: "piece", piece: next };
 }
+
+export interface TimeSignatureWrites {
+	/** New value for `piece.timeSignature`, when the piece gets a write. */
+	piece?: TimeSignature;
+	/** New value for `section.timeSignatureOverride` (null clears it), when the section gets a write. */
+	sectionOverride?: TimeSignature | null;
+}
+
+/**
+ * The write legs a plan turns into, so a caller cannot drop one: row 1 of the
+ * override table writes the piece AND clears a stale section override in the
+ * same breath — the cleared override is what makes the pick take effect.
+ */
+export function writesFromPlan(
+	plan: TimeSignatureWritePlan,
+): TimeSignatureWrites {
+	if (plan.target === "piece") {
+		return { piece: plan.piece, sectionOverride: plan.sectionOverride };
+	}
+	if (plan.target === "section") {
+		return { sectionOverride: plan.sectionOverride ?? null };
+	}
+	return {};
+}

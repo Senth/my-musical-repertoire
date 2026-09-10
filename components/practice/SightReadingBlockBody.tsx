@@ -24,6 +24,8 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 	const theme = useTheme();
 	const { user } = useAuth();
 	const [bpm, setBpm] = useState("");
+	/** The value as it was on mount — the `last` marker must not follow the thumb. */
+	const [savedBpm, setSavedBpm] = useState<number | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -31,7 +33,10 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 		if (!user) return;
 		let active = true;
 		readSightReadingBpm(user.uid).then((saved) => {
-			if (active && saved) setBpm(saved);
+			if (!active || !saved) return;
+			setBpm(saved);
+			const parsed = Number.parseInt(saved, 10);
+			if (!Number.isNaN(parsed)) setSavedBpm(parsed);
 		});
 		return () => {
 			active = false;
@@ -55,7 +60,6 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 		};
 	}, []);
 
-	const parsedBpm = Number.parseInt(bpm.trim(), 10);
 	const coach = useCoach();
 
 	return (
@@ -74,7 +78,7 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 					onBlur={() => setBpmError(validateBpm(bpm, t))}
 					stopRef={stopRef}
 					fullRange
-					last={Number.isNaN(parsedBpm) ? null : parsedBpm}
+					last={savedBpm}
 				/>
 			</ScreenContent>
 			<PracticeFooter

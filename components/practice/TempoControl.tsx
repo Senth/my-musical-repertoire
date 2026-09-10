@@ -155,13 +155,13 @@ export function TempoControl({
 		if (bpm !== null) onChangeText(clamp(bpm).toString());
 	}
 
-	// Typing commits on blur: an out-of-range number is clamped into range, and
-	// only then does the screens' validation run — on the value actually kept.
+	// Typing commits on blur: an out-of-range number is clamped into range
+	// before the screens' validation runs, so the error never outlives the
+	// value it was about.
 	const handleBlur = () => {
 		setEditing(false);
 		if (isValid && (parsed < BPM_MIN || parsed > BPM_MAX)) {
 			onChangeText(clamp(parsed).toString());
-			return;
 		}
 		onBlur();
 	};

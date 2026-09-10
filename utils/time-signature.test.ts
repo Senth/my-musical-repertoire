@@ -5,6 +5,7 @@ import {
 	PRESETS,
 	planTimeSignatureWrite,
 	resolveTimeSignature,
+	writesFromPlan,
 } from "./time-signature";
 
 const SEVEN_EIGHT: TimeSignature = { beats: 7, noteValue: 8 };
@@ -129,5 +130,39 @@ describe("planTimeSignatureWrite", () => {
 			target: "section",
 			sectionOverride: { beats: 8, noteValue: 8 },
 		});
+	});
+});
+
+describe("writesFromPlan", () => {
+	it("carries both legs when the piece write must also clear a stale override", () => {
+		// Row 1 of the override table: only writing the piece would leave the
+		// override winning in resolveTimeSignature, silently dropping the pick.
+		expect(
+			writesFromPlan({
+				target: "piece",
+				piece: SEVEN_EIGHT,
+				sectionOverride: null,
+			}),
+		).toEqual({ piece: SEVEN_EIGHT, sectionOverride: null });
+	});
+
+	it("carries only the piece leg when no section is in scope", () => {
+		expect(writesFromPlan({ target: "piece", piece: SEVEN_EIGHT })).toEqual({
+			piece: SEVEN_EIGHT,
+		});
+	});
+
+	it("carries the override leg when the plan targets the section", () => {
+		expect(
+			writesFromPlan({ target: "section", sectionOverride: SEVEN_EIGHT }),
+		).toEqual({ sectionOverride: SEVEN_EIGHT });
+		expect(
+			writesFromPlan({ target: "section", sectionOverride: null }),
+		).toEqual({ sectionOverride: null });
+	});
+
+	it("carries nothing for technique and no-op plans", () => {
+		expect(writesFromPlan({ target: "technique" })).toEqual({});
+		expect(writesFromPlan({ target: "none" })).toEqual({});
 	});
 });

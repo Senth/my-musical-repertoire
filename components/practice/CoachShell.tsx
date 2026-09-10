@@ -49,10 +49,7 @@ export function CoachShell({
 	const { t } = useTranslation();
 	const theme = useTheme<AppTheme>();
 
-	const sessionRemaining = Math.max(
-		0,
-		sessionTotalSeconds - sessionElapsedSeconds,
-	);
+	const sessionOver = sessionElapsedSeconds > sessionTotalSeconds;
 	const segments = coachSegments(blocks, blockStates, blockElapsedSeconds);
 	const blockOver = blockElapsedSeconds > blockTotalSeconds;
 
@@ -70,12 +67,21 @@ export function CoachShell({
 				<View style={{ alignItems: "flex-end", paddingRight: 4 }}>
 					<Text
 						variant="labelMedium"
-						style={{ color: theme.colors.onSurfaceVariant }}
+						style={{
+							color: sessionOver
+								? theme.colors.warning
+								: theme.colors.onSurfaceVariant,
+						}}
 					>
-						{t("screen.session.coach.timeLeft", {
-							elapsed: formatMMSS(sessionElapsedSeconds),
-							time: formatMMSS(sessionRemaining),
-						})}
+						{sessionOver
+							? t("screen.session.coach.timeOver", {
+									elapsed: formatMMSS(sessionElapsedSeconds),
+									time: formatMMSS(sessionElapsedSeconds - sessionTotalSeconds),
+								})
+							: t("screen.session.coach.timeLeft", {
+									elapsed: formatMMSS(sessionElapsedSeconds),
+									time: formatMMSS(sessionTotalSeconds - sessionElapsedSeconds),
+								})}
 					</Text>
 					<Text
 						variant="labelMedium"

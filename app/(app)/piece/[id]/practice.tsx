@@ -69,6 +69,7 @@ import {
 	planTimeSignatureWrite,
 	resolveTimeSignature,
 	type TimeSignature,
+	writesFromPlan,
 } from "@/utils/time-signature";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
 
@@ -194,12 +195,15 @@ export function PiecePracticeContent({
 			planFor: (next: TimeSignature) =>
 				planTimeSignatureWrite(next, piece, scopedSection),
 			onChange: (next: TimeSignature) => {
-				const plan = planTimeSignatureWrite(next, piece, scopedSection);
-				if (plan.target === "piece" && plan.piece) {
-					void updatePiece(pieceId, { timeSignature: plan.piece });
-				} else if (plan.target === "section" && scopedSection?.id) {
+				const writes = writesFromPlan(
+					planTimeSignatureWrite(next, piece, scopedSection),
+				);
+				if (writes.piece) {
+					void updatePiece(pieceId, { timeSignature: writes.piece });
+				}
+				if (scopedSection?.id && writes.sectionOverride !== undefined) {
 					void updateSection(pieceId, scopedSection.id, {
-						timeSignatureOverride: plan.sectionOverride ?? null,
+						timeSignatureOverride: writes.sectionOverride,
 					});
 				}
 			},
