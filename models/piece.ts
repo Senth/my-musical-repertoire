@@ -1,3 +1,4 @@
+import type { TimeSignature } from "@/utils/time-signature";
 import type { PracticeMistakes } from "./practice";
 
 export type PieceState =
@@ -25,6 +26,8 @@ export interface Piece {
 	collectionName?: string | null;
 	state: PieceState;
 	targetTempoBpm?: number | null;
+	/** The piece-wide metronome signature; a section override wins when present. */
+	timeSignature?: TimeSignature | null;
 	difficulty?: 1 | 2 | 3 | 4 | 5 | null;
 	lastPracticed?: Date | null;
 	lastTechnicalMistakes?: PracticeMistakes;
