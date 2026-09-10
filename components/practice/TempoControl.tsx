@@ -311,10 +311,14 @@ export function TempoControl({
 					flexDirection: "row",
 					alignItems: "center",
 					justifyContent: "center",
-					gap: 10,
+					gap: 8,
 				}}
 			>
-				<Button mode="outlined" onPress={tap}>
+				<Button
+					mode="outlined"
+					onPress={tap}
+					contentStyle={{ paddingHorizontal: 6 }}
+				>
 					{t("common.bpm.tap")}
 				</Button>
 				{stopRef !== undefined && (

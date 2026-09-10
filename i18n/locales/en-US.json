@@ -568,14 +568,12 @@
 			}
 		},
 		"practice": {
-			"title": "Practice",
 			"pieceNotFound": "Piece not found",
 			"dateLabel": "Date",
 			"lastPracticed": "Last practiced: {{when}}",
-			"technicalMistakes": "Technical Mistakes",
-			"memoryMistakes": "Memory Mistakes",
+			"technicalMistakes": "Wrong notes?",
+			"memoryMistakes": "Memory slips?",
 			"save": "Save",
-			"noteForNextTimeLabel": "Note for next time (optional)",
 			"lastSession": {
 				"header": "Last session · {{when}}",
 				"headerAfterBreak": "Last session · {{when}} · after a break",
@@ -586,7 +584,6 @@
 				"effort": "Effort",
 				"technical": "Technical",
 				"memory": "Memory",
-				"note": "Note: {{note}}",
 				"firstPractice": "First practice — no reference yet"
 			},
 			"sectionsPanel": {
@@ -601,8 +598,6 @@
 			"demoted_one": "{{count}} section moved back to stabilizing",
 			"demoted_other": "{{count}} sections moved back to stabilizing",
 			"modes": {
-				"handsLabel": "Hands",
-				"drillLabel": "Drill",
 				"hands": {
 					"LH": "LH",
 					"RH": "RH",
@@ -618,11 +613,7 @@
 					"staccato": "Staccato"
 				},
 				"summarySeparator": " · ",
-				"summaryEntry": "{{mode}} {{bpm}}",
-				"summaryTargetBoth": "(target {{separate}}/{{together}})",
-				"summaryTargetOne": "(target {{bpm}})",
 				"targetSingle": "Target {{bpm}} BPM",
-				"htReadyHint": "Both hands reached {{bpm}} BPM — try hands together",
 				"a11ySelectHands": "Practice {{mode}}",
 				"a11ySelectDrill": "Drill: {{drill}}",
 				"incompleteMode": "{{mode}} needs quality and effort"
@@ -698,6 +689,17 @@
 					"yesterday": "Moved to {{phase}} yesterday — change it again?",
 					"daysAgo": "Moved to {{phase}} {{count}} days ago — change it again?"
 				}
+			},
+			"notRated": "not rated yet",
+			"standingNote": {
+				"heading": "Note",
+				"editA11y": "Edit note",
+				"placeholder": "Add a note"
+			},
+			"tally": {
+				"prefix": "Saving: {{tally}}",
+				"saved": "{{mode}} {{bpm}} {{quality}}",
+				"inProgress": "{{mode}} in progress"
 			}
 		},
 		"editPiece": {
@@ -817,10 +819,9 @@
 			}
 		},
 		"practiceTechnique": {
-			"title": "Log Technique",
 			"notFound": "Technique item not found",
-			"qualityLabel": "Quality",
-			"effortLabel": "Effort",
+			"qualityLabel": "How clean?",
+			"effortLabel": "How hard?",
 			"save": "Save",
 			"comparison": {
 				"title": "Practice Results",
@@ -902,9 +903,9 @@
 				"title": "Coach",
 				"sessionLabel": "Session",
 				"blockLabel": "Block {{current}}/{{total}}",
-				"saveAndNext": "Save & next block",
+				"saveAndNext": "Save & next",
 				"skip": "Skip",
-				"extend": "Extend +2 min",
+				"extend": "+2 min",
 				"sightReadingBody": "Sight-reading — pick your material",
 				"warmupBody": "Warmup — gentle scales of your choice",
 				"done": "Done",

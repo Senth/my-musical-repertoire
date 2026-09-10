@@ -171,14 +171,6 @@ async function practiceSection(
 			.click();
 		await page.getByPlaceholder(t("common.bpm.placeholder")).fill(opts.bpm);
 	}
-	if (opts.note) {
-		await page
-			.getByRole("textbox", {
-				name: t("screen.practice.noteForNextTimeLabel"),
-				exact: true,
-			})
-			.fill(opts.note);
-	}
 	await page
 		.getByRole("button", { name: opts.quality ?? "OK", exact: true })
 		.click();
@@ -439,22 +431,36 @@ test("The Practice button on a section card opens that section with its scored h
  * the note saved with a log must come back as the reference card's headline
  * the next time the same mode is opened.
  */
-test("A note saved with a practice log headlines the reference card on the next visit", async ({
+test("A standing note on a passage is still there on the next visit", async ({
 	page,
 }) => {
 	test.setTimeout(45_000);
 	const NOTE = "E2E note: ease the thumb at bar 124";
-	// Forwards only, as `twoDaysPass` demands — the last right-hand log sits
-	// two days ahead of the real clock, and the new note must top it.
-	await twoDaysPass(page);
-	await practiceSection(page, piece3Url, piece3SectionId, {
-		mode: "RH",
-		note: NOTE,
-	});
-
 	await page.goto(
 		`${piece3Url}/practice?sectionId=${piece3SectionId}&from=overview&mode=RH`,
 	);
+
+	// The standing note edits in place: the pencil opens the text area, and
+	// blurring it commits the write.
+	await page
+		.getByRole("button", {
+			name: t("screen.practice.standingNote.editA11y"),
+			exact: true,
+		})
+		.click();
+	await page
+		.getByRole("textbox", {
+			name: t("screen.practice.standingNote.editA11y"),
+			exact: true,
+		})
+		.fill(NOTE);
+	await page.getByText("Tempo", { exact: true }).click();
+	// The section listener confirms the write landed before the reload.
+	await expect(page.getByText(NOTE, { exact: false })).toBeVisible({
+		timeout: 10_000,
+	});
+
+	await page.reload();
 	await expect(page.getByText(NOTE, { exact: false })).toBeVisible({
 		timeout: 10_000,
 	});

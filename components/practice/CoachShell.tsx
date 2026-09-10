@@ -1,14 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import {
-	Appbar,
-	Button,
-	IconButton,
-	ProgressBar,
-	Text,
-	useTheme,
-} from "react-native-paper";
+import { Appbar, ProgressBar, Text, useTheme } from "react-native-paper";
 import type { PlannedBlock } from "@/models/session";
 
 export interface CoachShellProps {
@@ -19,10 +12,6 @@ export interface CoachShellProps {
 	sessionTotalSeconds: number;
 	blockElapsedSeconds: number;
 	blockTotalSeconds: number;
-	saving: boolean;
-	onSaveAndNext: () => void;
-	onSkip: () => void;
-	onExtend: () => void;
 	onExit: () => void;
 	children: ReactNode;
 }
@@ -43,10 +32,6 @@ export function CoachShell({
 	sessionTotalSeconds,
 	blockElapsedSeconds,
 	blockTotalSeconds,
-	saving,
-	onSaveAndNext,
-	onSkip,
-	onExtend,
 	onExit,
 	children,
 }: CoachShellProps) {
@@ -132,42 +117,6 @@ export function CoachShell({
 			</View>
 
 			<View className="flex-1">{children}</View>
-
-			<View
-				style={{
-					flexDirection: "row",
-					alignItems: "center",
-					gap: 8,
-					paddingHorizontal: 16,
-					paddingVertical: 12,
-					borderTopWidth: 1,
-					borderTopColor: theme.colors.outlineVariant,
-					backgroundColor: theme.colors.background,
-				}}
-			>
-				<IconButton
-					mode="contained-tonal"
-					icon="skip-next"
-					onPress={onSkip}
-					accessibilityLabel={t("screen.session.coach.skip")}
-				/>
-				<IconButton
-					mode="contained-tonal"
-					icon="plus"
-					onPress={onExtend}
-					accessibilityLabel={t("screen.session.coach.extend")}
-				/>
-				<View style={{ flex: 1 }}>
-					<Button
-						mode="contained"
-						onPress={onSaveAndNext}
-						loading={saving}
-						disabled={saving}
-					>
-						{t("screen.session.coach.saveAndNext")}
-					</Button>
-				</View>
-			</View>
 		</View>
 	);
 }

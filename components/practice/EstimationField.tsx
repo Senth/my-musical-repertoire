@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { SegmentedButtons, Text, useTheme } from "react-native-paper";
 
@@ -5,11 +6,12 @@ export interface EstimationOption<V extends string | number> {
 	value: V;
 	/** Sits on the button. Must stay short enough to fit five segments at 320px. */
 	short: string;
-	/** Spelled out under the row, where there is a whole line to spend. */
+	/** Spelled out beside the question once a value is chosen. */
 	full: string;
 }
 
 interface EstimationFieldProps<V extends string | number> {
+	/** The question — "How clean?", never a bare label. */
 	label: string;
 	/** `null` renders with nothing selected — the student has not rated yet. */
 	value: V | null;
@@ -19,12 +21,10 @@ interface EstimationFieldProps<V extends string | number> {
 }
 
 /**
- * One self-estimation row: quality, effort, or a mistake count.
- *
- * All of them share this component so they stay consistent — same geometry,
- * same text-not-numbers labels, and the same rule that the best answer sits on
- * the right. Buttons carry a short word; the line underneath spells the chosen
- * one out in full, which is where the calibration wording lives.
+ * One self-estimation group: question with the chosen word beside it, and the
+ * five-word row under it. All of them share this component so they stay
+ * consistent — same geometry, text-not-numbers labels, best answer on the
+ * right.
  */
 export function EstimationField<V extends string | number>({
 	label,
@@ -32,13 +32,23 @@ export function EstimationField<V extends string | number>({
 	onChange,
 	options,
 }: EstimationFieldProps<V>) {
+	const { t } = useTranslation();
 	const theme = useTheme();
 	const selected = options.find((o) => o.value === value);
 
 	return (
-		<View className="gap-2">
-			<Text variant="titleSmall">{label}</Text>
+		<View style={{ gap: 8 }}>
+			<View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+				<Text variant="labelLarge">{label}</Text>
+				<Text
+					variant="bodySmall"
+					style={{ color: theme.colors.onSurfaceVariant }}
+				>
+					{selected?.full ?? t("screen.practice.notRated")}
+				</Text>
+			</View>
 			<SegmentedButtons
+				style={{ width: "100%" }}
 				value={value?.toString() ?? ""}
 				onValueChange={(v) => {
 					const match = options.find((o) => o.value.toString() === v);
@@ -47,16 +57,14 @@ export function EstimationField<V extends string | number>({
 				buttons={options.map((o) => ({
 					value: o.value.toString(),
 					label: o.short,
-					labelStyle: { fontSize: 12, marginHorizontal: 0 },
+					// Paper floors each segment at minWidth 76 — five of them measure
+					// 380px against the 358px band and overflow at 390. minWidth 0
+					// lets them flex; 11px is round 8's small-segment size, which
+					// fits the words inside the label's max-width.
+					style: { minWidth: 0 },
+					labelStyle: { fontSize: 11, marginHorizontal: 0 },
 				}))}
 			/>
-			{/* Reserved even when unrated, so picking a value does not shift the form. */}
-			<Text
-				variant="bodySmall"
-				style={{ color: theme.colors.onSurfaceVariant, minHeight: 16 }}
-			>
-				{selected?.full ?? ""}
-			</Text>
 		</View>
 	);
 }

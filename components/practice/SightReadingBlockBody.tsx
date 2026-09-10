@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCoach } from "@/contexts/CoachContext";
 import {
 	readSightReadingBpm,
 	writeSightReadingBpm,
 } from "@/utils/session-storage";
 import { validateBpm } from "@/utils/validation";
+import { PracticeFooter } from "./PracticeFooter";
 import { TempoControl } from "./TempoControl";
 
 interface SightReadingBlockBodyProps {
@@ -53,24 +56,34 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 	}, []);
 
 	const parsedBpm = Number.parseInt(bpm.trim(), 10);
+	const coach = useCoach();
 
 	return (
-		<ScreenContent gap={4}>
-			<Text
-				variant="bodyLarge"
-				style={{ color: theme.colors.onSurfaceVariant }}
-			>
-				{t("screen.session.coach.sightReadingBody")}
-			</Text>
-			<TempoControl
-				value={bpm}
-				onChangeText={handleChange}
-				error={bpmError}
-				onBlur={() => setBpmError(validateBpm(bpm, t))}
-				stopRef={stopRef}
-				fullRange
-				last={Number.isNaN(parsedBpm) ? null : parsedBpm}
+		<View style={{ flex: 1 }}>
+			<ScreenContent gap={4} paddingBottom={12} style={{ flex: 1 }}>
+				<Text
+					variant="bodyLarge"
+					style={{ color: theme.colors.onSurfaceVariant }}
+				>
+					{t("screen.session.coach.sightReadingBody")}
+				</Text>
+				<TempoControl
+					value={bpm}
+					onChangeText={handleChange}
+					error={bpmError}
+					onBlur={() => setBpmError(validateBpm(bpm, t))}
+					stopRef={stopRef}
+					fullRange
+					last={Number.isNaN(parsedBpm) ? null : parsedBpm}
+				/>
+			</ScreenContent>
+			<PracticeFooter
+				primaryLabel={t("screen.session.coach.saveAndNext")}
+				onPrimary={coach.saveAndNext}
+				primaryLoading={coach.saving}
+				onSkip={coach.skipBlock}
+				onExtend={coach.extendBlock}
 			/>
-		</ScreenContent>
+		</View>
 	);
 }

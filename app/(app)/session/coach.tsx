@@ -16,10 +16,15 @@ import { PiecePracticeContent } from "@/app/(app)/piece/[id]/practice";
 import { TechniquePracticeContent } from "@/app/(app)/technique/[id]/practice";
 import { CoachShell, formatMMSS } from "@/components/practice/CoachShell";
 import { PhaseOfferDialog } from "@/components/practice/PhaseOfferCard";
+import { PracticeFooter } from "@/components/practice/PracticeFooter";
 import { SightReadingBlockBody } from "@/components/practice/SightReadingBlockBody";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import { useAuth } from "@/contexts/AuthContext";
-import { type CoachContextValue, CoachProvider } from "@/contexts/CoachContext";
+import {
+	type CoachContextValue,
+	CoachProvider,
+	useCoach,
+} from "@/contexts/CoachContext";
 import { useActiveSession } from "@/hooks/use-active-session";
 import { useCoachExitGuard } from "@/hooks/use-coach-exit-guard";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
@@ -339,10 +344,25 @@ export default function CoachScreen() {
 			validateHandlerRef,
 			phaseOfferRef,
 			notify,
+			saveAndNext: () => {
+				void handleSaveAndNext();
+			},
+			skipBlock: () => {
+				void handleSkip();
+			},
+			extendBlock: handleExtend,
+			saving,
 		}),
-		// The two handler refs are stable for the screen's lifetime — including
+		// The handler refs are stable for the screen's lifetime — including
 		// them would only churn the context value on every render.
-		[session?.sessionId, notify],
+		[
+			session?.sessionId,
+			notify,
+			handleSaveAndNext,
+			handleSkip,
+			handleExtend,
+			saving,
+		],
 	);
 
 	if (!loaded) {
@@ -422,6 +442,10 @@ export default function CoachScreen() {
 			validateHandlerRef={coachValue.validateHandlerRef}
 			phaseOfferRef={coachValue.phaseOfferRef}
 			notify={coachValue.notify}
+			saveAndNext={coachValue.saveAndNext}
+			skipBlock={coachValue.skipBlock}
+			extendBlock={coachValue.extendBlock}
+			saving={coachValue.saving}
 		>
 			<CoachShell
 				currentBlock={currentBlock}
@@ -431,10 +455,6 @@ export default function CoachScreen() {
 				sessionTotalSeconds={sessionTotalSeconds}
 				blockElapsedSeconds={blockElapsedSeconds}
 				blockTotalSeconds={blockTotalSeconds}
-				saving={saving}
-				onSaveAndNext={handleSaveAndNext}
-				onSkip={handleSkip}
-				onExtend={handleExtend}
 				onExit={handleExit}
 			>
 				{body}
@@ -576,17 +596,28 @@ function LeaveSessionDialog({
 
 function FreeformBlockBody({ label }: { label: string }) {
 	const theme = useTheme();
+	const coach = useCoach();
+	const { t } = useTranslation();
 	return (
-		<View
-			className="flex-1 items-center justify-center"
-			style={{ padding: 24, backgroundColor: theme.colors.background }}
-		>
-			<Text
-				variant="bodyLarge"
-				style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}
+		<View style={{ flex: 1 }}>
+			<View
+				className="flex-1 items-center justify-center"
+				style={{ padding: 24, backgroundColor: theme.colors.background }}
 			>
-				{label}
-			</Text>
+				<Text
+					variant="bodyLarge"
+					style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}
+				>
+					{label}
+				</Text>
+			</View>
+			<PracticeFooter
+				primaryLabel={t("screen.session.coach.saveAndNext")}
+				onPrimary={coach.saveAndNext}
+				primaryLoading={coach.saving}
+				onSkip={coach.skipBlock}
+				onExtend={coach.extendBlock}
+			/>
 		</View>
 	);
 }

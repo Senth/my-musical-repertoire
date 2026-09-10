@@ -66,9 +66,9 @@ export function AccentChip({
 					style={{
 						flexDirection: "row",
 						alignItems: "center",
-						gap: 4,
+						gap: 3,
 						height: CHIP_HEIGHT,
-						paddingLeft: 10,
+						paddingLeft: 8,
 					}}
 				>
 					<Icon
@@ -89,7 +89,7 @@ export function AccentChip({
 					style={{
 						height: CHIP_HEIGHT,
 						justifyContent: "center",
-						paddingHorizontal: 6,
+						paddingHorizontal: 4,
 					}}
 				>
 					<Icon source="chevron-down" size={18} color={tint} />
