@@ -86,7 +86,9 @@ function TempoMarker({
 			pointerEvents="none"
 			style={{
 				position: "absolute",
-				bottom: 0,
+				// Seated 8px into the slider's own top padding, so the chevron tip
+				// touches the track's top edge the way round 8 draws it.
+				bottom: -8,
 				...(anchor === "end"
 					? { right: `${Math.max(0, 100 - percent)}%` }
 					: { left: `${Math.min(100, Math.max(0, percent))}%` }),
@@ -204,36 +206,39 @@ export function TempoControl({
 		<View style={{ gap: 12 }}>
 			<Text variant="labelLarge">{t("common.tempo.heading")}</Text>
 
-			<View style={{ height: 30 }}>
-				{lastPos != null && (
-					<TempoMarker
-						label={t("common.tempo.last", { bpm: last })}
-						percent={close && mid != null ? mid : lastPos}
-						anchor={close ? "end" : edgeAnchor(lastPos)}
-						color={accentTint}
-					/>
-				)}
-				{targetPos != null && (
-					<TempoMarker
-						label={t("common.tempo.target", { bpm: target })}
-						percent={close && mid != null ? mid : targetPos}
-						anchor={close ? "start" : edgeAnchor(targetPos)}
-						color={accentTint}
-					/>
-				)}
+			{/* r8's `.sld`: markers and track in one block, lifted -10px toward the
+			    heading, with the chevron tips touching the track's top edge. */}
+			<View style={{ marginTop: -10 }}>
+				<View style={{ height: 30 }}>
+					{lastPos != null && (
+						<TempoMarker
+							label={t("common.tempo.last", { bpm: last })}
+							percent={close && mid != null ? mid : lastPos}
+							anchor={close ? "end" : edgeAnchor(lastPos)}
+							color={accentTint}
+						/>
+					)}
+					{targetPos != null && (
+						<TempoMarker
+							label={t("common.tempo.target", { bpm: target })}
+							percent={close && mid != null ? mid : targetPos}
+							anchor={close ? "start" : edgeAnchor(targetPos)}
+							color={accentTint}
+						/>
+					)}
+				</View>
+				<Slider
+					minimumValue={range.min}
+					maximumValue={range.max}
+					step={1}
+					value={sliderValue}
+					onValueChange={(v) => onChangeText(Math.round(v).toString())}
+					minimumTrackTintColor={theme.colors.primary}
+					maximumTrackTintColor={theme.colors.outlineVariant}
+					thumbTintColor={theme.colors.primary}
+					accessibilityLabel={t("common.tempo.sliderA11y")}
+				/>
 			</View>
-			<Slider
-				style={{ marginTop: -10 }}
-				minimumValue={range.min}
-				maximumValue={range.max}
-				step={1}
-				value={sliderValue}
-				onValueChange={(v) => onChangeText(Math.round(v).toString())}
-				minimumTrackTintColor={theme.colors.primary}
-				maximumTrackTintColor={theme.colors.outlineVariant}
-				thumbTintColor={theme.colors.primary}
-				accessibilityLabel={t("common.tempo.sliderA11y")}
-			/>
 
 			<View
 				style={{

@@ -44,12 +44,14 @@ export function AccentChip({
 
 	return (
 		<View>
+			{/* r8's `.split`: one 40px pill, radius 20, visibly two halves with a
+			    divider between them — tinted while sounding, outlined when silent. */}
 			<View
 				style={{
 					flexDirection: "row",
 					alignItems: "center",
 					height: CHIP_HEIGHT,
-					borderRadius: 8,
+					borderRadius: 20,
 					borderWidth: sounding ? 0 : 1,
 					borderColor: theme.colors.outline,
 					backgroundColor: sounding
@@ -66,9 +68,9 @@ export function AccentChip({
 					style={{
 						flexDirection: "row",
 						alignItems: "center",
-						gap: 3,
+						gap: 5,
 						height: CHIP_HEIGHT,
-						paddingLeft: 8,
+						paddingLeft: 12,
 					}}
 				>
 					<Icon
@@ -89,7 +91,11 @@ export function AccentChip({
 					style={{
 						height: CHIP_HEIGHT,
 						justifyContent: "center",
-						paddingHorizontal: 4,
+						paddingHorizontal: 9,
+						borderLeftWidth: 1,
+						borderLeftColor: sounding
+							? theme.colors.outline
+							: theme.colors.outlineVariant,
 					}}
 				>
 					<Icon source="chevron-down" size={18} color={tint} />
