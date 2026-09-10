@@ -32,14 +32,14 @@ import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useCoach } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { parseBpm, useModeDrafts } from "@/hooks/use-mode-drafts";
-import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
+import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { usePracticeSave } from "@/hooks/use-practice-save";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
 import {
 	useChangeSectionPhase,
 	useSectionPhaseHistory,
 } from "@/hooks/use-section-phase";
-import { useSections } from "@/hooks/use-sections";
+import { useSections, useUpdateSection } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import {
@@ -67,6 +67,11 @@ import {
 	parseModeKey,
 	targetForMode,
 } from "@/utils/practice-modes";
+import {
+	planTimeSignatureWrite,
+	resolveTimeSignature,
+	type TimeSignature,
+} from "@/utils/time-signature";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
 
 /** Sections always have all three hand modes and never have drills. */
@@ -99,6 +104,8 @@ export function PiecePracticeContent({
 	const { saveSectionPractice } = useSaveSectionPractice();
 	const { deletePiece } = useDeletePiece();
 	const { changeSectionPhase, dismissPhaseOffer } = useChangeSectionPhase();
+	const { updatePiece } = useUpdatePiece();
+	const { updateSection } = useUpdateSection();
 	const standaloneSessionId = useRef(randomUUID());
 
 	const piece = pieces.find((p) => p.id === pieceId);
@@ -182,6 +189,34 @@ export function PiecePracticeContent({
 	const scopedSection = sectionIdProp
 		? (sections.find((s) => s.id === sectionIdProp) ?? null)
 		: null;
+
+	const accent = useMemo(() => {
+		if (!piece) return undefined;
+		return {
+			signature: resolveTimeSignature(scopedSection, piece),
+			planFor: (next: TimeSignature) =>
+				planTimeSignatureWrite(next, piece, scopedSection),
+			onChange: (next: TimeSignature) => {
+				const plan = planTimeSignatureWrite(next, piece, scopedSection);
+				if (plan.target === "piece" && plan.piece) {
+					void updatePiece(pieceId, { timeSignature: plan.piece });
+				} else if (plan.target === "section" && scopedSection?.id) {
+					void updateSection(pieceId, scopedSection.id, {
+						timeSignatureOverride: plan.sectionOverride ?? null,
+					});
+				}
+			},
+			onClear: () => {
+				if (scopedSection?.id && scopedSection.timeSignatureOverride) {
+					void updateSection(pieceId, scopedSection.id, {
+						timeSignatureOverride: null,
+					});
+				} else {
+					void updatePiece(pieceId, { timeSignature: null });
+				}
+			},
+		};
+	}, [piece, scopedSection, pieceId, updatePiece, updateSection]);
 
 	const effectiveTarget = scopedSection
 		? (scopedSection.targetBpmOverride ?? piece?.targetTempoBpm ?? null)
@@ -632,6 +667,7 @@ export function PiecePracticeContent({
 							error={bpmError}
 							onBlur={handleBpmBlur}
 							stopRef={metronomeStopRef}
+							accent={accent}
 						/>
 					</View>
 					<Divider />

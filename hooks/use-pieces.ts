@@ -138,6 +138,7 @@ export function useUpdatePiece() {
 				| "collectionName"
 				| "state"
 				| "targetTempoBpm"
+				| "timeSignature"
 				| "difficulty"
 				| "lastPracticed"
 				| "lastTechnicalMistakes"

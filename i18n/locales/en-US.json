@@ -66,25 +66,25 @@
 			}
 		},
 		"metronome": {
-			"start": "Start Metronome",
-			"stop": "Stop Metronome",
-			"paused": "Metronome Paused",
+			"start": "Start",
+			"stop": "Stop",
+			"paused": "Paused",
 			"enterBpmToEnable": "Enter a BPM to enable the metronome",
 			"enterBpmToResume": "Enter a BPM to resume the metronome",
-			"timeSignatures": {
-				"fourFour": "4/4",
-				"threeFour": "3/4",
-				"sixEight": "6/8",
-				"twoFour": "2/4"
-			},
-			"timeSignatureA11y": "Time signature {{signature}}",
-			"volumeLevels": {
-				"mute": "Mute",
-				"soft": "Soft",
-				"normal": "Normal",
-				"loud": "Loud"
-			},
-			"volumeA11y": "Metronome click volume: {{level}}"
+			"accent": {
+				"title": "Accent",
+				"off": "no accent",
+				"none": "None",
+				"custom": "Custom",
+				"beats": "Beats",
+				"noteValue": "Note value",
+				"toggleA11y": "Toggle accent",
+				"editA11y": "Accent options",
+				"landsPiece": "Saved with the piece",
+				"landsSection": "Saved with this passage",
+				"landsTechnique": "Saved with the technique",
+				"landsNone": "Already the piece's signature"
+			}
 		},
 		"bpm": {
 			"placeholder": "e.g. 80",

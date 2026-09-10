@@ -28,6 +28,7 @@ import {
 	useDeleteTechnique,
 	useSaveTechniqueLog,
 	useTechniques,
+	useUpdateTechnique,
 } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
@@ -42,6 +43,7 @@ import {
 	parseModeKey,
 	targetForMode,
 } from "@/utils/practice-modes";
+import { planTimeSignatureWrite } from "@/utils/time-signature";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
 
 export interface TechniquePracticeContentProps {
@@ -64,6 +66,7 @@ export function TechniquePracticeContent({
 	const { techniques, loading: techniquesLoading } = useTechniques();
 	const { saveTechniqueLog } = useSaveTechniqueLog();
 	const { deleteTechnique } = useDeleteTechnique();
+	const { updateTechnique } = useUpdateTechnique();
 
 	const standaloneSessionId = useRef(randomUUID());
 	const technique = techniques.find((tn) => tn.id === techniqueId);
@@ -346,6 +349,23 @@ export function TechniquePracticeContent({
 							error={bpmError}
 							onBlur={handleBpmBlur}
 							stopRef={metronomeStopRef}
+							accent={
+								technique
+									? {
+											signature: technique.timeSignature ?? null,
+											planFor: (next) =>
+												planTimeSignatureWrite(next, null, null),
+											onChange: (next) =>
+												void updateTechnique(techniqueId, {
+													timeSignature: next,
+												}),
+											onClear: () =>
+												void updateTechnique(techniqueId, {
+													timeSignature: null,
+												}),
+										}
+									: undefined
+							}
 						/>
 					</View>
 

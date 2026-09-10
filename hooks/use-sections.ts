@@ -194,6 +194,7 @@ export function useUpdateSection() {
 				| "startBar"
 				| "endBar"
 				| "targetBpmOverride"
+				| "timeSignatureOverride"
 				| "notes"
 				| "lastPracticed"
 				| "lastQuality"

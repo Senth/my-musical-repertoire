@@ -1,29 +1,27 @@
 import type { MutableRefObject } from "react";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { HelperText, SegmentedButtons, TextInput } from "react-native-paper";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+	readMetronomeAccent,
+	writeMetronomeAccent,
+} from "@/utils/session-storage";
 import { addTap, bpmFromTaps } from "@/utils/tap-tempo";
+import type {
+	TimeSignature,
+	TimeSignatureWritePlan,
+} from "@/utils/time-signature";
+import { AccentChip } from "./AccentChip";
 import { MetronomeButton } from "./MetronomeButton";
 
-const SIGNATURES = [
-	{ key: "fourFour", beats: 4 },
-	{ key: "threeFour", beats: 3 },
-	{ key: "sixEight", beats: 6 },
-	{ key: "twoFour", beats: 2 },
-] as const;
-
-type SignatureKey = (typeof SIGNATURES)[number]["key"];
-
-// Click gain multipliers per volume level; 0 is the muted level.
-const VOLUME_LEVELS = [
-	{ key: "mute", gain: 0 },
-	{ key: "soft", gain: 0.5 },
-	{ key: "normal", gain: 1 },
-	{ key: "loud", gain: 1.5 },
-] as const;
-
-type VolumeKey = (typeof VOLUME_LEVELS)[number]["key"];
+export interface AccentControl {
+	signature: TimeSignature | null;
+	planFor: (next: TimeSignature) => TimeSignatureWritePlan;
+	onChange: (next: TimeSignature) => void;
+	onClear: () => void;
+}
 
 interface BpmControlProps {
 	value: string;
@@ -31,6 +29,7 @@ interface BpmControlProps {
 	error: string | null;
 	onBlur: () => void;
 	stopRef?: MutableRefObject<(() => void) | null>;
+	accent?: AccentControl;
 }
 
 const BPM_MIN = 20;
@@ -50,13 +49,31 @@ export function BpmControl({
 	error,
 	onBlur,
 	stopRef,
+	accent,
 }: BpmControlProps) {
 	const { t } = useTranslation();
+	const { user } = useAuth();
 	const parsed = Number.parseInt(value.trim(), 10);
 	const isValid = !Number.isNaN(parsed);
-	const [signature, setSignature] = useState<SignatureKey>("fourFour");
-	const [volumeLevel, setVolumeLevel] = useState<VolumeKey>("normal");
+	const [accentOn, setAccentOn] = useState(false);
 	const tapsRef = useRef<number[]>([]);
+
+	useEffect(() => {
+		if (!user) return;
+		let active = true;
+		readMetronomeAccent(user.uid).then((saved) => {
+			if (active) setAccentOn(saved);
+		});
+		return () => {
+			active = false;
+		};
+	}, [user]);
+
+	const toggleAccent = useCallback(() => {
+		const next = !accentOn;
+		setAccentOn(next);
+		if (user) void writeMetronomeAccent(user.uid, next);
+	}, [accentOn, user]);
 
 	function adjust(delta: number) {
 		if (!isValid) return;
@@ -80,6 +97,8 @@ export function BpmControl({
 	}
 
 	const off = !isValid;
+	const beatsPerBar =
+		accentOn && accent?.signature ? accent.signature.beats : null;
 
 	return (
 		<View className="gap-4">
@@ -98,12 +117,19 @@ export function BpmControl({
 				{stopRef !== undefined && (
 					<MetronomeButton
 						bpm={value}
-						beatsPerBar={
-							SIGNATURES.find((s) => s.key === signature)?.beats ?? 4
-						}
-						volume={VOLUME_LEVELS.find((v) => v.key === volumeLevel)?.gain ?? 1}
+						beatsPerBar={beatsPerBar}
 						disabled={!!error}
 						stopRef={stopRef}
+					/>
+				)}
+				{accent && (
+					<AccentChip
+						accentOn={accentOn}
+						signature={accent.signature}
+						onToggleAccent={toggleAccent}
+						planFor={accent.planFor}
+						onChange={accent.onChange}
+						onClear={accent.onClear}
 					/>
 				)}
 			</View>
@@ -186,34 +212,6 @@ export function BpmControl({
 					/>
 				</View>
 			</View>
-			<SegmentedButtons
-				style={FULL}
-				value={signature}
-				onValueChange={(v) => setSignature(v as SignatureKey)}
-				buttons={SIGNATURES.map(({ key }) => ({
-					value: key,
-					label: t(`common.metronome.timeSignatures.${key}`),
-					accessibilityLabel: t("common.metronome.timeSignatureA11y", {
-						signature: t(`common.metronome.timeSignatures.${key}`),
-					}),
-					disabled: off,
-					style: BTN,
-				}))}
-			/>
-			<SegmentedButtons
-				style={FULL}
-				value={volumeLevel}
-				onValueChange={(v) => setVolumeLevel(v as VolumeKey)}
-				buttons={VOLUME_LEVELS.map(({ key }) => ({
-					value: key,
-					label: t(`common.metronome.volumeLevels.${key}`),
-					accessibilityLabel: t("common.metronome.volumeA11y", {
-						level: t(`common.metronome.volumeLevels.${key}`),
-					}),
-					disabled: off,
-					style: BTN,
-				}))}
-			/>
 			<HelperText type="error" visible={!!error}>
 				{error ?? ""}
 			</HelperText>

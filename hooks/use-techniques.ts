@@ -161,6 +161,7 @@ export function useUpdateTechnique() {
 				| "state"
 				| "type"
 				| "targetTempoBpm"
+				| "timeSignature"
 				| "notes"
 				| "lastPracticedAt"
 				| "lastQuality"
