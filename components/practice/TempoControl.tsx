@@ -289,6 +289,9 @@ export function TempoControl({
 						<View
 							style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}
 						>
+							{/* An untouched tempo displays the slider's minimum, where the
+							    thumb already sits — display only: the draft stays empty and
+							    an untouched tempo still saves as no tempo at all. */}
 							<Text
 								variant="displaySmall"
 								style={{
@@ -297,7 +300,7 @@ export function TempoControl({
 									borderBottomColor: theme.colors.outline,
 								}}
 							>
-								{isValid ? parsed : "—"}
+								{isValid ? parsed : range.min}
 							</Text>
 							<Text
 								variant="bodySmall"
