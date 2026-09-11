@@ -42,8 +42,8 @@ function setOnLine(value: boolean) {
 	});
 }
 
-function fire(type: "online" | "offline") {
-	act(() => {
+async function fire(type: "online" | "offline") {
+	await act(() => {
 		for (const listener of listeners.get(type) ?? []) listener();
 	});
 }
@@ -54,29 +54,29 @@ function Probe({ onValue }: { onValue: (v: boolean) => void }) {
 }
 
 describe("useOnlineStatus", () => {
-	it("seeds from navigator.onLine", () => {
+	it("seeds from navigator.onLine", async () => {
 		setOnLine(false);
 		const onValue = jest.fn();
-		render(<Probe onValue={onValue} />);
+		await render(<Probe onValue={onValue} />);
 		expect(onValue).toHaveBeenLastCalledWith(false);
 	});
 
-	it("goes offline on the offline event and back on the online event", () => {
+	it("goes offline on the offline event and back on the online event", async () => {
 		setOnLine(true);
 		const onValue = jest.fn();
-		render(<Probe onValue={onValue} />);
+		await render(<Probe onValue={onValue} />);
 		expect(onValue).toHaveBeenLastCalledWith(true);
 
-		fire("offline");
+		await fire("offline");
 		expect(onValue).toHaveBeenLastCalledWith(false);
 
-		fire("online");
+		await fire("online");
 		expect(onValue).toHaveBeenLastCalledWith(true);
 	});
 
-	it("stops listening once unmounted", () => {
-		const view = render(<Probe onValue={jest.fn()} />);
-		view.unmount();
+	it("stops listening once unmounted", async () => {
+		const view = await render(<Probe onValue={jest.fn()} />);
+		await view.unmount();
 		expect(listeners.get("offline")?.size ?? 0).toBe(0);
 		expect(listeners.get("online")?.size ?? 0).toBe(0);
 	});

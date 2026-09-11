@@ -83,7 +83,7 @@
 		"firebase-tools": "^15.28.1",
 		"jest": "^30.0.0",
 		"jest-expo": "~57.0.0",
-		"react-test-renderer": "19.2.6",
+		"test-renderer": "1.2",
 		"typescript": "6.0.3"
 	},
 	"private": true,

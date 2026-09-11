@@ -58,16 +58,18 @@ const BY_MODE: ByMode = {
 	},
 };
 
-function lastKey(props: Omit<ProbeProps, "onKey" | "onBpm">): ModeKey {
+async function lastKey(
+	props: Omit<ProbeProps, "onKey" | "onBpm">,
+): Promise<ModeKey> {
 	const onKey = jest.fn();
-	render(<Probe {...props} onKey={onKey} onBpm={() => {}} />);
+	await render(<Probe {...props} onKey={onKey} onBpm={() => {}} />);
 	return onKey.mock.calls[onKey.mock.calls.length - 1][0];
 }
 
 describe("useModeDrafts preselect", () => {
-	it("opens on the preselected hands + drill", () => {
+	it("opens on the preselected hands + drill", async () => {
 		expect(
-			lastKey({
+			await lastKey({
 				byMode: BY_MODE,
 				available: ["LH", "RH"],
 				drills: ["staccato"],
@@ -76,9 +78,9 @@ describe("useModeDrafts preselect", () => {
 		).toBe("RH.staccato");
 	});
 
-	it("opens on the preselected hands with the normal drill", () => {
+	it("opens on the preselected hands with the normal drill", async () => {
 		expect(
-			lastKey({
+			await lastKey({
 				byMode: BY_MODE,
 				available: ["LH", "RH"],
 				drills: ["staccato"],
@@ -87,9 +89,9 @@ describe("useModeDrafts preselect", () => {
 		).toBe("RH");
 	});
 
-	it("falls back to the heuristic without a preselect", () => {
+	it("falls back to the heuristic without a preselect", async () => {
 		expect(
-			lastKey({
+			await lastKey({
 				byMode: BY_MODE,
 				available: ["LH", "RH"],
 				drills: ["staccato"],
@@ -97,9 +99,9 @@ describe("useModeDrafts preselect", () => {
 		).toBe("LH");
 	});
 
-	it("ignores a drill the item no longer offers", () => {
+	it("ignores a drill the item no longer offers", async () => {
 		expect(
-			lastKey({
+			await lastKey({
 				byMode: BY_MODE,
 				available: ["LH", "RH"],
 				drills: [],
@@ -108,9 +110,9 @@ describe("useModeDrafts preselect", () => {
 		).toBe("LH");
 	});
 
-	it("ignores a hands mode the item no longer offers", () => {
+	it("ignores a hands mode the item no longer offers", async () => {
 		expect(
-			lastKey({
+			await lastKey({
 				byMode: BY_MODE,
 				available: ["HT"],
 				drills: [],
@@ -121,22 +123,21 @@ describe("useModeDrafts preselect", () => {
 });
 
 describe("useModeDrafts carryBpm", () => {
-	function seededBpm(props: Omit<ProbeProps, "onKey" | "onBpm">): {
-		key: ModeKey;
-		bpm: string;
-	} {
+	async function seededBpm(
+		props: Omit<ProbeProps, "onKey" | "onBpm">,
+	): Promise<{ key: ModeKey; bpm: string }> {
 		const onKey = jest.fn();
 		const onBpm = jest.fn();
-		render(<Probe {...props} onKey={onKey} onBpm={onBpm} />);
+		await render(<Probe {...props} onKey={onKey} onBpm={onBpm} />);
 		return {
 			key: onKey.mock.calls[onKey.mock.calls.length - 1][0],
 			bpm: onBpm.mock.calls[onBpm.mock.calls.length - 1][0],
 		};
 	}
 
-	it("carries a tempo typed before the section loaded into the opened mode", () => {
+	it("carries a tempo typed before the section loaded into the opened mode", async () => {
 		expect(
-			seededBpm({
+			await seededBpm({
 				byMode: BY_MODE,
 				available: ["LH", "RH"],
 				drills: [],
@@ -145,9 +146,9 @@ describe("useModeDrafts carryBpm", () => {
 		).toEqual({ key: "LH", bpm: "72" });
 	});
 
-	it("seeds from the stored tempo when nothing was typed", () => {
+	it("seeds from the stored tempo when nothing was typed", async () => {
 		expect(
-			seededBpm({ byMode: BY_MODE, available: ["LH", "RH"], drills: [] }),
+			await seededBpm({ byMode: BY_MODE, available: ["LH", "RH"], drills: [] }),
 		).toEqual({ key: "LH", bpm: "60" });
 	});
 });

@@ -66,9 +66,9 @@ function scheduledFrequencies(): number[] {
 }
 
 // Pushes the fake clock forward and lets the scheduler drain what is due.
-function runTo(ctx: FakeContext, time: number) {
+async function runTo(ctx: FakeContext, time: number) {
 	ctx.currentTime = time;
-	act(() => {
+	await act(() => {
 		jest.advanceTimersByTime(25);
 	});
 }
@@ -82,50 +82,50 @@ describe("useMetronome time signature", () => {
 		};
 	});
 
-	it("accents beat 1 and wraps every beats-per-bar clicks", () => {
-		const { result } = renderHook(() => useMetronome(120, 4));
-		act(() => {
+	it("accents beat 1 and wraps every beats-per-bar clicks", async () => {
+		const { result } = await renderHook(() => useMetronome(120, 4));
+		await act(() => {
 			result.current.toggle();
 		});
 		const ctx = FakeContext.instances[0];
 
-		runTo(ctx, 0); // beat 1
-		runTo(ctx, 2.0); // beats 2, 3, 4, 1
-		runTo(ctx, 4.0); // beats 2, 3, 4, 1
+		await runTo(ctx, 0); // beat 1
+		await runTo(ctx, 2.0); // beats 2, 3, 4, 1
+		await runTo(ctx, 4.0); // beats 2, 3, 4, 1
 
 		expect(scheduledFrequencies()).toEqual([
 			1320, 880, 880, 880, 1320, 880, 880, 880, 1320,
 		]);
 	});
 
-	it("starts a new bar when the time signature changes mid-run", () => {
-		const { result, rerender } = renderHook(
+	it("starts a new bar when the time signature changes mid-run", async () => {
+		const { result, rerender } = await renderHook(
 			({ beatsPerBar }: { beatsPerBar: number }) =>
 				useMetronome(120, beatsPerBar),
 			{ initialProps: { beatsPerBar: 4 } },
 		);
-		act(() => {
+		await act(() => {
 			result.current.toggle();
 		});
 		const ctx = FakeContext.instances[0];
-		runTo(ctx, 1.0); // 4/4: beats 1, 2, 3
+		await runTo(ctx, 1.0); // 4/4: beats 1, 2, 3
 
-		rerender({ beatsPerBar: 3 });
-		runTo(ctx, 3.0); // beat 4 of the old bar, then beat 1 of the new bar
+		await rerender({ beatsPerBar: 3 });
+		await runTo(ctx, 3.0); // beat 4 of the old bar, then beat 1 of the new bar
 
 		const freqs = scheduledFrequencies();
 		expect(freqs.slice(0, 3)).toEqual([1320, 880, 880]);
 		expect(freqs.slice(3)).toEqual([1320, 880, 880, 1320]);
 	});
 
-	it("clicks evenly with no accented beat when beatsPerBar is null", () => {
-		const { result } = renderHook(() => useMetronome(120, null));
-		act(() => {
+	it("clicks evenly with no accented beat when beatsPerBar is null", async () => {
+		const { result } = await renderHook(() => useMetronome(120, null));
+		await act(() => {
 			result.current.toggle();
 		});
 		const ctx = FakeContext.instances[0];
-		runTo(ctx, 0);
-		runTo(ctx, 2.0);
+		await runTo(ctx, 0);
+		await runTo(ctx, 2.0);
 
 		const freqs = scheduledFrequencies();
 		expect(freqs.length).toBeGreaterThan(0);
