@@ -17,17 +17,17 @@ function Probe({ onValue }: { onValue: (v: boolean) => void }) {
 describe("useFabVisible", () => {
 	afterEach(() => mockUseIsFocused.mockReset());
 
-	it("returns true when the screen is focused", () => {
+	it("returns true when the screen is focused", async () => {
 		mockUseIsFocused.mockReturnValue(true);
 		const onValue = jest.fn();
-		render(<Probe onValue={onValue} />);
+		await render(<Probe onValue={onValue} />);
 		expect(onValue).toHaveBeenLastCalledWith(true);
 	});
 
-	it("returns false when the screen is not focused", () => {
+	it("returns false when the screen is not focused", async () => {
 		mockUseIsFocused.mockReturnValue(false);
 		const onValue = jest.fn();
-		render(<Probe onValue={onValue} />);
+		await render(<Probe onValue={onValue} />);
 		expect(onValue).toHaveBeenLastCalledWith(false);
 	});
 });

@@ -32,26 +32,26 @@ describe("useAutoFocusOnMount", () => {
 
 	afterEach(() => jest.restoreAllMocks());
 
-	function flushRaf() {
+	async function flushRaf() {
 		const next = rafCallbacks.shift();
-		if (next) act(() => next(performance.now()));
+		if (next) await act(() => next(performance.now()));
 	}
 
-	it("calls focus once, after two animation frames", () => {
+	it("calls focus once, after two animation frames", async () => {
 		const focus = jest.fn();
-		render(<Probe focus={focus} />);
+		await render(<Probe focus={focus} />);
 		expect(focus).not.toHaveBeenCalled();
-		flushRaf();
+		await flushRaf();
 		expect(focus).not.toHaveBeenCalled();
-		flushRaf();
+		await flushRaf();
 		expect(focus).toHaveBeenCalledTimes(1);
 	});
 
-	it("does not call focus when disabled", () => {
+	it("does not call focus when disabled", async () => {
 		const focus = jest.fn();
-		render(<Probe focus={focus} enabled={false} />);
-		flushRaf();
-		flushRaf();
+		await render(<Probe focus={focus} enabled={false} />);
+		await flushRaf();
+		await flushRaf();
 		expect(focus).not.toHaveBeenCalled();
 	});
 });

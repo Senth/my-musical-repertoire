@@ -40,9 +40,9 @@ jest.mock("@react-native-community/slider", () => {
 	return { __esModule: true, default: MockSlider };
 });
 
-function renderTempo(value: string, onChangeText = jest.fn()) {
+async function renderTempo(value: string, onChangeText = jest.fn()) {
 	const onBlur = jest.fn();
-	const screen = render(
+	const screen = await render(
 		<TempoControl
 			value={value}
 			onChangeText={onChangeText}
@@ -54,20 +54,20 @@ function renderTempo(value: string, onChangeText = jest.fn()) {
 }
 
 describe("TempoControl with no BPM set", () => {
-	it("displays the slider minimum, not a blank", () => {
-		const { screen } = renderTempo("");
+	it("displays the slider minimum, not a blank", async () => {
+		const { screen } = await renderTempo("");
 		expect(screen.getByText("20")).toBeTruthy();
 	});
 
-	it("never pushes the displayed default upward — an untouched tempo stays unset", () => {
-		const { onChangeText } = renderTempo("");
+	it("never pushes the displayed default upward — an untouched tempo stays unset", async () => {
+		const { onChangeText } = await renderTempo("");
 		expect(onChangeText).not.toHaveBeenCalled();
 		// The save path reads the same empty draft: no tempo, not 20.
 		expect(parseBpm("")).toBeNull();
 	});
 
-	it("still displays the typed tempo when one is set", () => {
-		const { screen, onChangeText } = renderTempo("96");
+	it("still displays the typed tempo when one is set", async () => {
+		const { screen, onChangeText } = await renderTempo("96");
 		expect(screen.getByText("96")).toBeTruthy();
 		expect(onChangeText).not.toHaveBeenCalled();
 	});
