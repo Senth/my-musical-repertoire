@@ -484,6 +484,11 @@
 				"offline": "You are offline. Deleting an account needs a connection."
 			}
 		},
+		"exportData": {
+			"body": "Download everything stored for your account as one JSON file: pieces, sections, techniques, practice logs, and session presets.",
+			"button": "Download my data",
+			"error": "Could not export your data. Please try again."
+		},
 		"login": {
 			"title": "Sign In",
 			"titleRegister": "Register",
