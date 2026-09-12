@@ -55,8 +55,9 @@ describe("playBlockEndCue", () => {
 
 	it("plays a fading tone on web and closes the context", () => {
 		const audio = fakeAudioContext();
+		// jest.fn mocks are constructible; the source calls `new AudioContext()`.
 		(globalThis as { window?: object }).window = {
-			AudioContext: () => audio.ctx,
+			AudioContext: jest.fn(() => audio.ctx),
 		};
 
 		playBlockEndCue();
@@ -79,7 +80,7 @@ describe("playBlockEndCue", () => {
 	it("falls back to webkitAudioContext", () => {
 		const audio = fakeAudioContext();
 		(globalThis as { window?: object }).window = {
-			webkitAudioContext: () => audio.ctx,
+			webkitAudioContext: jest.fn(() => audio.ctx),
 		};
 
 		playBlockEndCue();
@@ -105,9 +106,9 @@ describe("playBlockEndCue", () => {
 
 	it("swallows audio errors", () => {
 		(globalThis as { window?: object }).window = {
-			AudioContext: () => {
+			AudioContext: jest.fn(() => {
 				throw new Error("no audio device");
-			},
+			}),
 		};
 
 		expect(() => playBlockEndCue()).not.toThrow();
