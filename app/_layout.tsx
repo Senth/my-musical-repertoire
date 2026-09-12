@@ -11,6 +11,15 @@ import { UpdateBanner } from "@/components/ui/UpdateBanner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
+// react-native-worklets 0.12 flushes UI work with requestAnimationFrame, which
+// the node SSR runtime does not provide. The fallback only ever runs where rAF
+// is missing (server render); web, native and tests already have it.
+globalThis.requestAnimationFrame ??= ((callback: (time: number) => void) =>
+	setTimeout(
+		() => callback(Date.now()),
+		0,
+	)) as unknown as typeof globalThis.requestAnimationFrame;
+
 const lightTheme = {
 	...MD3LightTheme,
 	colors: {

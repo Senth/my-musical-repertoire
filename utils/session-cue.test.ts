@@ -1,11 +1,16 @@
+import { Platform } from "react-native";
 import { playBlockEndCue } from "./session-cue";
 
-const mockPlatform = { OS: "web" };
-
-jest.mock("react-native/Libraries/Utilities/Platform", () => ({
+// react-native 0.86 stopped routing `react-native`'s Platform export through
+// the deep `Libraries/Utilities/Platform` path, so mock the public module.
+jest.mock("react-native", () => ({
 	__esModule: true,
-	default: mockPlatform,
+	Platform: { OS: "web" },
 }));
+
+const setOS = (os: string) => {
+	(Platform as { OS: string }).OS = os;
+};
 
 function fakeAudioContext() {
 	const log: string[] = [];
@@ -50,6 +55,7 @@ describe("playBlockEndCue", () => {
 
 	afterEach(() => {
 		jest.useRealTimers();
+		setOS("web");
 		delete (globalThis as { window?: unknown }).window;
 	});
 
@@ -88,7 +94,7 @@ describe("playBlockEndCue", () => {
 	});
 
 	it("stays quiet off-web", () => {
-		mockPlatform.OS = "ios";
+		setOS("ios");
 		const ctor = jest.fn();
 		(globalThis as { window?: object }).window = { AudioContext: ctor };
 

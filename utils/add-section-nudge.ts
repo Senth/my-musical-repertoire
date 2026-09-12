@@ -21,7 +21,7 @@ export function sectionNudge(
 	piece: Piece | null | undefined,
 	sections: Section[],
 ): SectionNudge | null {
-	if (!piece || piece.state !== "learning") return null;
+	if (piece?.state !== "learning") return null;
 	if (piece.allSectionsAdded) return null;
 
 	const active = sections.filter(
