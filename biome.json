@@ -12,5 +12,17 @@
 			"!.emulator-seed",
 			"!.tmp"
 		]
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["assets/**"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"noSvgWithoutTitle": "off"
+					}
+				}
+			}
+		}
+	]
 }

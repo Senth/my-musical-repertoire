@@ -2166,30 +2166,30 @@ describe("run-through credit invariants", () => {
 			expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b", "c"]);
 		});
 
-		it.each([
-			"maintenance",
-			"performance",
-		] as const)("takes only learning and stabilizing sections out of a %s piece", (state) => {
-			const pieces: Piece[] = [
-				makePiece({ id: "pm", state, lastPracticed: days }),
-			];
-			const sections: Section[] = [
-				makeSection({ id: "a", pieceId: "pm", phase: "learning", order: 0 }),
-				makeSection({
-					id: "b",
-					pieceId: "pm",
-					phase: "stabilizing",
-					order: 1,
-				}),
-				makeSection({
-					id: "c",
-					pieceId: "pm",
-					phase: "maintenance",
-					order: 2,
-				}),
-			];
-			const pool = stabilizingLinePool(pieces, sections, NOW);
-			expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b"]);
-		});
+		it.each(["maintenance", "performance"] as const)(
+			"takes only learning and stabilizing sections out of a %s piece",
+			(state) => {
+				const pieces: Piece[] = [
+					makePiece({ id: "pm", state, lastPracticed: days }),
+				];
+				const sections: Section[] = [
+					makeSection({ id: "a", pieceId: "pm", phase: "learning", order: 0 }),
+					makeSection({
+						id: "b",
+						pieceId: "pm",
+						phase: "stabilizing",
+						order: 1,
+					}),
+					makeSection({
+						id: "c",
+						pieceId: "pm",
+						phase: "maintenance",
+						order: 2,
+					}),
+				];
+				const pool = stabilizingLinePool(pieces, sections, NOW);
+				expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b"]);
+			},
+		);
 	});
 });

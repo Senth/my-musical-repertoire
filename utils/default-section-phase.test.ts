@@ -35,14 +35,12 @@ describe("defaultSectionPhase", () => {
 		);
 	});
 
-	it.each([
-		"maintenance",
-		"performance",
-		"on_hold",
-		"shelved",
-	] as const)("defaults to stabilizing for a %s piece", (state) => {
-		expect(defaultSectionPhase(piece({ state }), [])).toBe("stabilizing");
-	});
+	it.each(["maintenance", "performance", "on_hold", "shelved"] as const)(
+		"defaults to stabilizing for a %s piece",
+		(state) => {
+			expect(defaultSectionPhase(piece({ state }), [])).toBe("stabilizing");
+		},
+	);
 
 	it("defaults to learning without a piece", () => {
 		expect(defaultSectionPhase(null, [])).toBe("learning");
