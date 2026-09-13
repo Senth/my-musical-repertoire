@@ -10,8 +10,8 @@ import {
 	daysSince,
 	NEEDS_WORK_WEIGHT,
 	needsWorkTerm,
-	PHASE_SCORE,
 	type SectionCandidate,
+	STATE_SCORE,
 	scoreMaintenancePiece,
 	scoreTechnique,
 } from "./planner-scoring";
@@ -88,11 +88,11 @@ function reasonForCandidate(
 
 	// Mirrors the three terms of `scoreSectionCandidate`: whichever contributed
 	// most is the honest answer to "why this passage".
-	const phase = candidate.phase;
+	const state = candidate.state;
 	const gap = bpmGap(target, currentBpm);
-	const daysTerm = PHASE_SCORE[phase] * days;
-	const bpmTerm = BPM_GAP_WEIGHT[phase] * gap;
-	const workTerm = NEEDS_WORK_WEIGHT[phase] * needsWorkTerm(quality, effort);
+	const daysTerm = STATE_SCORE[state] * days;
+	const bpmTerm = BPM_GAP_WEIGHT[state] * gap;
+	const workTerm = NEEDS_WORK_WEIGHT[state] * needsWorkTerm(quality, effort);
 
 	if (workTerm > daysTerm && workTerm >= bpmTerm) {
 		return {

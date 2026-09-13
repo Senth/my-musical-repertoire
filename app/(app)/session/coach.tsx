@@ -29,7 +29,7 @@ import {
 import { useActiveSession } from "@/hooks/use-active-session";
 import { useCoachExitGuard } from "@/hooks/use-coach-exit-guard";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
-import { useChangeSectionPhase } from "@/hooks/use-section-phase";
+import { useChangeSectionState } from "@/hooks/use-section-state";
 import { useSessionPause } from "@/hooks/use-session-pause";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import type {
@@ -58,7 +58,7 @@ export default function CoachScreen() {
 	const { user } = useAuth();
 	const { pieces } = usePieces();
 	const { updatePiece } = useUpdatePiece();
-	const { changeSectionPhase, dismissPhaseOffer } = useChangeSectionPhase();
+	const { changeSectionState, dismissPhaseOffer } = useChangeSectionState();
 	const { session, setSession, loaded } = useActiveSession(user);
 	const [saving, setSaving] = useState(false);
 	const [phaseOffer, setPhaseOffer] = useState<PendingPhaseOffer | null>(null);
@@ -236,7 +236,7 @@ export default function CoachScreen() {
 					return;
 				}
 			}
-			// A phase nudge raised by the save interrupts here, before the block
+			// A state nudge raised by the save interrupts here, before the block
 			// advances — the block body is gone by the time it does.
 			const pending = phaseOfferRef.current;
 			phaseOfferRef.current = null;
@@ -270,7 +270,7 @@ export default function CoachScreen() {
 					priorPhaseChangedAt: pending.priorPhaseChangedAt,
 					sessionId: pending.sessionId,
 				};
-				if (accepted) await changeSectionPhase(event);
+				if (accepted) await changeSectionState(event);
 				else await dismissPhaseOffer(event);
 			} catch {
 				// Non-fatal: the block still advances rather than trapping the session.
@@ -281,7 +281,7 @@ export default function CoachScreen() {
 			}
 			await continueAfterSave();
 		},
-		[phaseOffer, changeSectionPhase, dismissPhaseOffer, continueAfterSave, t],
+		[phaseOffer, changeSectionState, dismissPhaseOffer, continueAfterSave, t],
 	);
 
 	const handleDurationSave = useCallback(

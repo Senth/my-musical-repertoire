@@ -1,5 +1,5 @@
 import type { PieceState } from "@/models/piece";
-import type { SectionPhase } from "@/models/section";
+import type { SectionState } from "@/models/section";
 import type { TechniqueState } from "@/models/technique";
 
 /**
@@ -24,7 +24,7 @@ interface StateVisualPair {
 	dark: StateVisual;
 }
 
-/** Shared hues, so a phase and a piece state that mean the same thing look the same. */
+/** Shared hues, so a state and a piece state that mean the same thing look the same. */
 const HUE = {
 	performance: { light: "#794800", dark: "#F7BE83" },
 	learning: { light: "#60438D", dark: "#D6B9FF" },
@@ -72,7 +72,7 @@ const TECHNIQUE_STATE_VISUALS: Record<TechniqueState, StateVisualPair> = {
 	retired: visual("retired", "none", true),
 };
 
-const SECTION_PHASE_VISUALS: Record<SectionPhase, StateVisualPair> = {
+const SECTION_STATE_VISUALS: Record<SectionState, StateVisualPair> = {
 	not_started: visual("dormant", "dormant"),
 	learning: visual("learning", "learning"),
 	stabilizing: visual("stabilizing", "stabilizing"),
@@ -88,8 +88,8 @@ export const pieceStateVisual = (state: PieceState, dark: boolean) =>
 export const techniqueStateVisual = (state: TechniqueState, dark: boolean) =>
 	pick(TECHNIQUE_STATE_VISUALS[state], dark);
 
-export const sectionPhaseVisual = (phase: SectionPhase, dark: boolean) =>
-	pick(SECTION_PHASE_VISUALS[phase], dark);
+export const sectionStateVisual = (state: SectionState, dark: boolean) =>
+	pick(SECTION_STATE_VISUALS[state], dark);
 
 /** `#RRGGBB` -> `rgba(r, g, b, alpha)`, since RN styles take no colour-mix(). */
 export function withAlpha(hex: string, alpha: number): string {

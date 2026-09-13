@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePieces } from "@/hooks/use-pieces";
-import type { Section, SectionPhase } from "@/models/section";
+import type { Section, SectionState } from "@/models/section";
 import { awaitWrite } from "@/utils/firestore-write";
 import { byModeFromFirestore } from "@/utils/practice-modes";
 import { timeSignatureFromFirestore } from "@/utils/time-signature";
@@ -23,7 +23,9 @@ import { timeSignatureFromFirestore } from "@/utils/time-signature";
 interface FirestoreSection {
 	label: string;
 	order: number;
-	phase: SectionPhase;
+	state?: SectionState;
+	/** Legacy field name from before #84; read as a fallback until the migration has run everywhere. */
+	phase?: SectionState;
 	startBar?: number | null;
 	endBar?: number | null;
 	targetBpmOverride?: number | null;
@@ -50,7 +52,8 @@ function fromFirestore(
 		userId,
 		label: data.label,
 		order: data.order,
-		phase: data.phase,
+		// Dual-read during the #84 rollout: pre-migration docs carry `phase`.
+		state: (data.state ?? data.phase) as SectionState,
 		startBar: data.startBar ?? null,
 		endBar: data.endBar ?? null,
 		targetBpmOverride: data.targetBpmOverride ?? null,
@@ -195,7 +198,7 @@ export function useUpdateSection() {
 				Section,
 				| "label"
 				| "order"
-				| "phase"
+				| "state"
 				| "startBar"
 				| "endBar"
 				| "targetBpmOverride"

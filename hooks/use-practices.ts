@@ -25,7 +25,7 @@ import {
 } from "@/utils/practice-modes";
 import { computeRunThroughEffects } from "@/utils/run-through-credit";
 import { useUpdatePiece } from "./use-pieces";
-import { queuePhaseChange } from "./use-section-phase";
+import { queueStateChange } from "./use-section-state";
 
 export interface SavePracticeInput {
 	piece: Piece;
@@ -50,7 +50,7 @@ export function useSavePractice() {
 
 	/**
 	 * Saves a whole-piece run-through: the piece log and piece fields, plus the
-	 * run-through's effect on the piece's maintenance-phase sections — credit for
+	 * run-through's effect on the piece's maintenance-state sections — credit for
 	 * the ones that held together, demotion for the ones ticked as shaky.
 	 *
 	 * One batch for everything, so the save is atomic (never a demoted section
@@ -126,10 +126,10 @@ export function useSavePractice() {
 		}
 
 		// Demotions go through the shared helper so they stamp `phaseChangedAt`
-		// and leave an audit row like every other phase change.
+		// and leave an audit row like every other state change.
 		for (const sectionId of demotions) {
 			const demoted = sections.find((s) => s.id === sectionId);
-			queuePhaseChange(batch, user.uid, {
+			queueStateChange(batch, user.uid, {
 				pieceId,
 				sectionId,
 				fromPhase: "maintenance",

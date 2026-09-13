@@ -26,8 +26,8 @@ const PIECES = [
 		bpm: "132",
 		minutes: "5",
 		sections: [
-			{ label: "A section", phase: "learning", from: "1", to: "16" },
-			{ label: "B section", phase: "learning", from: "17", to: "32" },
+			{ label: "A section", state: "learning", from: "1", to: "16" },
+			{ label: "B section", state: "learning", from: "17", to: "32" },
 		],
 	},
 	{
@@ -38,8 +38,8 @@ const PIECES = [
 		bpm: "96",
 		minutes: "2",
 		sections: [
-			{ label: "Exposition", phase: "stabilizing", from: "1", to: "6" },
-			{ label: "Middle entries", phase: "learning", from: "7", to: "14" },
+			{ label: "Exposition", state: "stabilizing", from: "1", to: "6" },
+			{ label: "Middle entries", state: "learning", from: "7", to: "14" },
 		],
 	},
 	{
@@ -50,7 +50,7 @@ const PIECES = [
 		bpm: "120",
 		minutes: "4",
 		sections: [
-			{ label: "Main theme", phase: "maintenance", from: "1", to: "22" },
+			{ label: "Main theme", state: "maintenance", from: "1", to: "22" },
 		],
 	},
 	{
@@ -147,8 +147,8 @@ test("build the emulator fixture", async ({ page }) => {
 			);
 			await choose(
 				page,
-				t("screen.pieceSections.form.phaseLabel"),
-				t(`section.phase.${section.phase}`),
+				t("screen.pieceSections.form.stateLabel"),
+				t(`section.state.${section.state}`),
 			);
 			await fill(
 				page,

@@ -34,7 +34,7 @@ describe("makeSection", () => {
 			userId: "u",
 			label: "Sec",
 			order: 0,
-			phase: "learning",
+			state: "learning",
 			archived: false,
 			byMode: {},
 		});
@@ -45,10 +45,10 @@ describe("makeSection", () => {
 			id: "s2",
 			pieceId: "p1",
 			order: 3,
-			phase: "stabilizing",
+			state: "stabilizing",
 		});
 		expect(section.order).toBe(3);
-		expect(section.phase).toBe("stabilizing");
+		expect(section.state).toBe("stabilizing");
 	});
 });
 

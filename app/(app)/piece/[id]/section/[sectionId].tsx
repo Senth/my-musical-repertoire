@@ -23,9 +23,9 @@ import {
 	useUpdateSection,
 } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
-import { SECTION_PHASES, type SectionPhase } from "@/models/section";
+import { SECTION_STATES, type SectionState } from "@/models/section";
 import { space } from "@/theme/tokens";
-import { defaultSectionPhase } from "@/utils/default-section-phase";
+import { defaultSectionState } from "@/utils/default-section-state";
 
 export default function SectionEditScreen() {
 	const { t } = useTranslation();
@@ -49,7 +49,7 @@ export default function SectionEditScreen() {
 	const { archiveSection } = useArchiveSection();
 
 	const [label, setLabel] = useState("");
-	const [phase, setPhase] = useState<SectionPhase>("learning");
+	const [state, setState] = useState<SectionState>("learning");
 	const [startBarText, setStartBarText] = useState("");
 	const [endBarText, setEndBarText] = useState("");
 	const [notes, setNotes] = useState("");
@@ -61,7 +61,7 @@ export default function SectionEditScreen() {
 	const [archiveLoading, setArchiveLoading] = useState(false);
 	const hasSeeded = useRef(false);
 	const hasDefaulted = useRef(false);
-	const phaseTouched = useRef(false);
+	const stateTouched = useRef(false);
 	const labelTouched = useRef(false);
 	const labelInputRef = useAutoFocusOnMount(isNew);
 
@@ -88,14 +88,14 @@ export default function SectionEditScreen() {
 	useEffect(() => {
 		if (isNew || hasSeeded.current || !section) return;
 		setLabel(section.label);
-		setPhase(section.phase);
+		setState(section.state);
 		setStartBarText(section.startBar?.toString() ?? "");
 		setEndBarText(section.endBar?.toString() ?? "");
 		setNotes(section.notes ?? "");
 		hasSeeded.current = true;
 	}, [isNew, section]);
 
-	// A new section opens on the phase the piece's state suggests, computed once
+	// A new section opens on the state the piece's own state suggests, computed once
 	// the piece and its sections have arrived so the learning-section check is
 	// real. A pick already made from the dropdown wins — Firestore data can
 	// arrive after it.
@@ -103,12 +103,12 @@ export default function SectionEditScreen() {
 		if (
 			!isNew ||
 			hasDefaulted.current ||
-			phaseTouched.current ||
+			stateTouched.current ||
 			sectionsLoading ||
 			!piece
 		)
 			return;
-		setPhase(defaultSectionPhase(piece, sections));
+		setState(defaultSectionState(piece, sections));
 		hasDefaulted.current = true;
 	}, [isNew, sectionsLoading, piece, sections]);
 
@@ -135,7 +135,7 @@ export default function SectionEditScreen() {
 		try {
 			const sectionData = {
 				label: label.trim(),
-				phase,
+				state,
 				startBar,
 				endBar,
 				targetBpmOverride: null as number | null,
@@ -145,12 +145,12 @@ export default function SectionEditScreen() {
 			if (isNew) {
 				await addSection(pieceId, sectionData);
 			} else if (sectionId) {
-				// Every phase change stamps `phaseChangedAt` so the cycling guard can
+				// Every state change stamps `phaseChangedAt` so the cycling guard can
 				// see it. No transition row here — the form is a field editor, not one
 				// of the coached triggers the audit trail is about.
 				await updateSection(pieceId, sectionId, {
 					...sectionData,
-					...(section && phase !== section.phase
+					...(section && state !== section.state
 						? { phaseChangedAt: new Date() }
 						: {}),
 				});
@@ -163,9 +163,9 @@ export default function SectionEditScreen() {
 		}
 	};
 
-	const phaseOptions = SECTION_PHASES.map((p) => ({
+	const stateOptions = SECTION_STATES.map((p) => ({
 		value: p,
-		label: t(`section.phase.${p}`),
+		label: t(`section.state.${p}`),
 	}));
 
 	const formContent = (
@@ -185,12 +185,12 @@ export default function SectionEditScreen() {
 			/>
 
 			<DropdownField
-				label={t("screen.pieceSections.form.phaseLabel")}
-				value={phase}
-				options={phaseOptions}
+				label={t("screen.pieceSections.form.stateLabel")}
+				value={state}
+				options={stateOptions}
 				onChange={(v) => {
-					phaseTouched.current = true;
-					setPhase((v as SectionPhase) ?? "learning");
+					stateTouched.current = true;
+					setState((v as SectionState) ?? "learning");
 				}}
 			/>
 

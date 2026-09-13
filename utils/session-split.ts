@@ -7,7 +7,7 @@
  * into several capped blocks.
  *
  * The learning line no longer splits by a fixed share here: it picks blocks
- * greedily off one score-ranked pool and sizes each by the phase it landed on
+ * greedily off one score-ranked pool and sizes each by the state it landed on
  * (`session-planner.pickRepertoireLearningBlocks`). Only the bounds live here.
  *
  * Everything here is pure arithmetic on fractional minutes. Display rounding is
