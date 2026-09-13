@@ -81,7 +81,7 @@
 		"jest": "^30.0.0",
 		"jest-expo": "~57.0.0",
 		"test-renderer": "1.2",
-		"typescript": "6.0.3"
+		"typescript": "7.0.2"
 	},
 	"private": true,
 	"resolutions": {
