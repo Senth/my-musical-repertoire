@@ -1,12 +1,13 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
 import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
+import { ScreenContent } from "@/components/ui/ScreenContent";
 import { MetaChip } from "@/components/ui/StateChip";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
@@ -70,74 +71,72 @@ export default function TechniqueDetailScreen() {
 				/>
 			</Appbar.Header>
 
-			<ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-				<View className="w-full max-w-xl self-center">
-					{/* Header info */}
-					<View className="px-4 pt-4 gap-2">
-						<View className="flex-row items-center gap-2 flex-wrap">
-							<TechniqueStateChip state={item.state} />
-							{item.type && (
-								<MetaChip
-									label={t(
-										`technique.type.${item.type}` as Parameters<typeof t>[0],
-									)}
-								/>
-							)}
-						</View>
+			<ScreenContent gap={0} paddingBottom={40}>
+				{/* Header info */}
+				<View className="pt-4 gap-2">
+					<View className="flex-row items-center gap-2 flex-wrap">
+						<TechniqueStateChip state={item.state} />
+						{item.type && (
+							<MetaChip
+								label={t(
+									`technique.type.${item.type}` as Parameters<typeof t>[0],
+								)}
+							/>
+						)}
+					</View>
+					<Text
+						variant="bodyMedium"
+						style={{ color: theme.colors.onSurfaceVariant }}
+					>
+						{t("screen.techniqueDetail.lastPracticed", {
+							when: formatDaysAgo(item.lastPracticedAt, t),
+						})}
+					</Text>
+					{item.targetTempoBpm != null && (
 						<Text
 							variant="bodyMedium"
 							style={{ color: theme.colors.onSurfaceVariant }}
 						>
-							{t("screen.techniqueDetail.lastPracticed", {
-								when: formatDaysAgo(item.lastPracticedAt, t),
+							{t("screen.techniqueDetail.targetBpm", {
+								bpm: item.targetTempoBpm,
 							})}
 						</Text>
-						{item.targetTempoBpm != null && (
-							<Text
-								variant="bodyMedium"
-								style={{ color: theme.colors.onSurfaceVariant }}
-							>
-								{t("screen.techniqueDetail.targetBpm", {
-									bpm: item.targetTempoBpm,
-								})}
-							</Text>
-						)}
-					</View>
-
-					{/* Practice button */}
-					<View className="px-4 pt-4">
-						<Button
-							mode="contained"
-							onPress={() =>
-								router.push(`/technique/${id}/practice?from=technique-detail`)
-							}
-							contentStyle={{ paddingVertical: 4 }}
-						>
-							{t("screen.techniqueDetail.practice")}
-						</Button>
-					</View>
-
-					{item.notes && (
-						<>
-							<Divider className="mt-6" />
-							<View className="px-4 pt-4 gap-2">
-								<Text
-									variant="titleSmall"
-									style={{ color: theme.colors.onSurfaceVariant }}
-								>
-									{t("screen.techniqueDetail.notes")}
-								</Text>
-								<Text
-									variant="bodyMedium"
-									style={{ color: theme.colors.onSurface }}
-								>
-									{item.notes}
-								</Text>
-							</View>
-						</>
 					)}
 				</View>
-			</ScrollView>
+
+				{/* Practice button */}
+				<View className="pt-4">
+					<Button
+						mode="contained"
+						onPress={() =>
+							router.push(`/technique/${id}/practice?from=technique-detail`)
+						}
+						contentStyle={{ paddingVertical: 4 }}
+					>
+						{t("screen.techniqueDetail.practice")}
+					</Button>
+				</View>
+
+				{item.notes && (
+					<>
+						<Divider className="mt-6" />
+						<View className="pt-4 gap-2">
+							<Text
+								variant="titleSmall"
+								style={{ color: theme.colors.onSurfaceVariant }}
+							>
+								{t("screen.techniqueDetail.notes")}
+							</Text>
+							<Text
+								variant="bodyMedium"
+								style={{ color: theme.colors.onSurface }}
+							>
+								{item.notes}
+							</Text>
+						</View>
+					</>
+				)}
+			</ScreenContent>
 
 			<DeleteTechniqueDialog
 				visible={deleteDialogVisible}

@@ -1,5 +1,6 @@
 import { ScrollView, View } from "react-native";
 import { Button, Chip } from "react-native-paper";
+import { ScreenContent } from "@/components/ui/ScreenContent";
 
 export interface FilterPillItem {
 	id: string;
@@ -28,36 +29,36 @@ export function FilterPillRow({
 	if (pills.length === 0) return null;
 
 	return (
-		<ScrollView
-			horizontal
-			showsHorizontalScrollIndicator={false}
-			// A ScrollView grows by default; left unchecked this horizontal row
-			// would claim half the screen's height and push the list off-screen.
-			style={{ flexGrow: 0, flexShrink: 0 }}
-			contentContainerStyle={{
-				paddingHorizontal: 16,
-				paddingBottom: 8,
-				gap: 8,
-				alignItems: "center",
-			}}
-		>
-			{pills.map((pill) => (
-				<Chip
-					key={pill.id}
-					compact
-					closeIcon="close"
-					onClose={() => onRemove(pill.id)}
-					closeIconAccessibilityLabel={pill.removeLabel}
-					onPress={() => onRemove(pill.id)}
-				>
-					{pill.label}
-				</Chip>
-			))}
-			<View>
-				<Button compact mode="text" onPress={onClearAll}>
-					{clearAllLabel}
-				</Button>
-			</View>
-		</ScrollView>
+		<ScreenContent gap={0} scroll={false} paddingTop={0} paddingBottom={8}>
+			<ScrollView
+				horizontal
+				showsHorizontalScrollIndicator={false}
+				// A ScrollView grows by default; left unchecked this horizontal row
+				// would claim half the screen's height and push the list off-screen.
+				style={{ flexGrow: 0, flexShrink: 0 }}
+				contentContainerStyle={{
+					gap: 8,
+					alignItems: "center",
+				}}
+			>
+				{pills.map((pill) => (
+					<Chip
+						key={pill.id}
+						compact
+						closeIcon="close"
+						onClose={() => onRemove(pill.id)}
+						closeIconAccessibilityLabel={pill.removeLabel}
+						onPress={() => onRemove(pill.id)}
+					>
+						{pill.label}
+					</Chip>
+				))}
+				<View>
+					<Button compact mode="text" onPress={onClearAll}>
+						{clearAllLabel}
+					</Button>
+				</View>
+			</ScrollView>
+		</ScreenContent>
 	);
 }

@@ -99,7 +99,7 @@ export function SectionDetailRow({
 						opacity: pressed ? 0.7 : 1,
 					})}
 				>
-					<View className="py-3 px-4 gap-1">
+					<View className="py-3 gap-1">
 						<View className="flex-row items-center gap-2 flex-wrap">
 							<Text variant="bodyLarge">{section.label}</Text>
 							{barRangeText != null && (

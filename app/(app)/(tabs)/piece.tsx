@@ -446,13 +446,13 @@ export default function PiecesScreen() {
 			className="flex-1"
 			style={{ backgroundColor: theme.colors.background }}
 		>
-			<View className="px-4 pt-3 pb-2">
+			<ScreenContent gap={0} scroll={false} paddingTop={12} paddingBottom={8}>
 				<Searchbar
 					placeholder={t("screen.pieces.searchPlaceholder")}
 					value={searchQuery}
 					onChangeText={setSearchQuery}
 				/>
-			</View>
+			</ScreenContent>
 
 			<FilterPillRow
 				pills={pillItems}

@@ -69,6 +69,15 @@ export const ROUTES: { path: string; ready: string }[] = [
 	{ path: "/technique", ready: t("screen.techniques.title") },
 	{ path: "/piece/add", ready: t("screen.addPiece.title") },
 	{ path: "/technique/add", ready: t("screen.addTechnique.title") },
+	// Detail routes, on the same fixture ids as the practice routes below.
+	{
+		path: "/piece/Sa8Ub1cHaGRDMWeoF5AU",
+		ready: t("screen.pieceDetail.practice"),
+	},
+	{
+		path: "/technique/IG3UUL73rWTEUHFfR3X0",
+		ready: t("screen.techniqueDetail.practice"),
+	},
 	// Practice routes. The ids are read off the Balanced session the seed
 	// produces: piece Sa8Ub1cHaGRDMWeoF5AU, its section hRsrYuP0jnyDjIfev6W5
 	// (of piece jcJQY9qV1R5kVoc2SdMx), technique IG3UUL73rWTEUHFfR3X0.
