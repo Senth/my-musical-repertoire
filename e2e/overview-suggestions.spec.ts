@@ -64,11 +64,22 @@ async function choose(page: Page, label: string, option: string) {
 	).toHaveCount(0, { timeout: 10_000 });
 }
 
-/** Creates a piece and lands on its detail page, returning that page's URL. */
+/**
+ * Creates a piece and lands on its detail page, returning that page's URL.
+ *
+ * Visits `/piece` first so the form's Save has history to goBack() to: that
+ * navigation happens only after the write is acked, and returning to the list
+ * client-side keeps the page — and the in-flight addDoc — alive. A direct
+ * `page.goto("/piece/add")` has no history to pop, and reloading the page
+ * inside the ack window kills the write before it is durably queued, so the
+ * piece silently never exists and whichever test asserts on it next fails
+ * (#168).
+ */
 async function addPiece(
 	page: Page,
 	opts: { title: string; state: "learning" | "stabilizing" },
 ): Promise<string> {
+	await page.goto("/piece");
 	await page.goto("/piece/add");
 	await fill(page, t("screen.addPiece.titleLabel"), opts.title);
 	await fill(page, t("screen.addPiece.composerLabel"), COMPOSER);
@@ -79,7 +90,6 @@ async function addPiece(
 	);
 	await save(page, t("screen.addPiece.save"));
 
-	await page.goto("/piece");
 	await page.getByText(opts.title, { exact: true }).first().click();
 	await expect(
 		page.getByText(t("screen.pieceDetail.sections"), { exact: true }),
@@ -126,6 +136,13 @@ async function addSection(
 const DAY_MS = 86_400_000;
 
 /**
+ * One fixed instant for the whole file: every `setFixedTime` lands on the same
+ * clock, so the logs written under it carry identical timestamps and ranking
+ * cannot depend on when a sibling test happened to reach this call (#168).
+ */
+const SHIFTED_NOW = Date.now() + 2 * DAY_MS;
+
+/**
  * Moves the browser's clock two days ahead of the real one, so a log written
  * before the call reads as practised two days ago and one written after it
  * reads as today. `scorableModes` only ever considers a mode that already has
@@ -139,7 +156,7 @@ const DAY_MS = 86_400_000;
  * toast — an overlay that then swallows the click on Save.
  */
 async function twoDaysPass(page: Page) {
-	await page.clock.setFixedTime(Date.now() + 2 * DAY_MS);
+	await page.clock.setFixedTime(SHIFTED_NOW);
 }
 
 /** Logs a section practice and returns to the comparison screen. */
@@ -477,6 +494,13 @@ test("A learning piece with no passages that keeps being suggested is offered to
 	await addPiece(page, { title: controlTitle, state: "learning" });
 	// Played through once, then a day passes: the card returns, and with it the offer.
 	await twoDaysPass(page);
+
+	// The Coda section (test 7) competes for a learning slot on a score tied
+	// with the split candidate, and the tie is broken by document order — a
+	// coin flip per run (#168). One more right-hand drill, on top of the left
+	// hand the clock already made today, marks every mode practised today and
+	// drops the section from the menu.
+	await practiceSection(page, piece3Url, piece3SectionId, { mode: "RH" });
 
 	// Earlier tests left learning, unsectioned pieces behind, and the overview
 	// shows only two learning suggestions — the never-practised ones would win
