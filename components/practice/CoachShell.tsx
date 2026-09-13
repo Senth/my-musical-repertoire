@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import type { MD3Theme } from "react-native-paper";
 import { Appbar, Text, useTheme } from "react-native-paper";
+import { useIsCompact } from "@/hooks/use-is-compact";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
 import { coachSegments } from "@/utils/coach-progress";
 
@@ -48,6 +49,7 @@ export function CoachShell({
 }: CoachShellProps) {
 	const { t } = useTranslation();
 	const theme = useTheme<AppTheme>();
+	const isCompact = useIsCompact();
 
 	const sessionOver = sessionElapsedSeconds > sessionTotalSeconds;
 	const segments = coachSegments(blocks, blockStates, blockElapsedSeconds);
@@ -106,7 +108,12 @@ export function CoachShell({
 				</View>
 			</Appbar.Header>
 
-			<View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+			<View
+				style={{
+					paddingHorizontal: isCompact ? 16 : 24,
+					paddingBottom: 8,
+				}}
+			>
 				<View style={{ flexDirection: "row", gap: 3, height: 6 }}>
 					{segments.map((segment) => (
 						<View
