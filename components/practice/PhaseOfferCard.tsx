@@ -17,8 +17,8 @@ import {
 	CARD_TITLE_STYLE,
 	TITLE_ONLY_CARD_STYLE,
 } from "@/components/ui/card-style";
-import type { PhaseOffer, PhaseOfferStatus } from "@/utils/phase-offer";
 import type { AdvanceCriterion } from "@/utils/section-progression";
+import type { PhaseOffer, PhaseOfferStatus } from "@/utils/phase-offer";
 
 interface PhaseOfferProps {
 	offer: PhaseOffer;
@@ -35,7 +35,7 @@ function actionLabelKey(offer: PhaseOffer): string {
 }
 
 /**
- * The standalone-practice surface for a phase nudge: a card above the Done
+ * The standalone-practice surface for a state nudge: a card above the Done
  * button. See `docs/specs/section-phases.md` §6.1.
  */
 export function PhaseOfferCard({

@@ -1,6 +1,6 @@
 import type { Piece } from "@/models/piece";
 import type { ByMode, ModeKey, ModeStats } from "@/models/practice";
-import type { Section, SectionPhase } from "@/models/section";
+import type { Section, SectionState } from "@/models/section";
 import type { TechniqueItem } from "@/models/technique";
 import { isPracticedToday } from "./day-boundary";
 import {
@@ -11,17 +11,17 @@ import {
 } from "./practice-modes";
 
 /**
- * The three weights of the section score, one row per phase:
+ * The three weights of the section score, one row per state:
  *
- *     score = PHASE_SCORE·days + BPM_GAP_WEIGHT·bpmGap + NEEDS_WORK_WEIGHT·needsWork
+ *     score = STATE_SCORE·days + BPM_GAP_WEIGHT·bpmGap + NEEDS_WORK_WEIGHT·needsWork
  *
- * One formula for every phase — no branch — so scores stay comparable and the
+ * One formula for every state — no branch — so scores stay comparable and the
  * learning line can rank a neglected stabilizing section against a learning one
  * in a single pool. See `docs/specs/planner-scoring.md` §3.
  */
 
-/** `M` — how fast a section of this phase decays per day untouched. */
-export const PHASE_SCORE: Record<SectionPhase, number> = {
+/** `M` — how fast a section of this state decays per day untouched. */
+export const STATE_SCORE: Record<SectionState, number> = {
 	not_started: 10,
 	learning: 10,
 	stabilizing: 3,
@@ -29,12 +29,12 @@ export const PHASE_SCORE: Record<SectionPhase, number> = {
 };
 
 /**
- * `N` — weight on the raw BPM gap. Rises as the phase matures because the gaps
+ * `N` — weight on the raw BPM gap. Rises as the state matures because the gaps
  * shrink (learning ~50, stabilizing ~10, maintenance ~0): the weighting
  * normalizes the term into the same band everywhere, so tempo is a nudge in
- * every phase instead of dominating one and vanishing from another.
+ * every state instead of dominating one and vanishing from another.
  */
-export const BPM_GAP_WEIGHT: Record<SectionPhase, number> = {
+export const BPM_GAP_WEIGHT: Record<SectionState, number> = {
 	not_started: 0.25,
 	learning: 0.25,
 	stabilizing: 0.5,
@@ -43,7 +43,7 @@ export const BPM_GAP_WEIGHT: Record<SectionPhase, number> = {
 
 /** `P` — weight on the squared needs-work term. Halved for learning, where a
  * rough attempt is expected rather than alarming. */
-export const NEEDS_WORK_WEIGHT: Record<SectionPhase, number> = {
+export const NEEDS_WORK_WEIGHT: Record<SectionState, number> = {
 	not_started: 0.5,
 	learning: 0.5,
 	stabilizing: 1,
@@ -90,7 +90,7 @@ function allModesPracticedToday(
 export interface SectionCandidate {
 	piece: Piece;
 	section: Section | null;
-	phase: SectionPhase;
+	state: SectionState;
 	lastPracticed: Date | null;
 	currentBpm: number | null;
 	lastQuality: number | null;
@@ -128,7 +128,7 @@ export function bpmGap(
 
 export function scoreSectionCandidate(
 	piece: Piece,
-	phase: SectionPhase,
+	state: SectionState,
 	lastPracticed: Date | null,
 	currentBpm: number | null,
 	now: Date,
@@ -140,9 +140,9 @@ export function scoreSectionCandidate(
 	const days = daysSince(lastPracticed, now);
 	const effectiveTarget = target === undefined ? piece.targetTempoBpm : target;
 	return (
-		PHASE_SCORE[phase] * days +
-		BPM_GAP_WEIGHT[phase] * bpmGap(effectiveTarget, currentBpm) +
-		NEEDS_WORK_WEIGHT[phase] * needsWorkTerm(lastQuality, lastEffort)
+		STATE_SCORE[state] * days +
+		BPM_GAP_WEIGHT[state] * bpmGap(effectiveTarget, currentBpm) +
+		NEEDS_WORK_WEIGHT[state] * needsWorkTerm(lastQuality, lastEffort)
 	);
 }
 
@@ -154,7 +154,7 @@ export function scoreSectionCandidate(
  */
 export function scoreSectionModes(
 	piece: Piece,
-	phase: SectionPhase,
+	state: SectionState,
 	byMode: ByMode | null | undefined,
 	effectiveTarget: number | null,
 	now: Date,
@@ -172,7 +172,7 @@ export function scoreSectionModes(
 		return {
 			score: scoreSectionCandidate(
 				piece,
-				phase,
+				state,
 				legacy.lastPracticed,
 				deriveCurrentBpm(byMode),
 				now,
@@ -190,7 +190,7 @@ export function scoreSectionModes(
 		const { hands } = parseModeKey(key);
 		const score = scoreSectionCandidate(
 			piece,
-			phase,
+			state,
 			stats.lastPracticed ?? null,
 			stats.bpm ?? null,
 			now,
@@ -330,10 +330,10 @@ export function buildSectionCandidates(
 		const pieceSections = sectionsByPiece.get(piece.id) ?? [];
 		if (pieceSections.length === 0) {
 			// A piece with no sections is planned as one whole-piece candidate.
-			const phase: SectionPhase = "learning";
+			const state: SectionState = "learning";
 			const score = scoreSectionCandidate(
 				piece,
-				phase,
+				state,
 				piece.lastPracticed ?? null,
 				piece.lastAchievedTempoBpm ?? null,
 				now,
@@ -341,7 +341,7 @@ export function buildSectionCandidates(
 			candidates.push({
 				piece,
 				section: null,
-				phase,
+				state,
 				lastPracticed: piece.lastPracticed ?? null,
 				currentBpm: piece.lastAchievedTempoBpm ?? null,
 				lastQuality: null,
@@ -354,12 +354,12 @@ export function buildSectionCandidates(
 			for (const section of pieceSections) {
 				// A not-started section is parked material — never planned, never
 				// suggested, and moved to learning by the add-section nudge instead.
-				if (section.phase === "not_started") continue;
+				if (section.state === "not_started") continue;
 				const effectiveTarget =
 					section.targetBpmOverride ?? piece.targetTempoBpm ?? null;
 				const { score, modeKey } = scoreSectionModes(
 					piece,
-					section.phase,
+					section.state,
 					section.byMode,
 					effectiveTarget,
 					now,
@@ -373,7 +373,7 @@ export function buildSectionCandidates(
 				candidates.push({
 					piece,
 					section,
-					phase: section.phase,
+					state: section.state,
 					lastPracticed: section.lastPracticed ?? null,
 					currentBpm: deriveCurrentBpm(section.byMode),
 					lastQuality: section.lastQuality ?? null,

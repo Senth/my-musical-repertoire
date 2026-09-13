@@ -16,13 +16,13 @@ import type {
 	PhaseTransition,
 	PhaseTransitionOutcome,
 	PhaseTransitionTrigger,
-	SectionPhase,
+	SectionState,
 } from "@/models/section";
 import { awaitWrite } from "@/utils/firestore-write";
 import { daysBetween } from "@/utils/section-progression";
 
 /**
- * Every phase change in the app goes through here, so the
+ * Every state change in the app goes through here, so the
  * `sections/{id}/phaseTransitions` audit trail is complete rather than a
  * partial view of the new nudges. See `docs/specs/section-phases.md`
  * §4.3.
@@ -32,14 +32,14 @@ import { daysBetween } from "@/utils/section-progression";
  * Enough rows to answer "three dismissals since the last accepted change?"
  * with room to spare.
  */
-export const PHASE_HISTORY_LIMIT = 10;
+export const STATE_HISTORY_LIMIT = 10;
 
-export interface PhaseEvent {
+export interface StateEvent {
 	pieceId: string;
 	sectionId: string;
-	fromPhase: SectionPhase;
+	fromPhase: SectionState;
 	/** Where the section lands. Equal to `fromPhase` for a dismissal. */
-	toPhase: SectionPhase;
+	toPhase: SectionState;
 	trigger: PhaseTransitionTrigger;
 	achievedBpmAtEvent?: number | null;
 	qualityAtEvent?: number | null;
@@ -63,7 +63,7 @@ export function phaseTransitionsRef(
 }
 
 function transitionDoc(
-	event: PhaseEvent,
+	event: StateEvent,
 	outcome: PhaseTransitionOutcome,
 	date: Date,
 ) {
@@ -83,18 +83,18 @@ function transitionDoc(
 }
 
 /**
- * Queue a phase change and its audit row onto a batch the caller already owns —
- * never a phase change without its audit row. Used directly by the run-through
+ * Queue a state change and its audit row onto a batch the caller already owns —
+ * never a state change without its audit row. Used directly by the run-through
  * save, which writes the whole session in one batch.
  */
-export function queuePhaseChange(
+export function queueStateChange(
 	batch: WriteBatch,
 	userId: string,
-	event: PhaseEvent,
+	event: StateEvent,
 ): void {
 	const date = event.date ?? new Date();
 	batch.update(sectionRef(userId, event.pieceId, event.sectionId), {
-		phase: event.toPhase,
+		state: event.toPhase,
 		phaseChangedAt: Timestamp.fromDate(date),
 	});
 	batch.set(
@@ -104,10 +104,10 @@ export function queuePhaseChange(
 }
 
 /** Queue only the audit row — the student declined the offer. */
-export function queuePhaseDismissal(
+export function queueStateDismissal(
 	batch: WriteBatch,
 	userId: string,
-	event: PhaseEvent,
+	event: StateEvent,
 ): void {
 	batch.set(
 		doc(phaseTransitionsRef(userId, event.pieceId, event.sectionId)),
@@ -115,30 +115,30 @@ export function queuePhaseDismissal(
 	);
 }
 
-export function useChangeSectionPhase() {
+export function useChangeSectionState() {
 	const { user } = useAuth();
 
-	const changeSectionPhase = useCallback(
-		async (event: PhaseEvent) => {
+	const changeSectionState = useCallback(
+		async (event: StateEvent) => {
 			if (!user) throw new Error("Not authenticated");
 			const batch = writeBatch(db);
-			queuePhaseChange(batch, user.uid, event);
+			queueStateChange(batch, user.uid, event);
 			await awaitWrite(batch.commit());
 		},
 		[user],
 	);
 
 	const dismissPhaseOffer = useCallback(
-		async (event: PhaseEvent) => {
+		async (event: StateEvent) => {
 			if (!user) throw new Error("Not authenticated");
 			const batch = writeBatch(db);
-			queuePhaseDismissal(batch, user.uid, event);
+			queueStateDismissal(batch, user.uid, event);
 			await awaitWrite(batch.commit());
 		},
 		[user],
 	);
 
-	return { changeSectionPhase, dismissPhaseOffer };
+	return { changeSectionState, dismissPhaseOffer };
 }
 
 function fromFirestore(
@@ -148,8 +148,8 @@ function fromFirestore(
 	const at = data.date as { toDate?: () => Date } | null;
 	return {
 		id,
-		fromPhase: data.fromPhase as SectionPhase,
-		toPhase: data.toPhase as SectionPhase,
+		fromPhase: data.fromPhase as SectionState,
+		toPhase: data.toPhase as SectionState,
 		trigger: data.trigger as PhaseTransitionTrigger,
 		outcome: data.outcome as PhaseTransitionOutcome,
 		achievedBpmAtEvent: (data.achievedBpmAtEvent as number) ?? null,
@@ -161,11 +161,11 @@ function fromFirestore(
 }
 
 /**
- * The section's newest phase-transition rows, newest first. A one-shot
+ * The section's newest state-transition rows, newest first. A one-shot
  * `getDocs` like `useLastPracticeLog`, so it serves from the offline cache when
  * disconnected. `reload` re-reads after the offer writes a row.
  */
-export function useSectionPhaseHistory(
+export function useSectionStateHistory(
 	pieceId: string | null | undefined,
 	sectionId: string | null | undefined,
 ) {
@@ -184,7 +184,7 @@ export function useSectionPhaseHistory(
 			query(
 				phaseTransitionsRef(user.uid, pieceId, sectionId),
 				orderBy("date", "desc"),
-				limit(PHASE_HISTORY_LIMIT),
+				limit(STATE_HISTORY_LIMIT),
 			),
 		)
 			.then((snap) => {

@@ -18,7 +18,7 @@ import {
 } from "react-native-paper";
 import { LegalLinks } from "@/components/legal/LegalLinks";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
-import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
+import { SectionStateChip } from "@/components/section/SectionStateChip";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import {
@@ -64,7 +64,7 @@ import {
 } from "@/utils/session-storage";
 import {
 	pieceStateVisual,
-	sectionPhaseVisual,
+	sectionStateVisual,
 	techniqueStateVisual,
 } from "@/utils/state-colors";
 
@@ -231,7 +231,7 @@ export default function OverviewScreen() {
 							onPress={() => router.push(`/piece/${s.piece.id}`)}
 							style={accentBorderStyle(
 								s.section
-									? sectionPhaseVisual(s.section.phase, theme.dark)
+									? sectionStateVisual(s.section.state, theme.dark)
 									: pieceStateVisual(s.piece.state, theme.dark),
 							)}
 						>
@@ -244,7 +244,7 @@ export default function OverviewScreen() {
 							<Card.Content>
 								<View className="gap-2">
 									{s.section ? (
-										<SectionPhaseChip phase={s.section.phase} />
+										<SectionStateChip state={s.section.state} />
 									) : (
 										<PieceStateChip state={s.piece.state} />
 									)}

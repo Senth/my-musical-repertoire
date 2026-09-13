@@ -6,13 +6,13 @@ const piece = (over = {}) =>
 	makePiece({ id: "p1", state: "learning", ...over });
 
 const section = (over: Partial<Section> & { id: string }) =>
-	makeSection({ pieceId: "p1", phase: "stabilizing", ...over });
+	makeSection({ pieceId: "p1", state: "stabilizing", ...over });
 
 describe("sectionNudge", () => {
 	it("nudges a learning piece whose sections have all left learning", () => {
 		const result = sectionNudge(piece(), [
 			section({ id: "s1", order: 0 }),
-			section({ id: "s2", order: 1, phase: "maintenance" }),
+			section({ id: "s2", order: 1, state: "maintenance" }),
 		]);
 		expect(result).toEqual({ kind: "add", section: expect.anything() });
 		expect(result?.section.id).toBe("s2");
@@ -28,8 +28,8 @@ describe("sectionNudge", () => {
 
 	it("suggests moving the next not-started section to learning", () => {
 		const result = sectionNudge(piece(), [
-			section({ id: "s1", order: 0, phase: "not_started" }),
-			section({ id: "s2", order: 1, phase: "not_started" }),
+			section({ id: "s1", order: 0, state: "not_started" }),
+			section({ id: "s2", order: 1, state: "not_started" }),
 		]);
 		expect(result).toEqual({ kind: "transition", section: expect.anything() });
 		expect(result?.section.id).toBe("s1");
@@ -38,7 +38,7 @@ describe("sectionNudge", () => {
 	it("prefers the not-started suggestion over adding a section", () => {
 		const result = sectionNudge(piece(), [
 			section({ id: "s1", order: 0 }),
-			section({ id: "s2", order: 1, phase: "not_started" }),
+			section({ id: "s2", order: 1, state: "not_started" }),
 		]);
 		expect(result?.kind).toBe("transition");
 		expect(result?.section.id).toBe("s2");
@@ -47,7 +47,7 @@ describe("sectionNudge", () => {
 	it("stays quiet while any section is still in learning", () => {
 		const result = sectionNudge(piece(), [
 			section({ id: "s1", order: 0 }),
-			section({ id: "s2", order: 1, phase: "learning" }),
+			section({ id: "s2", order: 1, state: "learning" }),
 		]);
 		expect(result).toBeNull();
 	});
@@ -56,7 +56,7 @@ describe("sectionNudge", () => {
 		expect(
 			sectionNudge(piece(), [
 				section({ id: "s1", order: 0 }),
-				section({ id: "s2", order: 1, phase: "learning", archived: true }),
+				section({ id: "s2", order: 1, state: "learning", archived: true }),
 			])?.section.id,
 		).toBe("s1");
 		expect(
@@ -86,7 +86,7 @@ describe("sectionNudge", () => {
 
 	it("ignores sections belonging to another piece", () => {
 		const result = sectionNudge(piece(), [
-			makeSection({ id: "other", pieceId: "p2", phase: "stabilizing" }),
+			makeSection({ id: "other", pieceId: "p2", state: "stabilizing" }),
 		]);
 		expect(result).toBeNull();
 	});

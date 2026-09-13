@@ -1,9 +1,9 @@
 import { PIECE_STATES, type PieceState } from "@/models/piece";
-import { SECTION_PHASES } from "@/models/section";
+import { SECTION_STATES } from "@/models/section";
 import { TECHNIQUE_STATES } from "@/models/technique";
 import {
 	pieceStateVisual,
-	sectionPhaseVisual,
+	sectionStateVisual,
 	techniqueStateVisual,
 	withAlpha,
 } from "./state-colors";
@@ -57,25 +57,25 @@ describe("piece state visuals", () => {
 	});
 });
 
-describe("technique state and section phase visuals", () => {
+describe("technique state and section state visuals", () => {
 	it.each([true, false])("covers every technique state (dark=%s)", (dark) => {
 		for (const state of TECHNIQUE_STATES) {
 			expect(techniqueStateVisual(state, dark).accent).toMatch(/^#/);
 		}
 	});
 
-	it.each([true, false])("covers every section phase (dark=%s)", (dark) => {
-		for (const phase of SECTION_PHASES) {
-			expect(sectionPhaseVisual(phase, dark).accent).toMatch(/^#/);
+	it.each([true, false])("covers every section state (dark=%s)", (dark) => {
+		for (const state of SECTION_STATES) {
+			expect(sectionStateVisual(state, dark).accent).toMatch(/^#/);
 		}
 	});
 
 	it("keeps shared meanings on a shared hue", () => {
 		// A section in maintenance and a piece in maintenance must look alike.
-		expect(sectionPhaseVisual("maintenance", false).accent).toBe(
+		expect(sectionStateVisual("maintenance", false).accent).toBe(
 			pieceStateVisual("maintenance", false).accent,
 		);
-		expect(sectionPhaseVisual("learning", false).accent).toBe(
+		expect(sectionStateVisual("learning", false).accent).toBe(
 			pieceStateVisual("learning", false).accent,
 		);
 		expect(techniqueStateVisual("maintenance", false).accent).toBe(

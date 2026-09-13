@@ -29,7 +29,7 @@ export function sectionNudge(
 	);
 	if (active.length === 0) return null;
 
-	const notStarted = active.filter((s) => s.phase === "not_started");
+	const notStarted = active.filter((s) => s.state === "not_started");
 	if (notStarted.length > 0) {
 		return {
 			kind: "transition",
@@ -39,7 +39,7 @@ export function sectionNudge(
 		};
 	}
 
-	if (active.some((s) => s.phase === "learning")) return null;
+	if (active.some((s) => s.state === "learning")) return null;
 
 	return {
 		kind: "add",

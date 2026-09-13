@@ -34,7 +34,7 @@ export interface RunThroughCredit {
 
 export interface RunThroughEffects {
 	credits: RunThroughCredit[];
-	/** Section ids to move back to the `stabilizing` phase. */
+	/** Section ids to move back to the `stabilizing` state. */
 	demotions: string[];
 }
 
@@ -87,12 +87,12 @@ function creditedBpm(
 }
 
 /**
- * What a whole-piece run-through does to the piece's maintenance-phase sections:
+ * What a whole-piece run-through does to the piece's maintenance-state sections:
  * the unticked ones keep their recency and tempo (credit), the ticked ones drop
- * back to the stabilizing phase so the planner schedules them again.
+ * back to the stabilizing state so the planner schedules them again.
  *
  * Pure — no Firestore, no React. Returns an empty result for any piece state or
- * section phase outside the maintenance/performance × maintenance cell.
+ * section state outside the maintenance/performance × maintenance cell.
  * See `docs/specs/section-phases.md` §4.
  */
 export function computeRunThroughEffects({
@@ -112,7 +112,7 @@ export function computeRunThroughEffects({
 
 	for (const section of sections) {
 		if (section.archived) continue;
-		if (section.phase !== "maintenance") continue;
+		if (section.state !== "maintenance") continue;
 		const sectionId = section.id;
 		if (!sectionId) continue;
 

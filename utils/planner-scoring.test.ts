@@ -4,7 +4,7 @@ import {
 	buildSectionCandidates,
 	daysSince,
 	needsWorkTerm,
-	PHASE_SCORE,
+	STATE_SCORE,
 	scoreMaintenancePiece,
 	scoreSectionCandidate,
 	scoreTechnique,
@@ -51,14 +51,14 @@ describe("needsWorkTerm", () => {
 
 describe("scoreSectionCandidate", () => {
 	// docs/specs/planner-scoring.md §3
-	it("applies phase weight × days", () => {
+	it("applies state weight × days", () => {
 		const piece = makePiece({ id: "p1" });
 		const past = new Date(NOW.getTime() - 3 * 86_400_000);
 		const score = scoreSectionCandidate(piece, "learning", past, null, NOW);
-		expect(score).toBe(PHASE_SCORE.learning * 3);
+		expect(score).toBe(STATE_SCORE.learning * 3);
 	});
 
-	it("weights the BPM gap by phase", () => {
+	it("weights the BPM gap by state", () => {
 		const piece = makePiece({ id: "p1", targetTempoBpm: 120 });
 		const day = new Date(NOW.getTime() - 1 * 86_400_000);
 		// Learning gaps are large, so the weight is small — 0.25 × 40.
@@ -75,7 +75,7 @@ describe("scoreSectionCandidate", () => {
 		);
 	});
 
-	it("adds the needs-work term at the phase weight", () => {
+	it("adds the needs-work term at the state weight", () => {
 		const piece = makePiece({ id: "p1" });
 		const day = new Date(NOW.getTime() - 1 * 86_400_000);
 		// q2/e4 → 18, halved for learning.
@@ -87,10 +87,10 @@ describe("scoreSectionCandidate", () => {
 		).toBe(3 + 18);
 	});
 
-	it("never-practiced returns 999 days × phaseScore", () => {
+	it("never-practiced returns 999 days × stateScore", () => {
 		const piece = makePiece({ id: "p1" });
 		const score = scoreSectionCandidate(piece, "stabilizing", null, null, NOW);
-		expect(score).toBe(PHASE_SCORE.stabilizing * 999);
+		expect(score).toBe(STATE_SCORE.stabilizing * 999);
 	});
 
 	it("ranks a struggle above a smaller tempo gap (the acceptance case)", () => {
@@ -237,7 +237,7 @@ describe("buildSectionCandidates", () => {
 		const candidates = buildSectionCandidates(pieces, [], NOW);
 		expect(candidates).toHaveLength(1);
 		expect(candidates[0].section).toBeNull();
-		expect(candidates[0].phase).toBe("learning");
+		expect(candidates[0].state).toBe("learning");
 	});
 
 	it("creates one candidate per non-archived section", () => {
@@ -277,14 +277,14 @@ describe("per-mode scoring", () => {
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				byMode: {
 					LH: { bpm: 60, lastPracticed: daysAgo(1) },
 					HT: { bpm: 95, lastPracticed: daysAgo(1) },
 				},
 			}),
 		);
-		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 55);
+		expect(candidate.score).toBe(STATE_SCORE.learning * 1 + 0.25 * 55);
 		expect(candidate.modeKey).toBe("LH");
 	});
 
@@ -304,8 +304,8 @@ describe("per-mode scoring", () => {
 			}),
 		);
 		// hands-separate target is 115, hands-together 100
-		expect(separate.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 25);
-		expect(together.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 10);
+		expect(separate.score).toBe(STATE_SCORE.learning * 1 + 0.25 * 25);
+		expect(together.score).toBe(STATE_SCORE.learning * 1 + 0.25 * 10);
 	});
 
 	it("ignores modes that were never practised", () => {
@@ -317,7 +317,7 @@ describe("per-mode scoring", () => {
 				byMode: { LH: { bpm: 115, lastPracticed: daysAgo(2) } },
 			}),
 		);
-		expect(candidate.score).toBe(PHASE_SCORE.learning * 2);
+		expect(candidate.score).toBe(STATE_SCORE.learning * 2);
 		expect(candidate.modeKey).toBe("LH");
 	});
 
@@ -326,7 +326,7 @@ describe("per-mode scoring", () => {
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
-				phase: "maintenance",
+				state: "maintenance",
 				byMode: {
 					HT: { bpm: 80, quality: 3, effort: 4, lastPracticed: daysAgo(3) },
 				},
@@ -345,7 +345,7 @@ describe("per-mode scoring", () => {
 				byMode: { "LH.staccato": { bpm: 90, lastPracticed: daysAgo(1) } },
 			}),
 		);
-		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 25);
+		expect(candidate.score).toBe(STATE_SCORE.learning * 1 + 0.25 * 25);
 		expect(candidate.modeKey).toBe("LH.staccato");
 	});
 
@@ -358,7 +358,7 @@ describe("per-mode scoring", () => {
 				byMode: { HT: { bpm: 50, lastPracticed: daysAgo(1) } },
 			}),
 		);
-		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 10);
+		expect(candidate.score).toBe(STATE_SCORE.learning * 1 + 0.25 * 10);
 	});
 
 	it("drops only the modes practised today", () => {
@@ -400,7 +400,7 @@ describe("per-mode scoring", () => {
 			}),
 		);
 		// No mode history means no tempo at all, so only the recency term survives.
-		expect(candidate.score).toBe(PHASE_SCORE.learning * 1);
+		expect(candidate.score).toBe(STATE_SCORE.learning * 1);
 		expect(candidate.currentBpm).toBeNull();
 		expect(candidate.modeKey).toBeNull();
 	});
@@ -418,16 +418,16 @@ describe("per-mode scoring", () => {
 			}),
 		);
 		// No scorable mode is left, so the gap comes from min(LH, RH) = 80.
-		expect(candidate.score).toBe(PHASE_SCORE.learning * 1 + 0.25 * 20);
+		expect(candidate.score).toBe(STATE_SCORE.learning * 1 + 0.25 * 20);
 		expect(candidate.currentBpm).toBe(80);
 		expect(candidate.modeKey).toBeNull();
 	});
 
 	it("keeps the 999-day score for a never-practised section", () => {
 		const candidate = candidateFor(
-			makeSection({ id: "s1", pieceId: "p1", phase: "stabilizing" }),
+			makeSection({ id: "s1", pieceId: "p1", state: "stabilizing" }),
 		);
-		expect(candidate.score).toBe(PHASE_SCORE.stabilizing * 999);
+		expect(candidate.score).toBe(STATE_SCORE.stabilizing * 999);
 		expect(candidate.modeKey).toBeNull();
 	});
 });

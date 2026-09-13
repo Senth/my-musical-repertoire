@@ -98,7 +98,7 @@ function sortCandidates(candidates: SectionCandidate[]): SectionCandidate[] {
 
 /**
  * The learning line only ever looks at pieces whose *state* is `learning`, and
- * ranks every phase in **one** pool — the score is comparable across phases now
+ * ranks every state in **one** pool — the score is comparable across phases now
  * (`planner-scoring` §3.1), so a section neglected for a week can out-rank new
  * acquisition without a reserved share forcing it.
  *
@@ -137,7 +137,7 @@ export function learningLinePool(
 /**
  * Cross-piece consolidation: everything inside a piece promoted out of
  * `learning`, plus the "problem section in an otherwise fine piece" case —
- * a learning- or stabilizing-phase section inside a maintenance/performance
+ * a learning- or stabilizing-state section inside a maintenance/performance
  * piece. Those pieces' *whole-piece* candidates stay out: run-throughs are the
  * maintenance line's job, and counting them twice would double-book the piece.
  */
@@ -162,7 +162,7 @@ export function stabilizingLinePool(
 	).filter(
 		(c) =>
 			c.section != null &&
-			(c.phase === "stabilizing" || c.phase === "learning"),
+			(c.state === "stabilizing" || c.state === "learning"),
 	);
 	return stillAvailable(
 		[...promoted, ...problemSections],
@@ -248,7 +248,7 @@ export interface LearningLineResult {
 }
 
 /**
- * Block bounds are a property of the *phase the candidate landed on*, not of
+ * Block bounds are a property of the *state the candidate landed on*, not of
  * which half of a split it came from: new acquisition needs 8–12 minutes, a
  * review of learned material 6–9.
  */
@@ -256,20 +256,20 @@ function blockBounds(candidate: SectionCandidate): {
 	min: number;
 	max: number;
 } {
-	return candidate.phase === "learning"
+	return candidate.state === "learning"
 		? { min: LEARNING_BLOCK_MIN, max: LEARNING_BLOCK_MAX }
 		: { min: REVIEW_BLOCK_MIN, max: REVIEW_BLOCK_MAX };
 }
 
 /**
  * Fills the learning line greedily off one score-ranked, piece-anchored pool
- * (`learningLinePool`): take the best candidate, size the block by the phase it
+ * (`learningLinePool`): take the best candidate, size the block by the state it
  * landed on, and keep adding while the chosen set genuinely cannot absorb the
  * minutes on its own.
  *
  * There is no reserved review share any more. Whether the session is all-new,
  * all-review or mixed falls out of the scores, and the score has its own
- * back-pressure — every section accrues `PHASE_SCORE·days` while it waits and
+ * back-pressure — every section accrues `STATE_SCORE·days` while it waits and
  * resets to zero when picked, so the line can never lock into one mode. See
  * `docs/specs/session-planner.md` §4.2.
  *
@@ -344,7 +344,7 @@ export function pickRepertoireLearningBlocks(
 	const reviewBlocks: PlannedBlock[] = [];
 	chosen.forEach((i, n) => {
 		const candidate = ordered[i];
-		if (candidate.phase === "learning") {
+		if (candidate.state === "learning") {
 			learningBlocks.push(
 				sectionBlock("repertoire-learning", candidate, minutes[n]),
 			);
@@ -797,7 +797,7 @@ function hasStabilizingLineContent(
 		(s) =>
 			!s.archived &&
 			problemPieceIds.has(s.pieceId) &&
-			(s.phase === "stabilizing" || s.phase === "learning"),
+			(s.state === "stabilizing" || s.state === "learning"),
 	);
 }
 
@@ -813,7 +813,7 @@ function hasReviewContent(pieces: Piece[], sections: Section[]): boolean {
 		(s) =>
 			!s.archived &&
 			learningPieceIds.has(s.pieceId) &&
-			(s.phase === "stabilizing" || s.phase === "maintenance"),
+			(s.state === "stabilizing" || s.state === "maintenance"),
 	);
 }
 

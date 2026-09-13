@@ -23,7 +23,7 @@ import { PracticeFooter } from "@/components/practice/PracticeFooter";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
 import { StandingNote } from "@/components/practice/StandingNote";
 import { TempoControl } from "@/components/practice/TempoControl";
-import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
+import { SectionStateChip } from "@/components/section/SectionStateChip";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
@@ -36,9 +36,9 @@ import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { usePracticeSave } from "@/hooks/use-practice-save";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
 import {
-	useChangeSectionPhase,
-	useSectionPhaseHistory,
-} from "@/hooks/use-section-phase";
+	useChangeSectionState,
+	useSectionStateHistory,
+} from "@/hooks/use-section-state";
 import { useSections, useUpdateSection } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
@@ -53,11 +53,6 @@ import {
 	mistakeOptions,
 	qualityOptions,
 } from "@/utils/estimation-options";
-import {
-	decidePhaseOffer,
-	type PendingPhaseOffer,
-	type PhaseOfferStatus,
-} from "@/utils/phase-offer";
 import { formatBarRange } from "@/utils/piece-display";
 import {
 	type ModeEntry,
@@ -65,6 +60,11 @@ import {
 	parseModeKey,
 	targetForMode,
 } from "@/utils/practice-modes";
+import {
+	decidePhaseOffer,
+	type PendingPhaseOffer,
+	type PhaseOfferStatus,
+} from "@/utils/phase-offer";
 import {
 	planTimeSignatureWrite,
 	resolveTimeSignature,
@@ -102,7 +102,7 @@ export function PiecePracticeContent({
 	const { savePractice } = useSavePractice();
 	const { saveSectionPractice } = useSaveSectionPractice();
 	const { deletePiece } = useDeletePiece();
-	const { changeSectionPhase, dismissPhaseOffer } = useChangeSectionPhase();
+	const { changeSectionState, dismissPhaseOffer } = useChangeSectionState();
 	const { updatePiece } = useUpdatePiece();
 	const { updateSection } = useUpdateSection();
 	const standaloneSessionId = useRef(randomUUID());
@@ -118,7 +118,7 @@ export function PiecePracticeContent({
 		logs: priorLogs,
 		loading: lastLogLoading,
 	} = useLastPracticeLog(lastLogScope);
-	const { transitions, reload: reloadTransitions } = useSectionPhaseHistory(
+	const { transitions, reload: reloadTransitions } = useSectionStateHistory(
 		pieceId,
 		sectionIdProp,
 	);
@@ -254,11 +254,11 @@ export function PiecePracticeContent({
 
 	// Only rows where ticking does something get a checkbox. Outside a
 	// run-through that is every section — the tick is still recorded on the piece
-	// log — but a run-through only acts on maintenance-phase sections.
+	// log — but a run-through only acts on maintenance-state sections.
 	const flaggableIds = useMemo(
 		() =>
 			activeSections
-				.filter((s) => !isRunThrough || s.phase === "maintenance")
+				.filter((s) => !isRunThrough || s.state === "maintenance")
 				.map((s) => s.id ?? ""),
 		[activeSections, isRunThrough],
 	);
@@ -438,7 +438,7 @@ export function PiecePracticeContent({
 					priorPhaseChangedAt: pendingOffer.priorPhaseChangedAt,
 					sessionId: pendingOffer.sessionId,
 				};
-				if (accepted) await changeSectionPhase(event);
+				if (accepted) await changeSectionState(event);
 				else await dismissPhaseOffer(event);
 				setPendingOffer(null);
 				reloadTransitions();
@@ -448,7 +448,7 @@ export function PiecePracticeContent({
 				setOfferBusy(false);
 			}
 		},
-		[pendingOffer, changeSectionPhase, dismissPhaseOffer, reloadTransitions, t],
+		[pendingOffer, changeSectionState, dismissPhaseOffer, reloadTransitions, t],
 	);
 
 	const handleDelete = async () => {
@@ -603,7 +603,7 @@ export function PiecePracticeContent({
 								onChangeHands={modes.setHands}
 								drafts={modes.drafts}
 								drills={NO_DRILLS}
-								chip={<SectionPhaseChip phase={scopedSection.phase} />}
+								chip={<SectionStateChip state={scopedSection.state} />}
 							/>
 						)}
 
@@ -687,14 +687,14 @@ export function PiecePracticeContent({
 								flaggableIds={flaggableIds}
 								onToggleFlag={handleToggleFlag}
 								onPractice={handlePracticeSection}
-								onChangePhase={(sectionId, phase) => {
+								onChangeState={(sectionId, state) => {
 									const target = activeSections.find((s) => s.id === sectionId);
-									if (!target || phase === target.phase) return;
-									changeSectionPhase({
+									if (!target || state === target.state) return;
+									changeSectionState({
 										pieceId,
 										sectionId,
-										fromPhase: target.phase,
-										toPhase: phase,
+										fromPhase: target.state,
+										toPhase: state,
 										trigger: "phase-chip",
 										achievedBpmAtEvent: target.byMode?.HT?.bpm ?? null,
 										qualityAtEvent: target.byMode?.HT?.quality ?? null,

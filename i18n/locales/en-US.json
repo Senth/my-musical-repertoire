@@ -24,7 +24,7 @@
 		"noSections": "No sections"
 	},
 	"section": {
-		"phase": {
+		"state": {
 			"not_started": "Not started",
 			"learning": "Learning",
 			"stabilizing": "Stabilizing",
@@ -1014,7 +1014,7 @@
 			"bpm": "{{bpm}} BPM",
 			"form": {
 				"labelLabel": "Label (e.g. Opening, Bridge, Coda)",
-				"phaseLabel": "Phase",
+				"stateLabel": "Phase",
 				"barsLabel": "Bars (optional)",
 				"startBarLabel": "Start",
 				"endBarLabel": "End",

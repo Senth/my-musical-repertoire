@@ -18,7 +18,7 @@ const CHIP_TEXT_STYLE = {
 } as const;
 
 /**
- * The lifecycle chip used for piece states, technique states and section phases.
+ * The lifecycle chip used for piece states, technique states and section states.
  *
  * Deliberately quiet: a low-alpha tint of the state's hue with hue-matched text,
  * so a list of cards reads title-first and the chips stay complementary. The
