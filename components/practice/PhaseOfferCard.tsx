@@ -17,6 +17,7 @@ import {
 	CARD_TITLE_STYLE,
 	TITLE_ONLY_CARD_STYLE,
 } from "@/components/ui/card-style";
+import { space } from "@/theme/tokens";
 import type { PhaseOffer, PhaseOfferStatus } from "@/utils/phase-offer";
 import type { AdvanceCriterion } from "@/utils/section-progression";
 
@@ -58,7 +59,13 @@ export function PhaseOfferCard({
 			/>
 			<Card.Content>
 				<PhaseOfferBody offer={offer} onReadyChange={onReadyChange} />
-				<View className="flex-row gap-2 mt-2">
+				<View
+					style={{
+						flexDirection: "row",
+						gap: space.sm,
+						marginTop: space.sm,
+					}}
+				>
 					<Button
 						mode="contained"
 						onPress={onAccept}

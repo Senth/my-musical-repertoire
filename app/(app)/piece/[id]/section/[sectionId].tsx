@@ -24,6 +24,7 @@ import {
 } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { SECTION_PHASES, type SectionPhase } from "@/models/section";
+import { space } from "@/theme/tokens";
 import { defaultSectionPhase } from "@/utils/default-section-phase";
 
 export default function SectionEditScreen() {
@@ -168,7 +169,7 @@ export default function SectionEditScreen() {
 	}));
 
 	const formContent = (
-		<View className="gap-4">
+		<View style={{ gap: space.lg }}>
 			<FormTextField
 				ref={labelInputRef}
 				label={t("screen.pieceSections.form.labelLabel")}
@@ -193,7 +194,7 @@ export default function SectionEditScreen() {
 				}}
 			/>
 
-			<View className="gap-1">
+			<View style={{ gap: space.xs }}>
 				<Text
 					variant="bodySmall"
 					style={{ color: theme.colors.onSurfaceVariant }}

@@ -1,4 +1,5 @@
 import type { TextStyle, ViewStyle } from "react-native";
+import { border } from "@/theme/tokens";
 import { type StateVisual, withAlpha } from "@/utils/state-colors";
 
 /**
@@ -7,7 +8,9 @@ import { type StateVisual, withAlpha } from "@/utils/state-colors";
  * composer line. Pair `CARD_TITLE_STYLE` with a subtitle in `onSurfaceVariant`.
  */
 export const CARD_TITLE_STYLE: TextStyle = {
-	fontSize: 17,
+	// The contract's one sanctioned `fontSize` exception: a half-step between
+	// Paper's variants that makes the title beat its composer.
+	fontSize: 17, // invariants:allow
 	fontWeight: "500",
 };
 
@@ -25,7 +28,7 @@ export const TITLE_ONLY_CARD_STYLE: ViewStyle = {
 /** The card's left accent stripe. Shelved/retired fade so they stay hindmost. */
 export function accentBorderStyle(visual: StateVisual): ViewStyle {
 	return {
-		borderLeftWidth: 4,
+		borderLeftWidth: border.stripe,
 		borderLeftColor: visual.outlined
 			? withAlpha(visual.accent, 0.35)
 			: visual.accent,

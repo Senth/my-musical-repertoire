@@ -3,9 +3,10 @@ import type { ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
- * global.css sets scrollbar-width: thin, giving ~8px scrollbars on desktop web.
- * The FAB is positioned via Portal at viewport level, so its right offset adds
- * the scrollbar width to maintain 16dp from the content area edge per MD3:
+ * The page shell in `app/+html.tsx` sets scrollbar-width: thin, giving ~8px
+ * scrollbars on desktop web. The FAB is positioned via Portal at viewport
+ * level, so its right offset adds the scrollbar width to maintain 16dp from
+ * the content area edge per MD3:
  *
  *   FAB_RIGHT = 16dp (MD3 margin) + 8px (thin scrollbar width) = 24px
  *

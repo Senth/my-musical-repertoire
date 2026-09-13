@@ -15,6 +15,7 @@ import {
 	type TechniqueState,
 	type TechniqueType,
 } from "@/models/technique";
+import { space } from "@/theme/tokens";
 
 export default function EditTechniqueScreen() {
 	const { t } = useTranslation();
@@ -102,7 +103,7 @@ export default function EditTechniqueScreen() {
 	};
 
 	const formContent = (
-		<View className="gap-4">
+		<View style={{ gap: space.lg }}>
 			<TextInput
 				label={t("screen.editTechnique.titleLabel")}
 				aria-label={t("screen.editTechnique.titleLabel")}

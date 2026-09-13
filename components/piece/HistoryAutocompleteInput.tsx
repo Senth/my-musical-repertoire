@@ -65,7 +65,7 @@ export function HistoryAutocompleteInput({
 							elevation: 4,
 							backgroundColor: theme.colors.surface,
 							borderRadius: 4,
-							shadowColor: "#000",
+							shadowColor: theme.colors.scrim,
 							shadowOffset: { width: 0, height: 2 },
 							shadowOpacity: 0.15,
 							shadowRadius: 3,

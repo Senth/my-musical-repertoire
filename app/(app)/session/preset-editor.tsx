@@ -27,6 +27,7 @@ import {
 	presetTotalMinutes,
 	SCRATCH_PRESET_ID,
 } from "@/models/session-preset";
+import { space } from "@/theme/tokens";
 
 /**
  * Six checkbox + slider rows in canonical order with a derived total. Zero is
@@ -180,7 +181,7 @@ export default function PresetEditorScreen() {
 			error={error}
 			onDismissError={() => setError(null)}
 		>
-			<View className="gap-2">
+			<View style={{ gap: space.sm }}>
 				<FormTextField
 					label={t("screen.session.editor.nameLabel")}
 					value={name}
@@ -207,8 +208,12 @@ export default function PresetEditorScreen() {
 				<Divider />
 
 				<View
-					className="flex-row items-center justify-between"
-					style={{ paddingVertical: 12 }}
+					style={{
+						flexDirection: "row",
+						alignItems: "center",
+						justifyContent: "space-between",
+						paddingVertical: 12,
+					}}
 				>
 					<Text variant="bodyLarge" style={{ fontWeight: "600" }}>
 						{t("screen.session.editor.total")}
@@ -229,7 +234,7 @@ export default function PresetEditorScreen() {
 					</Text>
 				)}
 
-				<View className="flex-row gap-2" style={{ marginTop: 8 }}>
+				<View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
 					{isCustom ? (
 						<>
 							<Button
@@ -237,7 +242,7 @@ export default function PresetEditorScreen() {
 								onPress={handleStartCustom}
 								loading={saving}
 								disabled={saving || enabledCount === 0}
-								className="flex-1"
+								style={{ flex: 1, minHeight: 0 }}
 							>
 								{t("screen.session.editor.start")}
 							</Button>
@@ -245,7 +250,7 @@ export default function PresetEditorScreen() {
 								mode="outlined"
 								onPress={handleSaveAsNew}
 								disabled={saving || enabledCount === 0}
-								className="flex-1"
+								style={{ flex: 1, minHeight: 0 }}
 							>
 								{t("screen.session.editor.saveAsPreset")}
 							</Button>
@@ -257,7 +262,7 @@ export default function PresetEditorScreen() {
 								onPress={handleSave}
 								loading={saving}
 								disabled={saving || enabledCount === 0}
-								className="flex-1"
+								style={{ flex: 1, minHeight: 0 }}
 							>
 								{t("screen.session.editor.save")}
 							</Button>
@@ -266,7 +271,7 @@ export default function PresetEditorScreen() {
 									mode="outlined"
 									onPress={handleSaveAsNew}
 									disabled={saving || enabledCount === 0}
-									className="flex-1"
+									style={{ flex: 1, minHeight: 0 }}
 								>
 									{t("screen.session.editor.saveAsNew")}
 								</Button>
@@ -312,10 +317,10 @@ function LineRow({
 
 	return (
 		<View style={{ paddingBottom: 4 }}>
-			<View className="flex-row items-center">
+			<View style={{ flexDirection: "row", alignItems: "center" }}>
 				{/* Wrapped rather than flexed directly: Checkbox.Item does not
 				    stretch its own touchable, so the minutes column would drift. */}
-				<View className="flex-1">
+				<View style={{ flex: 1, minHeight: 0 }}>
 					<Checkbox.Item
 						mode="android"
 						position="leading"

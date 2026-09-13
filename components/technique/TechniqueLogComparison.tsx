@@ -5,6 +5,7 @@ import { Button, Divider, Text, useTheme } from "react-native-paper";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { TrendIcon } from "@/components/ui/TrendIcon";
 import type { ModeKey } from "@/models/practice";
+import { space } from "@/theme/tokens";
 import { modeLabelLong } from "@/utils/mode-label";
 
 /** One saved mode, with the values its own previous log had. */
@@ -45,10 +46,18 @@ function QualityRow({
 	const diff = hasPrevious ? current - previous : 0;
 
 	return (
-		<View className="gap-1">
+		<View style={{ gap: space.xs }}>
 			<Text variant="labelLarge">{label}</Text>
-			<View className="flex-row items-center justify-between">
-				<View className="flex-row items-center gap-2">
+			<View
+				style={{
+					flexDirection: "row",
+					alignItems: "center",
+					justifyContent: "space-between",
+				}}
+			>
+				<View
+					style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}
+				>
 					<Text variant="bodyLarge">
 						{t(`technique.qualityShort.${current}` as Parameters<typeof t>[0])}
 					</Text>
@@ -83,9 +92,15 @@ function EffortRow({
 	const hasPrevious = previous != null;
 
 	return (
-		<View className="gap-1">
+		<View style={{ gap: space.xs }}>
 			<Text variant="labelLarge">{label}</Text>
-			<View className="flex-row items-center justify-between">
+			<View
+				style={{
+					flexDirection: "row",
+					alignItems: "center",
+					justifyContent: "space-between",
+				}}
+			>
 				<Text variant="bodyLarge">
 					{t(`technique.effortShort.${current}` as Parameters<typeof t>[0])}
 				</Text>
@@ -121,16 +136,24 @@ function TempoRow({
 	const diff = hasPrevious && current != null ? current - previous : 0;
 
 	return (
-		<View className="gap-1">
+		<View style={{ gap: space.xs }}>
 			<Text variant="labelLarge">{label}</Text>
-			<View className="flex-row items-center justify-between">
-				<View className="flex-row items-center gap-2">
+			<View
+				style={{
+					flexDirection: "row",
+					alignItems: "center",
+					justifyContent: "space-between",
+				}}
+			>
+				<View
+					style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}
+				>
 					<Text variant="bodyLarge">
 						{current != null ? `${current} BPM` : "—"}
 					</Text>
 					<TrendIcon diff={diff} visible={hasPrevious && current != null} />
 				</View>
-				<View className="items-end gap-1">
+				<View style={{ alignItems: "flex-end", gap: space.xs }}>
 					{hasPrevious && (
 						<Text
 							variant="bodySmall"
@@ -210,7 +233,7 @@ export function TechniqueLogComparison({
 
 	return (
 		<ScreenContent scroll={showModeHeadings || beforeActions != null}>
-			<View className="gap-1">
+			<View style={{ gap: space.xs }}>
 				<Text variant="headlineSmall">
 					{t("screen.practiceTechnique.comparison.title")}
 				</Text>
@@ -239,7 +262,7 @@ export function TechniqueLogComparison({
 			<Divider />
 
 			{modes.map((mode) => (
-				<View key={mode.modeKey} className="gap-3">
+				<View key={mode.modeKey} style={{ gap: space.md }}>
 					{showModeHeadings && (
 						<Text variant="titleSmall">{modeLabelLong(mode.modeKey, t)}</Text>
 					)}
@@ -271,7 +294,7 @@ export function TechniqueLogComparison({
 
 			{beforeActions}
 
-			<View className="mt-4">
+			<View style={{ marginTop: space.lg }}>
 				<Button mode="contained" onPress={onDone}>
 					{backLabel}
 				</Button>

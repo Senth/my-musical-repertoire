@@ -2,15 +2,15 @@ import type { ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 import { ScrollView, View } from "react-native";
 import { useIsCompact } from "@/hooks/use-is-compact";
+import { contentWidth, space } from "@/theme/tokens";
 
-// NativeWind needs static class strings — map, don't template-interpolate.
 const GAP = {
-	0: "",
-	1: "gap-1",
-	2: "gap-2",
-	3: "gap-3",
-	4: "gap-4",
-	6: "gap-6",
+	0: undefined,
+	1: space.xs,
+	2: space.sm,
+	3: space.md,
+	4: space.lg,
+	6: space.xl,
 } as const;
 
 interface ScreenContentProps {
@@ -49,7 +49,14 @@ export function ScreenContent({
 				paddingBottom,
 			}}
 		>
-			<View className={`w-full max-w-xl self-center ${GAP[gap]}`}>
+			<View
+				style={{
+					width: "100%",
+					maxWidth: contentWidth.page,
+					alignSelf: "center",
+					gap: GAP[gap],
+				}}
+			>
 				{children}
 			</View>
 		</View>

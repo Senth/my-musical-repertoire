@@ -43,6 +43,7 @@ import {
 	TECHNIQUE_TYPES,
 	type TechniqueItem,
 } from "@/models/technique";
+import { space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
 import {
 	DEFAULT_TECHNIQUE_FILTERS,
@@ -302,8 +303,15 @@ export default function TechniquesScreen() {
 				// Techniques have no composer line to separate the title from the
 				// chips, so the gap is explicit here. `mt-*` does not survive
 				// List.Item's description wrapper.
-				<View className="gap-1" style={{ marginTop: 8 }}>
-					<View className="flex-row items-center gap-2 flex-wrap">
+				<View style={{ gap: space.xs, marginTop: space.sm }}>
+					<View
+						style={{
+							flexDirection: "row",
+							alignItems: "center",
+							flexWrap: "wrap",
+							gap: space.sm,
+						}}
+					>
 						<TechniqueStateChip state={item.state} />
 						{item.type && <MetaChip label={t(`technique.type.${item.type}`)} />}
 						<Text
@@ -316,7 +324,7 @@ export default function TechniquesScreen() {
 				</View>
 			)}
 			right={() => (
-				<View className="justify-center">{renderCardMenu(item)}</View>
+				<View style={{ justifyContent: "center" }}>{renderCardMenu(item)}</View>
 			)}
 			onPress={() => router.push(`/technique/${item.id}`)}
 			onLongPress={(e) =>
@@ -333,7 +341,16 @@ export default function TechniquesScreen() {
 	const hiddenBySearch = searchQuery.trim().length > 0;
 
 	const emptyState = (
-		<View className="flex-1 items-center justify-center p-8 gap-3">
+		<View
+			style={{
+				flex: 1,
+				minHeight: 0,
+				alignItems: "center",
+				justifyContent: "center",
+				padding: space.xxl,
+				gap: space.md,
+			}}
+		>
 			<Text
 				variant="bodyLarge"
 				style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}
@@ -364,10 +381,19 @@ export default function TechniquesScreen() {
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
-			<View className="px-4 pt-3 pb-2">
+			<View
+				style={{
+					paddingHorizontal: space.lg,
+					paddingTop: space.md,
+					paddingBottom: space.sm,
+				}}
+			>
 				<Searchbar
 					placeholder={t("screen.techniques.searchPlaceholder")}
 					value={searchQuery}
@@ -383,7 +409,14 @@ export default function TechniquesScreen() {
 			/>
 
 			{loading ? (
-				<View className="flex-1 items-center justify-center">
+				<View
+					style={{
+						flex: 1,
+						minHeight: 0,
+						alignItems: "center",
+						justifyContent: "center",
+					}}
+				>
 					<ActivityIndicator size="large" />
 				</View>
 			) : visibleTechniques.length === 0 ? (
@@ -419,8 +452,15 @@ export default function TechniquesScreen() {
 								right={() => renderCardMenu(item)}
 							/>
 							<Card.Content>
-								<View className="gap-2">
-									<View className="flex-row items-center gap-2 flex-wrap">
+								<View style={{ gap: space.sm }}>
+									<View
+										style={{
+											flexDirection: "row",
+											alignItems: "center",
+											flexWrap: "wrap",
+											gap: space.sm,
+										}}
+									>
 										<TechniqueStateChip state={item.state} />
 										{item.type && (
 											<MetaChip label={t(`technique.type.${item.type}`)} />

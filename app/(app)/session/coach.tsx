@@ -600,8 +600,14 @@ function FreeformBlockBody({ label }: { label: string }) {
 	return (
 		<View style={{ flex: 1 }}>
 			<View
-				className="flex-1 items-center justify-center"
-				style={{ padding: 24, backgroundColor: theme.colors.background }}
+				style={{
+					flex: 1,
+					minHeight: 0,
+					alignItems: "center",
+					justifyContent: "center",
+					padding: 24,
+					backgroundColor: theme.colors.background,
+				}}
 			>
 				<Text
 					variant="bodyLarge"

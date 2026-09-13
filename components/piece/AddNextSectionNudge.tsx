@@ -5,6 +5,7 @@ import {
 	CARD_TITLE_STYLE,
 	TITLE_ONLY_CARD_STYLE,
 } from "@/components/ui/card-style";
+import { space } from "@/theme/tokens";
 
 interface AddNextSectionNudgeProps {
 	pieceTitle: string;
@@ -48,7 +49,7 @@ export function AddNextSectionNudge({
 				style={TITLE_ONLY_CARD_STYLE}
 			/>
 			<Card.Content>
-				<View className="gap-2">
+				<View style={{ gap: space.sm }}>
 					<Text
 						variant="bodyMedium"
 						style={{ color: theme.colors.onSurfaceVariant }}
@@ -64,7 +65,13 @@ export function AddNextSectionNudge({
 									piece: pieceTitle,
 								})}
 					</Text>
-					<View className="flex-row gap-2 mt-1">
+					<View
+						style={{
+							flexDirection: "row",
+							gap: space.sm,
+							marginTop: space.xs,
+						}}
+					>
 						{kind === "transition" ? (
 							<Button
 								mode="contained"

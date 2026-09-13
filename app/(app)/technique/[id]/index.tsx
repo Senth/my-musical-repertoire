@@ -10,6 +10,7 @@ import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { MetaChip } from "@/components/ui/StateChip";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
+import { contentWidth, space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
 
 export default function TechniqueDetailScreen() {
@@ -52,8 +53,11 @@ export default function TechniqueDetailScreen() {
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			<Appbar.Header>
 				<Appbar.BackAction onPress={goBack} />
@@ -71,10 +75,29 @@ export default function TechniqueDetailScreen() {
 			</Appbar.Header>
 
 			<ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-				<View className="w-full max-w-xl self-center">
+				<View
+					style={{
+						width: "100%",
+						maxWidth: contentWidth.page,
+						alignSelf: "center",
+					}}
+				>
 					{/* Header info */}
-					<View className="px-4 pt-4 gap-2">
-						<View className="flex-row items-center gap-2 flex-wrap">
+					<View
+						style={{
+							paddingHorizontal: space.lg,
+							paddingTop: space.lg,
+							gap: space.sm,
+						}}
+					>
+						<View
+							style={{
+								flexDirection: "row",
+								alignItems: "center",
+								flexWrap: "wrap",
+								gap: space.sm,
+							}}
+						>
 							<TechniqueStateChip state={item.state} />
 							{item.type && (
 								<MetaChip
@@ -105,7 +128,12 @@ export default function TechniqueDetailScreen() {
 					</View>
 
 					{/* Practice button */}
-					<View className="px-4 pt-4">
+					<View
+						style={{
+							paddingHorizontal: space.lg,
+							paddingTop: space.lg,
+						}}
+					>
 						<Button
 							mode="contained"
 							onPress={() =>
@@ -119,8 +147,14 @@ export default function TechniqueDetailScreen() {
 
 					{item.notes && (
 						<>
-							<Divider className="mt-6" />
-							<View className="px-4 pt-4 gap-2">
+							<Divider style={{ marginTop: space.xl }} />
+							<View
+								style={{
+									paddingHorizontal: space.lg,
+									paddingTop: space.lg,
+									gap: space.sm,
+								}}
+							>
 								<Text
 									variant="titleSmall"
 									style={{ color: theme.colors.onSurfaceVariant }}

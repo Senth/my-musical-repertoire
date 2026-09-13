@@ -6,6 +6,7 @@ import { Appbar, Text, useTheme } from "react-native-paper";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
+import { space } from "@/theme/tokens";
 
 /** One block of a legal document, as stored in the translation file. */
 export interface LegalSection {
@@ -91,8 +92,11 @@ export function LegalDocument({ documentKey, footer }: LegalDocumentProps) {
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			<Appbar.Header style={{ backgroundColor: theme.colors.elevation.level2 }}>
 				<Appbar.BackAction
@@ -115,15 +119,22 @@ export function LegalDocument({ documentKey, footer }: LegalDocumentProps) {
 				</Text>
 
 				{sections.map((section) => (
-					<View key={section.heading} className="gap-2">
+					<View key={section.heading} style={{ gap: space.sm }}>
 						<Text variant="titleMedium">{section.heading}</Text>
 						{section.paragraphs?.map((paragraph) => (
 							<LinkedText key={paragraph}>{paragraph}</LinkedText>
 						))}
 						{section.bullets?.map((bullet) => (
-							<View key={bullet} className="flex-row gap-2 pl-1">
+							<View
+								key={bullet}
+								style={{
+									flexDirection: "row",
+									gap: space.sm,
+									paddingLeft: space.xs,
+								}}
+							>
 								<Text variant="bodyMedium">•</Text>
-								<View className="flex-1">
+								<View style={{ flex: 1, minHeight: 0 }}>
 									<LinkedText>{bullet}</LinkedText>
 								</View>
 							</View>

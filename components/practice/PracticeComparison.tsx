@@ -8,6 +8,7 @@ import {
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { TrendIcon } from "@/components/ui/TrendIcon";
 import { PracticeMistakes } from "@/models/practice";
+import { space } from "@/theme/tokens";
 
 /** Short wording — the row already carries a trend icon and a "Previous: …" column. */
 const MISTAKE_LABELS: Record<PracticeMistakes, string> = {
@@ -45,10 +46,18 @@ function ComparisonRow({
 	const diff = hasComparison ? previous - current : 0;
 
 	return (
-		<View className="gap-1">
+		<View style={{ gap: space.xs }}>
 			<Text variant="labelLarge">{label}</Text>
-			<View className="flex-row items-center justify-between">
-				<View className="flex-row items-center gap-2">
+			<View
+				style={{
+					flexDirection: "row",
+					alignItems: "center",
+					justifyContent: "space-between",
+				}}
+			>
+				<View
+					style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}
+				>
 					<Text variant="bodyLarge">{t(MISTAKE_LABELS[current])}</Text>
 					<TrendIcon diff={diff} visible={hasComparison} />
 				</View>
@@ -104,7 +113,7 @@ export function PracticeComparison({
 
 	return (
 		<ScreenContent scroll={false}>
-			<View className="gap-1">
+			<View style={{ gap: space.xs }}>
 				<Text variant="headlineSmall">
 					{t("screen.practice.comparison.title")}
 				</Text>
@@ -130,7 +139,7 @@ export function PracticeComparison({
 				{t(summaryKey)}
 			</Text>
 
-			<View className="gap-2">
+			<View style={{ gap: space.sm }}>
 				<Text
 					variant="labelMedium"
 					style={{ color: theme.colors.onSurfaceVariant }}
@@ -160,7 +169,7 @@ export function PracticeComparison({
 				previous={previousMemory}
 			/>
 
-			<View className="mt-4">
+			<View style={{ marginTop: space.lg }}>
 				<Button mode="contained" onPress={onDone}>
 					{backLabel}
 				</Button>

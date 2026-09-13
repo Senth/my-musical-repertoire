@@ -1,5 +1,6 @@
 import { View } from "react-native";
 import { IconButton, useTheme } from "react-native-paper";
+import { border } from "@/theme/tokens";
 
 interface ListHeaderActionsProps {
 	sortLabel: string;
@@ -46,7 +47,7 @@ export function ListHeaderActions({
 							height: 10,
 							borderRadius: 5,
 							backgroundColor: theme.colors.primary,
-							borderWidth: 1,
+							borderWidth: border.hairline,
 							borderColor: theme.colors.elevation.level2,
 						}}
 					/>
