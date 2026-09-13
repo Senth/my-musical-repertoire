@@ -1,13 +1,13 @@
 import type { TimeSignature } from "@/utils/time-signature";
 import type { ByMode } from "./practice";
 
-export type SectionPhase =
+export type SectionState =
 	| "not_started"
 	| "learning"
 	| "stabilizing"
 	| "maintenance";
 
-export const SECTION_PHASES: SectionPhase[] = [
+export const SECTION_STATES: SectionState[] = [
 	"not_started",
 	"learning",
 	"stabilizing",
@@ -20,7 +20,7 @@ export interface Section {
 	userId: string;
 	label: string;
 	order: number;
-	phase: SectionPhase;
+	state: SectionState;
 	startBar?: number | null;
 	endBar?: number | null;
 	targetBpmOverride?: number | null;
@@ -35,14 +35,14 @@ export interface Section {
 	/** Per-hands stats. Sections have no drill axis — keys are `LH`/`RH`/`HT`. */
 	byMode?: ByMode;
 	/**
-	 * When the phase last moved, from any trigger. Missing on sections that
+	 * When the state last moved, from any trigger. Missing on sections that
 	 * predate the field — never backfilled, so it reads as null and the cycling
 	 * guard stays quiet.
 	 */
 	phaseChangedAt?: Date | null;
 }
 
-/** What caused a phase change (or a declined offer). */
+/** What caused a state change (or a declined offer). */
 export type PhaseTransitionTrigger =
 	| "advance-button"
 	| "demote-button"
@@ -52,15 +52,15 @@ export type PhaseTransitionTrigger =
 export type PhaseTransitionOutcome = "accepted" | "dismissed";
 
 /**
- * One row of `sections/{id}/phaseTransitions`. Written on every phase change and
+ * One row of `sections/{id}/phaseTransitions`. Written on every state change and
  * on every declined nudge — the dismissals are what say whether the advance
  * thresholds are set too high. See `docs/specs/section-phases.md`.
  */
 export interface PhaseTransition {
 	id?: string;
-	fromPhase: SectionPhase;
+	fromPhase: SectionState;
 	/** Equal to `fromPhase` when the outcome is `dismissed`. */
-	toPhase: SectionPhase;
+	toPhase: SectionState;
 	trigger: PhaseTransitionTrigger;
 	outcome: PhaseTransitionOutcome;
 	achievedBpmAtEvent: number | null;

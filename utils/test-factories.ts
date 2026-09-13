@@ -25,7 +25,7 @@ export function makeSection(
 		userId: "u",
 		label: "Sec",
 		order: 0,
-		phase: "learning",
+		state: "learning",
 		archived: false,
 		startBar: null,
 		endBar: null,

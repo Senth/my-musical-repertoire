@@ -48,8 +48,8 @@ async function fill(page: Page, label: string, value: string) {
 	await page.getByRole("textbox", { name: label, exact: true }).fill(value);
 }
 
-async function save(page: Page, label: string) {
-	await page.getByRole("button", { name: label, exact: true }).click();
+async function save(page: Page, label: string, opts: { force?: boolean } = {}) {
+	await page.getByRole("button", { name: label, exact: true }).click(opts);
 }
 
 async function choose(page: Page, label: string, option: string) {
@@ -77,7 +77,11 @@ async function addPiece(
 		t("screen.addPiece.stateLabel"),
 		t(`piece.state.${opts.state}`),
 	);
-	await save(page, t("screen.addPiece.save"));
+	// force: the Save press follows a Menu choice, and Paper's dismiss scrim
+	// has been observed spending that press even after the scrim testifies
+	// gone — a resolved click the form never receives. Hitting the button
+	// regardless removes the race; there is no dialog to click through here.
+	await save(page, t("screen.addPiece.save"), { force: true });
 
 	await page.goto("/piece");
 	await page.getByText(opts.title, { exact: true }).first().click();
@@ -93,7 +97,7 @@ async function addSection(
 	pieceUrl: string,
 	opts: {
 		label: string;
-		phase: "learning" | "stabilizing";
+		state: "learning" | "stabilizing";
 		from: number;
 		to: number;
 	},
@@ -102,8 +106,8 @@ async function addSection(
 	await fill(page, t("screen.pieceSections.form.labelLabel"), opts.label);
 	await choose(
 		page,
-		t("screen.pieceSections.form.phaseLabel"),
-		t(`section.phase.${opts.phase}`),
+		t("screen.pieceSections.form.stateLabel"),
+		t(`section.state.${opts.state}`),
 	);
 	await fill(
 		page,
@@ -111,7 +115,8 @@ async function addSection(
 		String(opts.from),
 	);
 	await fill(page, t("screen.pieceSections.form.endBarLabel"), String(opts.to));
-	await save(page, t("screen.pieceSections.form.save"));
+	// Same scrim race as addPiece: the Save press follows a Menu choice.
+	await save(page, t("screen.pieceSections.form.save"), { force: true });
 	await expect(page.getByText(opts.label, { exact: true })).toBeVisible({
 		timeout: 10_000,
 	});
@@ -264,7 +269,7 @@ test("A stabilizing piece is suggested by section and the card names that passag
 	piece1Url = await addPiece(page, { title: PIECE1, state: "stabilizing" });
 	await addSection(page, piece1Url, {
 		label: "First pass",
-		phase: "stabilizing",
+		state: "stabilizing",
 		from: 101,
 		to: 108,
 	});
@@ -280,7 +285,7 @@ test("A stabilizing piece is suggested by section and the card names that passag
 		page.getByText(barRange(101, 108), { exact: false }),
 	).toBeVisible({ timeout: 10_000 });
 	await expect(
-		page.getByText(t("section.phase.stabilizing"), { exact: true }).first(),
+		page.getByText(t("section.state.stabilizing"), { exact: true }).first(),
 	).toBeVisible({ timeout: 10_000 });
 });
 
@@ -290,7 +295,7 @@ test("Two sections of one piece both appear in Practice Today when no other piec
 	test.setTimeout(60_000);
 	await addSection(page, piece1Url, {
 		label: "Second pass",
-		phase: "stabilizing",
+		state: "stabilizing",
 		from: 140,
 		to: 148,
 	});
@@ -314,7 +319,7 @@ test("A second section of an already-suggested piece yields its slot to an unrep
 	piece2Url = await addPiece(page, { title: PIECE2, state: "stabilizing" });
 	await addSection(page, piece2Url, {
 		label: "Opening",
-		phase: "stabilizing",
+		state: "stabilizing",
 		from: 111,
 		to: 118,
 	});
@@ -343,7 +348,7 @@ test("A learning section inside a stabilizing piece is chipped Learning on the o
 	test.setTimeout(60_000);
 	await addSection(page, piece1Url, {
 		label: "New passage",
-		phase: "learning",
+		state: "learning",
 		from: 170,
 		to: 174,
 	});
@@ -352,11 +357,11 @@ test("A learning section inside a stabilizing piece is chipped Learning on the o
 	await expect(
 		page.getByText(barRange(170, 174), { exact: false }),
 	).toBeVisible({ timeout: 10_000 });
-	// Scoped to the card: `section.phase.learning` and `piece.state.learning` are
+	// Scoped to the card: `section.state.learning` and `piece.state.learning` are
 	// both "Learning", so a page-wide match is satisfied by another card's state chip.
 	await expect(
 		cardContaining(page, barRange(170, 174)).getByText(
-			t("section.phase.learning"),
+			t("section.state.learning"),
 			{ exact: true },
 		),
 	).toBeVisible({ timeout: 10_000 });
@@ -369,7 +374,7 @@ test("A section practised left hand today is suggested again the same day for ri
 	piece3Url = await addPiece(page, { title: PIECE3, state: "learning" });
 	piece3SectionId = await addSection(page, piece3Url, {
 		label: "Coda",
-		phase: "learning",
+		state: "learning",
 		from: 121,
 		to: 128,
 	});

@@ -4,7 +4,7 @@ import type {
 	PhaseTransition,
 	PhaseTransitionTrigger,
 	Section,
-	SectionPhase,
+	SectionState,
 } from "@/models/section";
 import { dayKey } from "./day-boundary";
 import { hsTarget, type ModeEntry } from "./practice-modes";
@@ -54,7 +54,7 @@ export const SUPPRESSION_DISMISSAL_COUNT = 3;
 /** How long a suppressed offer stays hidden. */
 export const SUPPRESSION_DAYS = 7;
 
-/** A phase changed within this many days makes the next offer carry a warning. */
+/** A state changed within this many days makes the next offer carry a warning. */
 export const CYCLING_GUARD_DAYS = 7;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -103,8 +103,8 @@ export type AdvanceCriterion =
 
 export interface AdvanceEvaluation {
 	eligible: boolean;
-	/** The phase the offer would move to; null when there is nothing above. */
-	toPhase: SectionPhase | null;
+	/** The state the offer would move to; null when there is nothing above. */
+	toPhase: SectionState | null;
 	failing: AdvanceCriterion[];
 	/** HT tempo the offer would quote, for the copy and the audit row. */
 	htBpm: number | null;
@@ -120,7 +120,7 @@ export type DemoteReason =
 
 export interface DemoteEvaluation {
 	eligible: boolean;
-	toPhase: SectionPhase | null;
+	toPhase: SectionState | null;
 	reason: DemoteReason | null;
 }
 
@@ -206,17 +206,17 @@ export function isTempoNonDecreasing(days: HtDay[]): boolean {
 	return bpms.every((bpm, i) => i === 0 || bpm >= bpms[i - 1]);
 }
 
-/** The phase an advance from `phase` would land on. */
-export function nextPhase(phase: SectionPhase): SectionPhase | null {
-	if (phase === "learning") return "stabilizing";
-	if (phase === "stabilizing") return "maintenance";
+/** The state an advance from `state` would land on. */
+export function nextState(state: SectionState): SectionState | null {
+	if (state === "learning") return "stabilizing";
+	if (state === "stabilizing") return "maintenance";
 	return null;
 }
 
-/** The phase a demote from `phase` would land on. */
-export function previousPhase(phase: SectionPhase): SectionPhase | null {
-	if (phase === "maintenance") return "stabilizing";
-	if (phase === "stabilizing") return "learning";
+/** The state a demote from `state` would land on. */
+export function previousState(state: SectionState): SectionState | null {
+	if (state === "maintenance") return "stabilizing";
+	if (state === "stabilizing") return "learning";
 	return null;
 }
 
@@ -225,19 +225,19 @@ export function previousPhase(phase: SectionPhase): SectionPhase | null {
 // ---------------------------------------------------------------------------
 
 /**
- * §3.2 / §3.3 — whether the section has earned the next phase.
+ * §3.2 / §3.3 — whether the section has earned the next state.
  *
  * `byMode` is passed separately from `section` so the caller can hand in the
  * map it just merged rather than the stale stored one. `logs` must already
  * include the entries written by the save in progress.
  */
 export function evaluateAdvance(
-	section: Pick<Section, "phase" | "targetBpmOverride">,
+	section: Pick<Section, "state" | "targetBpmOverride">,
 	piece: Pick<Piece, "targetTempoBpm"> | null | undefined,
 	byMode: ByMode | null | undefined,
 	logs: ProgressionLog[],
 ): AdvanceEvaluation {
-	const toPhase = nextPhase(section.phase);
+	const toPhase = nextState(section.state);
 	const htBpm = byMode?.HT?.bpm ?? null;
 	if (!toPhase) {
 		return { eligible: false, toPhase: null, failing: [], htBpm, cleanDays: 0 };
@@ -337,11 +337,11 @@ function previousBpmForMode(
  * saved entry against the newest earlier log for the same mode.
  */
 export function evaluateDemote(
-	section: Pick<Section, "phase">,
+	section: Pick<Section, "state">,
 	savedEntries: ModeEntry[],
 	priorLogs: ProgressionLog[],
 ): DemoteEvaluation {
-	const toPhase = previousPhase(section.phase);
+	const toPhase = previousState(section.state);
 	if (!toPhase) return { eligible: false, toPhase: null, reason: null };
 
 	const plain = savedEntries.filter((e) => !e.drill);
@@ -435,7 +435,7 @@ export function isSuppressed(
 }
 
 /**
- * §3.5 — a phase changed less than a week ago earns a "you just moved this"
+ * §3.5 — a state changed less than a week ago earns a "you just moved this"
  * warning on the next offer. A warning, never a block.
  */
 export function cyclingGuardDays(

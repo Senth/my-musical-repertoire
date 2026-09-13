@@ -9,8 +9,8 @@ import {
 interface AddNextSectionNudgeProps {
 	pieceTitle: string;
 	sectionLabel: string;
-	/** Phase the named section sits in, for the copy. */
-	phaseLabel: string;
+	/** State the named section sits in, for the copy. */
+	stateLabel: string;
 	/** `add` offers a new passage; `transition` offers starting a queued one. */
 	kind: "add" | "transition";
 	busy?: boolean;
@@ -20,7 +20,7 @@ interface AddNextSectionNudgeProps {
 }
 
 /**
- * Offered when a learning piece has no learning-phase sections left: either to
+ * Offered when a learning piece has no learning-state sections left: either to
  * add the next passage, or — when not-started sections are queued — to move the
  * next one into learning. Always one tap to the action — "No more sections" is
  * a decision the student records, not a bare dismiss. See
@@ -29,7 +29,7 @@ interface AddNextSectionNudgeProps {
 export function AddNextSectionNudge({
 	pieceTitle,
 	sectionLabel,
-	phaseLabel,
+	stateLabel,
 	kind,
 	busy,
 	onAddSection,
@@ -60,7 +60,7 @@ export function AddNextSectionNudge({
 								})
 							: t("screen.pieceSections.addNextNudge.body", {
 									section: sectionLabel,
-									phase: phaseLabel.toLowerCase(),
+									phase: stateLabel.toLowerCase(),
 									piece: pieceTitle,
 								})}
 					</Text>

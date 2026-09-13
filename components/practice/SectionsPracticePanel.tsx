@@ -8,9 +8,9 @@ import {
 	TouchableRipple,
 	useTheme,
 } from "react-native-paper";
-import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
+import { SectionStateChip } from "@/components/section/SectionStateChip";
 import type { Piece } from "@/models/piece";
-import type { Section, SectionPhase } from "@/models/section";
+import type { Section, SectionState } from "@/models/section";
 import { deriveCurrentBpm } from "@/utils/practice-modes";
 
 interface SectionsPracticePanelProps {
@@ -25,7 +25,7 @@ interface SectionsPracticePanelProps {
 	flaggableIds?: string[];
 	onToggleFlag: (sectionId: string) => void;
 	onPractice: (sectionId: string) => void;
-	onChangePhase?: (sectionId: string, phase: SectionPhase) => void;
+	onChangeState?: (sectionId: string, state: SectionState) => void;
 }
 
 export function SectionsPracticePanel({
@@ -36,7 +36,7 @@ export function SectionsPracticePanel({
 	flaggableIds,
 	onToggleFlag,
 	onPractice,
-	onChangePhase,
+	onChangeState,
 }: SectionsPracticePanelProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -90,10 +90,10 @@ export function SectionsPracticePanel({
 								}}
 							>
 								<Text variant="bodyLarge">{section.label}</Text>
-								<SectionPhaseChip
-									phase={section.phase}
-									onChangePhase={
-										onChangePhase ? (p) => onChangePhase(sid, p) : undefined
+								<SectionStateChip
+									state={section.state}
+									onChangeState={
+										onChangeState ? (p) => onChangeState(sid, p) : undefined
 									}
 								/>
 								{showBpm && (

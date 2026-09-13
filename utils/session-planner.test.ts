@@ -72,13 +72,13 @@ describe("pickRepertoireSection", () => {
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				lastPracticed: new Date(NOW.getTime() - 10 * 86400000),
 			}),
 			makeSection({
 				id: "s2",
 				pieceId: "p2",
-				phase: "learning",
+				state: "learning",
 				lastPracticed: new Date(NOW.getTime() - 1 * 86400000),
 			}),
 		];
@@ -120,14 +120,14 @@ describe("pickRepertoireSection", () => {
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				lastPracticed: same,
 				byMode: { HT: { bpm: 60, lastPracticed: same } },
 			}),
 			makeSection({
 				id: "s2",
 				pieceId: "p2",
-				phase: "learning",
+				state: "learning",
 				lastPracticed: same,
 				byMode: { HT: { bpm: 100, lastPracticed: same } },
 			}),
@@ -146,14 +146,14 @@ describe("pickRepertoireSection", () => {
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				order: 0,
 				lastPracticed: lp,
 			}),
 			makeSection({
 				id: "s2",
 				pieceId: "p2",
-				phase: "learning",
+				state: "learning",
 				order: 0,
 				lastPracticed: lp,
 			}),
@@ -168,21 +168,21 @@ describe("pickRepertoireSection", () => {
 		expect(b).toBeNull();
 	});
 
-	it("uses section.phase weight for scoring", () => {
+	it("uses section.state weight for scoring", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const days = new Date(NOW.getTime() - 10 * 86400000);
 		const sections: Section[] = [
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				order: 0,
 				lastPracticed: days,
 			}),
 			makeSection({
 				id: "s2",
 				pieceId: "p1",
-				phase: "maintenance",
+				state: "maintenance",
 				order: 1,
 				lastPracticed: days,
 			}),
@@ -197,7 +197,7 @@ describe("pickRepertoireLearningBlocks", () => {
 
 	/**
 	 * One learning piece whose candidates rank in exactly `types` order — `L` is
-	 * a learning-phase section (8–12 min), `R` a stabilizing one (6–9 min). Scores
+	 * a learning-state section (8–12 min), `R` a stabilizing one (6–9 min). Scores
 	 * step down by 30 along the string, so greedy walks it left to right.
 	 */
 	function poolFor(types: string): {
@@ -205,14 +205,14 @@ describe("pickRepertoireLearningBlocks", () => {
 		sections: Section[];
 	} {
 		const sections = Array.from(types, (t, i) => {
-			const phase = t === "L" ? "learning" : "stabilizing";
+			const state = t === "L" ? "learning" : "stabilizing";
 			const score = 300 - 30 * i;
 			return makeSection({
 				id: `s${i}`,
 				pieceId: "p1",
-				phase,
+				state,
 				order: i,
-				lastPracticed: days(score / (phase === "learning" ? 10 : 3)),
+				lastPracticed: days(score / (state === "learning" ? 10 : 3)),
 			});
 		});
 		return {
@@ -284,7 +284,7 @@ describe("pickRepertoireLearningBlocks", () => {
 			});
 		}
 
-		it("never returns a block outside its phase's bounds", () => {
+		it("never returns a block outside its state's bounds", () => {
 			for (const types of ["L", "R", "LR", "RL", "LLR", "RRL", "LRLRLR"]) {
 				for (let allocated = 8; allocated <= 60; allocated += 0.25) {
 					const { pieces, sections } = poolFor(types);
@@ -330,28 +330,28 @@ describe("pickRepertoireLearningBlocks", () => {
 			makeSection({
 				id: "r0",
 				pieceId: "p1",
-				phase: "stabilizing",
+				state: "stabilizing",
 				order: 0,
 				lastPracticed: days(9),
 			}),
 			makeSection({
 				id: "r1",
 				pieceId: "p1",
-				phase: "stabilizing",
+				state: "stabilizing",
 				order: 1,
 				lastPracticed: days(4),
 			}),
 			makeSection({
 				id: "r2",
 				pieceId: "p1",
-				phase: "maintenance",
+				state: "maintenance",
 				order: 2,
 				lastPracticed: days(2),
 			}),
 			makeSection({
 				id: "s-learn",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				order: 3,
 				lastPracticed: days(1),
 			}),
@@ -373,21 +373,21 @@ describe("pickRepertoireLearningBlocks", () => {
 			makeSection({
 				id: "a",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				order: 0,
 				lastPracticed: days(3),
 			}),
 			makeSection({
 				id: "b",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				order: 1,
 				lastPracticed: days(2),
 			}),
 			makeSection({
 				id: "c",
 				pieceId: "p1",
-				phase: "stabilizing",
+				state: "stabilizing",
 				order: 2,
 				lastPracticed: days(5),
 			}),
@@ -407,14 +407,14 @@ describe("pickRepertoireLearningBlocks", () => {
 			makeSection({
 				id: "a",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				order: 0,
 				lastPracticed: days(3),
 			}),
 			makeSection({
 				id: "c",
 				pieceId: "p1",
-				phase: "stabilizing",
+				state: "stabilizing",
 				order: 1,
 				lastPracticed: days(21),
 			}),
@@ -433,13 +433,13 @@ describe("pickRepertoireLearningBlocks", () => {
 			makeSection({
 				id: "a1",
 				pieceId: "pa",
-				phase: "learning",
+				state: "learning",
 				lastPracticed: days(5), // 50 — the anchor
 			}),
 			makeSection({
 				id: "b1",
 				pieceId: "pb",
-				phase: "learning",
+				state: "learning",
 				lastPracticed: days(4), // 40
 			}),
 		];
@@ -457,19 +457,19 @@ describe("pickRepertoireLearningBlocks", () => {
 			makeSection({
 				id: "a-learn",
 				pieceId: "pa",
-				phase: "learning",
+				state: "learning",
 				lastPracticed: days(10),
 			}),
 			makeSection({
 				id: "a-review",
 				pieceId: "pa",
-				phase: "stabilizing",
+				state: "stabilizing",
 				lastPracticed: days(1), // score 2.5
 			}),
 			makeSection({
 				id: "b-review",
 				pieceId: "pb",
-				phase: "stabilizing",
+				state: "stabilizing",
 				lastPracticed: days(30), // score 75 — but the wrong piece
 			}),
 		];
@@ -486,7 +486,7 @@ describe("pickRepertoireLearningBlocks", () => {
 			makeSection({
 				id,
 				pieceId: "p1",
-				phase: "stabilizing",
+				state: "stabilizing",
 				order: i,
 				lastPracticed: days(9 - i),
 			}),
@@ -505,7 +505,7 @@ describe("pickRepertoireLearningBlocks", () => {
 		// pedagogical ceiling, so the surplus is handed back rather than absorbed.
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const sections: Section[] = [
-			makeSection({ id: "s1", pieceId: "p1", phase: "learning" }),
+			makeSection({ id: "s1", pieceId: "p1", state: "learning" }),
 		];
 		const under = pickRepertoireLearningBlocks(pieces, sections, 13, NOW);
 		expect(under.learningBlocks[0].allocatedMinutes).toBeCloseTo(12);
@@ -523,8 +523,8 @@ describe("pickRepertoireLearningBlocks", () => {
 			makePiece({ id: "pm", state: "maintenance" }),
 		];
 		const sections: Section[] = [
-			makeSection({ id: "s1", pieceId: "ps", phase: "learning" }),
-			makeSection({ id: "s2", pieceId: "pm", phase: "stabilizing" }),
+			makeSection({ id: "s1", pieceId: "ps", state: "learning" }),
+			makeSection({ id: "s2", pieceId: "pm", state: "stabilizing" }),
 		];
 		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
 		expect(r.learningBlocks).toEqual([]);
@@ -538,14 +538,14 @@ describe("pickRepertoireLearningBlocks", () => {
 			makeSection({
 				id: "a",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				order: 0,
 				lastPracticed: days(9),
 			}),
 			makeSection({
 				id: "b",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				order: 1,
 				lastPracticed: days(3),
 			}),
@@ -572,7 +572,7 @@ describe("pickRepertoireStabilizingBlocks", () => {
 			makeSection({
 				id: "problem",
 				pieceId: "pm",
-				phase: "stabilizing",
+				state: "stabilizing",
 				order: 0,
 				lastPracticed: days(6),
 			}),
@@ -580,7 +580,7 @@ describe("pickRepertoireStabilizingBlocks", () => {
 			makeSection({
 				id: "settled",
 				pieceId: "pm",
-				phase: "maintenance",
+				state: "maintenance",
 				order: 1,
 				lastPracticed: days(20),
 			}),
@@ -592,7 +592,7 @@ describe("pickRepertoireStabilizingBlocks", () => {
 	it("never touches a learning-state piece — that is the learning line's job", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const sections: Section[] = [
-			makeSection({ id: "s1", pieceId: "p1", phase: "stabilizing" }),
+			makeSection({ id: "s1", pieceId: "p1", state: "stabilizing" }),
 		];
 		const r = pickRepertoireStabilizingBlocks(pieces, sections, 10, NOW);
 		expect(r.blocks).toEqual([]);
@@ -605,7 +605,7 @@ describe("pickRepertoireStabilizingBlocks", () => {
 			makeSection({
 				id,
 				pieceId: "ps",
-				phase: "stabilizing",
+				state: "stabilizing",
 				order: i,
 				lastPracticed: days(9 - i),
 			}),
@@ -619,7 +619,7 @@ describe("pickRepertoireStabilizingBlocks", () => {
 	it("caps the block instead of grinding one section for the whole line", () => {
 		const pieces: Piece[] = [makePiece({ id: "ps", state: "stabilizing" })];
 		const sections: Section[] = [
-			makeSection({ id: "only", pieceId: "ps", phase: "stabilizing" }),
+			makeSection({ id: "only", pieceId: "ps", state: "stabilizing" }),
 		];
 		const r = pickRepertoireStabilizingBlocks(pieces, sections, 20, NOW);
 		expect(r.blocks).toHaveLength(1);
@@ -1269,7 +1269,7 @@ describe("planned block modeKey", () => {
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				byMode: {
 					LH: {
 						bpm: 30,
@@ -1414,8 +1414,8 @@ describe("buildPlan", () => {
 	it("a repertoire-heavy allocation still schedules its technique and reading minutes", () => {
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const sections: Section[] = [
-			makeSection({ id: "s1", pieceId: "p1", phase: "learning", order: 1 }),
-			makeSection({ id: "s0", pieceId: "p1", phase: "stabilizing", order: 0 }),
+			makeSection({ id: "s1", pieceId: "p1", state: "learning", order: 1 }),
+			makeSection({ id: "s0", pieceId: "p1", state: "stabilizing", order: 0 }),
 		];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
 		const plan = buildPlan(
@@ -1621,8 +1621,8 @@ describe("buildPlan", () => {
 			}),
 		];
 		const sections: Section[] = [
-			makeSection({ id: "l1", pieceId: "pl", phase: "learning", order: 1 }),
-			makeSection({ id: "r1", pieceId: "pl", phase: "stabilizing", order: 0 }),
+			makeSection({ id: "l1", pieceId: "pl", state: "learning", order: 1 }),
+			makeSection({ id: "r1", pieceId: "pl", state: "stabilizing", order: 0 }),
 		];
 		const ts: TechniqueItem[] = [makeTechnique({ id: "a1", state: "active" })];
 		const plan = buildPlan(BALANCED_60, pieces, sections, ts, NOW);
@@ -1707,14 +1707,14 @@ describe("buildPlan", () => {
 			makeSection({
 				id: "learn",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				order: 1,
 				lastPracticed: days,
 			}),
 			makeSection({
 				id: "learned",
 				pieceId: "p1",
-				phase: "stabilizing",
+				state: "stabilizing",
 				order: 0,
 				lastPracticed: days,
 			}),
@@ -1725,7 +1725,7 @@ describe("buildPlan", () => {
 		expect(kinds.indexOf("repertoire-review")).toBeLessThan(
 			kinds.indexOf("repertoire-learning"),
 		);
-		// The stabilizing-phase section inside a learning piece — previously
+		// The stabilizing-state section inside a learning piece — previously
 		// unreachable by any line — is what the review block lands on.
 		const review = plan.blocks.find((b) => b.kind === "repertoire-review");
 		expect(review?.sectionId).toBe("learned");
@@ -1746,7 +1746,7 @@ describe("buildPlan", () => {
 			makeSection({
 				id: "problem",
 				pieceId: "pm",
-				phase: "stabilizing",
+				state: "stabilizing",
 				lastPracticed: days,
 			}),
 		];
@@ -1764,7 +1764,7 @@ describe("buildPlan", () => {
 		// to absorb the surplus — the preview has to say where the minutes went.
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const sections: Section[] = [
-			makeSection({ id: "s1", pieceId: "p1", phase: "learning" }),
+			makeSection({ id: "s1", pieceId: "p1", state: "learning" }),
 		];
 		const plan = buildPlan(
 			alloc({
@@ -1793,11 +1793,11 @@ describe("buildPlan", () => {
 		const NOW_LOCAL = new Date(2026, 4, 27, 12, 0);
 		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
 		const sections: Section[] = [
-			makeSection({ id: "s1", pieceId: "p1", phase: "learning" }),
+			makeSection({ id: "s1", pieceId: "p1", state: "learning" }),
 			makeSection({
 				id: "r1",
 				pieceId: "p1",
-				phase: "stabilizing",
+				state: "stabilizing",
 				lastPracticed: new Date(NOW_LOCAL.getTime() - 60 * 60 * 1000),
 			}),
 		];
@@ -1887,13 +1887,13 @@ describe("same-day exclusion", () => {
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				lastPracticed: oneHourAgo(),
 			}),
 			makeSection({
 				id: "s2",
 				pieceId: "p2",
-				phase: "learning",
+				state: "learning",
 				lastPracticed: twoDaysAgo(),
 			}),
 		];
@@ -1915,7 +1915,7 @@ describe("same-day exclusion", () => {
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				lastPracticed: oneHourAgo(),
 				byMode: {
 					LH: { bpm: 100, lastPracticed: oneHourAgo() },
@@ -1941,7 +1941,7 @@ describe("same-day exclusion", () => {
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				lastPracticed: oneHourAgo(),
 				byMode: {
 					LH: { bpm: 100, lastPracticed: oneHourAgo() },
@@ -2138,9 +2138,9 @@ describe("run-through credit invariants", () => {
 		// Sections on the maintenance pieces must not turn the block into a
 		// section block: run-throughs are whole-piece by definition.
 		const sections: Section[] = [
-			makeSection({ id: "m1a", pieceId: "m1", phase: "maintenance" }),
-			makeSection({ id: "m1b", pieceId: "m1", phase: "stabilizing", order: 1 }),
-			makeSection({ id: "m2a", pieceId: "m2", phase: "maintenance" }),
+			makeSection({ id: "m1a", pieceId: "m1", state: "maintenance" }),
+			makeSection({ id: "m1b", pieceId: "m1", state: "stabilizing", order: 1 }),
+			makeSection({ id: "m2a", pieceId: "m2", state: "maintenance" }),
 		];
 		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
 		const maint = plan.blocks.filter(
@@ -2152,15 +2152,15 @@ describe("run-through credit invariants", () => {
 		}
 	});
 
-	describe("stabilizingLinePool phase coverage", () => {
+	describe("stabilizingLinePool state coverage", () => {
 		const days = new Date(NOW.getTime() - 5 * 86400000);
 
 		it("scores all three phases inside a stabilizing-state piece", () => {
 			const pieces: Piece[] = [makePiece({ id: "ps", state: "stabilizing" })];
 			const sections: Section[] = [
-				makeSection({ id: "a", pieceId: "ps", phase: "learning", order: 0 }),
-				makeSection({ id: "b", pieceId: "ps", phase: "stabilizing", order: 1 }),
-				makeSection({ id: "c", pieceId: "ps", phase: "maintenance", order: 2 }),
+				makeSection({ id: "a", pieceId: "ps", state: "learning", order: 0 }),
+				makeSection({ id: "b", pieceId: "ps", state: "stabilizing", order: 1 }),
+				makeSection({ id: "c", pieceId: "ps", state: "maintenance", order: 2 }),
 			];
 			const pool = stabilizingLinePool(pieces, sections, NOW);
 			expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b", "c"]);
@@ -2174,17 +2174,17 @@ describe("run-through credit invariants", () => {
 				makePiece({ id: "pm", state, lastPracticed: days }),
 			];
 			const sections: Section[] = [
-				makeSection({ id: "a", pieceId: "pm", phase: "learning", order: 0 }),
+				makeSection({ id: "a", pieceId: "pm", state: "learning", order: 0 }),
 				makeSection({
 					id: "b",
 					pieceId: "pm",
-					phase: "stabilizing",
+					state: "stabilizing",
 					order: 1,
 				}),
 				makeSection({
 					id: "c",
 					pieceId: "pm",
-					phase: "maintenance",
+					state: "maintenance",
 					order: 2,
 				}),
 			];

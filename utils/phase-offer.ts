@@ -1,6 +1,6 @@
 import type { Piece } from "@/models/piece";
 import type { ByMode } from "@/models/practice";
-import type { PhaseTransition, Section, SectionPhase } from "@/models/section";
+import type { PhaseTransition, Section, SectionState } from "@/models/section";
 import type { ModeEntry } from "./practice-modes";
 import {
 	type AdvanceCriterion,
@@ -24,15 +24,15 @@ export type PhaseOfferKind = "advance" | "demote";
 
 export interface PhaseOffer {
 	kind: PhaseOfferKind;
-	fromPhase: SectionPhase;
-	toPhase: SectionPhase;
+	fromPhase: SectionState;
+	toPhase: SectionState;
 	/** Hands-together tempo behind an advance offer, for the copy and the audit row. */
 	htBpm: number | null;
 	/** Clean HT days behind an advance offer. */
 	cleanDays: number;
 	/** What triggered a demote offer; null on an advance. */
 	demoteReason: DemoteReason | null;
-	/** Days since the last phase change when it was recent; null otherwise. */
+	/** Days since the last state change when it was recent; null otherwise. */
 	cyclingDays: number | null;
 }
 
@@ -117,7 +117,7 @@ export function decidePhaseOffer({
 		return {
 			offer: {
 				kind: "demote",
-				fromPhase: section.phase,
+				fromPhase: section.state,
 				toPhase: demote.toPhase,
 				htBpm: byMode?.HT?.bpm ?? null,
 				cleanDays: 0,
@@ -136,7 +136,7 @@ export function decidePhaseOffer({
 		return {
 			offer: {
 				kind: "advance",
-				fromPhase: section.phase,
+				fromPhase: section.state,
 				toPhase: advance.toPhase,
 				htBpm: advance.htBpm,
 				cleanDays: advance.cleanDays,
@@ -152,7 +152,7 @@ export function decidePhaseOffer({
 	if (
 		advance.toPhase != null &&
 		effectiveTargetBpm(section, piece) == null &&
-		section.phase !== "maintenance"
+		section.state !== "maintenance"
 	) {
 		return {
 			offer: null,

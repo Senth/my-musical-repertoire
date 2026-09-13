@@ -9,7 +9,7 @@ import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveSession } from "@/hooks/use-active-session";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
-import { useChangeSectionPhase } from "@/hooks/use-section-phase";
+import { useChangeSectionState } from "@/hooks/use-section-state";
 import { useAllSections } from "@/hooks/use-sections";
 import type { Piece } from "@/models/piece";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
@@ -27,7 +27,7 @@ export default function SessionSummaryScreen() {
 	const { pieces } = usePieces();
 	const { sections } = useAllSections();
 	const { updatePiece } = useUpdatePiece();
-	const { changeSectionPhase } = useChangeSectionPhase();
+	const { changeSectionState } = useChangeSectionState();
 	const [busyPieceId, setBusyPieceId] = useState<string | null>(null);
 
 	const handleDone = async () => {
@@ -77,10 +77,10 @@ export default function SessionSummaryScreen() {
 		if (!nudge.section.id) return;
 		setBusyPieceId(pieceId);
 		try {
-			await changeSectionPhase({
+			await changeSectionState({
 				pieceId,
 				sectionId: nudge.section.id,
-				fromPhase: nudge.section.phase,
+				fromPhase: nudge.section.state,
 				toPhase: "learning",
 				trigger: "advance-button",
 				achievedBpmAtEvent: nudge.section.byMode?.HT?.bpm ?? null,
@@ -174,7 +174,7 @@ export default function SessionSummaryScreen() {
 						key={piece.id}
 						pieceTitle={piece.title}
 						sectionLabel={nudge.section.label}
-						phaseLabel={t(`section.phase.${nudge.section.phase}`)}
+						stateLabel={t(`section.state.${nudge.section.state}`)}
 						kind={nudge.kind}
 						busy={busyPieceId === piece.id}
 						onAddSection={() => router.push(`/piece/${piece.id}/section/new`)}

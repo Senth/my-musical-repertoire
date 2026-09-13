@@ -172,7 +172,7 @@ describe("suggestPieces", () => {
 					id: "s1",
 					pieceId: "p1",
 					lastPracticed: new Date(NOW.getTime() - 1 * 86_400_000),
-					// gap = 110, phaseScore*days = 10
+					// gap = 110, stateScore*days = 10
 					byMode: {
 						HT: {
 							bpm: 10,
@@ -210,7 +210,7 @@ describe("suggestPieces", () => {
 				makeSection({
 					id: "s1",
 					pieceId: "p1",
-					phase: "maintenance",
+					state: "maintenance",
 					lastPracticed: new Date(NOW.getTime() - 1 * 86_400_000),
 					lastEffort: 5, // bonus = (5-1)+(5-1)=8 > 1*1=1
 					lastQuality: 1,
@@ -383,7 +383,7 @@ describe("suggestPieces", () => {
 				makeSection({
 					id: "s1",
 					pieceId: "p1",
-					phase: "maintenance",
+					state: "maintenance",
 					lastPracticed: new Date(NOW.getTime() - 86_400_000),
 					lastQuality: 5, // rollup is clean...
 					lastEffort: 1,
@@ -404,7 +404,7 @@ describe("suggestPieces", () => {
 	});
 
 	describe("never-practiced boost", () => {
-		it("never-practiced piece scores 999 × phaseScore", () => {
+		it("never-practiced piece scores 999 × stateScore", () => {
 			const pieces = [
 				makePiece({ id: "p1", state: "learning" }), // 999 days
 				makePiece({

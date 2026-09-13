@@ -44,7 +44,7 @@ export function scorePiece(
 			section.targetBpmOverride ?? piece.targetTempoBpm ?? null;
 		const { score } = scoreSectionModes(
 			piece,
-			section.phase,
+			section.state,
 			section.byMode,
 			effectiveTarget,
 			now,

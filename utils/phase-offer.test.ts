@@ -1,8 +1,8 @@
 import type { ByMode } from "@/models/practice";
-import type { PhaseTransition, SectionPhase } from "@/models/section";
-import { decidePhaseOffer, type PhaseOfferInput } from "./phase-offer";
+import type { PhaseTransition, SectionState } from "@/models/section";
 import type { ModeEntry } from "./practice-modes";
 import type { ProgressionLog } from "./section-progression";
+import { decidePhaseOffer, type PhaseOfferInput } from "./phase-offer";
 import { makePiece, makeSection } from "./test-factories";
 
 const TARGET = 120;
@@ -41,20 +41,20 @@ function dismissal(over: Partial<PhaseTransition> = {}): PhaseTransition {
 
 function decide(
 	over: Partial<PhaseOfferInput> & {
-		phase?: SectionPhase;
+		state?: SectionState;
 		targetTempoBpm?: number | null;
 		phaseChangedAt?: Date | null;
 	} = {},
 ) {
 	const {
-		phase = "learning",
+		state = "learning",
 		targetTempoBpm = TARGET,
 		phaseChangedAt = null,
 		...rest
 	} = over;
 	const byMode: ByMode = { HT: { bpm: 116, quality: 5, effort: 3 } };
 	return decidePhaseOffer({
-		section: makeSection({ id: "s1", pieceId: "p1", phase, phaseChangedAt }),
+		section: makeSection({ id: "s1", pieceId: "p1", state, phaseChangedAt }),
 		piece: makePiece({ id: "p1", targetTempoBpm }),
 		byMode,
 		// One clean day already in history; the save adds today's.
@@ -89,7 +89,7 @@ describe("decidePhaseOffer", () => {
 
 	it("offers the demote and never an advance at the same time", () => {
 		const { offer } = decide({
-			phase: "maintenance",
+			state: "maintenance",
 			savedEntries: [entry({ quality: 1 })],
 		});
 		expect(offer).toMatchObject({
@@ -103,14 +103,14 @@ describe("decidePhaseOffer", () => {
 	it("does not compare the saved tempo against itself", () => {
 		// A 116 BPM save with no earlier HT tempo has nothing to have dropped from.
 		const { offer } = decide({
-			phase: "maintenance",
+			state: "maintenance",
 			priorLogs: [],
 			savedEntries: [entry({ bpm: 116 })],
 		});
 		expect(offer?.kind).not.toBe("demote");
 	});
 
-	it("carries the cycling-guard age when the phase moved recently", () => {
+	it("carries the cycling-guard age when the state moved recently", () => {
 		const { offer } = decide({ phaseChangedAt: new Date(2026, 7, 6, 12, 0) });
 		expect(offer?.cyclingDays).toBe(2);
 	});
@@ -140,7 +140,7 @@ describe("decidePhaseOffer", () => {
 
 	it("suppresses a demote offer on its own dismissal count", () => {
 		const { offer, status } = decide({
-			phase: "maintenance",
+			state: "maintenance",
 			savedEntries: [entry({ quality: 1 })],
 			transitions: [
 				dismissal({ trigger: "demote-button" }),
@@ -186,7 +186,7 @@ describe("decidePhaseOffer", () => {
 
 	it("says nothing about a target on a maintenance section", () => {
 		const { offer, status } = decide({
-			phase: "maintenance",
+			state: "maintenance",
 			targetTempoBpm: null,
 		});
 		expect(offer).toBeNull();
