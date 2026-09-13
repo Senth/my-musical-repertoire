@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import { Icon, Text, useTheme } from "react-native-paper";
+import { border } from "@/theme/tokens";
 import type {
 	TimeSignature,
 	TimeSignatureWritePlan,
@@ -92,7 +93,7 @@ export function AccentChip({
 						height: CHIP_HEIGHT,
 						justifyContent: "center",
 						paddingHorizontal: 9,
-						borderLeftWidth: 1,
+						borderLeftWidth: border.hairline,
 						borderLeftColor: sounding
 							? theme.colors.outline
 							: theme.colors.outlineVariant,

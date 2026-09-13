@@ -13,6 +13,7 @@ import {
 import { FormTextField } from "@/components/ui/FormTextField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnlineStatus } from "@/hooks/use-online-status";
+import { space } from "@/theme/tokens";
 import { deleteAllUserData } from "@/utils/delete-account";
 import { clearLocalUserData } from "@/utils/session-storage";
 
@@ -111,7 +112,7 @@ export function DeleteAccountCard() {
 	return (
 		<Card mode="outlined" style={{ borderColor: theme.colors.error }}>
 			<Card.Content>
-				<View className="gap-3">
+				<View style={{ gap: space.md }}>
 					<Text variant="bodyMedium">
 						{t("screen.deleteAccount.dialogBody")}
 					</Text>
@@ -130,7 +131,7 @@ export function DeleteAccountCard() {
 				<Dialog visible={open} onDismiss={busy ? () => {} : close}>
 					<Dialog.Title>{t("screen.deleteAccount.dialogTitle")}</Dialog.Title>
 					<Dialog.Content>
-						<View className="gap-2">
+						<View style={{ gap: space.sm }}>
 							<Text variant="bodyMedium">
 								{t("screen.deleteAccount.dialogBody")}
 							</Text>

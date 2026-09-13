@@ -16,6 +16,7 @@ import {
 	type TechniqueState,
 	type TechniqueType,
 } from "@/models/technique";
+import { space } from "@/theme/tokens";
 import { validateBpm } from "@/utils/validation";
 
 export default function AddTechniqueScreen() {
@@ -94,7 +95,7 @@ export default function AddTechniqueScreen() {
 	};
 
 	const formContent = (
-		<View className="gap-4">
+		<View style={{ gap: space.lg }}>
 			<FormTextField
 				ref={titleInputRef}
 				label={t("screen.addTechnique.titleLabel")}

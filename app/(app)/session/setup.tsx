@@ -33,6 +33,7 @@ import {
 	type PresetLines,
 	SCRATCH_PRESET_ID,
 } from "@/models/session-preset";
+import { space } from "@/theme/tokens";
 import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
 import { buildPlan, planTotalMinutes } from "@/utils/session-planner";
 import { writeActiveSession } from "@/utils/session-storage";
@@ -158,8 +159,11 @@ export default function SessionSetupScreen() {
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			<Appbar.Header>
 				<Appbar.BackAction onPress={goBack} />
@@ -176,7 +180,7 @@ export default function SessionSetupScreen() {
 				<LoadingScreen />
 			) : (
 				<ScreenContent gap={6} paddingBottom={24}>
-					<View className="gap-2">
+					<View style={{ gap: space.sm }}>
 						<Text variant="titleSmall">
 							{t("screen.session.setup.preview")}
 						</Text>
@@ -230,7 +234,13 @@ function OmittedRow({ slot }: { slot: OmittedSlot }) {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	return (
-		<View className="flex-row items-start gap-3">
+		<View
+			style={{
+				flexDirection: "row",
+				alignItems: "flex-start",
+				gap: space.md,
+			}}
+		>
 			<Text
 				variant="bodyMedium"
 				style={{ color: theme.colors.onSurfaceVariant, fontStyle: "italic" }}
@@ -262,9 +272,16 @@ function TotalRow({ plan }: { plan: SessionPlan }) {
 			: t(minutesLabelKey(total.approx), { minutes: total.minutes });
 
 	return (
-		<View className="gap-2">
+		<View style={{ gap: space.sm }}>
 			<Divider />
-			<View className="flex-row items-start justify-between gap-3">
+			<View
+				style={{
+					flexDirection: "row",
+					alignItems: "flex-start",
+					justifyContent: "space-between",
+					gap: space.md,
+				}}
+			>
 				<Text variant="bodyLarge" style={{ fontWeight: "600" }}>
 					{t("screen.session.setup.totalLabel")}
 				</Text>
@@ -309,7 +326,7 @@ function OptInRow({
 				: null;
 
 	return (
-		<View className="gap-1">
+		<View style={{ gap: space.xs }}>
 			<Checkbox.Item
 				mode="android"
 				position="leading"
@@ -324,7 +341,14 @@ function OptInRow({
 				})}
 				style={{ paddingHorizontal: 0 }}
 			/>
-			<View className="flex-row items-center gap-2" style={{ paddingLeft: 48 }}>
+			<View
+				style={{
+					flexDirection: "row",
+					alignItems: "center",
+					gap: space.sm,
+					paddingLeft: 48,
+				}}
+			>
 				<Text
 					variant="bodySmall"
 					style={{ color: theme.colors.onSurfaceVariant }}
@@ -366,8 +390,15 @@ function PreviewRow({ block }: { block: PlannedBlock }) {
 		.join(" / ");
 
 	return (
-		<View className="flex-row items-start justify-between gap-3">
-			<View className="flex-1">
+		<View
+			style={{
+				flexDirection: "row",
+				alignItems: "flex-start",
+				justifyContent: "space-between",
+				gap: space.md,
+			}}
+		>
+			<View style={{ flex: 1, minHeight: 0 }}>
 				<Text variant="bodyLarge">{kindLabel}</Text>
 				{subtitleParts ? (
 					<Text

@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { ProgressBar, Text, useTheme } from "react-native-paper";
 import { PracticeMistakes } from "@/models/practice";
+import { radius, space } from "@/theme/tokens";
 
 interface PieceProgressBarProps {
 	technicalMistakes?: PracticeMistakes;
@@ -31,12 +32,18 @@ export function PieceProgressBar({
 	const score = calculateScore(technicalMistakes, memoryMistakes);
 
 	return (
-		<View className="flex-row items-center gap-2">
-			<View className="flex-1">
+		<View
+			style={{
+				flexDirection: "row",
+				alignItems: "center",
+				gap: space.sm,
+			}}
+		>
+			<View style={{ flex: 1, minHeight: 0 }}>
 				<ProgressBar
 					progress={score !== null ? score / 10 : 0}
 					color={theme.colors.primary}
-					style={{ height: 6, borderRadius: 3 }}
+					style={{ height: 6, borderRadius: radius.hairline }}
 				/>
 			</View>
 			{showLabel && (

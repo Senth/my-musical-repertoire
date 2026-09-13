@@ -146,7 +146,7 @@ CI runs the same list on every PR, emulators included.
 `types.d.ts` exists for that: it repeats the `expo/types` reference that
 `expo-env.d.ts` carries, because the Expo CLI generates that file and gitignores
 it. It is present on a developer's machine and absent in CI, where `tsc` would
-otherwise fail on `import "./global.css"` in a file nobody touched.
+otherwise miss the Expo router types in a file nobody touched.
 
 ## Firebase projects and deploys
 

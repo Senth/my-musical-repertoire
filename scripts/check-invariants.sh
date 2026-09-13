@@ -19,9 +19,10 @@
 # unresolvable, it is a hard error — a CI expression that evaluates to an empty
 # string must never read as a pass.
 #
-# Not here yet, deliberately:
-#   * style literals and colour literals — the app is still on NativeWind, and
-#     both checks turn on green in the PR that moves it to theme/tokens.ts.
+# Checks 7-9 are the token rule from #127. Check 9 covers `fontSize` and the
+# border widths — the properties that are clean today. The spacing, radius and
+# size properties still carry pre-token literals that #31 / #113 / #26 own;
+# the pattern widens to them inside those PRs, not here.
 #
 # Requires: git, grep, jq, and bash 4.4+ for `mapfile -d`.
 set -uo pipefail
@@ -203,6 +204,64 @@ if [[ -n "$missing" ]]; then
 		"Add it to utils/delete-account.ts and to clearLocalUserData, children before parents."
 else
 	report 4 "deletion covers every store" ok
+fi
+
+# ---------------------------------------------------------------------------
+# 7. No className — NativeWind is gone
+#
+# The styling order is a Paper component first, else a style prop built from
+# theme/tokens.ts. A className has no interpreter left to render it.
+# ---------------------------------------------------------------------------
+PATTERN='className'
+hits=$(scan "${SRC[@]}" | drop_allowed | strip_comments)
+if [[ -n "$hits" ]]; then
+	report 7 "no className" FAIL "$hits" \
+		"Use a react-native-paper component, else a style prop built from theme/tokens.ts."
+else
+	report 7 "no className" ok
+fi
+
+# ---------------------------------------------------------------------------
+# 8. No colour literal outside the value files
+#
+# The palettes live in theme/, the lifecycle set in utils/state-colors.ts —
+# the contract's two value homes. Two exclusions, both named: `*.test.ts`
+# files hold hex fixtures for those value files, not styling, and
+# app/+html.tsx is the static HTML shell, which renders in Node during
+# `expo export` and cannot reach the React Native theme graph — its PWA
+# metas carry the brand hexes directly.
+# ---------------------------------------------------------------------------
+COLOUR_SRC=()
+for f in "${SRC[@]}"; do
+	[[ "$f" =~ ^theme/ ]] && continue
+	[[ "$f" == "utils/state-colors.ts" ]] && continue
+	[[ "$f" =~ \.test\.tsx?$ ]] && continue
+	[[ "$f" == "app/+html.tsx" ]] && continue
+	COLOUR_SRC+=("$f")
+done
+PATTERN='#[0-9a-fA-F]{3,8}\b'
+hits=$(scan "${COLOUR_SRC[@]}" | drop_allowed | strip_comments)
+if [[ -n "$hits" ]]; then
+	report 8 "colours from the value files" FAIL "$hits" \
+		"Take the colour from the theme palettes or the lifecycle set."
+else
+	report 8 "colours from the value files" ok
+fi
+
+# ---------------------------------------------------------------------------
+# 9. Style props read the token scale
+#
+# Scoped today to fontSize and the border widths, which are clean; the spacing,
+# radius and size properties still carry pre-token literals that #31 / #113 /
+# #26 pay off, and the pattern widens to them there.
+# ---------------------------------------------------------------------------
+PATTERN='(fontSize|border[A-Za-z]*Width):[[:space:]]*[0-9]'
+hits=$(scan "${SRC[@]}" | drop_allowed | strip_comments)
+if [[ -n "$hits" ]]; then
+	report 9 "style props read the token scale" FAIL "$hits" \
+		"Read it from theme/tokens.ts."
+else
+	report 9 "style props read the token scale" ok
 fi
 
 # ---------------------------------------------------------------------------

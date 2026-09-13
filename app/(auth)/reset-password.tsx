@@ -7,6 +7,7 @@ import { Appbar, Button, Card, HelperText, useTheme } from "react-native-paper";
 import { FormTextField } from "@/components/ui/FormTextField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsCompact } from "@/hooks/use-is-compact";
+import { contentWidth, space } from "@/theme/tokens";
 
 export default function ResetPasswordScreen() {
 	const { t } = useTranslation();
@@ -28,8 +29,11 @@ export default function ResetPasswordScreen() {
 	if (!oobCode) {
 		return (
 			<View
-				className="flex-1 justify-center items-center"
 				style={{
+					flex: 1,
+					minHeight: 0,
+					justifyContent: "center",
+					alignItems: "center",
 					backgroundColor: theme.colors.background,
 					paddingHorizontal: 16,
 				}}
@@ -81,7 +85,7 @@ export default function ResetPasswordScreen() {
 	};
 
 	const formContent = (
-		<View className="gap-2">
+		<View style={{ gap: space.sm }}>
 			<FormTextField
 				label={t("screen.resetPassword.newPasswordLabel")}
 				value={password}
@@ -125,8 +129,11 @@ export default function ResetPasswordScreen() {
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			<Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
 				<Appbar.Content
@@ -137,10 +144,21 @@ export default function ResetPasswordScreen() {
 
 			<KeyboardAvoidingView
 				behavior={Platform.OS === "ios" ? "padding" : "height"}
-				className="flex-1 justify-center items-center"
-				style={{ paddingHorizontal: 16 }}
+				style={{
+					flex: 1,
+					minHeight: 0,
+					justifyContent: "center",
+					alignItems: "center",
+					paddingHorizontal: 16,
+				}}
 			>
-				<View className="w-full max-w-md self-center">
+				<View
+					style={{
+						width: "100%",
+						maxWidth: contentWidth.form,
+						alignSelf: "center",
+					}}
+				>
 					{isCompact ? (
 						formContent
 					) : (

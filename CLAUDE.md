@@ -7,12 +7,10 @@ My Musical Repertoire: an Expo / React Native web-first practice app on Firebase
 - Package manager is **yarn**, not npm; imports use the `@/` alias, never `../`;
   platform splits are `.web.tsx` / `.native.tsx`.
 - Reach for a **react-native-paper** component first, else a style prop built from
-  `theme/tokens.ts` — no `StyleSheet.create`, and deliberately no NativeWind or Tailwind.
-  Colours come from `useTheme()` — never a literal outside a theme file.
-  - The app has not got there yet: 163 `className` uses across 40 files, and
-    `theme/tokens.ts` arrives with the conversion in #127. The rule is still the rule —
-    new code is written on the target stack, so the conversion never has to catch up
-    with itself.
+  `theme/tokens.ts` — no `StyleSheet.create`, and deliberately no NativeWind, Tailwind
+  or `className` anywhere. Every spacing, radius and size reads from `theme/tokens.ts`
+  ([the design contract](docs/DESIGN.md) says what each token is for), and colours come
+  from `useTheme()` — never a literal outside `theme/`.
 - Every user-facing string goes through `t()`, with `i18n/locales/en-US.json` updated in
   the same change.
 - Domain modules in `utils/` and `models/` have sibling tests. Snapshot tests and

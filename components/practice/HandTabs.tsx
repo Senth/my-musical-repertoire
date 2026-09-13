@@ -6,6 +6,7 @@ import type { ModeDraft } from "@/hooks/use-mode-drafts";
 import { parseBpm } from "@/hooks/use-mode-drafts";
 import type { PracticeDrill } from "@/models/practice";
 import { HANDS_MODES, type HandsMode, type ModeKey } from "@/models/practice";
+import { border } from "@/theme/tokens";
 import { parseModeKey } from "@/utils/practice-modes";
 
 const HANDS_ICON: Record<HandsMode, string> = {
@@ -93,7 +94,7 @@ export function HandTabs({
 						flexDirection: "row",
 						height: TAB_HEIGHT,
 						borderRadius: TAB_HEIGHT / 2,
-						borderWidth: 1,
+						borderWidth: border.hairline,
 						borderColor: theme.colors.outlineVariant,
 						overflow: "hidden",
 					}}

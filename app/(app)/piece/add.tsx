@@ -10,6 +10,7 @@ import { useAutoFocusOnMount } from "@/hooks/use-auto-focus-on-mount";
 import { useAddPiece, usePieces } from "@/hooks/use-pieces";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { PIECE_STATES, type PieceState } from "@/models/piece";
+import { space } from "@/theme/tokens";
 import {
 	collectionSuggestions,
 	composerSuggestions,
@@ -112,7 +113,7 @@ export default function AddPieceScreen() {
 	};
 
 	const formContent = (
-		<View className="gap-4">
+		<View style={{ gap: space.lg }}>
 			<FormTextField
 				ref={titleInputRef}
 				label={t("screen.addPiece.titleLabel")}

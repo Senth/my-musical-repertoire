@@ -1,16 +1,10 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import type { MD3Theme } from "react-native-paper";
-import { Appbar, Text, useTheme } from "react-native-paper";
+import { Appbar, Text } from "react-native-paper";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
+import { useAppTheme } from "@/theme";
 import { coachSegments } from "@/utils/coach-progress";
-
-type AppTheme = MD3Theme & {
-	colors: MD3Theme["colors"] & {
-		warning: string;
-	};
-};
 
 export interface CoachShellProps {
 	blocks: PlannedBlock[];
@@ -47,17 +41,14 @@ export function CoachShell({
 	children,
 }: CoachShellProps) {
 	const { t } = useTranslation();
-	const theme = useTheme<AppTheme>();
+	const theme = useAppTheme();
 
 	const sessionOver = sessionElapsedSeconds > sessionTotalSeconds;
 	const segments = coachSegments(blocks, blockStates, blockElapsedSeconds);
 	const blockOver = blockElapsedSeconds > blockTotalSeconds;
 
 	return (
-		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
-		>
+		<View style={{ flex: 1, backgroundColor: theme.colors.background }}>
 			<Appbar.Header>
 				<Appbar.BackAction
 					onPress={onExit}
@@ -145,7 +136,7 @@ export function CoachShell({
 				</View>
 			</View>
 
-			<View className="flex-1">{children}</View>
+			<View style={{ flex: 1 }}>{children}</View>
 		</View>
 	);
 }

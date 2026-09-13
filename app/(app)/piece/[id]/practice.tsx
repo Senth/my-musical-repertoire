@@ -487,8 +487,11 @@ export function PiecePracticeContent({
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			{!inCoach && (
 				<Appbar.Header>

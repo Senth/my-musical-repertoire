@@ -13,6 +13,7 @@ import { useChangeSectionPhase } from "@/hooks/use-section-phase";
 import { useAllSections } from "@/hooks/use-sections";
 import type { Piece } from "@/models/piece";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
+import { space } from "@/theme/tokens";
 import { sectionNudge } from "@/utils/add-section-nudge";
 import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
 import { planTotalMinutes } from "@/utils/session-planner";
@@ -101,8 +102,13 @@ export default function SessionSummaryScreen() {
 	if (!session) {
 		return (
 			<View
-				className="flex-1 items-center justify-center"
-				style={{ backgroundColor: theme.colors.background }}
+				style={{
+					flex: 1,
+					minHeight: 0,
+					alignItems: "center",
+					justifyContent: "center",
+					backgroundColor: theme.colors.background,
+				}}
 			>
 				<Button mode="contained" onPress={handleDone}>
 					{t("screen.session.summary.done")}
@@ -127,8 +133,11 @@ export default function SessionSummaryScreen() {
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			<Appbar.Header>
 				<Appbar.Content title={t("screen.session.summary.title")} />
@@ -211,9 +220,15 @@ function SummaryRow({
 		.join(" / ");
 
 	return (
-		<View className="flex-row items-start gap-2">
+		<View
+			style={{
+				flexDirection: "row",
+				alignItems: "flex-start",
+				gap: space.sm,
+			}}
+		>
 			<Text style={{ width: 20 }}>{skipped ? "⤬" : completed ? "✓" : "·"}</Text>
-			<View className="flex-1">
+			<View style={{ flex: 1, minHeight: 0 }}>
 				<Text variant="bodyLarge">
 					{kindLabel}
 					{!skipped && actual.minutes > 0

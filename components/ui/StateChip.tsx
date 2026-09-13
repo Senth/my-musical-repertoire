@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { Chip, useTheme } from "react-native-paper";
+import { radius, type } from "@/theme/tokens";
 import { type StateVisual, withAlpha } from "@/utils/state-colors";
 
 interface StateChipProps {
@@ -10,7 +11,7 @@ interface StateChipProps {
 
 /** Shared geometry for every informational chip, so none out-sizes its neighbour. */
 const CHIP_TEXT_STYLE = {
-	fontSize: 11,
+	fontSize: type.labelSmall,
 	lineHeight: 16,
 	letterSpacing: 0.3,
 	marginVertical: 3,
@@ -42,7 +43,7 @@ export function StateChip({
 					? theme.colors.outlineVariant
 					: "transparent",
 				borderWidth: visual.outlined ? 1 : 0,
-				borderRadius: 6,
+				borderRadius: radius.chip,
 				alignSelf: "flex-start",
 			}}
 			textStyle={{ ...CHIP_TEXT_STYLE, color: visual.accent }}
@@ -69,7 +70,7 @@ export function MetaChip({ label }: { label: string }): ReactElement {
 					theme.colors.onSurfaceVariant,
 					theme.dark ? 0.11 : 0.07,
 				),
-				borderRadius: 6,
+				borderRadius: radius.chip,
 				alignSelf: "flex-start",
 			}}
 			textStyle={{ ...CHIP_TEXT_STYLE, color: theme.colors.onSurfaceVariant }}

@@ -11,6 +11,7 @@ import {
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import type { Piece } from "@/models/piece";
 import type { Section, SectionPhase } from "@/models/section";
+import { space } from "@/theme/tokens";
 import { deriveCurrentBpm } from "@/utils/practice-modes";
 
 interface SectionsPracticePanelProps {
@@ -52,7 +53,7 @@ export function SectionsPracticePanel({
 				: "screen.practice.sectionsPanel.header";
 
 	return (
-		<View className="gap-3">
+		<View style={{ gap: space.md }}>
 			<Text variant="titleSmall">{t(headerKey)}</Text>
 			<Divider />
 			{sections.map((section) => {

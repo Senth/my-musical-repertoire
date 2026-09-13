@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Checkbox, Text, useTheme } from "react-native-paper";
+import { space } from "@/theme/tokens";
 import type { PhaseOffer } from "@/utils/phase-offer";
 import type { DemoteReason } from "@/utils/section-progression";
 
@@ -68,7 +69,7 @@ export function PhaseOfferBody({
 		);
 
 	return (
-		<View className="gap-2">
+		<View style={{ gap: space.sm }}>
 			<Text variant="bodyMedium">{offerReasonText(offer, t)}</Text>
 
 			{offer.cyclingDays != null && (

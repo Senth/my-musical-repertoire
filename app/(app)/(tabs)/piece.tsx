@@ -39,6 +39,7 @@ import { useListPrefs } from "@/hooks/use-list-prefs";
 import { usePieceScores } from "@/hooks/use-piece-scores";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { PIECE_STATES, type Piece } from "@/models/piece";
+import { size, space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
 import {
 	availableCollections,
@@ -363,14 +364,21 @@ export default function PiecesScreen() {
 		<List.Item
 			title={item.title}
 			description={() => (
-				<View className="gap-1 mt-1">
+				<View style={{ gap: space.xs, marginTop: space.xs }}>
 					<Text
 						variant="bodyMedium"
 						style={{ color: theme.colors.onSurfaceVariant }}
 					>
 						{formatComposerLine(item.composer, item.collectionName)}
 					</Text>
-					<View className="flex-row items-center gap-2 flex-wrap">
+					<View
+						style={{
+							flexDirection: "row",
+							alignItems: "center",
+							flexWrap: "wrap",
+							gap: space.sm,
+						}}
+					>
 						<PieceStateChip state={item.state} />
 						{(item.sectionCount ?? 0) > 0 && (
 							<Text
@@ -390,7 +398,7 @@ export default function PiecesScreen() {
 				</View>
 			)}
 			right={() => (
-				<View className="justify-center w-24">
+				<View style={{ justifyContent: "center", width: size.md }}>
 					<PieceProgressBar
 						technicalMistakes={item.lastTechnicalMistakes}
 						memoryMistakes={item.lastMemoryMistakes}
@@ -412,7 +420,16 @@ export default function PiecesScreen() {
 	const hiddenBySearch = searchQuery.trim().length > 0;
 
 	const emptyState = (
-		<View className="flex-1 items-center justify-center p-8 gap-3">
+		<View
+			style={{
+				flex: 1,
+				minHeight: 0,
+				alignItems: "center",
+				justifyContent: "center",
+				padding: space.xxl,
+				gap: space.md,
+			}}
+		>
 			<Text
 				variant="bodyLarge"
 				style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}
@@ -443,10 +460,19 @@ export default function PiecesScreen() {
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
-			<View className="px-4 pt-3 pb-2">
+			<View
+				style={{
+					paddingHorizontal: space.lg,
+					paddingTop: space.md,
+					paddingBottom: space.sm,
+				}}
+			>
 				<Searchbar
 					placeholder={t("screen.pieces.searchPlaceholder")}
 					value={searchQuery}
@@ -462,7 +488,14 @@ export default function PiecesScreen() {
 			/>
 
 			{loading ? (
-				<View className="flex-1 items-center justify-center">
+				<View
+					style={{
+						flex: 1,
+						minHeight: 0,
+						alignItems: "center",
+						justifyContent: "center",
+					}}
+				>
 					<ActivityIndicator size="large" />
 				</View>
 			) : visiblePieces.length === 0 ? (
@@ -502,8 +535,15 @@ export default function PiecesScreen() {
 								right={() => renderCardMenu(item)}
 							/>
 							<Card.Content>
-								<View className="gap-2">
-									<View className="flex-row items-center gap-2 flex-wrap">
+								<View style={{ gap: space.sm }}>
+									<View
+										style={{
+											flexDirection: "row",
+											alignItems: "center",
+											flexWrap: "wrap",
+											gap: space.sm,
+										}}
+									>
 										<PieceStateChip state={item.state} />
 										{(item.sectionCount ?? 0) > 0 && (
 											<Text

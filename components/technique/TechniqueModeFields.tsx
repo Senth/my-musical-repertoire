@@ -7,6 +7,7 @@ import {
 	TECHNIQUE_HANDS_MODES,
 	type TechniqueHandsMode,
 } from "@/models/practice";
+import { space } from "@/theme/tokens";
 
 interface TechniqueModeFieldsProps {
 	/** i18n prefix — `screen.addTechnique` or `screen.editTechnique`. */
@@ -38,7 +39,7 @@ export function TechniqueModeFields({
 
 	return (
 		<>
-			<View className="gap-1">
+			<View style={{ gap: space.xs }}>
 				<Text variant="titleSmall">{t(`${screen}.handsLabel`)}</Text>
 				<Text
 					variant="bodySmall"
@@ -64,7 +65,7 @@ export function TechniqueModeFields({
 				</RadioButton.Group>
 			</View>
 
-			<View className="gap-1">
+			<View style={{ gap: space.xs }}>
 				<Text variant="titleSmall">{t(`${screen}.drillsLabel`)}</Text>
 				{PRACTICE_DRILLS.map((drill) => (
 					<Checkbox.Item

@@ -35,6 +35,7 @@ import {
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import type { ModeKey, PracticeDrill } from "@/models/practice";
+import { type } from "@/theme/tokens";
 import { effortOptions, qualityOptions } from "@/utils/estimation-options";
 import {
 	availableHandsModes,
@@ -219,8 +220,11 @@ export function TechniquePracticeContent({
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			{!inCoach && (
 				<Appbar.Header>
@@ -314,7 +318,10 @@ export function TechniquePracticeContent({
 											},
 										),
 										style: { minWidth: 0 },
-										labelStyle: { fontSize: 11, marginHorizontal: 0 },
+										labelStyle: {
+											fontSize: type.labelSmall,
+											marginHorizontal: 0,
+										},
 									},
 									...drills.map((d) => ({
 										value: d,
@@ -324,7 +331,10 @@ export function TechniquePracticeContent({
 											{ drill: t(`screen.practice.modes.drill.${d}`) },
 										),
 										style: { minWidth: 0 },
-										labelStyle: { fontSize: 11, marginHorizontal: 0 },
+										labelStyle: {
+											fontSize: type.labelSmall,
+											marginHorizontal: 0,
+										},
 									})),
 								]}
 							/>

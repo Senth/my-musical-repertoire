@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
+import { space } from "@/theme/tokens";
 
 /**
  * Privacy policy and terms links. Shown under the sign-in form so the terms are
@@ -19,7 +20,15 @@ export function LegalLinks() {
 	} as const;
 
 	return (
-		<View className="flex-row justify-center items-center gap-3 flex-wrap">
+		<View
+			style={{
+				flexDirection: "row",
+				justifyContent: "center",
+				alignItems: "center",
+				gap: space.md,
+				flexWrap: "wrap",
+			}}
+		>
 			<Text
 				variant="bodySmall"
 				style={linkStyle}

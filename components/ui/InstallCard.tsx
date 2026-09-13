@@ -5,6 +5,7 @@ import {
 	CARD_TITLE_STYLE,
 	TITLE_ONLY_CARD_STYLE,
 } from "@/components/ui/card-style";
+import { space } from "@/theme/tokens";
 
 interface InstallCardProps {
 	onInstall: () => void;
@@ -28,14 +29,20 @@ export function InstallCard({ onInstall, onDismiss }: InstallCardProps) {
 				style={TITLE_ONLY_CARD_STYLE}
 			/>
 			<Card.Content>
-				<View className="gap-2">
+				<View style={{ gap: space.sm }}>
 					<Text
 						variant="bodyMedium"
 						style={{ color: theme.colors.onSurfaceVariant }}
 					>
 						{t("screen.overview.install.body")}
 					</Text>
-					<View className="flex-row gap-2 mt-1">
+					<View
+						style={{
+							flexDirection: "row",
+							gap: space.sm,
+							marginTop: space.xs,
+						}}
+					>
 						<Button mode="contained" icon="download" onPress={onInstall}>
 							{t("screen.overview.install.install")}
 						</Button>

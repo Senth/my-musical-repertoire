@@ -47,6 +47,7 @@ import {
 	SCRATCH_PRESET_ID,
 	type SessionPreset,
 } from "@/models/session-preset";
+import { space } from "@/theme/tokens";
 import { displayMinutes } from "@/utils/format-minutes";
 import { shouldOfferInstall } from "@/utils/install-gating";
 import { modeLabelLong } from "@/utils/mode-label";
@@ -162,8 +163,11 @@ export default function OverviewScreen() {
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			<ScreenContent
 				gap={4}
@@ -242,7 +246,7 @@ export default function OverviewScreen() {
 								subtitleStyle={{ color: theme.colors.onSurfaceVariant }}
 							/>
 							<Card.Content>
-								<View className="gap-2">
+								<View style={{ gap: space.sm }}>
 									{s.section ? (
 										<SectionPhaseChip phase={s.section.phase} />
 									) : (
@@ -333,8 +337,15 @@ export default function OverviewScreen() {
 							style={TITLE_ONLY_CARD_STYLE}
 						/>
 						<Card.Content>
-							<View className="gap-2">
-								<View className="flex-row items-center gap-2 flex-wrap">
+							<View style={{ gap: space.sm }}>
+								<View
+									style={{
+										flexDirection: "row",
+										alignItems: "center",
+										flexWrap: "wrap",
+										gap: space.sm,
+									}}
+								>
 									<TechniqueStateChip state={s.tech.state} />
 									{s.tech.type && (
 										<MetaChip
@@ -502,7 +513,7 @@ function SessionEntryBlock({
 				style={{ backgroundColor: theme.colors.primaryContainer }}
 			>
 				<Card.Content>
-					<View className="gap-2">
+					<View style={{ gap: space.sm }}>
 						<Text variant="titleMedium">
 							{t("screen.session.resume.banner", {
 								// Sessions started before presets existed have no name — a
@@ -522,7 +533,13 @@ function SessionEntryBlock({
 								title: blockTitle,
 							})}
 						</Text>
-						<View className="flex-row gap-2 mt-1">
+						<View
+							style={{
+								flexDirection: "row",
+								gap: space.sm,
+								marginTop: space.xs,
+							}}
+						>
 							<Button mode="contained" onPress={onResume} icon="play">
 								{t("screen.session.resume.resume")}
 							</Button>
@@ -546,7 +563,7 @@ function SessionEntryBlock({
 	};
 
 	return (
-		<View className="gap-2">
+		<View style={{ gap: space.sm }}>
 			<Text variant="titleMedium">{t("screen.session.newSession")}</Text>
 
 			{!loading && presets.length === 0 && (
@@ -567,15 +584,24 @@ function SessionEntryBlock({
 					}
 				>
 					<View
-						className="flex-row items-center"
 						style={{
+							flexDirection: "row",
+							alignItems: "center",
 							minHeight: SESSION_ROW_HEIGHT,
 							paddingLeft: 16,
 							paddingRight: 4,
 						}}
 					>
-						<View className="flex-1 flex-row items-center gap-3">
-							<Text variant="bodyLarge" className="flex-1">
+						<View
+							style={{
+								flex: 1,
+								minHeight: 0,
+								flexDirection: "row",
+								alignItems: "center",
+								gap: space.md,
+							}}
+						>
+							<Text variant="bodyLarge" style={{ flex: 1, minHeight: 0 }}>
 								{preset.name}
 							</Text>
 							<Text
@@ -647,15 +673,24 @@ function SessionEntryBlock({
 				}
 			>
 				<View
-					className="flex-row items-center"
 					style={{
+						flexDirection: "row",
+						alignItems: "center",
 						minHeight: SESSION_ROW_HEIGHT,
 						paddingLeft: 16,
 						paddingRight: 4,
 					}}
 				>
-					<View className="flex-1 flex-row items-center gap-3">
-						<Text variant="bodyLarge" className="flex-1">
+					<View
+						style={{
+							flex: 1,
+							minHeight: 0,
+							flexDirection: "row",
+							alignItems: "center",
+							gap: space.md,
+						}}
+					>
+						<Text variant="bodyLarge" style={{ flex: 1, minHeight: 0 }}>
 							{t("screen.session.preset.customRow")}
 						</Text>
 						{scratch ? (

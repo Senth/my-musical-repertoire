@@ -1,24 +1,13 @@
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
-import {
-	IconButton,
-	type MD3Theme,
-	ProgressBar,
-	Text,
-	useTheme,
-} from "react-native-paper";
+import { IconButton, ProgressBar, Text } from "react-native-paper";
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import type { Section, SectionPhase } from "@/models/section";
+import { useAppTheme } from "@/theme";
+import { space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
 import { formatBarRange } from "@/utils/piece-display";
 import { deriveCurrentBpm } from "@/utils/practice-modes";
-
-type AppTheme = MD3Theme & {
-	colors: MD3Theme["colors"] & {
-		warning: string;
-		success: string;
-	};
-};
 
 interface SectionDetailRowProps {
 	section: Section;
@@ -38,7 +27,7 @@ export function SectionDetailRow({
 	onChangePhase,
 }: SectionDetailRowProps) {
 	const { t } = useTranslation();
-	const theme = useTheme<AppTheme>();
+	const theme = useAppTheme();
 
 	const effectiveTargetBpm =
 		section.targetBpmOverride ?? pieceTargetBpm ?? null;
@@ -99,8 +88,21 @@ export function SectionDetailRow({
 						opacity: pressed ? 0.7 : 1,
 					})}
 				>
-					<View className="py-3 px-4 gap-1">
-						<View className="flex-row items-center gap-2 flex-wrap">
+					<View
+						style={{
+							paddingVertical: space.md,
+							paddingHorizontal: space.lg,
+							gap: space.xs,
+						}}
+					>
+						<View
+							style={{
+								flexDirection: "row",
+								alignItems: "center",
+								flexWrap: "wrap",
+								gap: space.sm,
+							}}
+						>
 							<Text variant="bodyLarge">{section.label}</Text>
 							{barRangeText != null && (
 								<Text
@@ -111,7 +113,14 @@ export function SectionDetailRow({
 								</Text>
 							)}
 						</View>
-						<View className="flex-row items-center gap-2 flex-wrap">
+						<View
+							style={{
+								flexDirection: "row",
+								alignItems: "center",
+								flexWrap: "wrap",
+								gap: space.sm,
+							}}
+						>
 							<SectionPhaseChip
 								phase={section.phase}
 								onChangePhase={onChangePhase}

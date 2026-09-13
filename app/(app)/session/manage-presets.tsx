@@ -72,8 +72,11 @@ export default function ManagePresetsScreen() {
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			<Appbar.Header>
 				<Appbar.BackAction onPress={goBack} />
@@ -98,10 +101,15 @@ export default function ManagePresetsScreen() {
 					{presets.map((preset, index) => (
 						<Card key={preset.id} mode="contained">
 							<View
-								className="flex-row items-center"
-								style={{ minHeight: 56, paddingLeft: 16, paddingRight: 4 }}
+								style={{
+									flexDirection: "row",
+									alignItems: "center",
+									minHeight: 56,
+									paddingLeft: 16,
+									paddingRight: 4,
+								}}
 							>
-								<View className="flex-1" style={{ paddingVertical: 8 }}>
+								<View style={{ flex: 1, minHeight: 0, paddingVertical: 8 }}>
 									<Text variant="bodyLarge">{preset.name}</Text>
 									<Text
 										variant="bodySmall"

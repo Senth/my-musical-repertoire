@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { Appbar, Card, useTheme } from "react-native-paper";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { useIsCompact } from "@/hooks/use-is-compact";
+import { contentWidth } from "@/theme/tokens";
 
 interface FormScaffoldProps {
 	title: string;
@@ -31,8 +32,11 @@ export function FormScaffold({
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			<Appbar.Header>
 				<Appbar.BackAction onPress={onBack} />
@@ -41,7 +45,7 @@ export function FormScaffold({
 
 			<KeyboardAvoidingView
 				behavior={Platform.OS === "ios" ? "padding" : "height"}
-				className="flex-1"
+				style={{ flex: 1, minHeight: 0 }}
 			>
 				<ScrollView
 					contentContainerStyle={{
@@ -51,7 +55,13 @@ export function FormScaffold({
 					}}
 					keyboardShouldPersistTaps="handled"
 				>
-					<View className="w-full max-w-xl self-center">
+					<View
+						style={{
+							width: "100%",
+							maxWidth: contentWidth.page,
+							alignSelf: "center",
+						}}
+					>
 						<Card
 							mode={isCompact ? "contained" : "elevated"}
 							style={

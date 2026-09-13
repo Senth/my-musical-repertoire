@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { SegmentedButtons, Text, useTheme } from "react-native-paper";
+import { type } from "@/theme/tokens";
 
 export interface EstimationOption<V extends string | number> {
 	value: V;
@@ -62,7 +63,7 @@ export function EstimationField<V extends string | number>({
 					// lets them flex; 11px is round 8's small-segment size, which
 					// fits the words inside the label's max-width.
 					style: { minWidth: 0 },
-					labelStyle: { fontSize: 11, marginHorizontal: 0 },
+					labelStyle: { fontSize: type.labelSmall, marginHorizontal: 0 },
 				}))}
 			/>
 		</View>

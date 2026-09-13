@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, useTheme } from "react-native-paper";
 import { useIsCompact } from "@/hooks/use-is-compact";
+import { border, contentWidth } from "@/theme/tokens";
 
 interface PracticeFooterProps {
 	primaryLabel: string;
@@ -31,7 +32,7 @@ export function PracticeFooter({
 	return (
 		<View
 			style={{
-				borderTopWidth: 1,
+				borderTopWidth: border.hairline,
 				borderTopColor: theme.colors.outlineVariant,
 				backgroundColor: theme.colors.background,
 				paddingHorizontal: isCompact ? 16 : 24,
@@ -44,7 +45,7 @@ export function PracticeFooter({
 					alignItems: "center",
 					gap: 10,
 					width: "100%",
-					maxWidth: 576,
+					maxWidth: contentWidth.page,
 					alignSelf: "center",
 				}}
 			>

@@ -30,6 +30,7 @@ import { useChangeSectionPhase } from "@/hooks/use-section-phase";
 import { useReorderSections, useSections } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { Section } from "@/models/section";
+import { contentWidth, space } from "@/theme/tokens";
 import { sectionNudge } from "@/utils/add-section-nudge";
 import { formatDaysAgo } from "@/utils/date";
 import { formatBarRange, formatComposerLine } from "@/utils/piece-display";
@@ -150,10 +151,15 @@ export default function PieceDetailScreen() {
 			return (
 				<ScaleDecorator>
 					<View
-						className="flex-row items-center py-2 px-4"
-						style={{ backgroundColor: theme.colors.surface }}
+						style={{
+							flexDirection: "row",
+							alignItems: "center",
+							paddingVertical: space.sm,
+							paddingHorizontal: space.lg,
+							backgroundColor: theme.colors.surface,
+						}}
 					>
-						<View className="flex-1 gap-1">
+						<View style={{ flex: 1, minHeight: 0, gap: space.xs }}>
 							<Text variant="bodyLarge">{item.label}</Text>
 							{barRangeText != null && (
 								<Text
@@ -198,8 +204,11 @@ export default function PieceDetailScreen() {
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			<Appbar.Header>
 				<Appbar.BackAction onPress={goBack} />
@@ -218,7 +227,15 @@ export default function PieceDetailScreen() {
 
 			{reordering ? (
 				<GestureHandlerRootView style={{ flex: 1 }}>
-					<View className="flex-row items-center justify-between px-4 py-2">
+					<View
+						style={{
+							flexDirection: "row",
+							alignItems: "center",
+							justifyContent: "space-between",
+							paddingHorizontal: space.lg,
+							paddingVertical: space.sm,
+						}}
+					>
 						<Text
 							variant="titleSmall"
 							style={{ color: theme.colors.onSurfaceVariant }}
@@ -239,10 +256,29 @@ export default function PieceDetailScreen() {
 				</GestureHandlerRootView>
 			) : (
 				<ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
-					<View className="w-full max-w-xl self-center">
+					<View
+						style={{
+							width: "100%",
+							maxWidth: contentWidth.page,
+							alignSelf: "center",
+						}}
+					>
 						{/* Piece header info */}
-						<View className="px-4 pt-4 gap-2">
-							<View className="flex-row items-center gap-2 flex-wrap">
+						<View
+							style={{
+								paddingHorizontal: space.lg,
+								paddingTop: space.lg,
+								gap: space.sm,
+							}}
+						>
+							<View
+								style={{
+									flexDirection: "row",
+									alignItems: "center",
+									flexWrap: "wrap",
+									gap: space.sm,
+								}}
+							>
 								<Text
 									variant="titleMedium"
 									style={{ color: theme.colors.onSurfaceVariant }}
@@ -254,7 +290,12 @@ export default function PieceDetailScreen() {
 						</View>
 
 						{/* Practice button (promoted above metadata) */}
-						<View className="px-4 pt-4">
+						<View
+							style={{
+								paddingHorizontal: space.lg,
+								paddingTop: space.lg,
+							}}
+						>
 							<Button
 								mode="contained"
 								onPress={() =>
@@ -267,7 +308,12 @@ export default function PieceDetailScreen() {
 						</View>
 
 						{/* Compact meta line */}
-						<View className="px-4 pt-2">
+						<View
+							style={{
+								paddingHorizontal: space.lg,
+								paddingTop: space.sm,
+							}}
+						>
 							<Text
 								variant="bodyMedium"
 								style={{ color: theme.colors.onSurfaceVariant }}
@@ -276,11 +322,23 @@ export default function PieceDetailScreen() {
 							</Text>
 						</View>
 
-						<Divider className="mt-6" />
+						<Divider style={{ marginTop: space.xl }} />
 
 						{/* Notes section */}
-						<View className="px-4 pt-4 gap-2">
-							<View className="flex-row items-center justify-between">
+						<View
+							style={{
+								paddingHorizontal: space.lg,
+								paddingTop: space.lg,
+								gap: space.sm,
+							}}
+						>
+							<View
+								style={{
+									flexDirection: "row",
+									alignItems: "center",
+									justifyContent: "space-between",
+								}}
+							>
 								<Text
 									variant="titleSmall"
 									style={{ color: theme.colors.onSurfaceVariant }}
@@ -299,7 +357,7 @@ export default function PieceDetailScreen() {
 							</View>
 
 							{notesEditing ? (
-								<View className="gap-2">
+								<View style={{ gap: space.sm }}>
 									<TextInput
 										value={notesText}
 										onChangeText={setNotesText}
@@ -308,7 +366,13 @@ export default function PieceDetailScreen() {
 										numberOfLines={4}
 										autoFocus
 									/>
-									<View className="flex-row gap-2 justify-end">
+									<View
+										style={{
+											flexDirection: "row",
+											gap: space.sm,
+											justifyContent: "flex-end",
+										}}
+									>
 										<Button
 											onPress={() => {
 												setNotesText(piece.notes ?? "");
@@ -342,10 +406,18 @@ export default function PieceDetailScreen() {
 							)}
 						</View>
 
-						<Divider className="mt-6" />
+						<Divider style={{ marginTop: space.xl }} />
 
 						{/* Sections header */}
-						<View className="flex-row items-center justify-between px-4 pt-4">
+						<View
+							style={{
+								flexDirection: "row",
+								alignItems: "center",
+								justifyContent: "space-between",
+								paddingHorizontal: space.lg,
+								paddingTop: space.lg,
+							}}
+						>
 							<Text
 								variant="titleSmall"
 								style={{ color: theme.colors.onSurfaceVariant }}
@@ -379,7 +451,9 @@ export default function PieceDetailScreen() {
 						</View>
 
 						{nudge && (
-							<View className="px-4 pb-2">
+							<View
+								style={{ paddingHorizontal: space.lg, paddingBottom: space.sm }}
+							>
 								<AddNextSectionNudge
 									pieceTitle={piece.title}
 									sectionLabel={nudge.section.label}
@@ -395,7 +469,14 @@ export default function PieceDetailScreen() {
 
 						{/* Sections list / empty state */}
 						{!sectionsLoading && sections.length === 0 ? (
-							<View className="items-center py-8 gap-4 px-4">
+							<View
+								style={{
+									alignItems: "center",
+									paddingVertical: space.xxl,
+									gap: space.lg,
+									paddingHorizontal: space.lg,
+								}}
+							>
 								<IconButton
 									icon="music-note-outline"
 									size={48}
@@ -422,7 +503,7 @@ export default function PieceDetailScreen() {
 								</Button>
 							</View>
 						) : (
-							<View className="pt-1">
+							<View style={{ paddingTop: space.xs }}>
 								{sections.map((s) => (
 									<SectionDetailRow
 										key={s.id}

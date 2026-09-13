@@ -3,7 +3,6 @@
 	"ignoreDependencies": [
 		"expo",
 		"expo-splash-screen",
-		"react-native-css-interop",
 		"react-native-svg",
 		"react-native-web"
 	]

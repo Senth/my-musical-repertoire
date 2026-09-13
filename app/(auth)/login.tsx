@@ -17,6 +17,7 @@ import { LegalLinks } from "@/components/legal/LegalLinks";
 import { FormTextField } from "@/components/ui/FormTextField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsCompact } from "@/hooks/use-is-compact";
+import { contentWidth, space } from "@/theme/tokens";
 
 type Mode = "signIn" | "register";
 
@@ -154,7 +155,7 @@ export default function LoginScreen() {
 	};
 
 	const formContent = (
-		<View className="gap-2">
+		<View style={{ gap: space.sm }}>
 			<FormTextField
 				label={t("screen.login.emailLabel")}
 				value={email}
@@ -212,7 +213,7 @@ export default function LoginScreen() {
 			)}
 
 			{googleAccountDetected && (
-				<View className="gap-2 mt-2">
+				<View style={{ gap: space.sm, marginTop: space.sm }}>
 					<GoogleSignInButton onError={(msg) => setServerError(msg)} />
 					{passwordResetSent ? (
 						<HelperText type="info" visible>
@@ -267,8 +268,11 @@ export default function LoginScreen() {
 
 	return (
 		<View
-			className="flex-1"
-			style={{ backgroundColor: theme.colors.background }}
+			style={{
+				flex: 1,
+				minHeight: 0,
+				backgroundColor: theme.colors.background,
+			}}
 		>
 			<Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
 				<Appbar.Content
@@ -283,10 +287,21 @@ export default function LoginScreen() {
 
 			<KeyboardAvoidingView
 				behavior={Platform.OS === "ios" ? "padding" : "height"}
-				className="flex-1 justify-center items-center"
-				style={{ paddingHorizontal: 16 }}
+				style={{
+					flex: 1,
+					minHeight: 0,
+					justifyContent: "center",
+					alignItems: "center",
+					paddingHorizontal: 16,
+				}}
 			>
-				<View className="w-full max-w-md self-center">
+				<View
+					style={{
+						width: "100%",
+						maxWidth: contentWidth.form,
+						alignSelf: "center",
+					}}
+				>
 					{isCompact ? (
 						formContent
 					) : (

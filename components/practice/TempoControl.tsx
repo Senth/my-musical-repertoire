@@ -13,6 +13,7 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { useAuth } from "@/contexts/AuthContext";
+import { border } from "@/theme/tokens";
 import {
 	readMetronomeAccent,
 	writeMetronomeAccent,
@@ -295,7 +296,7 @@ export function TempoControl({
 							<Text
 								variant="displaySmall"
 								style={{
-									borderBottomWidth: 1,
+									borderBottomWidth: border.hairline,
 									borderStyle: "dashed",
 									borderBottomColor: theme.colors.outline,
 								}}

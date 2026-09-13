@@ -10,6 +10,7 @@ import { FormTextField } from "@/components/ui/FormTextField";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { PIECE_STATES, type PieceState } from "@/models/piece";
+import { space } from "@/theme/tokens";
 import {
 	collectionSuggestions,
 	composerSuggestions,
@@ -168,7 +169,7 @@ export default function EditPieceScreen() {
 	};
 
 	const formContent = (
-		<View className="gap-4">
+		<View style={{ gap: space.lg }}>
 			<FormTextField
 				label={t("screen.editPiece.titleLabel")}
 				value={title}
@@ -239,8 +240,15 @@ export default function EditPieceScreen() {
 				numberOfLines={3}
 			/>
 
-			<View className="flex-row items-center justify-between gap-3">
-				<View className="flex-1">
+			<View
+				style={{
+					flexDirection: "row",
+					alignItems: "center",
+					justifyContent: "space-between",
+					gap: space.md,
+				}}
+			>
+				<View style={{ flex: 1, minHeight: 0 }}>
 					<Text variant="bodyLarge">
 						{t("screen.editPiece.allSectionsAdded")}
 					</Text>
