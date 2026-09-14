@@ -33,8 +33,7 @@ function cyclingGuardKey(days: number): string {
  * dialog wrap it with their own actions.
  *
  * `onChecksChange` reports whether every checkbox shown has been ticked, so the
- * wrapper can enable its primary action. See
- * `docs/specs/section-phases.md` §6.1.
+ * wrapper can enable its primary action.
  */
 export function PhaseOfferBody({
 	offer,

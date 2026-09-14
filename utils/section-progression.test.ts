@@ -497,7 +497,7 @@ describe("evaluateAdvance — stabilizing → maintenance", () => {
 		]);
 	});
 
-	it("needs three clean days, not two", () => {
+	it("needs ten clean days, not two", () => {
 		const result = stabilizing({
 			logs: cleanDays(2, { achievedBpm: TARGET }),
 		});
@@ -527,25 +527,18 @@ describe("evaluateAdvance — stabilizing → maintenance", () => {
 	});
 
 	it("fails on a sliding tempo alone", () => {
-		const result = stabilizing({
-			logs: [
-				log(7, { achievedBpm: 121 }),
-				log(6, { achievedBpm: 130 }),
-				log(5, { achievedBpm: 122 }),
-			],
-		});
+		const logs = cleanDays(CLEAN_DAYS_MAINTENANCE, { achievedBpm: TARGET });
+		logs[0] = log(7, { achievedBpm: TARGET - 10 });
+		const result = stabilizing({ logs });
 		expect(result.eligible).toBe(false);
 		expect(result.failing).toEqual([{ kind: "bpm-trend" }]);
 	});
 
 	it("skips days with no logged tempo in the trend check", () => {
-		const result = stabilizing({
-			logs: [
-				log(7, { achievedBpm: 130 }),
-				log(6, { achievedBpm: null }),
-				log(5, { achievedBpm: 122 }),
-			],
-		});
+		const logs = cleanDays(CLEAN_DAYS_MAINTENANCE, { achievedBpm: TARGET });
+		logs[0] = log(7, { achievedBpm: TARGET + 10 });
+		logs[1] = log(6, { achievedBpm: null });
+		const result = stabilizing({ logs });
 		expect(result.eligible).toBe(true);
 	});
 });
