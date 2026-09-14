@@ -1,7 +1,12 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
+import DraggableFlatList, {
+	type RenderItemParams,
+	ScaleDecorator,
+} from "react-native-draggable-flatlist";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
 	Appbar,
 	Button,
@@ -16,7 +21,7 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
-import { ScreenContent } from "@/components/ui/ScreenContent";
+import { useIsCompact } from "@/hooks/use-is-compact";
 import {
 	useSessionPresetActions,
 	useSessionPresets,
@@ -26,12 +31,14 @@ import {
 	presetTotalMinutes,
 	type SessionPreset,
 } from "@/models/session-preset";
+import { contentWidth, space } from "@/theme/tokens";
 
 export default function ManagePresetsScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const router = useRouter();
 	const goBack = useUpNavigation("/(app)/(tabs)/overview");
+	const isCompact = useIsCompact();
 	const { presets, loading } = useSessionPresets();
 	const {
 		addPreset,
@@ -53,13 +60,12 @@ export default function ManagePresetsScreen() {
 	);
 	const [notice, setNotice] = useState<string | null>(null);
 
-	const move = async (index: number, delta: number) => {
-		const next = index + delta;
-		if (next < 0 || next >= presets.length) return;
-		const ids = presets.map((p) => p.id ?? "");
-		[ids[index], ids[next]] = [ids[next], ids[index]];
-		await reorderPresets(ids);
-	};
+	const handleDragEnd = useCallback(
+		async ({ data }: { data: SessionPreset[] }) => {
+			await reorderPresets(data.map((p) => p.id ?? ""));
+		},
+		[reorderPresets],
+	);
 
 	const handleRestore = async () => {
 		const restored = await restoreDefaults(presets);
@@ -69,6 +75,111 @@ export default function ManagePresetsScreen() {
 				: t("screen.session.manage.restored", { count: restored }),
 		);
 	};
+
+	const renderPreset = useCallback(
+		({ item: preset, drag, isActive }: RenderItemParams<SessionPreset>) => (
+			<ScaleDecorator>
+				<Card mode="contained" style={{ marginBottom: space.md }}>
+					<View
+						style={{
+							flexDirection: "row",
+							alignItems: "center",
+							minHeight: 56,
+							paddingLeft: 16,
+							paddingRight: 4,
+						}}
+					>
+						<View style={{ flex: 1, minHeight: 0, paddingVertical: 8 }}>
+							<Text variant="bodyLarge">{preset.name}</Text>
+							<Text
+								variant="bodySmall"
+								style={{ color: theme.colors.onSurfaceVariant }}
+							>
+								{t("screen.session.preset.minutes", {
+									minutes: presetTotalMinutes(preset.lines),
+								})}
+							</Text>
+						</View>
+						<IconButton
+							icon="drag"
+							size={20}
+							disabled={isActive}
+							accessibilityLabel={t("a11y.drag.reorder")}
+							onLongPress={drag}
+							onPressIn={drag}
+						/>
+						<IconButton
+							icon="dots-vertical"
+							accessibilityLabel={t("screen.session.preset.rowActions", {
+								name: preset.name,
+							})}
+							onPress={(e) =>
+								setMenu({
+									id: preset.id ?? "",
+									x: e.nativeEvent.pageX,
+									y: e.nativeEvent.pageY,
+								})
+							}
+						/>
+						{menu !== null && menu.id === preset.id && (
+							<Menu
+								visible
+								onDismiss={() => setMenu(null)}
+								anchor={{ x: menu.x, y: menu.y }}
+							>
+								<Menu.Item
+									leadingIcon="pencil"
+									title={t("screen.session.preset.edit")}
+									onPress={() => {
+										setMenu(null);
+										router.push(
+											`/session/preset-editor?presetId=${preset.id}` as const,
+										);
+									}}
+								/>
+								<Menu.Item
+									leadingIcon="rename-box"
+									title={t("screen.session.manage.rename")}
+									onPress={() => {
+										setMenu(null);
+										setRenameText(preset.name);
+										setRenaming(preset);
+									}}
+								/>
+								<Menu.Item
+									leadingIcon="content-copy"
+									title={t("screen.session.preset.duplicate")}
+									onPress={() => {
+										setMenu(null);
+										addPreset(
+											t("screen.session.preset.copyName", {
+												name: preset.name,
+											}),
+											preset.lines,
+											preset.order + 1,
+										);
+									}}
+								/>
+								<Menu.Item
+									leadingIcon="delete"
+									title={t("screen.session.preset.delete")}
+									onPress={() => {
+										setMenu(null);
+										setPendingDelete(preset);
+									}}
+								/>
+							</Menu>
+						)}
+					</View>
+				</Card>
+			</ScaleDecorator>
+		),
+		[addPreset, menu, router, t, theme.colors.onSurfaceVariant],
+	);
+
+	if (loading) {
+		return <LoadingScreen />;
+	}
 
 	return (
 		<View
@@ -83,134 +194,45 @@ export default function ManagePresetsScreen() {
 				<Appbar.Content title={t("screen.session.manage.title")} />
 			</Appbar.Header>
 
-			{loading ? (
-				<LoadingScreen />
-			) : (
-				<ScreenContent gap={3} paddingBottom={32}>
-					{presets.length === 0 && (
+			<GestureHandlerRootView style={{ flex: 1 }}>
+				<DraggableFlatList
+					data={presets}
+					keyExtractor={(preset) => preset.id ?? ""}
+					renderItem={renderPreset}
+					onDragEnd={handleDragEnd}
+					ListEmptyComponent={
 						<Text
 							variant="bodyMedium"
 							style={{ color: theme.colors.onSurfaceVariant }}
 						>
 							{t("screen.session.manage.empty")}
 						</Text>
-					)}
-
-					{/* Reorder stays inline; everything else lives behind the overflow —
-					    six trailing icons squeeze the name to nothing on a phone. */}
-					{presets.map((preset, index) => (
-						<Card key={preset.id} mode="contained">
-							<View
-								style={{
-									flexDirection: "row",
-									alignItems: "center",
-									minHeight: 56,
-									paddingLeft: 16,
-									paddingRight: 4,
-								}}
+					}
+					ListFooterComponent={
+						<View style={{ gap: space.md }}>
+							<Button
+								mode="outlined"
+								icon="plus"
+								onPress={() => router.push("/session/preset-editor")}
 							>
-								<View style={{ flex: 1, minHeight: 0, paddingVertical: 8 }}>
-									<Text variant="bodyLarge">{preset.name}</Text>
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{t("screen.session.preset.minutes", {
-											minutes: presetTotalMinutes(preset.lines),
-										})}
-									</Text>
-								</View>
-								<IconButton
-									icon="arrow-up"
-									disabled={index === 0}
-									accessibilityLabel={t("screen.session.manage.moveUp")}
-									onPress={() => move(index, -1)}
-								/>
-								<IconButton
-									icon="arrow-down"
-									disabled={index === presets.length - 1}
-									accessibilityLabel={t("screen.session.manage.moveDown")}
-									onPress={() => move(index, 1)}
-								/>
-								<IconButton
-									icon="dots-vertical"
-									accessibilityLabel={t("screen.session.preset.rowActions", {
-										name: preset.name,
-									})}
-									onPress={(e) =>
-										setMenu({
-											id: preset.id ?? "",
-											x: e.nativeEvent.pageX,
-											y: e.nativeEvent.pageY,
-										})
-									}
-								/>
-								{menu !== null && menu.id === preset.id && (
-									<Menu
-										visible
-										onDismiss={() => setMenu(null)}
-										anchor={{ x: menu.x, y: menu.y }}
-									>
-										<Menu.Item
-											leadingIcon="pencil"
-											title={t("screen.session.preset.edit")}
-											onPress={() => {
-												setMenu(null);
-												router.push(
-													`/session/preset-editor?presetId=${preset.id}` as const,
-												);
-											}}
-										/>
-										<Menu.Item
-											leadingIcon="rename-box"
-											title={t("screen.session.manage.rename")}
-											onPress={() => {
-												setMenu(null);
-												setRenameText(preset.name);
-												setRenaming(preset);
-											}}
-										/>
-										<Menu.Item
-											leadingIcon="content-copy"
-											title={t("screen.session.preset.duplicate")}
-											onPress={() => {
-												setMenu(null);
-												addPreset(
-													t("screen.session.preset.copyName", {
-														name: preset.name,
-													}),
-													preset.lines,
-													preset.order + 1,
-												);
-											}}
-										/>
-										<Menu.Item
-											leadingIcon="delete"
-											title={t("screen.session.preset.delete")}
-											onPress={() => {
-												setMenu(null);
-												setPendingDelete(preset);
-											}}
-										/>
-									</Menu>
-								)}
-							</View>
-						</Card>
-					))}
+								{t("screen.session.manage.newPreset")}
+							</Button>
 
-					<Button
-						mode="outlined"
-						icon="plus"
-						onPress={() => router.push("/session/preset-editor")}
-					>
-						{t("screen.session.manage.newPreset")}
-					</Button>
-
-					<Button mode="text" icon="restore" onPress={handleRestore}>
-						{t("screen.session.manage.restore")}
-					</Button>
-				</ScreenContent>
-			)}
+							<Button mode="text" icon="restore" onPress={handleRestore}>
+								{t("screen.session.manage.restore")}
+							</Button>
+						</View>
+					}
+					contentContainerStyle={{
+						width: "100%",
+						maxWidth: contentWidth.page + (isCompact ? 32 : 48),
+						alignSelf: "center",
+						paddingHorizontal: isCompact ? 16 : 24,
+						paddingTop: 24,
+						paddingBottom: 32,
+					}}
+				/>
+			</GestureHandlerRootView>
 
 			<Portal>
 				<Dialog visible={renaming != null} onDismiss={() => setRenaming(null)}>
