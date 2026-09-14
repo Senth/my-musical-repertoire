@@ -14,8 +14,7 @@ export type SectionNudge =
  *
  * Fires at *stabilizing*, not maintenance: that is the window where there is
  * attention to spare for new material, and where the two sections still
- * reinforce each other as an anchor pair. See
- * `docs/specs/section-phases.md` §6.3.
+ * reinforce each other as an anchor pair.
  */
 export function sectionNudge(
 	piece: Piece | null | undefined,

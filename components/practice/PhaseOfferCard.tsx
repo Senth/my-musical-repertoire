@@ -36,7 +36,7 @@ function actionLabelKey(offer: PhaseOffer): string {
 
 /**
  * The standalone-practice surface for a phase nudge: a card above the Done
- * button. See `docs/specs/section-phases.md` §6.1.
+ * button.
  */
 export function PhaseOfferCard({
 	offer,
@@ -128,7 +128,7 @@ export function PhaseOfferDialog({
 
 /**
  * The passive line shown in the offer's place — one criterion short, or the
- * offer suppressed. §3.6: it never renders when the section is further off than
+ * offer suppressed. It never renders when the section is further off than
  * that, because a line that always renders stops being read.
  */
 export function PhaseStatusLine({ status }: { status: PhaseOfferStatus }) {

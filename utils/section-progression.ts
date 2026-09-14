@@ -12,8 +12,7 @@ import { hsTarget, type ModeEntry } from "./practice-modes";
 /**
  * Section progression nudges — the criteria engine.
  *
- * Pure: no Firestore, no React. See `docs/specs/section-phases.md`
- * §3 for the rules and the pedagogy behind each number.
+ * Pure: no Firestore, no React.
  */
 
 // ---------------------------------------------------------------------------
@@ -88,7 +87,7 @@ export interface HtDay {
 	clean: boolean;
 }
 
-/** Why an advance is not (yet) offered. Drives the §3.6 status line. */
+/** Why an advance is not (yet) offered. Drives the status line. */
 export type AdvanceCriterion =
 	| { kind: "no-target" }
 	| { kind: "ht-tempo"; current: number | null; required: number }
@@ -182,7 +181,7 @@ export function groupHtDays(logs: ProgressionLog[]): HtDay[] {
 }
 
 /**
- * §3.1 — the most recent `n` distinct days with a plain HT log must all be
+ * The most recent `n` distinct days with a plain HT log must all be
  * clean. `count` is how many clean days the section has running back from the
  * newest, capped at `n`, so the status line can say "1 of 2".
  *
@@ -200,7 +199,7 @@ export function cleanHtDays(
 	return { met: count >= n, count, days: days.slice(0, n).reverse() };
 }
 
-/** §3.3.4 — day tempos, oldest → newest, must never step backwards. */
+/** Day tempos, oldest → newest, must never step backwards. */
 export function isTempoNonDecreasing(days: HtDay[]): boolean {
 	const bpms = days.map((d) => d.maxBpm).filter((b): b is number => b != null);
 	return bpms.every((bpm, i) => i === 0 || bpm >= bpms[i - 1]);
@@ -225,7 +224,7 @@ export function previousPhase(phase: SectionPhase): SectionPhase | null {
 // ---------------------------------------------------------------------------
 
 /**
- * §3.2 / §3.3 — whether the section has earned the next phase.
+ * Whether the section has earned the next phase.
  *
  * `byMode` is passed separately from `section` so the caller can hand in the
  * map it just merged rather than the stale stored one. `logs` must already
@@ -331,7 +330,7 @@ function previousBpmForMode(
 }
 
 /**
- * §3.4 — whether the session just saved is evidence the section has slipped.
+ * Whether the session just saved is evidence the section has slipped.
  *
  * `priorLogs` must be the history *before* this save: the BPM rule compares the
  * saved entry against the newest earlier log for the same mode.
@@ -405,7 +404,7 @@ export function evaluateDemote(
 // ---------------------------------------------------------------------------
 
 /**
- * §3.5 — hide an offer the student has waved away three times since they last
+ * Hide an offer the student has waved away three times since they last
  * accepted one, until a week has passed. Not a permanent mute: after
  * `SUPPRESSION_DAYS` the offer comes back.
  *
@@ -435,7 +434,7 @@ export function isSuppressed(
 }
 
 /**
- * §3.5 — a phase changed less than a week ago earns a "you just moved this"
+ * A phase changed less than a week ago earns a "you just moved this"
  * warning on the next offer. A warning, never a block.
  */
 export function cyclingGuardDays(

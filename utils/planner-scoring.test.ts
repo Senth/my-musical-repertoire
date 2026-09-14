@@ -50,7 +50,6 @@ describe("needsWorkTerm", () => {
 });
 
 describe("scoreSectionCandidate", () => {
-	// docs/specs/planner-scoring.md §3
 	it("applies phase weight × days", () => {
 		const piece = makePiece({ id: "p1" });
 		const past = new Date(NOW.getTime() - 3 * 86_400_000);
@@ -106,7 +105,7 @@ describe("scoreSectionCandidate", () => {
 	});
 
 	it("lets neglect and struggle carry a review past new acquisition", () => {
-		// §3.1's behaviour table: target 120, learning at 70, stabilizing at 110.
+		// Target 120, learning at 70, stabilizing at 110.
 		const piece = makePiece({ id: "p1", targetTempoBpm: 120 });
 		const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000);
 		const learningBaseline = scoreSectionCandidate(

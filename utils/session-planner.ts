@@ -99,7 +99,7 @@ function sortCandidates(candidates: SectionCandidate[]): SectionCandidate[] {
 /**
  * The learning line only ever looks at pieces whose *state* is `learning`, and
  * ranks every phase in **one** pool — the score is comparable across phases now
- * (`planner-scoring` §3.1), so a section neglected for a week can out-rank new
+ * so a section neglected for a week can out-rank new
  * acquisition without a reserved share forcing it.
  *
  * The order is piece-anchored: pieces are ranked by their best candidate, and
@@ -270,8 +270,7 @@ function blockBounds(candidate: SectionCandidate): {
  * There is no reserved review share any more. Whether the session is all-new,
  * all-review or mixed falls out of the scores, and the score has its own
  * back-pressure — every section accrues `PHASE_SCORE·days` while it waits and
- * resets to zero when picked, so the line can never lock into one mode. See
- * `docs/specs/session-planner.md` §4.2.
+ * resets to zero when picked, so the line can never lock into one mode.
  *
  * Minutes: every block gets its floor, then the remainder is spread in
  * proportion to each block's headroom so they all reach their maximum together.
