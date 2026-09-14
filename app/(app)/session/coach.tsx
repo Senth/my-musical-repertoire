@@ -36,10 +36,10 @@ import type {
 	BlockExecutionState,
 	PlannedBlock,
 } from "@/models/session";
+import type { PendingPhaseOffer } from "@/utils/phase-offer";
 import { playBlockEndCue } from "@/utils/session-cue";
 import { planTotalMinutes } from "@/utils/session-planner";
 import { writeActiveSession } from "@/utils/session-storage";
-import type { PendingPhaseOffer } from "@/utils/phase-offer";
 
 const TICK_MS = 1000;
 

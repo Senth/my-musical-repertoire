@@ -53,6 +53,11 @@ import {
 	mistakeOptions,
 	qualityOptions,
 } from "@/utils/estimation-options";
+import {
+	decidePhaseOffer,
+	type PendingPhaseOffer,
+	type PhaseOfferStatus,
+} from "@/utils/phase-offer";
 import { formatBarRange } from "@/utils/piece-display";
 import {
 	type ModeEntry,
@@ -60,11 +65,6 @@ import {
 	parseModeKey,
 	targetForMode,
 } from "@/utils/practice-modes";
-import {
-	decidePhaseOffer,
-	type PendingPhaseOffer,
-	type PhaseOfferStatus,
-} from "@/utils/phase-offer";
 import {
 	planTimeSignatureWrite,
 	resolveTimeSignature,

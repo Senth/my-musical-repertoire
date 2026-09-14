@@ -1,8 +1,8 @@
 import type { ByMode } from "@/models/practice";
 import type { PhaseTransition, SectionState } from "@/models/section";
+import { decidePhaseOffer, type PhaseOfferInput } from "./phase-offer";
 import type { ModeEntry } from "./practice-modes";
 import type { ProgressionLog } from "./section-progression";
-import { decidePhaseOffer, type PhaseOfferInput } from "./phase-offer";
 import { makePiece, makeSection } from "./test-factories";
 
 const TARGET = 120;

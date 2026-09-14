@@ -17,8 +17,8 @@ import {
 	CARD_TITLE_STYLE,
 	TITLE_ONLY_CARD_STYLE,
 } from "@/components/ui/card-style";
-import type { AdvanceCriterion } from "@/utils/section-progression";
 import type { PhaseOffer, PhaseOfferStatus } from "@/utils/phase-offer";
+import type { AdvanceCriterion } from "@/utils/section-progression";
 
 interface PhaseOfferProps {
 	offer: PhaseOffer;
