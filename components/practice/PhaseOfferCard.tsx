@@ -178,6 +178,14 @@ function criterionText(criterion: AdvanceCriterion, t: Translate): string {
 						current: criterion.current,
 						required: criterion.required,
 					});
+		case "not-played":
+			return t(`${prefix}.notPlayed`, {
+				modes: criterion.hands
+					.map((hands) =>
+						t(`screen.practice.modes.handsLong.${hands}`).toLowerCase(),
+					)
+					.join(" and "),
+			});
 		case "clean-days":
 			return t(`${prefix}.cleanDays`, {
 				count: criterion.count,

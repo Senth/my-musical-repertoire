@@ -98,6 +98,7 @@ export type AdvanceCriterion =
 			current: number | null;
 			required: number;
 	  }
+	| { kind: "not-played"; hands: HandsMode[] }
 	| { kind: "clean-days"; count: number; required: number }
 	| { kind: "bpm-trend" };
 
@@ -186,8 +187,9 @@ export function groupHtDays(logs: ProgressionLog[]): HtDay[] {
  * clean. `count` is how many clean days the section has running back from the
  * newest, capped at `n`, so the status line can say "1 of 2".
  *
- * Missing history is unmet, never assumed: a section with no HT logs cannot
- * advance, and there is no hands-separate fallback.
+ * Missing history is unmet, never assumed: clean days are never conjured from
+ * hands-separate practice. A section with no HT history takes the hands-only
+ * advance path instead, which does not count them.
  */
 export function cleanHtDays(
 	logs: ProgressionLog[],
@@ -227,15 +229,23 @@ export function previousPhase(phase: SectionPhase): SectionPhase | null {
 /**
  * §3.2 / §3.3 — whether the section has earned the next phase.
  *
+ * The gate depends on what the section has actually practised. With HT
+ * history, hands together is the integration step: HT must be in
+ * `savedEntries` — the session being graded — and at tempo, with the
+ * clean-day run behind it. With no HT history, both hands carry the gate
+ * instead: each at the hands-separate target, and both in `savedEntries`.
+ *
  * `byMode` is passed separately from `section` so the caller can hand in the
  * map it just merged rather than the stale stored one. `logs` must already
- * include the entries written by the save in progress.
+ * include the entries written by the save in progress, and `savedEntries` is
+ * that save.
  */
 export function evaluateAdvance(
 	section: Pick<Section, "phase" | "targetBpmOverride">,
 	piece: Pick<Piece, "targetTempoBpm"> | null | undefined,
 	byMode: ByMode | null | undefined,
 	logs: ProgressionLog[],
+	savedEntries: ModeEntry[],
 ): AdvanceEvaluation {
 	const toPhase = nextPhase(section.phase);
 	const htBpm = byMode?.HT?.bpm ?? null;
@@ -259,20 +269,71 @@ export function evaluateAdvance(
 		toPhase === "stabilizing"
 			? ADVANCE_HT_RATIO_STABILIZING
 			: ADVANCE_HT_RATIO_MAINTENANCE;
-	const requiredHt = target * ratio;
-	if (htBpm == null || htBpm < requiredHt) {
-		failing.push({ kind: "ht-tempo", current: htBpm, required: requiredHt });
-	}
+	const requiredHs = hsTarget(target) ?? 0;
+	const savedHands = new Set(
+		savedEntries.filter((e) => !e.drill).map((e) => e.hands),
+	);
+	let cleanDays = 0;
 
-	// Hands-separate is proven at the learning gate only; the maintenance gate
-	// does not re-check it.
-	if (toPhase === "stabilizing") {
-		const requiredHs = hsTarget(target) ?? 0;
+	if (byMode?.HT) {
+		const requiredHt = target * ratio;
+		if (htBpm == null || htBpm < requiredHt) {
+			failing.push({ kind: "ht-tempo", current: htBpm, required: requiredHt });
+		}
+
+		// Hands-separate is proven at the learning gate only; the maintenance
+		// gate does not re-check it.
+		if (toPhase === "stabilizing") {
+			for (const hands of ["LH", "RH"] as HandsMode[]) {
+				// A mode never practised is not required. One that has been practised
+				// and lags — or was rated without a tempo — blocks the advance.
+				if (!byMode[hands]) continue;
+				const bpm = byMode[hands].bpm ?? null;
+				if (bpm == null || bpm < requiredHs) {
+					failing.push({
+						kind: "hands-separate",
+						hands,
+						current: bpm,
+						required: requiredHs,
+					});
+				}
+			}
+		}
+
+		// The offer grades this session: HT at target from an earlier session is
+		// not evidence it still goes today (#173).
+		if (!savedHands.has("HT")) {
+			failing.push({ kind: "not-played", hands: ["HT"] });
+		}
+
+		const requiredDays =
+			toPhase === "stabilizing"
+				? CLEAN_DAYS_STABILIZING
+				: CLEAN_DAYS_MAINTENANCE;
+		const clean = cleanHtDays(logs, requiredDays);
+		if (!clean.met) {
+			failing.push({
+				kind: "clean-days",
+				count: clean.count,
+				required: requiredDays,
+			});
+		}
+
+		if (
+			toPhase === "maintenance" &&
+			clean.met &&
+			!isTempoNonDecreasing(clean.days)
+		) {
+			failing.push({ kind: "bpm-trend" });
+		}
+
+		cleanDays = clean.count;
+	} else {
+		// Hands-only section: the hands-separate target is the whole gate, and
+		// both hands must be in the session being graded. Clean days are an HT
+		// concept — a section that never plays HT has none to count.
 		for (const hands of ["LH", "RH"] as HandsMode[]) {
-			// A mode never practised is not required. One that has been practised
-			// and lags — or was rated without a tempo — blocks the advance.
-			if (!byMode?.[hands]) continue;
-			const bpm = byMode[hands].bpm ?? null;
+			const bpm = byMode?.[hands]?.bpm ?? null;
 			if (bpm == null || bpm < requiredHs) {
 				failing.push({
 					kind: "hands-separate",
@@ -282,25 +343,12 @@ export function evaluateAdvance(
 				});
 			}
 		}
-	}
-
-	const requiredDays =
-		toPhase === "stabilizing" ? CLEAN_DAYS_STABILIZING : CLEAN_DAYS_MAINTENANCE;
-	const clean = cleanHtDays(logs, requiredDays);
-	if (!clean.met) {
-		failing.push({
-			kind: "clean-days",
-			count: clean.count,
-			required: requiredDays,
-		});
-	}
-
-	if (
-		toPhase === "maintenance" &&
-		clean.met &&
-		!isTempoNonDecreasing(clean.days)
-	) {
-		failing.push({ kind: "bpm-trend" });
+		const missing = (["LH", "RH"] as HandsMode[]).filter(
+			(hands) => !savedHands.has(hands),
+		);
+		if (missing.length > 0) {
+			failing.push({ kind: "not-played", hands: missing });
+		}
 	}
 
 	return {
@@ -308,7 +356,7 @@ export function evaluateAdvance(
 		toPhase,
 		failing,
 		htBpm,
-		cleanDays: clean.count,
+		cleanDays,
 	};
 }
 

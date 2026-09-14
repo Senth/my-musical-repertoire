@@ -128,7 +128,7 @@ export function decidePhaseOffer({
 		};
 	}
 
-	const advance = evaluateAdvance(section, piece, byMode, logs);
+	const advance = evaluateAdvance(section, piece, byMode, logs, savedEntries);
 	if (advance.eligible && advance.toPhase) {
 		if (isSuppressed(transitions, "advance-button", now)) {
 			return { offer: null, status: { kind: "suppressed" } };
