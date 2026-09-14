@@ -240,9 +240,9 @@ describe("pickRepertoireLearningBlocks", () => {
 		return { minutes, leftoverMinutes: r.leftoverMinutes };
 	}
 
-	describe("§4.3 minute distribution", () => {
-		// Every row of docs/specs/session-planner.md §4.2. The pool
-		// is longer than the chosen set wherever the table notes a guard firing.
+	describe("minute distribution", () => {
+		// The pool is longer than the chosen set wherever the table notes a
+		// guard firing.
 		const table: Array<[number, string, number[], number]> = [
 			[8, "L", [8], 0],
 			[8, "R", [8], 0],
@@ -2116,9 +2116,8 @@ describe("same-day exclusion", () => {
 });
 
 /**
- * Properties the run-through credit design depends on
- * (`docs/specs/section-phases.md` §4.4). They hold today; these
- * tests exist so a future change cannot quietly break them.
+ * Properties the run-through credit design depends on. They hold today;
+ * these tests exist so a future change cannot quietly break them.
  */
 describe("run-through credit invariants", () => {
 	it("plans every maintenance block as a whole piece, never a section", () => {

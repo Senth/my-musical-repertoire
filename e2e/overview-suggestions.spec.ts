@@ -2,8 +2,8 @@ import { expect, type Page, test } from "@playwright/test";
 import { t } from "./support/app";
 
 /**
- * The seven acceptance claims of #111, suggest-sections
- * §9 — the two `[eye]` claims are for the browser reviewer, not for a script.
+ * The seven acceptance claims of #111 — the two `[eye]` claims are for the
+ * browser reviewer, not for a script.
  *
  * Runs on its own throwaway account (`overview-suggestions.setup.ts`), never
  * `SEED_USER` — see `OVERVIEW_AUTH_STATE` in `playwright.config.ts` for why.
