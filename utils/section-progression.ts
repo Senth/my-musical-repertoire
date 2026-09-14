@@ -31,7 +31,7 @@ export const ADVANCE_HT_RATIO_MAINTENANCE = 1;
 export const CLEAN_DAYS_STABILIZING = 2;
 
 /** Distinct clean HT days required for `stabilizing → maintenance`. */
-export const CLEAN_DAYS_MAINTENANCE = 3;
+export const CLEAN_DAYS_MAINTENANCE = 10;
 
 /** A day is clean only when every plain HT log on it rates at least this. */
 export const CLEAN_DAY_MIN_QUALITY = 4;
