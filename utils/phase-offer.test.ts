@@ -161,6 +161,18 @@ describe("decidePhaseOffer", () => {
 		});
 	});
 
+	it("names the unplayed hand when HT sat out the session (#173)", () => {
+		const { offer, status } = decide({
+			priorLogs: [log(7), log(6)],
+			savedEntries: [entry({ hands: "LH" })],
+		});
+		expect(offer).toBeNull();
+		expect(status).toEqual({
+			kind: "criterion",
+			criterion: { kind: "not-played", hands: ["HT"] },
+		});
+	});
+
 	it("stays silent when the section is two criteria away", () => {
 		const { offer, status } = decide({
 			byMode: { HT: { bpm: 50 } },

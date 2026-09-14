@@ -60,18 +60,21 @@ function advance({
 	targetTempoBpm = TARGET as number | null,
 	byMode = { HT: mode(116) } as ByMode | null,
 	logs = cleanDays(CLEAN_DAYS_STABILIZING),
+	savedEntries = [entry()],
 }: {
 	phase?: SectionPhase;
 	targetBpmOverride?: number | null;
 	targetTempoBpm?: number | null;
 	byMode?: ByMode | null;
 	logs?: ProgressionLog[];
+	savedEntries?: ModeEntry[];
 } = {}) {
 	return evaluateAdvance(
 		makeSection({ id: "s1", pieceId: "p1", phase, targetBpmOverride }),
 		makePiece({ id: "p1", targetTempoBpm }),
 		byMode,
 		logs,
+		savedEntries,
 	);
 }
 
@@ -317,13 +320,13 @@ describe("evaluateAdvance — learning → stabilizing", () => {
 		]);
 	});
 
-	it("fails on HT tempo when HT was never practised", () => {
-		const result = advance({ byMode: {}, logs: [] });
-		expect(result.failing).toContainEqual({
-			kind: "ht-tempo",
-			current: null,
-			required: 114,
+	it("does not offer the advance when HT was not played this session (#173)", () => {
+		const result = advance({
+			byMode: { HT: mode(116), LH: mode(HS_TARGET), RH: mode(HS_TARGET) },
+			savedEntries: [entry({ hands: "LH", bpm: HS_TARGET })],
 		});
+		expect(result.eligible).toBe(false);
+		expect(result.failing).toEqual([{ kind: "not-played", hands: ["HT"] }]);
 	});
 
 	it("fails on clean days alone", () => {
@@ -387,13 +390,68 @@ describe("evaluateAdvance — learning → stabilizing", () => {
 		]);
 	});
 
-	it("never advances a section with no HT history", () => {
+	it("advances a section with no HT history on both hands at target this session", () => {
 		const result = advance({
 			byMode: { LH: mode(HS_TARGET), RH: mode(HS_TARGET) },
 			logs: [log(7, { hands: "LH" }), log(6, { hands: "RH" })],
+			savedEntries: [
+				entry({ hands: "LH", bpm: HS_TARGET }),
+				entry({ hands: "RH", bpm: HS_TARGET }),
+			],
+		});
+		expect(result.eligible).toBe(true);
+		expect(result.toPhase).toBe("stabilizing");
+		expect(result.htBpm).toBeNull();
+		expect(result.cleanDays).toBe(0);
+	});
+
+	it("blocks a section with no HT history when a hand was not played this session", () => {
+		const result = advance({
+			byMode: { LH: mode(HS_TARGET), RH: mode(HS_TARGET) },
+			logs: [log(7, { hands: "LH" }), log(6, { hands: "RH" })],
+			savedEntries: [entry({ hands: "LH", bpm: HS_TARGET })],
 		});
 		expect(result.eligible).toBe(false);
-		expect(result.failing).toHaveLength(2);
+		expect(result.failing).toEqual([{ kind: "not-played", hands: ["RH"] }]);
+	});
+
+	it("blocks a section with no HT history when a hand lags the target", () => {
+		const result = advance({
+			byMode: { LH: mode(HS_TARGET), RH: mode(HS_TARGET - 1) },
+			logs: [log(7, { hands: "LH" }), log(6, { hands: "RH" })],
+			savedEntries: [
+				entry({ hands: "LH", bpm: HS_TARGET }),
+				entry({ hands: "RH", bpm: HS_TARGET - 1 }),
+			],
+		});
+		expect(result.eligible).toBe(false);
+		expect(result.failing).toEqual([
+			{
+				kind: "hands-separate",
+				hands: "RH",
+				current: HS_TARGET - 1,
+				required: HS_TARGET,
+			},
+		]);
+	});
+
+	it("blocks a section with no HT history when a hand was never practised", () => {
+		const result = advance({
+			byMode: { LH: mode(HS_TARGET) },
+			logs: [log(7, { hands: "LH" })],
+			savedEntries: [entry({ hands: "LH", bpm: HS_TARGET })],
+		});
+		expect(result.eligible).toBe(false);
+		expect(result.failing).toContainEqual({
+			kind: "hands-separate",
+			hands: "RH",
+			current: null,
+			required: HS_TARGET,
+		});
+		expect(result.failing).toContainEqual({
+			kind: "not-played",
+			hands: ["RH"],
+		});
 	});
 
 	it("reports only the missing target when no target is set", () => {
@@ -453,6 +511,19 @@ describe("evaluateAdvance — stabilizing → maintenance", () => {
 			byMode: { HT: mode(TARGET), LH: mode(40) },
 		});
 		expect(result.eligible).toBe(true);
+	});
+
+	it("advances a section with no HT history on the same hands-only rule", () => {
+		const result = stabilizing({
+			byMode: { LH: mode(HS_TARGET), RH: mode(HS_TARGET) },
+			logs: [log(7, { hands: "LH" }), log(6, { hands: "RH" })],
+			savedEntries: [
+				entry({ hands: "LH", bpm: HS_TARGET }),
+				entry({ hands: "RH", bpm: HS_TARGET }),
+			],
+		});
+		expect(result.eligible).toBe(true);
+		expect(result.toPhase).toBe("maintenance");
 	});
 
 	it("fails on a sliding tempo alone", () => {

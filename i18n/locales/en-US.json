@@ -665,8 +665,7 @@
 				"reason": {
 					"advance_one": "Hands together at {{bpm}} BPM, clean for {{count}} session.",
 					"advance_other": "Hands together at {{bpm}} BPM, clean for {{count}} sessions.",
-					"advanceNoBpm_one": "Clean for {{count}} session.",
-					"advanceNoBpm_other": "Clean for {{count}} sessions.",
+					"advanceHands": "Both hands at the target tempo.",
 					"bpmDrop": "Tempo dropped {{percent}}% since last session.",
 					"lowQuality": "You rated this session {{quality}} out of 5.",
 					"strain": "Maximum effort for a quality of {{quality}} out of 5.",
@@ -684,6 +683,7 @@
 					"htTempoNone": "Hands together not timed yet — needs {{required}} BPM",
 					"handsSeparate": "{{mode}} at {{current}} BPM, needs {{required}}",
 					"handsSeparateNone": "{{mode}} not timed yet, needs {{required}} BPM",
+					"notPlayed": "Practice {{modes}} this session to advance",
 					"cleanDays": "{{count}} of {{required}} clean sessions",
 					"bpmTrend": "Tempo dipped since last session",
 					"suppressed": "Change the phase from the chip when you are ready",

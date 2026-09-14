@@ -101,10 +101,10 @@ type Translate = ReturnType<typeof useTranslation>["t"];
 /** The single line of evidence under the title. */
 export function offerReasonText(offer: PhaseOffer, t: Translate): string {
 	if (offer.kind === "advance") {
+		// No HT tempo on an advance means the hands-only gate passed (#173) —
+		// there are no clean HT days to quote either.
 		if (offer.htBpm == null) {
-			return t("screen.practice.phaseOffer.reason.advanceNoBpm", {
-				count: offer.cleanDays,
-			});
+			return t("screen.practice.phaseOffer.reason.advanceHands");
 		}
 		return t("screen.practice.phaseOffer.reason.advance", {
 			bpm: offer.htBpm,
