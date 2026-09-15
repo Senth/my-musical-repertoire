@@ -536,3 +536,36 @@ test("A learning piece with no passages that keeps being suggested is offered to
 		}),
 	).toBeVisible({ timeout: 10_000 });
 });
+
+/**
+ * #172: the passage flubbed mid-practice often has no section yet, and
+ * leaving the practice screen to add one ends the session. The add-section
+ * button below the panel (shown even when there are no sections at all)
+ * opens the same form the piece screen uses, and Save returns to the
+ * practice screen with the new section listed.
+ */
+test("A section can be added without leaving the practice screen", async ({
+	page,
+}) => {
+	test.setTimeout(60_000);
+	const title = "E2E Mid-Practice Add";
+	const pieceUrl = await addPiece(page, { title, state: "stabilizing" });
+
+	await page.goto(`${pieceUrl}/practice?from=overview`);
+	await page
+		.getByRole("button", {
+			name: t("screen.pieceSections.addSection"),
+			exact: true,
+		})
+		.click();
+	await expect(page).toHaveURL(/\/section\/new$/);
+
+	const label = "E2E Cadenza";
+	await fill(page, t("screen.pieceSections.form.labelLabel"), label);
+	await save(page, t("screen.pieceSections.form.save"));
+
+	await expect(page).toHaveURL(/\/practice/);
+	await expect(page.getByText(label, { exact: true })).toBeVisible({
+		timeout: 10_000,
+	});
+});
