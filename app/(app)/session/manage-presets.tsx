@@ -200,6 +200,7 @@ export default function ManagePresetsScreen() {
 					keyExtractor={(preset) => preset.id ?? ""}
 					renderItem={renderPreset}
 					onDragEnd={handleDragEnd}
+					activationDistance={8}
 					ListEmptyComponent={
 						<Text
 							variant="bodyMedium"
