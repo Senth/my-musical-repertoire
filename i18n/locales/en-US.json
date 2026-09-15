@@ -695,6 +695,7 @@
 				}
 			},
 			"notRated": "not rated yet",
+			"previousAnswer": "· was {{answer}}",
 			"standingNote": {
 				"heading": "Note",
 				"editA11y": "Edit note",

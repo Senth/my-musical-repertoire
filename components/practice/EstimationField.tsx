@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { SegmentedButtons, Text, useTheme } from "react-native-paper";
-import { type } from "@/theme/tokens";
+import { border, type } from "@/theme/tokens";
 
 export interface EstimationOption<V extends string | number> {
 	value: V;
@@ -19,6 +19,8 @@ interface EstimationFieldProps<V extends string | number> {
 	onChange: (value: V) => void;
 	/** Ordered worst → best, so the good end is always on the right. */
 	options: EstimationOption<V>[];
+	/** Last logged answer for this question, when there is one. */
+	previous?: V | null;
 }
 
 /**
@@ -32,10 +34,12 @@ export function EstimationField<V extends string | number>({
 	value,
 	onChange,
 	options,
+	previous = null,
 }: EstimationFieldProps<V>) {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const selected = options.find((o) => o.value === value);
+	const previousOption = options.find((o) => o.value === previous);
 
 	return (
 		<View style={{ gap: 8 }}>
@@ -43,9 +47,22 @@ export function EstimationField<V extends string | number>({
 				<Text variant="labelLarge">{label}</Text>
 				<Text
 					variant="bodySmall"
-					style={{ color: theme.colors.onSurfaceVariant }}
+					style={{
+						color: theme.colors.onSurfaceVariant,
+						// Chosen word plus "was <answer>" wraps inside the band instead
+						// of pushing the row past a 320px phone.
+						flexShrink: 1,
+					}}
 				>
 					{selected?.full ?? t("screen.practice.notRated")}
+					{previousOption && (
+						<Text>
+							{" "}
+							{t("screen.practice.previousAnswer", {
+								answer: previousOption.full,
+							})}
+						</Text>
+					)}
 				</Text>
 			</View>
 			<SegmentedButtons
@@ -62,7 +79,19 @@ export function EstimationField<V extends string | number>({
 					// 380px against the 358px band and overflow at 390. minWidth 0
 					// lets them flex; 11px is round 8's small-segment size, which
 					// fits the words inside the label's max-width.
-					style: { minWidth: 0 },
+					style: {
+						minWidth: 0,
+						// The previous answer's tick: a hairline under its own segment.
+						// Muted, never the accent — the accent means chosen, and the
+						// previous answer is not a choice. When it sits under the
+						// chosen segment the fill wins and the tick is dropped.
+						...(previousOption &&
+							o.value === previousOption.value &&
+							previousOption.value !== value && {
+								borderBottomWidth: border.hairline,
+								borderBottomColor: theme.colors.onSurfaceVariant,
+							}),
+					},
 					labelStyle: { fontSize: type.labelSmall, marginHorizontal: 0 },
 				}))}
 			/>

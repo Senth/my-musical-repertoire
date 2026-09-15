@@ -676,12 +676,14 @@ export function PiecePracticeContent({
 									value={modes.draft.quality}
 									onChange={modes.setQuality}
 									options={qualityOptions(t)}
+									previous={logsByMode[modes.currentKey]?.quality ?? null}
 								/>
 								<EstimationField
 									label={t("screen.practiceTechnique.effortLabel")}
 									value={modes.draft.effort}
 									onChange={modes.setEffort}
 									options={effortOptions(t)}
+									previous={logsByMode[modes.currentKey]?.effort ?? null}
 								/>
 							</>
 						) : (
@@ -691,12 +693,14 @@ export function PiecePracticeContent({
 									value={technicalMistakes}
 									onChange={setTechnicalMistakes}
 									options={mistakes}
+									previous={lastLog?.technicalMistakes ?? null}
 								/>
 								<EstimationField
 									label={t("screen.practice.memoryMistakes")}
 									value={memoryMistakes}
 									onChange={setMemoryMistakes}
 									options={mistakes}
+									previous={lastLog?.memoryMistakes ?? null}
 								/>
 							</>
 						)}
