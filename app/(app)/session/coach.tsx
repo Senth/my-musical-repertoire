@@ -385,6 +385,7 @@ export default function CoachScreen() {
 						key={session.currentBlockIndex}
 						techniqueId={currentBlock.techniqueId}
 						preselectMode={currentBlock.modeKey ?? null}
+						clockPaused={!!session.pausedAt}
 					/>
 				);
 			} else {
@@ -400,6 +401,7 @@ export default function CoachScreen() {
 						key={session.currentBlockIndex}
 						techniqueId={currentBlock.techniqueId}
 						preselectMode={currentBlock.modeKey ?? null}
+						clockPaused={!!session.pausedAt}
 					/>
 				);
 			} else {
@@ -428,6 +430,7 @@ export default function CoachScreen() {
 						sectionId={currentBlock.sectionId ?? null}
 						preselectMode={currentBlock.modeKey ?? null}
 						triggerOverride="session-coach"
+						clockPaused={!!session.pausedAt}
 					/>
 				);
 			} else {

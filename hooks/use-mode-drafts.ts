@@ -22,6 +22,11 @@ export interface ModeDraft {
 
 const EMPTY_DRAFT: ModeDraft = { bpm: "", quality: null, effort: null };
 
+/** One interval per screen; each tick credits the mode currently selected. */
+const CLOCK_TICK_MS = 1000;
+/** Cumulative active time with a mode selected that counts as touching it. */
+const TOUCHED_MS = 90_000;
+
 interface UseModeDraftsArgs {
 	byMode: ByMode | null | undefined;
 	available: HandsMode[];
@@ -41,6 +46,11 @@ interface UseModeDraftsArgs {
 	 * stored value, so the student's entry survives the scope switch.
 	 */
 	carryBpm?: string | null;
+	/**
+	 * False while the coach session is paused or the screen is unfocused. A
+	 * clock that runs in a pocket is measuring the pocket, not the practice.
+	 */
+	clockRunning?: boolean;
 }
 
 /** A preselect only wins when the chips can actually reach it. */
@@ -99,6 +109,7 @@ export function useModeDrafts({
 	preselect,
 	ready,
 	carryBpm,
+	clockRunning = true,
 }: UseModeDraftsArgs) {
 	const [drafts, setDrafts] = useState<Record<ModeKey, ModeDraft>>({});
 	const [dirty, setDirty] = useState<Set<ModeKey>>(() => new Set());
@@ -147,6 +158,39 @@ export function useModeDrafts({
 		[patch],
 	);
 	const setEffort = useCallback((effort: Rating) => patch({ effort }), [patch]);
+
+	// The clock is cumulative per mode, so leaving and returning to a hand adds
+	// up. `lastTickRef` is re-anchored whenever the interval (re)starts, which
+	// is what keeps paused or unfocused gaps out of the total.
+	const activeMsRef = useRef<Record<ModeKey, number>>({});
+	const lastTickRef = useRef<number | null>(null);
+	const currentKeyRef = useRef(currentKey);
+	const draftsRef = useRef(drafts);
+	useEffect(() => {
+		currentKeyRef.current = currentKey;
+	}, [currentKey]);
+	useEffect(() => {
+		draftsRef.current = drafts;
+	}, [drafts]);
+
+	useEffect(() => {
+		if (!ready || !clockRunning) return;
+		lastTickRef.current = Date.now();
+		const id = setInterval(() => {
+			const now = Date.now();
+			const elapsed = now - (lastTickRef.current ?? now);
+			lastTickRef.current = now;
+			const key = currentKeyRef.current;
+			const d = draftsRef.current[key];
+			if (d?.quality != null && d?.effort != null) return;
+			const next = (activeMsRef.current[key] ?? 0) + elapsed;
+			activeMsRef.current[key] = next;
+			if (next >= TOUCHED_MS) {
+				setDirty((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+			}
+		}, CLOCK_TICK_MS);
+		return () => clearInterval(id);
+	}, [ready, clockRunning]);
 
 	const entries: ModeEntry[] = useMemo(
 		() =>

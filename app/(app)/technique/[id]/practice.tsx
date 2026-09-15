@@ -55,12 +55,15 @@ export interface TechniquePracticeContentProps {
 	from?: string;
 	/** Mode to open on — the session coach passes the block's planned mode. */
 	preselectMode?: ModeKey | null;
+	/** True while the coach session is paused; freezes the mode-touched clock. */
+	clockPaused?: boolean;
 }
 
 export function TechniquePracticeContent({
 	techniqueId,
 	from,
 	preselectMode,
+	clockPaused,
 }: TechniquePracticeContentProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -91,6 +94,10 @@ export function TechniquePracticeContent({
 		[technique?.activeDrills],
 	);
 
+	// Pocket time is not practice: the clock stops while the coach is paused
+	// or the screen has lost focus.
+	const clockRunning = useIsFocused() && !clockPaused;
+
 	const modes = useModeDrafts({
 		byMode: technique?.byMode,
 		available,
@@ -98,6 +105,7 @@ export function TechniquePracticeContent({
 		effectiveTarget,
 		preselect: preselectMode,
 		ready: !!technique,
+		clockRunning,
 	});
 
 	// The app bar names the exercise; the kind word is the whole subtitle.

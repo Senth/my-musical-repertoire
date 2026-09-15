@@ -87,6 +87,8 @@ export interface PiecePracticeContentProps {
 	triggerOverride?: PracticeTrigger;
 	/** Mode to open on — the session coach passes the block's planned mode. */
 	preselectMode?: ModeKey | null;
+	/** True while the coach session is paused; freezes the mode-touched clock. */
+	clockPaused?: boolean;
 }
 
 export function PiecePracticeContent({
@@ -95,6 +97,7 @@ export function PiecePracticeContent({
 	from,
 	triggerOverride,
 	preselectMode,
+	clockPaused,
 }: PiecePracticeContentProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -243,6 +246,10 @@ export function PiecePracticeContent({
 		? (scopedSection.targetBpmOverride ?? piece?.targetTempoBpm ?? null)
 		: (piece?.targetTempoBpm ?? null);
 
+	// Pocket time is not practice: the clock stops while the coach is paused
+	// or the screen has lost focus.
+	const clockRunning = useIsFocused() && !clockPaused;
+
 	const modes = useModeDrafts({
 		byMode: scopedSection?.byMode,
 		available: HANDS_MODES,
@@ -251,6 +258,7 @@ export function PiecePracticeContent({
 		preselect: preselectMode,
 		ready: !!scopedSection,
 		carryBpm: achievedBpm,
+		clockRunning,
 	});
 
 	const handleBpmBlur = (text: string) => {
