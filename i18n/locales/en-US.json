@@ -583,16 +583,11 @@
 			"technicalMistakes": "Wrong notes?",
 			"memoryMistakes": "Memory slips?",
 			"save": "Save",
-			"lastSession": {
-				"header": "Last session · {{when}}",
-				"headerAfterBreak": "Last session · {{when}} · after a break",
-				"tempo": "Tempo",
-				"tempoTarget": "(target {{bpm}})",
-				"tempoNone": "—",
-				"quality": "Quality",
-				"effort": "Effort",
-				"technical": "Technical",
-				"memory": "Memory",
+			"meta": {
+				"saving": "Saving: {{tally}}",
+				"saved": "{{mode}} {{bpm}} {{quality}}",
+				"inProgress": "{{mode}} in progress",
+				"lastPractised": "Last practised {{when}}",
 				"firstPractice": "First practice — no reference yet"
 			},
 			"sectionsPanel": {
@@ -704,11 +699,6 @@
 				"heading": "Note",
 				"editA11y": "Edit note",
 				"placeholder": "Add a note"
-			},
-			"tally": {
-				"prefix": "Saving: {{tally}}",
-				"saved": "{{mode}} {{bpm}} {{quality}}",
-				"inProgress": "{{mode}} in progress"
 			}
 		},
 		"editPiece": {

@@ -11,16 +11,17 @@ import {
 	Snackbar,
 	useTheme,
 } from "react-native-paper";
+import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { PracticeAppbarContent } from "@/components/practice/CoachShell";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { HandTabs } from "@/components/practice/HandTabs";
-import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import {
 	PhaseOfferCard,
 	PhaseStatusLine,
 } from "@/components/practice/PhaseOfferCard";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { PracticeFooter } from "@/components/practice/PracticeFooter";
+import { PracticeMeta } from "@/components/practice/PracticeMeta";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
 import { StandingNote } from "@/components/practice/StandingNote";
 import { TempoControl } from "@/components/practice/TempoControl";
@@ -49,6 +50,7 @@ import {
 	PracticeMistakes,
 	type PracticeTrigger,
 } from "@/models/practice";
+import { formatDaysAgo } from "@/utils/date";
 import {
 	effortOptions,
 	mistakeOptions,
@@ -66,6 +68,7 @@ import {
 	parseModeKey,
 	targetForMode,
 } from "@/utils/practice-modes";
+import { practiceTally } from "@/utils/practice-tally";
 import {
 	planTimeSignatureWrite,
 	resolveTimeSignature,
@@ -500,6 +503,23 @@ export function PiecePracticeContent({
 
 	const mistakes = mistakeOptions(t);
 
+	const scopedLog = scopedSection
+		? (logsByMode[modes.currentKey] ?? null)
+		: lastLog;
+	const lastLine = lastLogLoading
+		? null
+		: scopedLog
+			? t("screen.practice.meta.lastPractised", {
+					when: formatDaysAgo(scopedLog.date, t),
+				})
+			: t("screen.practice.meta.firstPractice");
+
+	const metaChip = scopedSection ? (
+		<SectionPhaseChip phase={scopedSection.phase} />
+	) : (
+		<PieceStateChip state={piece.state} />
+	);
+
 	return (
 		<View
 			style={{
@@ -602,21 +622,23 @@ export function PiecePracticeContent({
 								onChangeHands={modes.setHands}
 								drafts={modes.drafts}
 								drills={NO_DRILLS}
-								chip={<SectionPhaseChip phase={scopedSection.phase} />}
 							/>
 						)}
 
-						<LastSessionCard
-							lastLog={
-								scopedSection ? (logsByMode[modes.currentKey] ?? null) : lastLog
-							}
-							loading={lastLogLoading}
-							scope={scopedSection ? "section" : "piece"}
-							targetBpm={
+						<PracticeMeta
+							tally={
 								scopedSection
-									? targetForMode(modes.hands, effectiveTarget)
-									: effectiveTarget
+									? practiceTally({
+											drafts: modes.drafts,
+											available: HANDS_MODES,
+											drills: NO_DRILLS,
+											dirty: modes.dirty,
+											t,
+										})
+									: undefined
 							}
+							lastLine={lastLine}
+							chip={metaChip}
 						/>
 
 						<TempoControl

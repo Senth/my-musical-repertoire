@@ -190,6 +190,8 @@ export function useModeDrafts({
 		currentKey,
 		draft,
 		drafts,
+		/** The modes the student touched, as opposed to ones merely seeded. */
+		dirty,
 		setBpm,
 		setQuality,
 		setEffort,

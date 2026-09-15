@@ -13,12 +13,13 @@ import {
 import { PracticeAppbarContent } from "@/components/practice/CoachShell";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { HandTabs } from "@/components/practice/HandTabs";
-import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import { PracticeFooter } from "@/components/practice/PracticeFooter";
+import { PracticeMeta } from "@/components/practice/PracticeMeta";
 import { StandingNote } from "@/components/practice/StandingNote";
 import { TempoControl } from "@/components/practice/TempoControl";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
+import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
@@ -36,6 +37,7 @@ import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import type { ModeKey, PracticeDrill } from "@/models/practice";
 import { type } from "@/theme/tokens";
+import { formatDaysAgo } from "@/utils/date";
 import { effortOptions, qualityOptions } from "@/utils/estimation-options";
 import {
 	availableHandsModes,
@@ -44,6 +46,7 @@ import {
 	parseModeKey,
 	targetForMode,
 } from "@/utils/practice-modes";
+import { practiceTally } from "@/utils/practice-tally";
 import { planTimeSignatureWrite } from "@/utils/time-signature";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
 
@@ -352,15 +355,27 @@ export function TechniquePracticeContent({
 							/>
 						)}
 
-						<LastSessionCard
-							lastLog={logsByMode[modes.currentKey] ?? null}
-							loading={lastLogLoading}
-							scope="technique"
-							targetBpm={targetForMode(
-								modes.hands,
-								effectiveTarget,
-								hasTogether,
-							)}
+						<PracticeMeta
+							tally={practiceTally({
+								drafts: modes.drafts,
+								available,
+								drills,
+								dirty: modes.dirty,
+								t,
+							})}
+							lastLine={
+								lastLogLoading
+									? null
+									: logsByMode[modes.currentKey]
+										? t("screen.practice.meta.lastPractised", {
+												when: formatDaysAgo(
+													logsByMode[modes.currentKey].date,
+													t,
+												),
+											})
+										: t("screen.practice.meta.firstPractice")
+							}
+							chip={<TechniqueStateChip state={technique.state} />}
 						/>
 
 						<TempoControl
