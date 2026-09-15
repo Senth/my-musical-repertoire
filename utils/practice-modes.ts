@@ -43,13 +43,19 @@ export function hsTarget(effectiveTarget: number | null): number | null {
 	return Math.round(effectiveTarget * HS_TARGET_MULTIPLIER);
 }
 
-/** Target BPM for a hands mode. A drill never changes the target. */
+/**
+ * Target BPM for a hands mode. A drill never changes the target. The raised
+ * hands-separate target is the price of the step up to hands-together, so an
+ * item that offers no hands-together mode keeps the plain target (#181).
+ */
 export function targetForMode(
 	hands: HandsMode,
 	effectiveTarget: number | null,
+	hasTogether = true,
 ): number | null {
 	if (effectiveTarget == null) return null;
-	return hands === "HT" ? effectiveTarget : hsTarget(effectiveTarget);
+	if (hands === "HT" || !hasTogether) return effectiveTarget;
+	return hsTarget(effectiveTarget);
 }
 
 /** Which hands chips a technique offers. */

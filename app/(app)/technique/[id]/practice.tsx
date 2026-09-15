@@ -82,6 +82,7 @@ export function TechniquePracticeContent({
 		() => availableHandsModes(technique?.handsMode),
 		[technique?.handsMode],
 	);
+	const hasTogether = available.includes("HT");
 	const drills = useMemo(
 		() => technique?.activeDrills ?? [],
 		[technique?.activeDrills],
@@ -275,7 +276,11 @@ export function TechniquePracticeContent({
 							previousQuality: previous?.quality ?? undefined,
 							previousEffort: previous?.effort ?? undefined,
 							previousTempoBpm: previous?.achievedBpm ?? undefined,
-							targetTempoBpm: targetForMode(entry.hands, effectiveTarget),
+							targetTempoBpm: targetForMode(
+								entry.hands,
+								effectiveTarget,
+								hasTogether,
+							),
 						};
 					})}
 					onDone={handleDone}
@@ -344,7 +349,11 @@ export function TechniquePracticeContent({
 							lastLog={logsByMode[modes.currentKey] ?? null}
 							loading={lastLogLoading}
 							scope="technique"
-							targetBpm={targetForMode(modes.hands, effectiveTarget)}
+							targetBpm={targetForMode(
+								modes.hands,
+								effectiveTarget,
+								hasTogether,
+							)}
 						/>
 
 						<TempoControl
@@ -370,7 +379,7 @@ export function TechniquePracticeContent({
 										}
 									: undefined
 							}
-							target={targetForMode(modes.hands, effectiveTarget)}
+							target={targetForMode(modes.hands, effectiveTarget, hasTogether)}
 							last={technique?.byMode?.[modes.currentKey]?.bpm ?? null}
 						/>
 

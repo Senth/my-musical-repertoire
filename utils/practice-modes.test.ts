@@ -50,6 +50,13 @@ describe("practice-modes", () => {
 			expect(targetForMode("RH", 96)).toBe(110);
 			expect(targetForMode("LH", null)).toBeNull();
 		});
+
+		it("keeps the plain target when hands-together is not offered", () => {
+			expect(targetForMode("LH", 96, false)).toBe(96);
+			expect(targetForMode("RH", 96, false)).toBe(96);
+			expect(targetForMode("HT", 96, false)).toBe(96);
+			expect(targetForMode("LH", null, false)).toBeNull();
+		});
 	});
 
 	describe("availableHandsModes", () => {
