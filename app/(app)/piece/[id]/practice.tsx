@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import {
 	Appbar,
+	Button,
 	Divider,
 	Menu,
 	Snackbar,
@@ -676,36 +677,46 @@ export function PiecePracticeContent({
 						)}
 
 						{!scopedSection && (
-							<SectionsPracticePanel
-								sections={activeSections}
-								piece={piece}
-								mistakeLevel={
-									showCheckboxes
-										? isRunThrough
-											? "run-through"
-											: "checkbox"
-										: "normal"
-								}
-								flaggedIds={flaggedSectionIds}
-								flaggableIds={flaggableIds}
-								onToggleFlag={handleToggleFlag}
-								onPractice={handlePracticeSection}
-								onChangePhase={(sectionId, phase) => {
-									const target = activeSections.find((s) => s.id === sectionId);
-									if (!target || phase === target.phase) return;
-									changeSectionPhase({
-										pieceId,
-										sectionId,
-										fromPhase: target.phase,
-										toPhase: phase,
-										trigger: "phase-chip",
-										achievedBpmAtEvent: target.byMode?.HT?.bpm ?? null,
-										qualityAtEvent: target.byMode?.HT?.quality ?? null,
-										priorPhaseChangedAt: target.phaseChangedAt ?? null,
-										sessionId: coach.sessionId ?? standaloneSessionId.current,
-									}).catch(() => setError(t("error.firebase")));
-								}}
-							/>
+							<>
+								<SectionsPracticePanel
+									sections={activeSections}
+									piece={piece}
+									mistakeLevel={
+										showCheckboxes
+											? isRunThrough
+												? "run-through"
+												: "checkbox"
+											: "normal"
+									}
+									flaggedIds={flaggedSectionIds}
+									flaggableIds={flaggableIds}
+									onToggleFlag={handleToggleFlag}
+									onPractice={handlePracticeSection}
+									onChangePhase={(sectionId, phase) => {
+										const target = activeSections.find(
+											(s) => s.id === sectionId,
+										);
+										if (!target || phase === target.phase) return;
+										changeSectionPhase({
+											pieceId,
+											sectionId,
+											fromPhase: target.phase,
+											toPhase: phase,
+											trigger: "phase-chip",
+											achievedBpmAtEvent: target.byMode?.HT?.bpm ?? null,
+											qualityAtEvent: target.byMode?.HT?.quality ?? null,
+											priorPhaseChangedAt: target.phaseChangedAt ?? null,
+											sessionId: coach.sessionId ?? standaloneSessionId.current,
+										}).catch(() => setError(t("error.firebase")));
+									}}
+								/>
+								<Button
+									mode="outlined"
+									onPress={() => router.push(`/piece/${pieceId}/section/new`)}
+								>
+									{t("screen.pieceSections.addSection")}
+								</Button>
+							</>
 						)}
 
 						<StandingNote
