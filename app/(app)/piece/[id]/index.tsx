@@ -251,6 +251,7 @@ export default function PieceDetailScreen() {
 						keyExtractor={(item) => item.id ?? ""}
 						renderItem={renderDragItem}
 						onDragEnd={handleDragEnd}
+						activationDistance={8}
 						contentContainerStyle={{ paddingBottom: 96 }}
 					/>
 				</GestureHandlerRootView>
