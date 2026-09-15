@@ -4,7 +4,7 @@ import { View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCoach } from "@/contexts/CoachContext";
+import { useCoach, usePracticeHeading } from "@/contexts/CoachContext";
 import {
 	readSightReadingBpm,
 	writeSightReadingBpm,
@@ -61,6 +61,7 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 	}, []);
 
 	const coach = useCoach();
+	usePracticeHeading(t("screen.session.coach.sightReadingTitle"), null);
 
 	return (
 		<View style={{ flex: 1 }}>

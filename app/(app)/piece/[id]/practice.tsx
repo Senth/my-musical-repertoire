@@ -9,9 +9,9 @@ import {
 	Divider,
 	Menu,
 	Snackbar,
-	Text,
 	useTheme,
 } from "react-native-paper";
+import { PracticeAppbarContent } from "@/components/practice/CoachShell";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { HandTabs } from "@/components/practice/HandTabs";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
@@ -30,7 +30,7 @@ import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
-import { useCoach } from "@/contexts/CoachContext";
+import { useCoach, usePracticeHeading } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { parseBpm, useModeDrafts } from "@/hooks/use-mode-drafts";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
@@ -188,6 +188,22 @@ export function PiecePracticeContent({
 	const scopedSection = sectionIdProp
 		? (sections.find((s) => s.id === sectionIdProp) ?? null)
 		: null;
+
+	const barRangeText = scopedSection ? formatBarRange(scopedSection, t) : null;
+
+	// The app bar names the passage: on a section the subtitle carries the
+	// piece, the composer and the bars; on a whole piece the composer alone.
+	const headingTitle = scopedSection
+		? scopedSection.label
+		: (piece?.title ?? "");
+	const headingSubtitle = (
+		scopedSection
+			? [piece?.title ?? "", piece?.composer ?? "", barRangeText]
+			: [piece?.composer ?? ""]
+	)
+		.filter(Boolean)
+		.join(t("screen.practice.heading.separator"));
+	usePracticeHeading(headingTitle, headingSubtitle || null);
 
 	const accent = useMemo(() => {
 		if (!piece) return undefined;
@@ -484,8 +500,6 @@ export function PiecePracticeContent({
 
 	const mistakes = mistakeOptions(t);
 
-	const barRangeText = scopedSection ? formatBarRange(scopedSection, t) : null;
-
 	return (
 		<View
 			style={{
@@ -497,7 +511,9 @@ export function PiecePracticeContent({
 			{!inCoach && (
 				<Appbar.Header>
 					<Appbar.BackAction onPress={goBack} />
-					<Appbar.Content title="" />
+					<PracticeAppbarContent
+						heading={{ title: headingTitle, subtitle: headingSubtitle }}
+					/>
 					<Menu
 						visible={headerMenuVisible}
 						onDismiss={() => setHeaderMenuVisible(false)}
@@ -579,27 +595,6 @@ export function PiecePracticeContent({
 						paddingBottom={12}
 						style={{ flex: 1 }}
 					>
-						<View style={{ gap: 2 }}>
-							<Text variant="titleMedium" numberOfLines={1}>
-								{scopedSection ? scopedSection.label : piece.title}
-							</Text>
-							<Text
-								variant="bodySmall"
-								numberOfLines={1}
-								style={{ color: theme.colors.onSurfaceVariant }}
-							>
-								{[
-									// The name line above already carries the piece on a
-									// whole-piece block — r8's frame 5 repeats only the composer.
-									...(scopedSection ? [piece.title] : []),
-									piece.composer,
-									barRangeText,
-								]
-									.filter(Boolean)
-									.join(" · ")}
-							</Text>
-						</View>
-
 						{scopedSection && (
 							<HandTabs
 								available={HANDS_MODES}

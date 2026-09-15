@@ -576,6 +576,10 @@
 			"pieceNotFound": "Piece not found",
 			"dateLabel": "Date",
 			"lastPracticed": "Last practiced: {{when}}",
+			"heading": {
+				"separator": " · ",
+				"technique": "Technique"
+			},
 			"technicalMistakes": "Wrong notes?",
 			"memoryMistakes": "Memory slips?",
 			"save": "Save",
@@ -912,6 +916,7 @@
 				"skip": "Skip",
 				"extend": "+2 min",
 				"sightReadingBody": "Sight-reading — pick your material",
+				"sightReadingTitle": "Sight-reading",
 				"warmupBody": "Warmup — gentle scales of your choice",
 				"done": "Done",
 				"durationPrompt": {

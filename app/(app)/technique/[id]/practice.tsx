@@ -8,9 +8,9 @@ import {
 	Divider,
 	Menu,
 	SegmentedButtons,
-	Text,
 	useTheme,
 } from "react-native-paper";
+import { PracticeAppbarContent } from "@/components/practice/CoachShell";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { HandTabs } from "@/components/practice/HandTabs";
 import { LastSessionCard } from "@/components/practice/LastSessionCard";
@@ -22,7 +22,7 @@ import { TechniqueLogComparison } from "@/components/technique/TechniqueLogCompa
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
-import { useCoach } from "@/contexts/CoachContext";
+import { useCoach, usePracticeHeading } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { useModeDrafts } from "@/hooks/use-mode-drafts";
 import { usePracticeSave } from "@/hooks/use-practice-save";
@@ -96,6 +96,12 @@ export function TechniquePracticeContent({
 		preselect: preselectMode,
 		ready: !!technique,
 	});
+
+	// The app bar names the exercise; the kind word is the whole subtitle.
+	usePracticeHeading(
+		technique?.title ?? "",
+		t("screen.practice.heading.technique"),
+	);
 
 	const getBackDestination = (): string => {
 		if (from === "overview") return "/(app)/(tabs)/overview";
@@ -230,7 +236,12 @@ export function TechniquePracticeContent({
 			{!inCoach && (
 				<Appbar.Header>
 					<Appbar.BackAction onPress={goBack} />
-					<Appbar.Content title="" />
+					<PracticeAppbarContent
+						heading={{
+							title: technique.title,
+							subtitle: t("screen.practice.heading.technique"),
+						}}
+					/>
 					<Menu
 						visible={headerMenuVisible}
 						onDismiss={() => setHeaderMenuVisible(false)}
@@ -294,10 +305,6 @@ export function TechniquePracticeContent({
 						paddingBottom={12}
 						style={{ flex: 1 }}
 					>
-						<Text variant="titleMedium" numberOfLines={1}>
-							{technique.title}
-						</Text>
-
 						<HandTabs
 							available={available}
 							hands={modes.hands}

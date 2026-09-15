@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
 	type CoachContextValue,
 	CoachProvider,
+	type PracticeHeading,
 	useCoach,
 } from "@/contexts/CoachContext";
 import { useActiveSession } from "@/hooks/use-active-session";
@@ -69,6 +70,7 @@ export default function CoachScreen() {
 	const [, setTick] = useState(0);
 	// Owned by the screen, not the block body: the body unmounts on advance.
 	const [notice, setNotice] = useState<string | null>(null);
+	const [heading, setHeading] = useState<PracticeHeading | null>(null);
 	const cueFiredForIndexRef = useRef<Set<number>>(new Set());
 
 	const saveHandlerRef = useRef<(() => Promise<{ saved: boolean }>) | null>(
@@ -344,6 +346,7 @@ export default function CoachScreen() {
 			validateHandlerRef,
 			phaseOfferRef,
 			notify,
+			setHeading,
 			saveAndNext: () => {
 				void handleSaveAndNext();
 			},
@@ -353,8 +356,8 @@ export default function CoachScreen() {
 			extendBlock: handleExtend,
 			saving,
 		}),
-		// The handler refs are stable for the screen's lifetime — including
-		// them would only churn the context value on every render.
+		// The handler refs and the heading setter are stable for the screen's
+		// lifetime — including them would only churn the context value.
 		[
 			session?.sessionId,
 			notify,
@@ -442,6 +445,7 @@ export default function CoachScreen() {
 			validateHandlerRef={coachValue.validateHandlerRef}
 			phaseOfferRef={coachValue.phaseOfferRef}
 			notify={coachValue.notify}
+			setHeading={setHeading}
 			saveAndNext={coachValue.saveAndNext}
 			skipBlock={coachValue.skipBlock}
 			extendBlock={coachValue.extendBlock}
@@ -454,6 +458,7 @@ export default function CoachScreen() {
 				sessionTotalSeconds={sessionTotalSeconds}
 				blockElapsedSeconds={blockElapsedSeconds}
 				blockTotalSeconds={blockTotalSeconds}
+				heading={heading}
 				onExit={handleExit}
 			>
 				{body}
