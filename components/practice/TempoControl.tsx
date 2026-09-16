@@ -13,12 +13,17 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { useAuth } from "@/contexts/AuthContext";
-import { border } from "@/theme/tokens";
+import { border, space } from "@/theme/tokens";
 import {
 	readMetronomeAccent,
 	writeMetronomeAccent,
 } from "@/utils/session-storage";
 import { addTap, bpmFromTaps } from "@/utils/tap-tempo";
+import {
+	type PlacedTempoMark,
+	placeTempoMarkers,
+	type TempoMark,
+} from "@/utils/tempo-markers";
 import { tempoSliderRange } from "@/utils/tempo-slider";
 import type {
 	TimeSignature,
@@ -56,58 +61,64 @@ interface TempoControlProps {
 
 const BPM_MIN = 20;
 const BPM_MAX = 240;
-/** Two markers closer than this share the midpoint instead of overlapping. */
-const MARKER_GAP_PCT = 14;
+/** Fixed strip above the slider that holds the markers, reserved even when empty. */
+const MARKER_STRIP_HEIGHT = 30;
+/** Seated 8px into the slider's own top padding, so the chevron tip touches
+ * the track's top edge the way round 8 draws it. */
+const MARKER_ARROW_BOTTOM = -8;
+const MARKER_ARROW_SIZE = 15;
+/** Three more pixels of air between a label and the arrow beneath it. */
+const MARKER_LABEL_AIR = 3;
+const MARKER_LABEL_BOTTOM =
+	MARKER_ARROW_BOTTOM + MARKER_ARROW_SIZE + MARKER_LABEL_AIR;
+/** Half the chevron's visible width — the box a lifted arrow occupies in the
+ * label's band. */
+const MARKER_ARROW_HALF = 6;
 
 function clamp(n: number): number {
 	return Math.max(BPM_MIN, Math.min(BPM_MAX, n));
 }
 
-/**
- * Which part of the label sits at `percent`: centered on it, or held inside
- * the track's edge by its leading ("start") or trailing ("end") edge — an
- * absolutely-positioned box shrinks to the space right of `left`, so a
- * centered marker near an edge would wrap and lose its chevron.
- */
-type MarkerAnchor = "start" | "center" | "end";
-
-function TempoMarker({
-	label,
-	percent,
-	anchor,
-	color,
-}: {
-	label: string;
-	percent: number;
-	anchor: MarkerAnchor;
-	color: string;
-}) {
+function MarkerArrow({ percent, color }: { percent: number; color: string }) {
 	return (
 		<View
-			pointerEvents="none"
 			style={{
 				position: "absolute",
-				// Seated 8px into the slider's own top padding, so the chevron tip
-				// touches the track's top edge the way round 8 draws it.
-				bottom: -8,
-				...(anchor === "end"
-					? { right: `${Math.max(0, 100 - percent)}%` }
-					: { left: `${Math.min(100, Math.max(0, percent))}%` }),
-				transform: [{ translateX: anchor === "center" ? "-50%" : "0%" }],
-				alignItems:
-					anchor === "end"
-						? "flex-end"
-						: anchor === "start"
-							? "flex-start"
-							: "center",
-				paddingHorizontal: anchor === "center" ? 0 : 4,
+				bottom: MARKER_ARROW_BOTTOM,
+				left: `${percent}%`,
+				transform: [{ translateX: "-50%" }],
 			}}
 		>
-			<Text variant="labelSmall" style={{ color }}>
-				{label}
-			</Text>
-			<Icon source="menu-down" size={15} color={color} />
+			<Icon source="menu-down" size={MARKER_ARROW_SIZE} color={color} />
 		</View>
+	);
+}
+
+function TempoMarkerLabel({
+	text,
+	color,
+	box,
+	onMeasure,
+}: {
+	text: string;
+	color: string;
+	box: PlacedTempoMark | undefined;
+	onMeasure: (width: number) => void;
+}) {
+	return (
+		<Text
+			variant="labelSmall"
+			onLayout={(e) => onMeasure(e.nativeEvent.layout.width)}
+			style={{
+				position: "absolute",
+				bottom: MARKER_LABEL_BOTTOM,
+				color,
+				// Held invisible until measured: placement needs the label's width.
+				...(box ? { left: box.left } : { left: 0, opacity: 0 }),
+			}}
+		>
+			{text}
+		</Text>
 	);
 }
 
@@ -183,25 +194,51 @@ export function TempoControl({
 		((bpm - range.min) / (range.max - range.min)) * 100;
 	const lastPos = last != null ? percent(clamp(last)) : null;
 	const targetPos = target != null ? percent(clamp(target)) : null;
-	const close =
-		lastPos != null &&
-		targetPos != null &&
-		Math.abs(lastPos - targetPos) < MARKER_GAP_PCT;
-	const mid =
-		close && lastPos != null && targetPos != null
-			? (lastPos + targetPos) / 2
-			: null;
 
 	const accentTint = theme.colors.onSurfaceVariant;
 	const beatsPerBar =
 		accentOn && accent?.signature ? accent.signature.beats : null;
-	// Near an edge the marker holds inside the track by that edge instead of
-	// centering — a centered box at 94% has only 6% of width left and wraps.
-	const edgeAnchor = (percent: number): MarkerAnchor => {
-		if (percent > 88) return "end";
-		if (percent < 12) return "start";
-		return "center";
-	};
+
+	const [trackWidth, setTrackWidth] = useState(0);
+	const [labelWidths, setLabelWidths] = useState<{
+		last: number | null;
+		target: number | null;
+	}>({ last: null, target: null });
+	const marks: TempoMark[] = [];
+	if (last != null && lastPos != null && trackWidth > 0 && labelWidths.last) {
+		marks.push({
+			id: "last",
+			value: clamp(last),
+			x: (lastPos / 100) * trackWidth,
+			width: labelWidths.last,
+			lifted: false,
+		});
+	}
+	if (
+		target != null &&
+		targetPos != null &&
+		trackWidth > 0 &&
+		labelWidths.target
+	) {
+		marks.push({
+			id: "target",
+			value: clamp(target),
+			x: (targetPos / 100) * trackWidth,
+			width: labelWidths.target,
+			lifted: false,
+		});
+	}
+	const placedMarks =
+		marks.length > 0
+			? placeTempoMarkers({
+					trackWidth,
+					gap: space.sm,
+					sideGap: space.sm,
+					arrowHalf: MARKER_ARROW_HALF,
+					marks,
+				})
+			: [];
+	const boxFor = (id: TempoMark["id"]) => placedMarks.find((p) => p.id === id);
 
 	return (
 		<View style={{ gap: 12 }}>
@@ -210,22 +247,36 @@ export function TempoControl({
 			{/* r8's `.sld`: markers and track in one block, lifted -10px toward the
 			    heading, with the chevron tips touching the track's top edge. */}
 			<View style={{ marginTop: -10 }}>
-				<View style={{ height: 30 }}>
+				<View
+					pointerEvents="none"
+					style={{ height: MARKER_STRIP_HEIGHT }}
+					onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+				>
 					{lastPos != null && (
-						<TempoMarker
-							label={t("common.tempo.last", { bpm: last })}
-							percent={close && mid != null ? mid : lastPos}
-							anchor={close ? "end" : edgeAnchor(lastPos)}
+						<TempoMarkerLabel
+							text={t("common.tempo.last", { bpm: last })}
 							color={accentTint}
+							box={boxFor("last")}
+							onMeasure={(width) =>
+								setLabelWidths((w) => ({ ...w, last: width }))
+							}
 						/>
 					)}
 					{targetPos != null && (
-						<TempoMarker
-							label={t("common.tempo.target", { bpm: target })}
-							percent={close && mid != null ? mid : targetPos}
-							anchor={close ? "start" : edgeAnchor(targetPos)}
+						<TempoMarkerLabel
+							text={t("common.tempo.target", { bpm: target })}
 							color={accentTint}
+							box={boxFor("target")}
+							onMeasure={(width) =>
+								setLabelWidths((w) => ({ ...w, target: width }))
+							}
 						/>
+					)}
+					{lastPos != null && (
+						<MarkerArrow percent={lastPos} color={accentTint} />
+					)}
+					{targetPos != null && (
+						<MarkerArrow percent={targetPos} color={accentTint} />
 					)}
 				</View>
 				<Slider
