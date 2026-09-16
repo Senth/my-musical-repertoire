@@ -1,16 +1,23 @@
 #!/usr/bin/env node
 /**
- * Renames `phase` to `state` on section documents (#84).
+ * Copies `phase` to `state` and `phaseChangedAt` to `stateChangedAt` on
+ * section documents (#84).
  *
- * The app now reads `state` with a `phase` fallback and writes only `state`,
- * so this script can run before, during, or after an app release — the
- * dual-read keeps old and new documents working either way. Until `phase`
- * is dropped, documents carry both fields with identical values.
+ * The script only adds fields, so a deployed old build keeps working while it
+ * runs. The new build reads either name, so it works before the deploy too.
+ * Until the legacy names are dropped, a migrated document carries both.
  *
- * Idempotent: documents that already have `state` are skipped, and
- * `--drop-legacy` only touches documents that still carry `phase`. Run it
- * with `--drop-legacy` once every client has been on the new build for a
- * release cycle.
+ * The rollout this was written for:
+ *
+ *   1. run it against production before the PR is merged
+ *   2. merge, which deploys hosting
+ *   3. run it again, to catch sections a browser tab on the old build wrote
+ *      during the deploy window
+ *   4. `--drop-legacy`, in the follow-up issue, once every client has been on
+ *      the new build for a release cycle
+ *
+ * Idempotent: a field already present on the target name is left alone, and
+ * `--drop-legacy` only touches documents that still carry a legacy name.
  *
  * Auth uses Application Default Credentials, and the Admin SDK bypasses
  * Firestore rules, so no rules deploy is needed.
@@ -62,7 +69,7 @@ async function main() {
 	}
 
 	console.log(
-		`Project: ${args.project}${args.dryRun ? " (dry run — nothing is written)" : ""}${args.dropLegacy ? " (dropping legacy phase)" : ""}`,
+		`Project: ${args.project}${args.dryRun ? " (dry run — nothing is written)" : ""}${args.dropLegacy ? " (dropping the legacy field names)" : ""}`,
 	);
 
 	initializeApp({
@@ -78,29 +85,32 @@ async function main() {
 
 	for (const doc of snap.docs) {
 		const data = doc.data();
-		if (data.state != null) {
-			alreadyMigrated++;
-			if (args.dropLegacy && data.phase != null) toDrop.push(doc.ref);
-			continue;
-		}
-		if (data.phase == null) {
+		const update = {};
+		if (data.state == null && data.phase != null) update.state = data.phase;
+		if (data.stateChangedAt == null && data.phaseChangedAt != null)
+			update.stateChangedAt = data.phaseChangedAt;
+
+		if (Object.keys(update).length > 0) toWrite.push({ ref: doc.ref, update });
+		else alreadyMigrated++;
+
+		if (data.state == null && data.phase == null)
 			console.warn(`  ! ${doc.path} has neither phase nor state — skipping`);
-			continue;
-		}
-		toWrite.push({ ref: doc.ref, phase: data.phase });
+
+		if (args.dropLegacy && (data.phase != null || data.phaseChangedAt != null))
+			toDrop.push(doc.ref);
 	}
 
 	let written = 0;
 	for (let i = 0; i < toWrite.length; i += MAX_BATCH) {
 		const chunk = toWrite.slice(i, i + MAX_BATCH);
 		if (args.dryRun) {
-			for (const { ref, phase } of chunk) {
-				console.log(`  would set ${ref.path} → state: ${phase}`);
+			for (const { ref, update } of chunk) {
+				console.log(`  would set ${ref.path} → ${JSON.stringify(update)}`);
 			}
 		} else {
 			const batch = db.batch();
-			for (const { ref, phase } of chunk)
-				batch.set(ref, { state: phase }, { merge: true });
+			for (const { ref, update } of chunk)
+				batch.set(ref, update, { merge: true });
 			await batch.commit();
 			written += chunk.length;
 			console.log(`  committed ${written}/${toWrite.length}`);
@@ -111,19 +121,23 @@ async function main() {
 	for (let i = 0; i < toDrop.length; i += MAX_BATCH) {
 		const chunk = toDrop.slice(i, i + MAX_BATCH);
 		if (args.dryRun) {
-			for (const ref of chunk) console.log(`  would drop phase on ${ref.path}`);
+			for (const ref of chunk)
+				console.log(`  would drop phase and phaseChangedAt on ${ref.path}`);
 		} else {
 			const batch = db.batch();
 			for (const ref of chunk)
-				batch.update(ref, { phase: FieldValue.delete() });
+				batch.update(ref, {
+					phase: FieldValue.delete(),
+					phaseChangedAt: FieldValue.delete(),
+				});
 			await batch.commit();
 			dropped += chunk.length;
-			console.log(`  dropped legacy phase on ${dropped}/${toDrop.length}`);
+			console.log(`  dropped legacy fields on ${dropped}/${toDrop.length}`);
 		}
 	}
 
 	console.log(
-		`\n${snap.size} sections found · ${toWrite.length} to migrate · ${toDrop.length} legacy drops · ${alreadyMigrated} already on state`,
+		`\n${snap.size} sections found · ${toWrite.length} to migrate · ${toDrop.length} legacy drops · ${alreadyMigrated} already migrated`,
 	);
 	if (args.dryRun) console.log("Dry run — no documents were modified.");
 }
