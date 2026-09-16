@@ -74,7 +74,7 @@ export function PhaseOfferBody({
 			{offer.cyclingDays != null && (
 				<Text variant="bodySmall" style={{ color: theme.colors.error }}>
 					{t(cyclingGuardKey(offer.cyclingDays), {
-						phase: t(`section.phase.${offer.fromPhase}`).toLowerCase(),
+						phase: t(`section.state.${offer.fromPhase}`).toLowerCase(),
 						count: offer.cyclingDays,
 					})}
 				</Text>
