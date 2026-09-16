@@ -6,6 +6,7 @@ const { chooseStrategy } = require("@/public/sw-routing.js") as {
 		mode: string;
 		sameOrigin: boolean;
 		pathname: string;
+		search: string;
 	}) => string;
 };
 
@@ -14,6 +15,7 @@ const GET = {
 	mode: "cors",
 	sameOrigin: true,
 	pathname: "/whatever",
+	search: "",
 };
 
 describe("chooseStrategy", () => {
@@ -30,6 +32,16 @@ describe("chooseStrategy", () => {
 		expect(chooseStrategy({ ...GET, pathname: "/__/auth/handler" })).toBe(
 			"passthrough",
 		);
+	});
+
+	it("passes the page's build check through to the wire", () => {
+		expect(
+			chooseStrategy({
+				...GET,
+				pathname: "/",
+				search: "?build-check=0",
+			}),
+		).toBe("passthrough");
 	});
 
 	it("leaves cross-origin navigations alone too", () => {

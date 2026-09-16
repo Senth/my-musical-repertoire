@@ -10,10 +10,10 @@ const IMMUTABLE_PREFIX = "/_expo/static/";
 /**
  * @typedef {"passthrough" | "navigate" | "cache-first" | "stale-while-revalidate"} Strategy
  *
- * @param {{ method: string, mode: string, sameOrigin: boolean, pathname: string }} request
+ * @param {{ method: string, mode: string, sameOrigin: boolean, pathname: string, search: string }} request
  * @returns {Strategy}
  */
-function chooseStrategy({ method, mode, sameOrigin, pathname }) {
+function chooseStrategy({ method, mode, sameOrigin, pathname, search }) {
 	// Writes must never be served or replayed from a cache.
 	if (method !== "GET") return "passthrough";
 	// Firestore, Google auth and fonts run their own offline handling — the
@@ -23,6 +23,9 @@ function chooseStrategy({ method, mode, sameOrigin, pathname }) {
 	// auth domain is cross-origin today, so this is insurance for the day it
 	// is not — but a reserved path must never be answered from a cache.
 	if (pathname.startsWith("/__/")) return "passthrough";
+	// The page's own build check must see the wire, never the very cache it
+	// is judging.
+	if (search.includes("build-check")) return "passthrough";
 	// The app shell has to come from the network when there is one, so a new
 	// deploy lands on the next reload instead of on the next service worker.
 	if (mode === "navigate") return "navigate";

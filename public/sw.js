@@ -43,11 +43,6 @@ self.addEventListener("activate", (event) => {
 	);
 });
 
-self.addEventListener("message", (event) => {
-	// Only ever reached from the update banner's Reload action.
-	if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
-});
-
 self.addEventListener("fetch", (event) => {
 	const request = event.request;
 	const url = new URL(request.url);
@@ -56,6 +51,7 @@ self.addEventListener("fetch", (event) => {
 		mode: request.mode,
 		sameOrigin: url.origin === self.location.origin,
 		pathname: url.pathname,
+		search: url.search,
 	});
 
 	switch (strategy) {
