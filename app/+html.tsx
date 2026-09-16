@@ -1,6 +1,7 @@
 import { ScrollViewStyleReset } from "expo-router/html";
 import type { PropsWithChildren } from "react";
 import { shell } from "@/theme/tokens";
+import { buildId } from "@/utils/build-info";
 
 /*
  * The page paint that has to exist before any JavaScript: the html/body
@@ -38,6 +39,7 @@ export default function Root({ children }: PropsWithChildren) {
 				<style>{PAGE_CSS}</style>
 				<meta charSet="utf-8" />
 				<meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+				<meta name="build" content={buildId} />
 				{/* `interactive-widget=resizes-content` makes the soft keyboard shrink
 				    the layout instead of sliding it up, which would push the coach's
 				    sticky timer bar and Save button off screen. */}
