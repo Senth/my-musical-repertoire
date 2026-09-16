@@ -2,7 +2,7 @@ import Slider from "@react-native-community/slider";
 import type { MutableRefObject } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, View } from "react-native";
+import { AccessibilityInfo, Animated, Pressable, View } from "react-native";
 import {
 	Button,
 	HelperText,
@@ -74,12 +74,63 @@ const MARKER_LABEL_BOTTOM =
 /** Half the chevron's visible width — the box a lifted arrow occupies in the
  * label's band. */
 const MARKER_ARROW_HALF = 6;
+/** How far the covered arrow rises clear of the thumb standing on it. */
+const MARKER_ARROW_LIFT = 10;
+/** Knob overlap plus 2px: a marker this close to the thumb is under it. */
+const MARKER_LIFT_OVERLAP = 15;
+const LIFT_MS = 150;
 
 function clamp(n: number): number {
 	return Math.max(BPM_MIN, Math.min(BPM_MAX, n));
 }
 
-function MarkerArrow({ percent, color }: { percent: number; color: string }) {
+/** `prefers-reduced-motion`, via the platform's accessibility info. */
+function useReducedMotion(): boolean {
+	const [reduced, setReduced] = useState(false);
+	useEffect(() => {
+		let active = true;
+		AccessibilityInfo.isReduceMotionEnabled().then((value) => {
+			if (active) setReduced(value);
+		});
+		const sub = AccessibilityInfo.addEventListener(
+			"reduceMotionChanged",
+			setReduced,
+		);
+		return () => {
+			active = false;
+			sub.remove();
+		};
+	}, []);
+	return reduced;
+}
+
+function MarkerArrow({
+	percent,
+	color,
+	lifted,
+	reducedMotion,
+}: {
+	percent: number;
+	color: string;
+	lifted: boolean;
+	reducedMotion: boolean;
+}) {
+	const target = lifted ? -MARKER_ARROW_LIFT : 0;
+	const y = useRef(new Animated.Value(target)).current;
+	const at = useRef(target);
+	useEffect(() => {
+		if (target === at.current) return;
+		at.current = target;
+		if (reducedMotion) {
+			y.setValue(target);
+			return;
+		}
+		Animated.timing(y, {
+			toValue: target,
+			duration: LIFT_MS,
+			useNativeDriver: true,
+		}).start();
+	}, [target, reducedMotion, y]);
 	return (
 		<View
 			style={{
@@ -89,7 +140,9 @@ function MarkerArrow({ percent, color }: { percent: number; color: string }) {
 				transform: [{ translateX: "-50%" }],
 			}}
 		>
-			<Icon source="menu-down" size={MARKER_ARROW_SIZE} color={color} />
+			<Animated.View style={{ transform: [{ translateY: y }] }}>
+				<Icon source="menu-down" size={MARKER_ARROW_SIZE} color={color} />
+			</Animated.View>
 		</View>
 	);
 }
@@ -98,27 +151,53 @@ function TempoMarkerLabel({
 	text,
 	color,
 	box,
+	reducedMotion,
 	onMeasure,
 }: {
 	text: string;
 	color: string;
 	box: PlacedTempoMark | undefined;
+	reducedMotion: boolean;
 	onMeasure: (width: number) => void;
 }) {
+	const x = useRef(new Animated.Value(0)).current;
+	const at = useRef<number | null>(null);
+	useEffect(() => {
+		if (!box || at.current === box.left) return;
+		// First paint with a placed box is arrival, not motion — nothing
+		// animates on entry.
+		const entry = at.current === null;
+		at.current = box.left;
+		if (entry || reducedMotion) {
+			x.setValue(box.left);
+			return;
+		}
+		Animated.timing(x, {
+			toValue: box.left,
+			duration: LIFT_MS,
+			useNativeDriver: true,
+		}).start();
+	}, [box, reducedMotion, x]);
 	return (
-		<Text
-			variant="labelSmall"
-			onLayout={(e) => onMeasure(e.nativeEvent.layout.width)}
+		<Animated.View
 			style={{
 				position: "absolute",
 				bottom: MARKER_LABEL_BOTTOM,
-				color,
+				// Position rides the transform so a sideways move animates;
+				// the label keeps one height throughout.
+				transform: [{ translateX: x }],
 				// Held invisible until measured: placement needs the label's width.
-				...(box ? { left: box.left } : { left: 0, opacity: 0 }),
+				...(box ? null : { opacity: 0 }),
 			}}
 		>
-			{text}
-		</Text>
+			<Text
+				variant="labelSmall"
+				onLayout={(e) => onMeasure(e.nativeEvent.layout.width)}
+				style={{ color }}
+			>
+				{text}
+			</Text>
+		</Animated.View>
 	);
 }
 
@@ -204,28 +283,30 @@ export function TempoControl({
 		last: number | null;
 		target: number | null;
 	}>({ last: null, target: null });
+	const reducedMotion = useReducedMotion();
+	const thumbX = (percent(sliderValue) / 100) * trackWidth;
+	const lifted = (x: number) => Math.abs(x - thumbX) < MARKER_LIFT_OVERLAP;
+	const lastX =
+		lastPos != null && trackWidth > 0 ? (lastPos / 100) * trackWidth : null;
+	const targetX =
+		targetPos != null && trackWidth > 0 ? (targetPos / 100) * trackWidth : null;
 	const marks: TempoMark[] = [];
-	if (last != null && lastPos != null && trackWidth > 0 && labelWidths.last) {
+	if (last != null && lastX != null && labelWidths.last) {
 		marks.push({
 			id: "last",
 			value: clamp(last),
-			x: (lastPos / 100) * trackWidth,
+			x: lastX,
 			width: labelWidths.last,
-			lifted: false,
+			lifted: lifted(lastX),
 		});
 	}
-	if (
-		target != null &&
-		targetPos != null &&
-		trackWidth > 0 &&
-		labelWidths.target
-	) {
+	if (target != null && targetX != null && labelWidths.target) {
 		marks.push({
 			id: "target",
 			value: clamp(target),
-			x: (targetPos / 100) * trackWidth,
+			x: targetX,
 			width: labelWidths.target,
-			lifted: false,
+			lifted: lifted(targetX),
 		});
 	}
 	const placedMarks =
@@ -257,6 +338,7 @@ export function TempoControl({
 							text={t("common.tempo.last", { bpm: last })}
 							color={accentTint}
 							box={boxFor("last")}
+							reducedMotion={reducedMotion}
 							onMeasure={(width) =>
 								setLabelWidths((w) => ({ ...w, last: width }))
 							}
@@ -267,16 +349,27 @@ export function TempoControl({
 							text={t("common.tempo.target", { bpm: target })}
 							color={accentTint}
 							box={boxFor("target")}
+							reducedMotion={reducedMotion}
 							onMeasure={(width) =>
 								setLabelWidths((w) => ({ ...w, target: width }))
 							}
 						/>
 					)}
 					{lastPos != null && (
-						<MarkerArrow percent={lastPos} color={accentTint} />
+						<MarkerArrow
+							percent={lastPos}
+							color={accentTint}
+							lifted={lastX != null && lifted(lastX)}
+							reducedMotion={reducedMotion}
+						/>
 					)}
 					{targetPos != null && (
-						<MarkerArrow percent={targetPos} color={accentTint} />
+						<MarkerArrow
+							percent={targetPos}
+							color={accentTint}
+							lifted={targetX != null && lifted(targetX)}
+							reducedMotion={reducedMotion}
+						/>
 					)}
 				</View>
 				<Slider
