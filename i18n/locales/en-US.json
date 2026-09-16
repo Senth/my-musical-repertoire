@@ -24,7 +24,7 @@
 		"noSections": "No sections"
 	},
 	"section": {
-		"phase": {
+		"state": {
 			"not_started": "Not started",
 			"learning": "Learning",
 			"stabilizing": "Stabilizing",
@@ -564,7 +564,7 @@
 			"titleLabel": "Title",
 			"composerLabel": "Composer",
 			"collectionLabel": "Collection",
-			"stateLabel": "Lifecycle State",
+			"stateLabel": "State",
 			"targetTempoBpmLabel": "Target Tempo (BPM)",
 			"durationLabel": "Duration (minutes)",
 			"save": "Save",
@@ -649,7 +649,7 @@
 				"backToPieces": "Back to Pieces",
 				"backToPiece": "Back to Piece"
 			},
-			"phaseOffer": {
+			"stateOffer": {
 				"title": {
 					"advance": {
 						"stabilizing": "Ready to move this to stabilizing?",
@@ -686,13 +686,13 @@
 					"notPlayed": "Practice {{modes}} this session to advance",
 					"cleanDays": "{{count}} of {{required}} clean sessions",
 					"bpmTrend": "Tempo dipped since last session",
-					"suppressed": "Change the phase from the chip when you are ready",
+					"suppressed": "Change the state from the chip when you are ready",
 					"noTarget": "Set a target tempo to track progress"
 				},
 				"cyclingGuard": {
-					"today": "Moved to {{phase}} today — change it again?",
-					"yesterday": "Moved to {{phase}} yesterday — change it again?",
-					"daysAgo": "Moved to {{phase}} {{count}} days ago — change it again?"
+					"today": "Moved to {{state}} today — change it again?",
+					"yesterday": "Moved to {{state}} yesterday — change it again?",
+					"daysAgo": "Moved to {{state}} {{count}} days ago — change it again?"
 				}
 			},
 			"notRated": "not rated yet",
@@ -708,7 +708,7 @@
 			"titleLabel": "Title",
 			"composerLabel": "Composer",
 			"collectionLabel": "Collection",
-			"stateLabel": "Lifecycle State",
+			"stateLabel": "State",
 			"targetTempoBpmLabel": "Target Tempo (BPM)",
 			"durationLabel": "Duration (minutes)",
 			"difficultyLabel": "Difficulty",
@@ -792,7 +792,7 @@
 			"titleLabel": "Title",
 			"typeLabel": "Type (optional)",
 			"typeNone": "None",
-			"stateLabel": "Lifecycle State",
+			"stateLabel": "State",
 			"handsLabel": "Hands",
 			"handsHelp": "Which hands this technique is practised with",
 			"drillsLabel": "Drills",
@@ -808,7 +808,7 @@
 			"titleLabel": "Title",
 			"typeLabel": "Type (optional)",
 			"typeNone": "None",
-			"stateLabel": "Lifecycle State",
+			"stateLabel": "State",
 			"handsLabel": "Hands",
 			"handsHelp": "Which hands this technique is practised with",
 			"drillsLabel": "Drills",
@@ -1009,7 +1009,7 @@
 			"bpm": "{{bpm}} BPM",
 			"form": {
 				"labelLabel": "Label (e.g. Opening, Bridge, Coda)",
-				"phaseLabel": "Phase",
+				"stateLabel": "State",
 				"barsLabel": "Bars (optional)",
 				"startBarLabel": "Start",
 				"endBarLabel": "End",
@@ -1022,7 +1022,7 @@
 			},
 			"addNextNudge": {
 				"title": "Ready for the next passage?",
-				"body": "Section {{section}} is {{phase}} — ready to add the next passage of {{piece}}?",
+				"body": "Section {{section}} is {{state}} — ready to add the next passage of {{piece}}?",
 				"transitionBody": "Section {{section}} of {{piece}} is not started — ready to start learning it?",
 				"add": "Add section",
 				"transition": "Move to learning",

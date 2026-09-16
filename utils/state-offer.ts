@@ -1,6 +1,6 @@
 import type { Piece } from "@/models/piece";
 import type { ByMode } from "@/models/practice";
-import type { PhaseTransition, Section, SectionPhase } from "@/models/section";
+import type { Section, SectionState, StateTransition } from "@/models/section";
 import type { ModeEntry } from "./practice-modes";
 import {
 	type AdvanceCriterion,
@@ -18,47 +18,47 @@ import {
  * offer to show, or which passive status line to show instead. Pure.
  */
 
-export type PhaseOfferKind = "advance" | "demote";
+export type StateOfferKind = "advance" | "demote";
 
-export interface PhaseOffer {
-	kind: PhaseOfferKind;
-	fromPhase: SectionPhase;
-	toPhase: SectionPhase;
+export interface StateOffer {
+	kind: StateOfferKind;
+	fromState: SectionState;
+	toState: SectionState;
 	/** Hands-together tempo behind an advance offer, for the copy and the audit row. */
 	htBpm: number | null;
 	/** Clean HT days behind an advance offer. */
 	cleanDays: number;
 	/** What triggered a demote offer; null on an advance. */
 	demoteReason: DemoteReason | null;
-	/** Days since the last phase change when it was recent; null otherwise. */
+	/** Days since the last state change when it was recent; null otherwise. */
 	cyclingDays: number | null;
 }
 
-export type PhaseOfferStatus =
+export type StateOfferStatus =
 	| { kind: "criterion"; criterion: AdvanceCriterion }
 	| { kind: "suppressed" };
 
-export interface PhaseOfferDecision {
-	offer: PhaseOffer | null;
-	status: PhaseOfferStatus | null;
+export interface StateOfferDecision {
+	offer: StateOffer | null;
+	status: StateOfferStatus | null;
 }
 
 /**
  * An offer plus everything needed to resolve it — so the coach screen, which
  * outlives the block body that raised it, can write the answer on its own.
  */
-export interface PendingPhaseOffer {
-	offer: PhaseOffer;
+export interface PendingStateOffer {
+	offer: StateOffer;
 	pieceId: string;
 	sectionId: string;
 	sectionLabel: string;
 	achievedBpmAtEvent: number | null;
 	qualityAtEvent: number | null;
-	priorPhaseChangedAt: Date | null;
+	priorStateChangedAt: Date | null;
 	sessionId: string | null;
 }
 
-export interface PhaseOfferInput {
+export interface StateOfferInput {
 	section: Section;
 	piece: Piece | null | undefined;
 	/** The map as it stands *after* the save — not the stale snapshot. */
@@ -69,11 +69,11 @@ export interface PhaseOfferInput {
 	savedEntries: ModeEntry[];
 	savedAt: Date;
 	/** The section's `phaseTransitions` rows, for the suppression count. */
-	transitions: PhaseTransition[];
+	transitions: StateTransition[];
 	now: Date;
 }
 
-const NOTHING: PhaseOfferDecision = { offer: null, status: null };
+const NOTHING: StateOfferDecision = { offer: null, status: null };
 
 /** The just-saved entries as logs, so the criteria see the current session. */
 function savedAsLogs(
@@ -90,7 +90,7 @@ function savedAsLogs(
 	}));
 }
 
-export function decidePhaseOffer({
+export function decideStateOffer({
 	section,
 	piece,
 	byMode,
@@ -99,24 +99,24 @@ export function decidePhaseOffer({
 	savedAt,
 	transitions,
 	now,
-}: PhaseOfferInput): PhaseOfferDecision {
+}: StateOfferInput): StateOfferDecision {
 	if (!section.id) return NOTHING;
 
 	const logs = [...savedAsLogs(savedEntries, savedAt), ...priorLogs];
-	const cyclingDays = cyclingGuardDays(section.phaseChangedAt, now);
+	const cyclingDays = cyclingGuardDays(section.stateChangedAt, now);
 
 	// Demote first: it is evidence from the session that just happened, and the
 	// two can never both be met — advancing needs quality >= 4 on the newest day.
 	const demote = evaluateDemote(section, savedEntries, priorLogs);
-	if (demote.eligible && demote.toPhase) {
+	if (demote.eligible && demote.toState) {
 		if (isSuppressed(transitions, "demote-button", now)) {
 			return { offer: null, status: { kind: "suppressed" } };
 		}
 		return {
 			offer: {
 				kind: "demote",
-				fromPhase: section.phase,
-				toPhase: demote.toPhase,
+				fromState: section.state,
+				toState: demote.toState,
 				htBpm: byMode?.HT?.bpm ?? null,
 				cleanDays: 0,
 				demoteReason: demote.reason,
@@ -127,15 +127,15 @@ export function decidePhaseOffer({
 	}
 
 	const advance = evaluateAdvance(section, piece, byMode, logs, savedEntries);
-	if (advance.eligible && advance.toPhase) {
+	if (advance.eligible && advance.toState) {
 		if (isSuppressed(transitions, "advance-button", now)) {
 			return { offer: null, status: { kind: "suppressed" } };
 		}
 		return {
 			offer: {
 				kind: "advance",
-				fromPhase: section.phase,
-				toPhase: advance.toPhase,
+				fromState: section.state,
+				toState: advance.toState,
 				htBpm: advance.htBpm,
 				cleanDays: advance.cleanDays,
 				demoteReason: null,
@@ -148,9 +148,9 @@ export function decidePhaseOffer({
 	// A missing target is actionable advice, not a progress report, so it shows
 	// however far off the rest of the criteria are.
 	if (
-		advance.toPhase != null &&
+		advance.toState != null &&
 		effectiveTargetBpm(section, piece) == null &&
-		section.phase !== "maintenance"
+		section.state !== "maintenance"
 	) {
 		return {
 			offer: null,

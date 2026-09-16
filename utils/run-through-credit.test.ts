@@ -32,11 +32,11 @@ function run(over: Partial<RunThroughInput> & { sections: Section[] }) {
 	});
 }
 
-/** A maintenance-phase section with a full prior HT rating. */
+/** A maintenance-state section with a full prior HT rating. */
 function maintenanceSection(over: Partial<Section> & { id: string }): Section {
 	return makeSection({
 		pieceId: "p1",
-		phase: "maintenance",
+		state: "maintenance",
 		byMode: ht(),
 		...over,
 	});
@@ -70,14 +70,14 @@ describe("computeRunThroughEffects", () => {
 		});
 	});
 
-	describe("phase gating", () => {
+	describe("state gating", () => {
 		it.each([
 			"learning",
 			"stabilizing",
-		] as const)("leaves a %s-phase section alone whether ticked or not", (phase) => {
+		] as const)("leaves a %s-state section alone whether ticked or not", (state) => {
 			const sections = [
-				maintenanceSection({ id: "s1", phase }),
-				maintenanceSection({ id: "s2", phase }),
+				maintenanceSection({ id: "s1", state }),
+				maintenanceSection({ id: "s2", state }),
 			];
 			const result = run({ sections, flaggedSectionIds: ["s2"] });
 			expect(result).toEqual({ credits: [], demotions: [] });
@@ -90,11 +90,11 @@ describe("computeRunThroughEffects", () => {
 			expect(result).toEqual({ credits: [], demotions: [] });
 		});
 
-		it("returns an empty result for a piece with no maintenance-phase sections", () => {
+		it("returns an empty result for a piece with no maintenance-state sections", () => {
 			const result = run({
 				sections: [
-					maintenanceSection({ id: "s1", phase: "learning" }),
-					maintenanceSection({ id: "s2", phase: "stabilizing" }),
+					maintenanceSection({ id: "s1", state: "learning" }),
+					maintenanceSection({ id: "s2", state: "stabilizing" }),
 				],
 			});
 			expect(result).toEqual({ credits: [], demotions: [] });

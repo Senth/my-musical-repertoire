@@ -16,6 +16,8 @@ import { t } from "./support/app";
 test.describe.configure({ mode: "serial" });
 
 const COMPOSER = "E2E Composer";
+const PROJECT_ID =
+	process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? "my-musical-repertoire-dev";
 const PIECE1 = "E2E Stabilizing Solo";
 const PIECE2 = "E2E Stabilizing Twin";
 const PIECE3 = "E2E Learning Hands";
@@ -48,8 +50,34 @@ async function fill(page: Page, label: string, value: string) {
 	await page.getByRole("textbox", { name: label, exact: true }).fill(value);
 }
 
-async function save(page: Page, label: string) {
-	await page.getByRole("button", { name: label, exact: true }).click();
+async function save(page: Page, label: string, opts: { force?: boolean } = {}) {
+	await page.getByRole("button", { name: label, exact: true }).click(opts);
+}
+
+/**
+ * Presses Save on a form reached through a Menu choice, and keeps pressing
+ * until the form is gone (#168).
+ *
+ * Paper's Menu leaves a full-screen dismiss pressable on top of the form for
+ * a frame or two after the menu itself reports closed. A click in that window
+ * is spent closing the scrim: Playwright resolves it, the button never sees
+ * it, and the form sits there filled in until the test times out somewhere
+ * later and confusingly. `force` does not help — the click still lands on
+ * whatever is topmost. Pressing again once the button is still there is the
+ * only thing that distinguishes "swallowed" from "saving".
+ */
+async function saveUntilGone(page: Page, label: string): Promise<void> {
+	const button = page.getByRole("button", { name: label, exact: true });
+	for (let attempt = 0; attempt < 5; attempt++) {
+		await button.click({ force: true });
+		try {
+			await expect(button).toHaveCount(0, { timeout: 5_000 });
+			return;
+		} catch {
+			// Still on the form: the press was swallowed, or the write is slow.
+		}
+	}
+	throw new Error(`"${label}" never left the form after 5 presses`);
 }
 
 async function choose(page: Page, label: string, option: string) {
@@ -88,7 +116,7 @@ async function addPiece(
 		t("screen.addPiece.stateLabel"),
 		t(`piece.state.${opts.state}`),
 	);
-	await save(page, t("screen.addPiece.save"));
+	await saveUntilGone(page, t("screen.addPiece.save"));
 
 	await page.getByText(opts.title, { exact: true }).first().click();
 	await expect(
@@ -97,13 +125,67 @@ async function addPiece(
 	return page.url();
 }
 
+/**
+ * Rewrites a section the app just created so it carries the pre-#84 field
+ * names, using the emulator's REST API because the app itself can no longer
+ * write them. Finds the document with a collection-group query on the label,
+ * which is unique per test.
+ */
+async function rewriteSectionAsLegacy(label: string): Promise<void> {
+	const base = `http://127.0.0.1:8052/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+	const headers = {
+		Authorization: "Bearer owner",
+		"Content-Type": "application/json",
+	};
+
+	const res = await fetch(`${base}:runQuery`, {
+		method: "POST",
+		headers,
+		body: JSON.stringify({
+			structuredQuery: {
+				from: [{ collectionId: "sections", allDescendants: true }],
+				where: {
+					fieldFilter: {
+						field: { fieldPath: "label" },
+						op: "EQUAL",
+						value: { stringValue: label },
+					},
+				},
+			},
+		}),
+	});
+	const rows = (await res.json()) as {
+		document?: { name: string; fields: Record<string, unknown> };
+	}[];
+	const found = rows.find((r) => r.document)?.document;
+	if (!found) throw new Error(`no section document with label "${label}"`);
+
+	const fields = found.fields;
+	const legacy: Record<string, unknown> = { phase: fields.state };
+	if (fields.stateChangedAt) legacy.phaseChangedAt = fields.stateChangedAt;
+
+	const mask = ["state", "stateChangedAt", ...Object.keys(legacy)]
+		.map((f) => `updateMask.fieldPaths=${f}`)
+		.join("&");
+	const patch = await fetch(`http://127.0.0.1:8052/v1/${found.name}?${mask}`, {
+		method: "PATCH",
+		headers,
+		body: JSON.stringify({ fields: legacy }),
+	});
+	if (!patch.ok) {
+		throw new Error(
+			`legacy rewrite failed: ${patch.status} ${await patch.text()}`,
+		);
+	}
+}
+
 /** Adds a section to a piece already on screen; returns the new section's id. */
 async function addSection(
 	page: Page,
 	pieceUrl: string,
 	opts: {
 		label: string;
-		phase: "learning" | "stabilizing";
+		state: "learning" | "stabilizing";
 		from: number;
 		to: number;
 	},
@@ -112,8 +194,8 @@ async function addSection(
 	await fill(page, t("screen.pieceSections.form.labelLabel"), opts.label);
 	await choose(
 		page,
-		t("screen.pieceSections.form.phaseLabel"),
-		t(`section.phase.${opts.phase}`),
+		t("screen.pieceSections.form.stateLabel"),
+		t(`section.state.${opts.state}`),
 	);
 	await fill(
 		page,
@@ -121,7 +203,7 @@ async function addSection(
 		String(opts.from),
 	);
 	await fill(page, t("screen.pieceSections.form.endBarLabel"), String(opts.to));
-	await save(page, t("screen.pieceSections.form.save"));
+	await saveUntilGone(page, t("screen.pieceSections.form.save"));
 	await expect(page.getByText(opts.label, { exact: true })).toBeVisible({
 		timeout: 10_000,
 	});
@@ -281,7 +363,7 @@ test("A stabilizing piece is suggested by section and the card names that passag
 	piece1Url = await addPiece(page, { title: PIECE1, state: "stabilizing" });
 	await addSection(page, piece1Url, {
 		label: "First pass",
-		phase: "stabilizing",
+		state: "stabilizing",
 		from: 101,
 		to: 108,
 	});
@@ -297,7 +379,7 @@ test("A stabilizing piece is suggested by section and the card names that passag
 		page.getByText(barRange(101, 108), { exact: false }),
 	).toBeVisible({ timeout: 10_000 });
 	await expect(
-		page.getByText(t("section.phase.stabilizing"), { exact: true }).first(),
+		page.getByText(t("section.state.stabilizing"), { exact: true }).first(),
 	).toBeVisible({ timeout: 10_000 });
 });
 
@@ -307,7 +389,7 @@ test("Two sections of one piece both appear in Practice Today when no other piec
 	test.setTimeout(60_000);
 	await addSection(page, piece1Url, {
 		label: "Second pass",
-		phase: "stabilizing",
+		state: "stabilizing",
 		from: 140,
 		to: 148,
 	});
@@ -331,7 +413,7 @@ test("A second section of an already-suggested piece yields its slot to an unrep
 	piece2Url = await addPiece(page, { title: PIECE2, state: "stabilizing" });
 	await addSection(page, piece2Url, {
 		label: "Opening",
-		phase: "stabilizing",
+		state: "stabilizing",
 		from: 111,
 		to: 118,
 	});
@@ -360,7 +442,7 @@ test("A learning section inside a stabilizing piece is chipped Learning on the o
 	test.setTimeout(60_000);
 	await addSection(page, piece1Url, {
 		label: "New passage",
-		phase: "learning",
+		state: "learning",
 		from: 170,
 		to: 174,
 	});
@@ -369,11 +451,11 @@ test("A learning section inside a stabilizing piece is chipped Learning on the o
 	await expect(
 		page.getByText(barRange(170, 174), { exact: false }),
 	).toBeVisible({ timeout: 10_000 });
-	// Scoped to the card: `section.phase.learning` and `piece.state.learning` are
+	// Scoped to the card: `section.state.learning` and `piece.state.learning` are
 	// both "Learning", so a page-wide match is satisfied by another card's state chip.
 	await expect(
 		cardContaining(page, barRange(170, 174)).getByText(
-			t("section.phase.learning"),
+			t("section.state.learning"),
 			{ exact: true },
 		),
 	).toBeVisible({ timeout: 10_000 });
@@ -386,7 +468,7 @@ test("A section practised left hand today is suggested again the same day for ri
 	piece3Url = await addPiece(page, { title: PIECE3, state: "learning" });
 	piece3SectionId = await addSection(page, piece3Url, {
 		label: "Coda",
-		phase: "learning",
+		state: "learning",
 		from: 121,
 		to: 128,
 	});
@@ -568,4 +650,38 @@ test("A section can be added without leaving the practice screen", async ({
 	await expect(page.getByText(label, { exact: true })).toBeVisible({
 		timeout: 10_000,
 	});
+});
+
+/**
+ * #84 left `state` readable under its old name `phase`, because documents
+ * written before the migration still carry it. Nothing else in the suite
+ * proves that fallback works, so this writes one section the old way and
+ * reads it back through the app.
+ *
+ * Delete this test together with the `?? data.phase` fallbacks in
+ * `hooks/use-sections.ts` when the follow-up issue drops the legacy fields.
+ */
+test("a section stored under the legacy `phase` field still renders its state", async ({
+	page,
+}) => {
+	test.setTimeout(60_000);
+	const title = "E2E Legacy Phase Field";
+	const label = "E2E Legacy Passage";
+	const pieceUrl = await addPiece(page, { title, state: "stabilizing" });
+	await addSection(page, pieceUrl, {
+		label,
+		state: "stabilizing",
+		from: 1,
+		to: 8,
+	});
+
+	await rewriteSectionAsLegacy(label);
+
+	await page.goto(pieceUrl);
+	await expect(page.getByText(label, { exact: true })).toBeVisible({
+		timeout: 10_000,
+	});
+	await expect(
+		page.getByText(t("section.state.stabilizing"), { exact: true }).first(),
+	).toBeVisible();
 });

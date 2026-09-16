@@ -27,7 +27,7 @@ import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { useFabStyleStack } from "@/hooks/use-fab-style";
 import { usePageInset } from "@/hooks/use-page-inset";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
-import { useChangeSectionPhase } from "@/hooks/use-section-phase";
+import { useChangeSectionState } from "@/hooks/use-section-state";
 import { useReorderSections, useSections } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { Section } from "@/models/section";
@@ -50,7 +50,7 @@ export default function PieceDetailScreen() {
 	const { deletePiece } = useDeletePiece();
 	const { updatePiece } = useUpdatePiece();
 	const { reorderSections } = useReorderSections();
-	const { changeSectionPhase } = useChangeSectionPhase();
+	const { changeSectionState } = useChangeSectionState();
 
 	const piece = pieces.find((p) => p.id === id);
 
@@ -83,15 +83,15 @@ export default function PieceDetailScreen() {
 		if (!id || !section?.id) return;
 		setNudgeBusy(true);
 		try {
-			await changeSectionPhase({
+			await changeSectionState({
 				pieceId: id,
 				sectionId: section.id,
-				fromPhase: section.phase,
-				toPhase: "learning",
+				fromState: section.state,
+				toState: "learning",
 				trigger: "advance-button",
 				achievedBpmAtEvent: section.byMode?.HT?.bpm ?? null,
 				qualityAtEvent: section.byMode?.HT?.quality ?? null,
-				priorPhaseChangedAt: section.phaseChangedAt ?? null,
+				priorStateChangedAt: section.stateChangedAt ?? null,
 			});
 		} catch {
 			setError(t("error.firebase"));
@@ -463,7 +463,7 @@ export default function PieceDetailScreen() {
 								<AddNextSectionNudge
 									pieceTitle={piece.title}
 									sectionLabel={nudge.section.label}
-									phaseLabel={t(`section.phase.${nudge.section.phase}`)}
+									stateLabel={t(`section.state.${nudge.section.state}`)}
 									kind={nudge.kind}
 									busy={nudgeBusy}
 									onAddSection={() => router.push(`/piece/${id}/section/new`)}
@@ -521,17 +521,17 @@ export default function PieceDetailScreen() {
 												`/piece/${id}/practice?sectionId=${s.id}&from=piece-detail`,
 											)
 										}
-										onChangePhase={(phase) => {
-											if (!id || !s.id || phase === s.phase) return;
-											changeSectionPhase({
+										onChangeState={(state) => {
+											if (!id || !s.id || state === s.state) return;
+											changeSectionState({
 												pieceId: id,
 												sectionId: s.id,
-												fromPhase: s.phase,
-												toPhase: phase,
-												trigger: "phase-chip",
+												fromState: s.state,
+												toState: state,
+												trigger: "state-chip",
 												achievedBpmAtEvent: s.byMode?.HT?.bpm ?? null,
 												qualityAtEvent: s.byMode?.HT?.quality ?? null,
-												priorPhaseChangedAt: s.phaseChangedAt ?? null,
+												priorStateChangedAt: s.stateChangedAt ?? null,
 											}).catch(() => setError(t("error.firebase")));
 										}}
 									/>

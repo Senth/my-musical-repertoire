@@ -9,7 +9,7 @@ export type SectionNudge =
  * Whether a learning piece is ready for new material, and which suggestion to
  * make. When the piece still has not-started sections, the nudge asks to move
  * the next one into learning rather than adding more passages. Only when every
- * active section has left both phases does it ask to add the next passage —
+ * active section has left both of those states does it ask to add the next passage —
  * named by the furthest one along, the one that just cleared learning.
  *
  * Fires at *stabilizing*, not maintenance: that is the window where there is
@@ -20,7 +20,7 @@ export function sectionNudge(
 	piece: Piece | null | undefined,
 	sections: Section[],
 ): SectionNudge | null {
-	if (!piece || piece.state !== "learning") return null;
+	if (piece?.state !== "learning") return null;
 	if (piece.allSectionsAdded) return null;
 
 	const active = sections.filter(
@@ -28,7 +28,7 @@ export function sectionNudge(
 	);
 	if (active.length === 0) return null;
 
-	const notStarted = active.filter((s) => s.phase === "not_started");
+	const notStarted = active.filter((s) => s.state === "not_started");
 	if (notStarted.length > 0) {
 		return {
 			kind: "transition",
@@ -38,7 +38,7 @@ export function sectionNudge(
 		};
 	}
 
-	if (active.some((s) => s.phase === "learning")) return null;
+	if (active.some((s) => s.state === "learning")) return null;
 
 	return {
 		kind: "add",

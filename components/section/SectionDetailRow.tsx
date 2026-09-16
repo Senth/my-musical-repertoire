@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import { IconButton, ProgressBar, Text } from "react-native-paper";
-import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
-import type { Section, SectionPhase } from "@/models/section";
+import { SectionStateChip } from "@/components/section/SectionStateChip";
+import type { Section, SectionState } from "@/models/section";
 import { useAppTheme } from "@/theme";
 import { size, space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
@@ -14,7 +14,7 @@ interface SectionDetailRowProps {
 	pieceTargetBpm?: number | null;
 	onPress: () => void;
 	onPracticePress: () => void;
-	onChangePhase?: (phase: SectionPhase) => void;
+	onChangeState?: (state: SectionState) => void;
 }
 
 const NOTES_MAX = 40;
@@ -24,7 +24,7 @@ export function SectionDetailRow({
 	pieceTargetBpm,
 	onPress,
 	onPracticePress,
-	onChangePhase,
+	onChangeState,
 }: SectionDetailRowProps) {
 	const { t } = useTranslation();
 	const theme = useAppTheme();
@@ -121,9 +121,9 @@ export function SectionDetailRow({
 								gap: space.sm,
 							}}
 						>
-							<SectionPhaseChip
-								phase={section.phase}
-								onChangePhase={onChangePhase}
+							<SectionStateChip
+								state={section.state}
+								onChangeState={onChangeState}
 							/>
 							{metaInline.length > 0 && (
 								<Text

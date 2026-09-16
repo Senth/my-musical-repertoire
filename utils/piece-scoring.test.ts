@@ -21,13 +21,13 @@ describe("scorePiece", () => {
 		const stale = makeSection({
 			id: "s1",
 			pieceId: "p1",
-			phase: "learning",
+			state: "learning",
 			lastPracticed: daysAgo(20),
 		});
 		const fresh = makeSection({
 			id: "s2",
 			pieceId: "p1",
-			phase: "learning",
+			state: "learning",
 			lastPracticed: daysAgo(1),
 		});
 
@@ -79,7 +79,7 @@ describe("scorePiece", () => {
 		const section = makeSection({
 			id: "s1",
 			pieceId: "p1",
-			phase: "learning",
+			state: "learning",
 			byMode: { HT: { bpm: 60, lastPracticed: daysAgo(1) } },
 			lastPracticed: daysAgo(1),
 		});
@@ -114,14 +114,14 @@ describe("scorePieces", () => {
 			makeSection({
 				id: "s1",
 				pieceId: "p1",
-				phase: "learning",
+				state: "learning",
 				byMode: { HT: { bpm: 80, lastPracticed: daysAgo(6) } },
 				lastPracticed: daysAgo(6),
 			}),
 			makeSection({
 				id: "s2",
 				pieceId: "p1",
-				phase: "stabilizing",
+				state: "stabilizing",
 				byMode: { HT: { bpm: 110, lastPracticed: daysAgo(2) } },
 				lastPracticed: daysAgo(2),
 			}),

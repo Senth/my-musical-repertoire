@@ -1,8 +1,8 @@
 import type { ByMode } from "@/models/practice";
 import type {
-	PhaseTransition,
-	PhaseTransitionTrigger,
-	SectionPhase,
+	SectionState,
+	StateTransition,
+	StateTransitionTrigger,
 } from "@/models/section";
 import { hsTarget, type ModeEntry } from "./practice-modes";
 import {
@@ -20,9 +20,9 @@ import {
 	groupHtDays,
 	isSuppressed,
 	isTempoNonDecreasing,
-	nextPhase,
+	nextState,
 	type ProgressionLog,
-	previousPhase,
+	previousState,
 	SUPPRESSION_DAYS,
 	SUPPRESSION_DISMISSAL_COUNT,
 } from "./section-progression";
@@ -55,14 +55,14 @@ function mode(bpm: number | null): ByMode[string] {
 }
 
 function advance({
-	phase = "learning" as SectionPhase,
+	state = "learning" as SectionState,
 	targetBpmOverride = null as number | null,
 	targetTempoBpm = TARGET as number | null,
 	byMode = { HT: mode(116) } as ByMode | null,
 	logs = cleanDays(CLEAN_DAYS_STABILIZING),
 	savedEntries = [entry()],
 }: {
-	phase?: SectionPhase;
+	state?: SectionState;
 	targetBpmOverride?: number | null;
 	targetTempoBpm?: number | null;
 	byMode?: ByMode | null;
@@ -70,7 +70,7 @@ function advance({
 	savedEntries?: ModeEntry[];
 } = {}) {
 	return evaluateAdvance(
-		makeSection({ id: "s1", pieceId: "p1", phase, targetBpmOverride }),
+		makeSection({ id: "s1", pieceId: "p1", state, targetBpmOverride }),
 		makePiece({ id: "p1", targetTempoBpm }),
 		byMode,
 		logs,
@@ -83,26 +83,26 @@ function entry(over: Partial<ModeEntry> = {}): ModeEntry {
 }
 
 function demote(
-	phase: SectionPhase,
+	state: SectionState,
 	entries: ModeEntry[],
 	priorLogs: ProgressionLog[] = [],
 ) {
 	return evaluateDemote(
-		makeSection({ id: "s1", pieceId: "p1", phase }),
+		makeSection({ id: "s1", pieceId: "p1", state }),
 		entries,
 		priorLogs,
 	);
 }
 
-function transition(over: Partial<PhaseTransition>): PhaseTransition {
+function transition(over: Partial<StateTransition>): StateTransition {
 	return {
-		fromPhase: "learning",
-		toPhase: "learning",
+		fromState: "learning",
+		toState: "learning",
 		trigger: "advance-button",
 		outcome: "dismissed",
 		achievedBpmAtEvent: null,
 		qualityAtEvent: null,
-		daysInPriorPhase: null,
+		daysInPriorState: null,
 		sessionId: null,
 		date: NOW,
 		...over,
@@ -112,9 +112,9 @@ function transition(over: Partial<PhaseTransition>): PhaseTransition {
 /** `n` dismissals of `trigger`, the newest `ageDays` old, one per day. */
 function dismissals(
 	n: number,
-	trigger: PhaseTransitionTrigger = "advance-button",
+	trigger: StateTransitionTrigger = "advance-button",
 	ageDays = 0,
-): PhaseTransition[] {
+): StateTransition[] {
 	return Array.from({ length: n }, (_, i) =>
 		transition({
 			trigger,
@@ -145,14 +145,14 @@ describe("effectiveTargetBpm", () => {
 	});
 });
 
-describe("nextPhase / previousPhase", () => {
+describe("nextState / previousState", () => {
 	it("walks the ladder and stops at both ends", () => {
-		expect(nextPhase("learning")).toBe("stabilizing");
-		expect(nextPhase("stabilizing")).toBe("maintenance");
-		expect(nextPhase("maintenance")).toBeNull();
-		expect(previousPhase("maintenance")).toBe("stabilizing");
-		expect(previousPhase("stabilizing")).toBe("learning");
-		expect(previousPhase("learning")).toBeNull();
+		expect(nextState("learning")).toBe("stabilizing");
+		expect(nextState("stabilizing")).toBe("maintenance");
+		expect(nextState("maintenance")).toBeNull();
+		expect(previousState("maintenance")).toBe("stabilizing");
+		expect(previousState("stabilizing")).toBe("learning");
+		expect(previousState("learning")).toBeNull();
 	});
 });
 
@@ -297,7 +297,7 @@ describe("evaluateAdvance — learning → stabilizing", () => {
 	it("is eligible when every criterion passes", () => {
 		const result = advance();
 		expect(result.eligible).toBe(true);
-		expect(result.toPhase).toBe("stabilizing");
+		expect(result.toState).toBe("stabilizing");
 		expect(result.failing).toEqual([]);
 		expect(result.htBpm).toBe(116);
 		expect(result.cleanDays).toBe(CLEAN_DAYS_STABILIZING);
@@ -400,7 +400,7 @@ describe("evaluateAdvance — learning → stabilizing", () => {
 			],
 		});
 		expect(result.eligible).toBe(true);
-		expect(result.toPhase).toBe("stabilizing");
+		expect(result.toState).toBe("stabilizing");
 		expect(result.htBpm).toBeNull();
 		expect(result.cleanDays).toBe(0);
 	});
@@ -478,7 +478,7 @@ describe("evaluateAdvance — learning → stabilizing", () => {
 describe("evaluateAdvance — stabilizing → maintenance", () => {
 	const stabilizing = (over: Parameters<typeof advance>[0] = {}) =>
 		advance({
-			phase: "stabilizing",
+			state: "stabilizing",
 			byMode: { HT: mode(TARGET) },
 			logs: cleanDays(CLEAN_DAYS_MAINTENANCE, { achievedBpm: TARGET }),
 			...over,
@@ -487,7 +487,7 @@ describe("evaluateAdvance — stabilizing → maintenance", () => {
 	it("is eligible when every criterion passes", () => {
 		const result = stabilizing();
 		expect(result.eligible).toBe(true);
-		expect(result.toPhase).toBe("maintenance");
+		expect(result.toState).toBe("maintenance");
 	});
 
 	it("gives no discount — 95% of target is not enough", () => {
@@ -523,7 +523,7 @@ describe("evaluateAdvance — stabilizing → maintenance", () => {
 			],
 		});
 		expect(result.eligible).toBe(true);
-		expect(result.toPhase).toBe("maintenance");
+		expect(result.toState).toBe("maintenance");
 	});
 
 	it("fails on a sliding tempo alone", () => {
@@ -545,9 +545,9 @@ describe("evaluateAdvance — stabilizing → maintenance", () => {
 
 describe("evaluateAdvance — maintenance", () => {
 	it("offers nothing above maintenance", () => {
-		const result = advance({ phase: "maintenance", byMode: { HT: mode(200) } });
+		const result = advance({ state: "maintenance", byMode: { HT: mode(200) } });
 		expect(result.eligible).toBe(false);
-		expect(result.toPhase).toBeNull();
+		expect(result.toState).toBeNull();
 		expect(result.failing).toEqual([]);
 	});
 });
@@ -556,14 +556,14 @@ describe("evaluateDemote", () => {
 	it("never demotes a learning section", () => {
 		const result = demote("learning", [entry({ quality: 1 })]);
 		expect(result.eligible).toBe(false);
-		expect(result.toPhase).toBeNull();
+		expect(result.toState).toBeNull();
 	});
 
 	it.each([
 		["stabilizing", "learning"],
 		["maintenance", "stabilizing"],
 	] as const)("targets %s → %s", (from, to) => {
-		expect(demote(from, [entry({ quality: 1 })]).toPhase).toBe(to);
+		expect(demote(from, [entry({ quality: 1 })]).toState).toBe(to);
 	});
 
 	it("stays quiet on a good session", () => {
@@ -752,7 +752,7 @@ describe("isSuppressed", () => {
 });
 
 describe("cyclingGuardDays", () => {
-	it("is quiet when the phase has never been changed", () => {
+	it("is quiet when the state has never been changed", () => {
 		expect(cyclingGuardDays(null, NOW)).toBeNull();
 		expect(cyclingGuardDays(undefined, NOW)).toBeNull();
 	});

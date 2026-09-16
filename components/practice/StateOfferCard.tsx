@@ -11,40 +11,40 @@ import {
 } from "react-native-paper";
 import {
 	offerTitleKey,
-	PhaseOfferBody,
-} from "@/components/practice/PhaseOfferBody";
+	StateOfferBody,
+} from "@/components/practice/StateOfferBody";
 import {
 	CARD_TITLE_STYLE,
 	TITLE_ONLY_CARD_STYLE,
 } from "@/components/ui/card-style";
 import { space } from "@/theme/tokens";
-import type { PhaseOffer, PhaseOfferStatus } from "@/utils/phase-offer";
 import type { AdvanceCriterion } from "@/utils/section-progression";
+import type { StateOffer, StateOfferStatus } from "@/utils/state-offer";
 
-interface PhaseOfferProps {
-	offer: PhaseOffer;
+interface StateOfferProps {
+	offer: StateOffer;
 	/** Disables both actions while the write is in flight. */
 	busy?: boolean;
 	onAccept: () => void;
 	onDismiss: () => void;
 }
 
-function actionLabelKey(offer: PhaseOffer): string {
+function actionLabelKey(offer: StateOffer): string {
 	return offer.kind === "advance"
-		? "screen.practice.phaseOffer.advanceAction"
-		: "screen.practice.phaseOffer.demoteAction";
+		? "screen.practice.stateOffer.advanceAction"
+		: "screen.practice.stateOffer.demoteAction";
 }
 
 /**
- * The standalone-practice surface for a phase nudge: a card above the Done
+ * The standalone-practice surface for a state nudge: a card above the Done
  * button.
  */
-export function PhaseOfferCard({
+export function StateOfferCard({
 	offer,
 	busy,
 	onAccept,
 	onDismiss,
-}: PhaseOfferProps) {
+}: StateOfferProps) {
 	const { t } = useTranslation();
 	const [ready, setReady] = useState(false);
 	const onReadyChange = useCallback((v: boolean) => setReady(v), []);
@@ -58,7 +58,7 @@ export function PhaseOfferCard({
 				style={TITLE_ONLY_CARD_STYLE}
 			/>
 			<Card.Content>
-				<PhaseOfferBody offer={offer} onReadyChange={onReadyChange} />
+				<StateOfferBody offer={offer} onReadyChange={onReadyChange} />
 				<View
 					style={{
 						flexDirection: "row",
@@ -75,7 +75,7 @@ export function PhaseOfferCard({
 						{t(actionLabelKey(offer))}
 					</Button>
 					<Button mode="text" onPress={onDismiss} disabled={busy}>
-						{t("screen.practice.phaseOffer.notYet")}
+						{t("screen.practice.stateOffer.notYet")}
 					</Button>
 				</View>
 			</Card.Content>
@@ -87,13 +87,13 @@ export function PhaseOfferCard({
  * The coach surface: the same body in a dialog fired between the save and the
  * block advancing, mirroring `DurationPromptDialog`.
  */
-export function PhaseOfferDialog({
+export function StateOfferDialog({
 	offer,
 	busy,
 	onAccept,
 	onDismiss,
 }: {
-	offer: PhaseOffer | null;
+	offer: StateOffer | null;
 	busy?: boolean;
 	onAccept: () => void;
 	onDismiss: () => void;
@@ -113,11 +113,11 @@ export function PhaseOfferDialog({
 			<Dialog visible onDismiss={onDismiss} dismissable={false}>
 				<Dialog.Title>{t(offerTitleKey(offer))}</Dialog.Title>
 				<Dialog.Content>
-					<PhaseOfferBody offer={offer} onReadyChange={onReadyChange} />
+					<StateOfferBody offer={offer} onReadyChange={onReadyChange} />
 				</Dialog.Content>
 				<Dialog.Actions>
 					<Button onPress={onDismiss} disabled={busy}>
-						{t("screen.practice.phaseOffer.notYet")}
+						{t("screen.practice.stateOffer.notYet")}
 					</Button>
 					<Button
 						mode="contained"
@@ -138,14 +138,14 @@ export function PhaseOfferDialog({
  * offer suppressed. It never renders when the section is further off than
  * that, because a line that always renders stops being read.
  */
-export function PhaseStatusLine({ status }: { status: PhaseOfferStatus }) {
+export function StateStatusLine({ status }: { status: StateOfferStatus }) {
 	const { t } = useTranslation();
 	const theme = useTheme();
 
 	return (
 		<Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
 			{status.kind === "suppressed"
-				? t("screen.practice.phaseOffer.status.suppressed")
+				? t("screen.practice.stateOffer.status.suppressed")
 				: criterionText(status.criterion, t)}
 		</Text>
 	);
@@ -154,7 +154,7 @@ export function PhaseStatusLine({ status }: { status: PhaseOfferStatus }) {
 type Translate = ReturnType<typeof useTranslation>["t"];
 
 function criterionText(criterion: AdvanceCriterion, t: Translate): string {
-	const prefix = "screen.practice.phaseOffer.status";
+	const prefix = "screen.practice.stateOffer.status";
 	switch (criterion.kind) {
 		case "no-target":
 			return t(`${prefix}.noTarget`);

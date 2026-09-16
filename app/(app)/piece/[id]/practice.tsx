@@ -15,17 +15,17 @@ import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { PracticeAppbarContent } from "@/components/practice/CoachShell";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { HandTabs } from "@/components/practice/HandTabs";
-import {
-	PhaseOfferCard,
-	PhaseStatusLine,
-} from "@/components/practice/PhaseOfferCard";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { PracticeFooter } from "@/components/practice/PracticeFooter";
 import { PracticeMeta } from "@/components/practice/PracticeMeta";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
 import { StandingNote } from "@/components/practice/StandingNote";
+import {
+	StateOfferCard,
+	StateStatusLine,
+} from "@/components/practice/StateOfferCard";
 import { TempoControl } from "@/components/practice/TempoControl";
-import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
+import { SectionStateChip } from "@/components/section/SectionStateChip";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
@@ -38,9 +38,9 @@ import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { usePracticeSave } from "@/hooks/use-practice-save";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
 import {
-	useChangeSectionPhase,
-	useSectionPhaseHistory,
-} from "@/hooks/use-section-phase";
+	useChangeSectionState,
+	useSectionStateHistory,
+} from "@/hooks/use-section-state";
 import { useSections, useUpdateSection } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
@@ -56,11 +56,6 @@ import {
 	mistakeOptions,
 	qualityOptions,
 } from "@/utils/estimation-options";
-import {
-	decidePhaseOffer,
-	type PendingPhaseOffer,
-	type PhaseOfferStatus,
-} from "@/utils/phase-offer";
 import { formatBarRange } from "@/utils/piece-display";
 import {
 	type ModeEntry,
@@ -69,6 +64,11 @@ import {
 	targetForMode,
 } from "@/utils/practice-modes";
 import { practiceTally } from "@/utils/practice-tally";
+import {
+	decideStateOffer,
+	type PendingStateOffer,
+	type StateOfferStatus,
+} from "@/utils/state-offer";
 import {
 	planTimeSignatureWrite,
 	resolveTimeSignature,
@@ -109,7 +109,7 @@ export function PiecePracticeContent({
 	const { savePractice } = useSavePractice();
 	const { saveSectionPractice } = useSaveSectionPractice();
 	const { deletePiece } = useDeletePiece();
-	const { changeSectionPhase, dismissPhaseOffer } = useChangeSectionPhase();
+	const { changeSectionState, dismissStateOffer } = useChangeSectionState();
 	const { updatePiece } = useUpdatePiece();
 	const { updateSection } = useUpdateSection();
 	const standaloneSessionId = useRef(randomUUID());
@@ -125,7 +125,7 @@ export function PiecePracticeContent({
 		logs: priorLogs,
 		loading: lastLogLoading,
 	} = useLastPracticeLog(lastLogScope);
-	const { transitions, reload: reloadTransitions } = useSectionPhaseHistory(
+	const { transitions, reload: reloadTransitions } = useSectionStateHistory(
 		pieceId,
 		sectionIdProp,
 	);
@@ -170,10 +170,10 @@ export function PiecePracticeContent({
 	const [notice, setNotice] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
 	const [savedEntries, setSavedEntries] = useState<ModeEntry[]>([]);
-	const [pendingOffer, setPendingOffer] = useState<PendingPhaseOffer | null>(
+	const [pendingOffer, setPendingOffer] = useState<PendingStateOffer | null>(
 		null,
 	);
-	const [offerStatus, setOfferStatus] = useState<PhaseOfferStatus | null>(null);
+	const [offerStatus, setOfferStatus] = useState<StateOfferStatus | null>(null);
 	const [offerBusy, setOfferBusy] = useState(false);
 	const metronomeStopRef = useRef<(() => void) | null>(null);
 
@@ -282,11 +282,11 @@ export function PiecePracticeContent({
 
 	// Only rows where ticking does something get a checkbox. Outside a
 	// run-through that is every section — the tick is still recorded on the piece
-	// log — but a run-through only acts on maintenance-phase sections.
+	// log — but a run-through only acts on maintenance-state sections.
 	const flaggableIds = useMemo(
 		() =>
 			activeSections
-				.filter((s) => !isRunThrough || s.phase === "maintenance")
+				.filter((s) => !isRunThrough || s.state === "maintenance")
 				.map((s) => s.id ?? ""),
 		[activeSections, isRunThrough],
 	);
@@ -364,7 +364,7 @@ export function PiecePracticeContent({
 
 				// Only ever after the save commits — a nudge offered while the timer
 				// is still running would be a decision made on mood, not on evidence.
-				const { offer, status } = decidePhaseOffer({
+				const { offer, status } = decideStateOffer({
 					section: scopedSection,
 					piece,
 					byMode: mergedByMode,
@@ -374,7 +374,7 @@ export function PiecePracticeContent({
 					transitions,
 					now: practiceDate,
 				});
-				const pending: PendingPhaseOffer | null = offer
+				const pending: PendingStateOffer | null = offer
 					? {
 							offer,
 							pieceId,
@@ -382,13 +382,13 @@ export function PiecePracticeContent({
 							sectionLabel: scopedSection.label,
 							achievedBpmAtEvent: offer.htBpm,
 							qualityAtEvent: mergedByMode?.HT?.quality ?? null,
-							priorPhaseChangedAt: scopedSection.phaseChangedAt ?? null,
+							priorStateChangedAt: scopedSection.stateChangedAt ?? null,
 							sessionId,
 						}
 					: null;
 				setPendingOffer(pending);
 				setOfferStatus(status);
-				if (inCoach) coach.phaseOfferRef.current = pending;
+				if (inCoach) coach.stateOfferRef.current = pending;
 			} else {
 				if (!piece) return { ok: false };
 				const { demotedCount } = await savePractice({
@@ -425,7 +425,7 @@ export function PiecePracticeContent({
 		achievedBpm,
 		coach.sessionId,
 		coach.notify,
-		coach.phaseOfferRef,
+		coach.stateOfferRef,
 		priorLogs,
 		transitions,
 		inCoach,
@@ -455,19 +455,19 @@ export function PiecePracticeContent({
 				const event = {
 					pieceId: pendingOffer.pieceId,
 					sectionId: pendingOffer.sectionId,
-					fromPhase: offer.fromPhase,
-					toPhase: offer.toPhase,
+					fromState: offer.fromState,
+					toState: offer.toState,
 					trigger:
 						offer.kind === "advance"
 							? ("advance-button" as const)
 							: ("demote-button" as const),
 					achievedBpmAtEvent: pendingOffer.achievedBpmAtEvent,
 					qualityAtEvent: pendingOffer.qualityAtEvent,
-					priorPhaseChangedAt: pendingOffer.priorPhaseChangedAt,
+					priorStateChangedAt: pendingOffer.priorStateChangedAt,
 					sessionId: pendingOffer.sessionId,
 				};
-				if (accepted) await changeSectionPhase(event);
-				else await dismissPhaseOffer(event);
+				if (accepted) await changeSectionState(event);
+				else await dismissStateOffer(event);
 				setPendingOffer(null);
 				reloadTransitions();
 			} catch {
@@ -476,7 +476,7 @@ export function PiecePracticeContent({
 				setOfferBusy(false);
 			}
 		},
-		[pendingOffer, changeSectionPhase, dismissPhaseOffer, reloadTransitions, t],
+		[pendingOffer, changeSectionState, dismissStateOffer, reloadTransitions, t],
 	);
 
 	const handleDelete = async () => {
@@ -523,7 +523,7 @@ export function PiecePracticeContent({
 			: t("screen.practice.meta.firstPractice");
 
 	const metaChip = scopedSection ? (
-		<SectionPhaseChip phase={scopedSection.phase} />
+		<SectionStateChip state={scopedSection.state} />
 	) : (
 		<PieceStateChip state={piece.state} />
 	);
@@ -594,14 +594,14 @@ export function PiecePracticeContent({
 					backLabel={getBackLabel()}
 					beforeActions={
 						pendingOffer ? (
-							<PhaseOfferCard
+							<StateOfferCard
 								offer={pendingOffer.offer}
 								busy={offerBusy}
 								onAccept={() => resolveOffer(true)}
 								onDismiss={() => resolveOffer(false)}
 							/>
 						) : offerStatus ? (
-							<PhaseStatusLine status={offerStatus} />
+							<StateStatusLine status={offerStatus} />
 						) : null
 					}
 				/>
@@ -721,20 +721,20 @@ export function PiecePracticeContent({
 									flaggableIds={flaggableIds}
 									onToggleFlag={handleToggleFlag}
 									onPractice={handlePracticeSection}
-									onChangePhase={(sectionId, phase) => {
+									onChangeState={(sectionId, state) => {
 										const target = activeSections.find(
 											(s) => s.id === sectionId,
 										);
-										if (!target || phase === target.phase) return;
-										changeSectionPhase({
+										if (!target || state === target.state) return;
+										changeSectionState({
 											pieceId,
 											sectionId,
-											fromPhase: target.phase,
-											toPhase: phase,
-											trigger: "phase-chip",
+											fromState: target.state,
+											toState: state,
+											trigger: "state-chip",
 											achievedBpmAtEvent: target.byMode?.HT?.bpm ?? null,
 											qualityAtEvent: target.byMode?.HT?.quality ?? null,
-											priorPhaseChangedAt: target.phaseChangedAt ?? null,
+											priorStateChangedAt: target.stateChangedAt ?? null,
 											sessionId: coach.sessionId ?? standaloneSessionId.current,
 										}).catch(() => setError(t("error.firebase")));
 									}}

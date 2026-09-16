@@ -15,9 +15,9 @@ import {
 import { PiecePracticeContent } from "@/app/(app)/piece/[id]/practice";
 import { TechniquePracticeContent } from "@/app/(app)/technique/[id]/practice";
 import { CoachShell, formatMMSS } from "@/components/practice/CoachShell";
-import { PhaseOfferDialog } from "@/components/practice/PhaseOfferCard";
 import { PracticeFooter } from "@/components/practice/PracticeFooter";
 import { SightReadingBlockBody } from "@/components/practice/SightReadingBlockBody";
+import { StateOfferDialog } from "@/components/practice/StateOfferCard";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -29,7 +29,7 @@ import {
 import { useActiveSession } from "@/hooks/use-active-session";
 import { useCoachExitGuard } from "@/hooks/use-coach-exit-guard";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
-import { useChangeSectionPhase } from "@/hooks/use-section-phase";
+import { useChangeSectionState } from "@/hooks/use-section-state";
 import { useSessionPause } from "@/hooks/use-session-pause";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import type {
@@ -38,10 +38,10 @@ import type {
 	PlannedBlock,
 } from "@/models/session";
 import { space } from "@/theme/tokens";
-import type { PendingPhaseOffer } from "@/utils/phase-offer";
 import { playBlockEndCue } from "@/utils/session-cue";
 import { planTotalMinutes } from "@/utils/session-planner";
 import { writeActiveSession } from "@/utils/session-storage";
+import type { PendingStateOffer } from "@/utils/state-offer";
 
 const TICK_MS = 1000;
 
@@ -58,10 +58,10 @@ export default function CoachScreen() {
 	const { user } = useAuth();
 	const { pieces } = usePieces();
 	const { updatePiece } = useUpdatePiece();
-	const { changeSectionPhase, dismissPhaseOffer } = useChangeSectionPhase();
+	const { changeSectionState, dismissStateOffer } = useChangeSectionState();
 	const { session, setSession, loaded } = useActiveSession(user);
 	const [saving, setSaving] = useState(false);
-	const [phaseOffer, setPhaseOffer] = useState<PendingPhaseOffer | null>(null);
+	const [stateOffer, setStateOffer] = useState<PendingStateOffer | null>(null);
 	const [offerBusy, setOfferBusy] = useState(false);
 	const [durationPrompt, setDurationPrompt] = useState<{
 		pieceId: string;
@@ -78,7 +78,7 @@ export default function CoachScreen() {
 		null,
 	);
 	const validateHandlerRef = useRef<(() => boolean) | null>(null);
-	const phaseOfferRef = useRef<PendingPhaseOffer | null>(null);
+	const stateOfferRef = useRef<PendingStateOffer | null>(null);
 	const sightReadingStopRef = useRef<(() => void) | null>(null);
 
 	useEffect(() => {
@@ -236,12 +236,12 @@ export default function CoachScreen() {
 					return;
 				}
 			}
-			// A phase nudge raised by the save interrupts here, before the block
+			// A state nudge raised by the save interrupts here, before the block
 			// advances — the block body is gone by the time it does.
-			const pending = phaseOfferRef.current;
-			phaseOfferRef.current = null;
+			const pending = stateOfferRef.current;
+			stateOfferRef.current = null;
 			if (pending) {
-				setPhaseOffer(pending);
+				setStateOffer(pending);
 				return;
 			}
 			await continueAfterSave();
@@ -250,38 +250,38 @@ export default function CoachScreen() {
 		}
 	}, [session, currentBlock, continueAfterSave]);
 
-	const resolvePhaseOffer = useCallback(
+	const resolveStateOffer = useCallback(
 		async (accepted: boolean) => {
-			const pending = phaseOffer;
+			const pending = stateOffer;
 			if (!pending) return;
 			setOfferBusy(true);
 			try {
 				const event = {
 					pieceId: pending.pieceId,
 					sectionId: pending.sectionId,
-					fromPhase: pending.offer.fromPhase,
-					toPhase: pending.offer.toPhase,
+					fromState: pending.offer.fromState,
+					toState: pending.offer.toState,
 					trigger:
 						pending.offer.kind === "advance"
 							? ("advance-button" as const)
 							: ("demote-button" as const),
 					achievedBpmAtEvent: pending.achievedBpmAtEvent,
 					qualityAtEvent: pending.qualityAtEvent,
-					priorPhaseChangedAt: pending.priorPhaseChangedAt,
+					priorStateChangedAt: pending.priorStateChangedAt,
 					sessionId: pending.sessionId,
 				};
-				if (accepted) await changeSectionPhase(event);
-				else await dismissPhaseOffer(event);
+				if (accepted) await changeSectionState(event);
+				else await dismissStateOffer(event);
 			} catch {
 				// Non-fatal: the block still advances rather than trapping the session.
 				setNotice(t("error.firebase"));
 			} finally {
 				setOfferBusy(false);
-				setPhaseOffer(null);
+				setStateOffer(null);
 			}
 			await continueAfterSave();
 		},
-		[phaseOffer, changeSectionPhase, dismissPhaseOffer, continueAfterSave, t],
+		[stateOffer, changeSectionState, dismissStateOffer, continueAfterSave, t],
 	);
 
 	const handleDurationSave = useCallback(
@@ -345,7 +345,7 @@ export default function CoachScreen() {
 			sessionId: session?.sessionId ?? null,
 			saveHandlerRef,
 			validateHandlerRef,
-			phaseOfferRef,
+			stateOfferRef,
 			notify,
 			setHeading,
 			saveAndNext: () => {
@@ -447,7 +447,7 @@ export default function CoachScreen() {
 			sessionId={coachValue.sessionId}
 			saveHandlerRef={coachValue.saveHandlerRef}
 			validateHandlerRef={coachValue.validateHandlerRef}
-			phaseOfferRef={coachValue.phaseOfferRef}
+			stateOfferRef={coachValue.stateOfferRef}
 			notify={coachValue.notify}
 			setHeading={setHeading}
 			saveAndNext={coachValue.saveAndNext}
@@ -467,11 +467,11 @@ export default function CoachScreen() {
 			>
 				{body}
 			</CoachShell>
-			<PhaseOfferDialog
-				offer={phaseOffer?.offer ?? null}
+			<StateOfferDialog
+				offer={stateOffer?.offer ?? null}
 				busy={offerBusy}
-				onAccept={() => resolvePhaseOffer(true)}
-				onDismiss={() => resolvePhaseOffer(false)}
+				onAccept={() => resolveStateOffer(true)}
+				onDismiss={() => resolveStateOffer(false)}
 			/>
 			<DurationPromptDialog
 				visible={!!durationPrompt}

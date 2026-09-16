@@ -6,7 +6,7 @@ import {
 	useEffect,
 	useMemo,
 } from "react";
-import type { PendingPhaseOffer } from "@/utils/phase-offer";
+import type { PendingStateOffer } from "@/utils/state-offer";
 
 interface CoachSaveResult {
 	saved: boolean;
@@ -26,11 +26,11 @@ export interface CoachContextValue {
 	saveHandlerRef: MutableRefObject<SaveFn | null>;
 	validateHandlerRef: MutableRefObject<ValidateFn | null>;
 	/**
-	 * Where a block body leaves a phase nudge raised by the save it just made.
+	 * Where a block body leaves a state nudge raised by the save it just made.
 	 * The coach reads it between the save and `advance("completed")` — a ref, not
 	 * state, because the body unmounts the moment the block advances.
 	 */
-	phaseOfferRef: MutableRefObject<PendingPhaseOffer | null>;
+	stateOfferRef: MutableRefObject<PendingStateOffer | null>;
 	/**
 	 * Shows a message at the coach screen level. A block body unmounts the moment
 	 * the block advances, so a snackbar it owns would never be seen.
@@ -60,7 +60,7 @@ export function CoachProvider({
 	sessionId,
 	saveHandlerRef,
 	validateHandlerRef,
-	phaseOfferRef,
+	stateOfferRef,
 	notify,
 	setHeading,
 	saveAndNext,
@@ -73,7 +73,7 @@ export function CoachProvider({
 	sessionId: string | null;
 	saveHandlerRef: MutableRefObject<SaveFn | null>;
 	validateHandlerRef: MutableRefObject<ValidateFn | null>;
-	phaseOfferRef: MutableRefObject<PendingPhaseOffer | null>;
+	stateOfferRef: MutableRefObject<PendingStateOffer | null>;
 	notify: (message: string) => void;
 	setHeading: (heading: PracticeHeading | null) => void;
 	saveAndNext: () => void;
@@ -88,7 +88,7 @@ export function CoachProvider({
 			sessionId,
 			saveHandlerRef,
 			validateHandlerRef,
-			phaseOfferRef,
+			stateOfferRef,
 			notify,
 			setHeading,
 			saveAndNext,
@@ -101,7 +101,7 @@ export function CoachProvider({
 			sessionId,
 			saveHandlerRef,
 			validateHandlerRef,
-			phaseOfferRef,
+			stateOfferRef,
 			notify,
 			setHeading,
 			saveAndNext,
@@ -119,7 +119,7 @@ const NOOP_SAVE_REF: MutableRefObject<SaveFn | null> = { current: null };
 const NOOP_VALIDATE_REF: MutableRefObject<ValidateFn | null> = {
 	current: null,
 };
-const NOOP_OFFER_REF: MutableRefObject<PendingPhaseOffer | null> = {
+const NOOP_OFFER_REF: MutableRefObject<PendingStateOffer | null> = {
 	current: null,
 };
 const NOOP_NOTIFY = () => {};
@@ -134,7 +134,7 @@ export function useCoach(): CoachContextValue {
 		sessionId: null,
 		saveHandlerRef: NOOP_SAVE_REF,
 		validateHandlerRef: NOOP_VALIDATE_REF,
-		phaseOfferRef: NOOP_OFFER_REF,
+		stateOfferRef: NOOP_OFFER_REF,
 		notify: NOOP_NOTIFY,
 		setHeading: NOOP_SET_HEADING,
 		saveAndNext: NOOP_BLOCK_CONTROL,

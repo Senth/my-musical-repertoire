@@ -1,13 +1,13 @@
 import type { TimeSignature } from "@/utils/time-signature";
 import type { ByMode } from "./practice";
 
-export type SectionPhase =
+export type SectionState =
 	| "not_started"
 	| "learning"
 	| "stabilizing"
 	| "maintenance";
 
-export const SECTION_PHASES: SectionPhase[] = [
+export const SECTION_STATES: SectionState[] = [
 	"not_started",
 	"learning",
 	"stabilizing",
@@ -20,7 +20,7 @@ export interface Section {
 	userId: string;
 	label: string;
 	order: number;
-	phase: SectionPhase;
+	state: SectionState;
 	startBar?: number | null;
 	endBar?: number | null;
 	targetBpmOverride?: number | null;
@@ -35,37 +35,44 @@ export interface Section {
 	/** Per-hands stats. Sections have no drill axis — keys are `LH`/`RH`/`HT`. */
 	byMode?: ByMode;
 	/**
-	 * When the phase last moved, from any trigger. Missing on sections that
+	 * When the state last moved, from any trigger. Missing on sections that
 	 * predate the field — never backfilled, so it reads as null and the cycling
 	 * guard stays quiet.
 	 */
-	phaseChangedAt?: Date | null;
+	stateChangedAt?: Date | null;
 }
 
-/** What caused a phase change (or a declined offer). */
-export type PhaseTransitionTrigger =
+/** What caused a state change (or a declined offer). */
+export type StateTransitionTrigger =
 	| "advance-button"
 	| "demote-button"
-	| "phase-chip"
+	| "state-chip"
 	| "run-through";
 
-export type PhaseTransitionOutcome = "accepted" | "dismissed";
+export type StateTransitionOutcome = "accepted" | "dismissed";
 
 /**
- * One row of `sections/{id}/phaseTransitions`. Written on every phase change and
+ * One row of `sections/{id}/phaseTransitions` — the stored path keeps the old
+ * word, see #84's follow-up. Written on every state change and
  * on every declined nudge — the dismissals are what say whether the advance
  * thresholds are set too high.
+ *
+ * Rows written before #84 store `fromPhase`/`toPhase`/`daysInPriorPhase` and a
+ * `phase-chip` trigger, and nothing reads them back under the new names. That
+ * is inert rather than fixed: the only consumer, `isSuppressed`, reads
+ * `outcome`, `trigger` and `date`. Anything that starts displaying transition
+ * history needs those old rows migrated first — same follow-up as the path.
  */
-export interface PhaseTransition {
+export interface StateTransition {
 	id?: string;
-	fromPhase: SectionPhase;
-	/** Equal to `fromPhase` when the outcome is `dismissed`. */
-	toPhase: SectionPhase;
-	trigger: PhaseTransitionTrigger;
-	outcome: PhaseTransitionOutcome;
+	fromState: SectionState;
+	/** Equal to `fromState` when the outcome is `dismissed`. */
+	toState: SectionState;
+	trigger: StateTransitionTrigger;
+	outcome: StateTransitionOutcome;
 	achievedBpmAtEvent: number | null;
 	qualityAtEvent: number | null;
-	daysInPriorPhase: number | null;
+	daysInPriorState: number | null;
 	sessionId: string | null;
 	date: Date;
 }

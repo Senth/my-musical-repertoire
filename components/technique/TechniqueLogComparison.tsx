@@ -26,7 +26,7 @@ interface TechniqueLogComparisonProps {
 	modes: ModeComparison[];
 	onDone: () => void;
 	backLabel: string;
-	/** Slot between the comparison and the Done button — the phase nudge lives here. */
+	/** Slot between the comparison and the Done button — the state nudge lives here. */
 	beforeActions?: ReactNode;
 }
 

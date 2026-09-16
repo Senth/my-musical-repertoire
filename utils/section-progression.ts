@@ -1,10 +1,10 @@
 import type { Piece } from "@/models/piece";
 import type { ByMode, HandsMode, PracticeDrill } from "@/models/practice";
 import type {
-	PhaseTransition,
-	PhaseTransitionTrigger,
 	Section,
-	SectionPhase,
+	SectionState,
+	StateTransition,
+	StateTransitionTrigger,
 } from "@/models/section";
 import { dayKey } from "./day-boundary";
 import { hsTarget, type ModeEntry } from "./practice-modes";
@@ -53,7 +53,7 @@ export const SUPPRESSION_DISMISSAL_COUNT = 3;
 /** How long a suppressed offer stays hidden. */
 export const SUPPRESSION_DAYS = 7;
 
-/** A phase changed within this many days makes the next offer carry a warning. */
+/** A state changed within this many days makes the next offer carry a warning. */
 export const CYCLING_GUARD_DAYS = 7;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -103,8 +103,8 @@ export type AdvanceCriterion =
 
 export interface AdvanceEvaluation {
 	eligible: boolean;
-	/** The phase the offer would move to; null when there is nothing above. */
-	toPhase: SectionPhase | null;
+	/** The state the offer would move to; null when there is nothing above. */
+	toState: SectionState | null;
 	failing: AdvanceCriterion[];
 	/** HT tempo the offer would quote, for the copy and the audit row. */
 	htBpm: number | null;
@@ -120,7 +120,7 @@ export type DemoteReason =
 
 export interface DemoteEvaluation {
 	eligible: boolean;
-	toPhase: SectionPhase | null;
+	toState: SectionState | null;
 	reason: DemoteReason | null;
 }
 
@@ -207,17 +207,17 @@ export function isTempoNonDecreasing(days: HtDay[]): boolean {
 	return bpms.every((bpm, i) => i === 0 || bpm >= bpms[i - 1]);
 }
 
-/** The phase an advance from `phase` would land on. */
-export function nextPhase(phase: SectionPhase): SectionPhase | null {
-	if (phase === "learning") return "stabilizing";
-	if (phase === "stabilizing") return "maintenance";
+/** The state an advance from `state` would land on. */
+export function nextState(state: SectionState): SectionState | null {
+	if (state === "learning") return "stabilizing";
+	if (state === "stabilizing") return "maintenance";
 	return null;
 }
 
-/** The phase a demote from `phase` would land on. */
-export function previousPhase(phase: SectionPhase): SectionPhase | null {
-	if (phase === "maintenance") return "stabilizing";
-	if (phase === "stabilizing") return "learning";
+/** The state a demote from `state` would land on. */
+export function previousState(state: SectionState): SectionState | null {
+	if (state === "maintenance") return "stabilizing";
+	if (state === "stabilizing") return "learning";
 	return null;
 }
 
@@ -226,7 +226,7 @@ export function previousPhase(phase: SectionPhase): SectionPhase | null {
 // ---------------------------------------------------------------------------
 
 /**
- * Whether the section has earned the next phase.
+ * Whether the section has earned the next state.
  *
  * The gate depends on what the section has actually practised. With HT
  * history, hands together is the integration step: HT must be in
@@ -240,23 +240,23 @@ export function previousPhase(phase: SectionPhase): SectionPhase | null {
  * that save.
  */
 export function evaluateAdvance(
-	section: Pick<Section, "phase" | "targetBpmOverride">,
+	section: Pick<Section, "state" | "targetBpmOverride">,
 	piece: Pick<Piece, "targetTempoBpm"> | null | undefined,
 	byMode: ByMode | null | undefined,
 	logs: ProgressionLog[],
 	savedEntries: ModeEntry[],
 ): AdvanceEvaluation {
-	const toPhase = nextPhase(section.phase);
+	const toState = nextState(section.state);
 	const htBpm = byMode?.HT?.bpm ?? null;
-	if (!toPhase) {
-		return { eligible: false, toPhase: null, failing: [], htBpm, cleanDays: 0 };
+	if (!toState) {
+		return { eligible: false, toState: null, failing: [], htBpm, cleanDays: 0 };
 	}
 
 	const target = effectiveTargetBpm(section, piece);
 	if (target == null) {
 		return {
 			eligible: false,
-			toPhase,
+			toState,
 			failing: [{ kind: "no-target" }],
 			htBpm,
 			cleanDays: 0,
@@ -265,7 +265,7 @@ export function evaluateAdvance(
 
 	const failing: AdvanceCriterion[] = [];
 	const ratio =
-		toPhase === "stabilizing"
+		toState === "stabilizing"
 			? ADVANCE_HT_RATIO_STABILIZING
 			: ADVANCE_HT_RATIO_MAINTENANCE;
 	const requiredHs = hsTarget(target) ?? 0;
@@ -282,7 +282,7 @@ export function evaluateAdvance(
 
 		// Hands-separate is proven at the learning gate only; the maintenance
 		// gate does not re-check it.
-		if (toPhase === "stabilizing") {
+		if (toState === "stabilizing") {
 			for (const hands of ["LH", "RH"] as HandsMode[]) {
 				// A mode never practised is not required. One that has been practised
 				// and lags — or was rated without a tempo — blocks the advance.
@@ -306,7 +306,7 @@ export function evaluateAdvance(
 		}
 
 		const requiredDays =
-			toPhase === "stabilizing"
+			toState === "stabilizing"
 				? CLEAN_DAYS_STABILIZING
 				: CLEAN_DAYS_MAINTENANCE;
 		const clean = cleanHtDays(logs, requiredDays);
@@ -319,7 +319,7 @@ export function evaluateAdvance(
 		}
 
 		if (
-			toPhase === "maintenance" &&
+			toState === "maintenance" &&
 			clean.met &&
 			!isTempoNonDecreasing(clean.days)
 		) {
@@ -352,7 +352,7 @@ export function evaluateAdvance(
 
 	return {
 		eligible: failing.length === 0,
-		toPhase,
+		toState,
 		failing,
 		htBpm,
 		cleanDays,
@@ -384,12 +384,12 @@ function previousBpmForMode(
  * saved entry against the newest earlier log for the same mode.
  */
 export function evaluateDemote(
-	section: Pick<Section, "phase">,
+	section: Pick<Section, "state">,
 	savedEntries: ModeEntry[],
 	priorLogs: ProgressionLog[],
 ): DemoteEvaluation {
-	const toPhase = previousPhase(section.phase);
-	if (!toPhase) return { eligible: false, toPhase: null, reason: null };
+	const toState = previousState(section.state);
+	if (!toState) return { eligible: false, toState: null, reason: null };
 
 	const plain = savedEntries.filter((e) => !e.drill);
 
@@ -401,7 +401,7 @@ export function evaluateDemote(
 		if (entry.bpm < DEMOTE_BPM_DROP_RATIO * previous) {
 			return {
 				eligible: true,
-				toPhase,
+				toState,
 				reason: {
 					kind: "bpm-drop",
 					hands: entry.hands,
@@ -416,7 +416,7 @@ export function evaluateDemote(
 		if (entry.quality <= DEMOTE_MAX_QUALITY) {
 			return {
 				eligible: true,
-				toPhase,
+				toState,
 				reason: {
 					kind: "low-quality",
 					hands: entry.hands,
@@ -433,7 +433,7 @@ export function evaluateDemote(
 		) {
 			return {
 				eligible: true,
-				toPhase,
+				toState,
 				reason: {
 					kind: "strain",
 					hands: entry.hands,
@@ -444,7 +444,7 @@ export function evaluateDemote(
 		}
 	}
 
-	return { eligible: false, toPhase, reason: null };
+	return { eligible: false, toState, reason: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -460,8 +460,8 @@ export function evaluateDemote(
  * any accepted row (whatever its trigger) resets the tally.
  */
 export function isSuppressed(
-	transitions: PhaseTransition[],
-	trigger: PhaseTransitionTrigger,
+	transitions: StateTransition[],
+	trigger: StateTransitionTrigger,
 	now: Date,
 ): boolean {
 	const sorted = [...transitions].sort(
@@ -482,15 +482,15 @@ export function isSuppressed(
 }
 
 /**
- * A phase changed less than a week ago earns a "you just moved this"
+ * A state changed less than a week ago earns a "you just moved this"
  * warning on the next offer. A warning, never a block.
  */
 export function cyclingGuardDays(
-	phaseChangedAt: Date | null | undefined,
+	stateChangedAt: Date | null | undefined,
 	now: Date,
 ): number | null {
-	if (!phaseChangedAt) return null;
-	const days = daysBetween(phaseChangedAt, now);
+	if (!stateChangedAt) return null;
+	const days = daysBetween(stateChangedAt, now);
 	if (days < 0 || days >= CYCLING_GUARD_DAYS) return null;
 	return days;
 }

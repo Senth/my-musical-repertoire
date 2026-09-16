@@ -9,7 +9,7 @@ import {
 const noop = () => {};
 const saveHandlerRef = { current: null };
 const validateHandlerRef = { current: null };
-const phaseOfferRef = { current: null };
+const stateOfferRef = { current: null };
 
 function Harness({
 	inCoach,
@@ -32,7 +32,7 @@ function Harness({
 			sessionId={null}
 			saveHandlerRef={saveHandlerRef}
 			validateHandlerRef={validateHandlerRef}
-			phaseOfferRef={phaseOfferRef}
+			stateOfferRef={stateOfferRef}
 			notify={noop}
 			setHeading={setHeading}
 			saveAndNext={noop}
