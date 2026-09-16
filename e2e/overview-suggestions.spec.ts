@@ -54,6 +54,32 @@ async function save(page: Page, label: string, opts: { force?: boolean } = {}) {
 	await page.getByRole("button", { name: label, exact: true }).click(opts);
 }
 
+/**
+ * Presses Save on a form reached through a Menu choice, and keeps pressing
+ * until the form is gone (#168).
+ *
+ * Paper's Menu leaves a full-screen dismiss pressable on top of the form for
+ * a frame or two after the menu itself reports closed. A click in that window
+ * is spent closing the scrim: Playwright resolves it, the button never sees
+ * it, and the form sits there filled in until the test times out somewhere
+ * later and confusingly. `force` does not help — the click still lands on
+ * whatever is topmost. Pressing again once the button is still there is the
+ * only thing that distinguishes "swallowed" from "saving".
+ */
+async function saveUntilGone(page: Page, label: string): Promise<void> {
+	const button = page.getByRole("button", { name: label, exact: true });
+	for (let attempt = 0; attempt < 5; attempt++) {
+		await button.click({ force: true });
+		try {
+			await expect(button).toHaveCount(0, { timeout: 5_000 });
+			return;
+		} catch {
+			// Still on the form: the press was swallowed, or the write is slow.
+		}
+	}
+	throw new Error(`"${label}" never left the form after 5 presses`);
+}
+
 async function choose(page: Page, label: string, option: string) {
 	await page.getByRole("combobox", { name: label, exact: true }).click();
 	await page.getByRole("menuitem", { name: option, exact: true }).click();
@@ -90,11 +116,7 @@ async function addPiece(
 		t("screen.addPiece.stateLabel"),
 		t(`piece.state.${opts.state}`),
 	);
-	// force: the Save press follows a Menu choice, and Paper's dismiss scrim
-	// has been observed spending that press even after the scrim testifies
-	// gone — a resolved click the form never receives. Hitting the button
-	// regardless removes the race; there is no dialog to click through here.
-	await save(page, t("screen.addPiece.save"), { force: true });
+	await saveUntilGone(page, t("screen.addPiece.save"));
 
 	await page.getByText(opts.title, { exact: true }).first().click();
 	await expect(
@@ -181,8 +203,7 @@ async function addSection(
 		String(opts.from),
 	);
 	await fill(page, t("screen.pieceSections.form.endBarLabel"), String(opts.to));
-	// Same scrim race as addPiece: the Save press follows a Menu choice.
-	await save(page, t("screen.pieceSections.form.save"), { force: true });
+	await saveUntilGone(page, t("screen.pieceSections.form.save"));
 	await expect(page.getByText(opts.label, { exact: true })).toBeVisible({
 		timeout: 10_000,
 	});
