@@ -16,6 +16,8 @@ import { t } from "./support/app";
 test.describe.configure({ mode: "serial" });
 
 const COMPOSER = "E2E Composer";
+const PROJECT_ID =
+	process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? "my-musical-repertoire-dev";
 const PIECE1 = "E2E Stabilizing Solo";
 const PIECE2 = "E2E Stabilizing Twin";
 const PIECE3 = "E2E Learning Hands";
@@ -102,6 +104,60 @@ async function addPiece(
 }
 
 /** Adds a section to a piece already on screen; returns the new section's id. */
+/**
+ * Rewrites a section the app just created so it carries the pre-#84 field
+ * names, using the emulator's REST API because the app itself can no longer
+ * write them. Finds the document with a collection-group query on the label,
+ * which is unique per test.
+ */
+async function rewriteSectionAsLegacy(label: string): Promise<void> {
+	const base = `http://127.0.0.1:8052/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+	const headers = {
+		Authorization: "Bearer owner",
+		"Content-Type": "application/json",
+	};
+
+	const res = await fetch(`${base}:runQuery`, {
+		method: "POST",
+		headers,
+		body: JSON.stringify({
+			structuredQuery: {
+				from: [{ collectionId: "sections", allDescendants: true }],
+				where: {
+					fieldFilter: {
+						field: { fieldPath: "label" },
+						op: "EQUAL",
+						value: { stringValue: label },
+					},
+				},
+			},
+		}),
+	});
+	const rows = (await res.json()) as {
+		document?: { name: string; fields: Record<string, unknown> };
+	}[];
+	const found = rows.find((r) => r.document)?.document;
+	if (!found) throw new Error(`no section document with label "${label}"`);
+
+	const fields = found.fields;
+	const legacy: Record<string, unknown> = { phase: fields.state };
+	if (fields.stateChangedAt) legacy.phaseChangedAt = fields.stateChangedAt;
+
+	const mask = ["state", "stateChangedAt", ...Object.keys(legacy)]
+		.map((f) => `updateMask.fieldPaths=${f}`)
+		.join("&");
+	const patch = await fetch(`http://127.0.0.1:8052/v1/${found.name}?${mask}`, {
+		method: "PATCH",
+		headers,
+		body: JSON.stringify({ fields: legacy }),
+	});
+	if (!patch.ok) {
+		throw new Error(
+			`legacy rewrite failed: ${patch.status} ${await patch.text()}`,
+		);
+	}
+}
+
 async function addSection(
 	page: Page,
 	pieceUrl: string,
@@ -573,4 +629,38 @@ test("A section can be added without leaving the practice screen", async ({
 	await expect(page.getByText(label, { exact: true })).toBeVisible({
 		timeout: 10_000,
 	});
+});
+
+/**
+ * #84 left `state` readable under its old name `phase`, because documents
+ * written before the migration still carry it. Nothing else in the suite
+ * proves that fallback works, so this writes one section the old way and
+ * reads it back through the app.
+ *
+ * Delete this test together with the `?? data.phase` fallbacks in
+ * `hooks/use-sections.ts` when the follow-up issue drops the legacy fields.
+ */
+test("a section stored under the legacy `phase` field still renders its state", async ({
+	page,
+}) => {
+	test.setTimeout(60_000);
+	const title = "E2E Legacy Phase Field";
+	const label = "E2E Legacy Passage";
+	const pieceUrl = await addPiece(page, { title, state: "stabilizing" });
+	await addSection(page, pieceUrl, {
+		label,
+		state: "stabilizing",
+		from: 1,
+		to: 8,
+	});
+
+	await rewriteSectionAsLegacy(label);
+
+	await page.goto(pieceUrl);
+	await expect(page.getByText(label, { exact: true })).toBeVisible({
+		timeout: 10_000,
+	});
+	await expect(
+		page.getByText(t("section.state.stabilizing"), { exact: true }).first(),
+	).toBeVisible();
 });

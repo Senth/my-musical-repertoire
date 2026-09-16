@@ -76,7 +76,7 @@ The core problem: _"I often don't know what I should practice, and I want the ap
   fresh, low-pressure, and distinct from repertoire polishing.
 - **Section model before score model**: Manual section labels and optional bar ranges exist
   before any PDF parsing or annotation. Targeted practice cannot depend on sheet-music features.
-- **Sections are piece-level, not block-level**: Sections (label + optional bar range + phase +
+- **Sections are piece-level, not block-level**: Sections (label + optional bar range + state +
   current BPM) live on the piece and are referenced by practice blocks. This enables per-section
   history, BPM-bump suggestions, and chaining. Blocks never define ad-hoc sections.
 - **Section progression is student-gated**: The student decides when to add the next section.

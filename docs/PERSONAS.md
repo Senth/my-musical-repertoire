@@ -40,7 +40,7 @@ in bars 17–24?" Never "task", "item", "entry".
 **Quits when** The app recommends work she would not assign — practising a piece
 end-to-end when three bars are the problem, or pushing tempo on a section that is not
 accurate yet. One bad recommendation costs her trust in every other one.
-**Stresses** Whether a suggestion answers *why this now*, whether the phase model
+**Stresses** Whether a suggestion answers *why this now*, whether the state model
 (learning → stabilizing → maintenance) matches how skill actually consolidates,
 whether BPM advice respects accuracy, and whether logging captures enough to justify
 tomorrow's recommendation.
@@ -113,7 +113,7 @@ tempo she can manage, repeatedly.
 **Tech** Phone, occasional. Not curious about features.
 **Opens the app to** Do what she was going to do anyway, and feel that it counted.
 **Says** "I practise loads", "I just can't get that bit", "I played it three times".
-Never "section", "phase", "target tempo".
+Never "section", "phase", "state", "target tempo".
 **Quits when** It nags. She is doing the honest thing — showing up — and an app that
 opens by telling her she is doing it wrong is an app she deletes on a bad week.
 **Stresses** Whether the app can change behaviour rather than record it, whether
