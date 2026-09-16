@@ -61,7 +61,8 @@ interface TempoControlProps {
 
 const BPM_MIN = 20;
 const BPM_MAX = 240;
-/** Fixed strip above the slider that holds the markers, reserved even when empty. */
+/** Strip above the slider that holds the markers; collapses when there is
+ * nothing to mark, so a block with no markers sits tight under its heading. */
 const MARKER_STRIP_HEIGHT = 30;
 /** Seated 8px into the slider's own top padding, so the chevron tip touches
  * the track's top edge the way round 8 draws it. */
@@ -244,10 +245,15 @@ export function TempoControl({
 		fullRange,
 	});
 	const sliderValue = isValid ? clamp(parsed) : range.min;
+	// The working BPM: a valid draft, or the slider minimum the untouched thumb
+	// sits on. Steppers and the metronome work from it, so the one gesture that
+	// fixes a 20 can be made — but mid-edit the typed text governs, so a
+	// half-typed "2" is not a 20.
+	const effective = isValid ? clamp(parsed) : editing ? NaN : range.min;
 
 	function adjust(delta: number) {
-		if (!isValid) return;
-		onChangeText(clamp(parsed + delta).toString());
+		if (!Number.isFinite(effective)) return;
+		onChangeText(clamp(effective + delta).toString());
 	}
 
 	function tap() {
@@ -273,6 +279,7 @@ export function TempoControl({
 		((bpm - range.min) / (range.max - range.min)) * 100;
 	const lastPos = last != null ? percent(clamp(last)) : null;
 	const targetPos = target != null ? percent(clamp(target)) : null;
+	const hasMarkers = lastPos != null || targetPos != null;
 
 	const accentTint = theme.colors.onSurfaceVariant;
 	const beatsPerBar =
@@ -330,7 +337,7 @@ export function TempoControl({
 			<View style={{ marginTop: -10 }}>
 				<View
 					pointerEvents="none"
-					style={{ height: MARKER_STRIP_HEIGHT }}
+					style={{ height: hasMarkers ? MARKER_STRIP_HEIGHT : 0 }}
 					onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
 				>
 					{lastPos != null && (
@@ -399,7 +406,7 @@ export function TempoControl({
 					size={20}
 					iconColor={theme.colors.primary}
 					onPress={() => adjust(-5)}
-					disabled={!isValid}
+					disabled={!Number.isFinite(effective)}
 					accessibilityLabel={t("common.bpm.decreaseFive")}
 				/>
 				<IconButton
@@ -408,7 +415,7 @@ export function TempoControl({
 					size={20}
 					iconColor={theme.colors.primary}
 					onPress={() => adjust(-1)}
-					disabled={!isValid}
+					disabled={!Number.isFinite(effective)}
 					accessibilityLabel={t("common.bpm.decreaseOne")}
 				/>
 				{editing ? (
@@ -434,9 +441,11 @@ export function TempoControl({
 						<View
 							style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}
 						>
-							{/* An untouched tempo displays the slider's minimum, where the
-							    thumb already sits — display only: the draft stays empty and
-							    an untouched tempo still saves as no tempo at all. */}
+							{/* An untouched tempo displays the slider's minimum, where
+							    the thumb already sits. Display only: the draft stays
+							    empty and an untouched tempo still saves as no tempo at
+							    all — but a stepper press is deliberate and starts from
+							    the displayed value. */}
 							<Text
 								variant="displaySmall"
 								style={{
@@ -445,7 +454,7 @@ export function TempoControl({
 									borderBottomColor: theme.colors.outline,
 								}}
 							>
-								{isValid ? parsed : range.min}
+								{Number.isFinite(effective) ? effective : range.min}
 							</Text>
 							<Text
 								variant="bodySmall"
@@ -462,7 +471,7 @@ export function TempoControl({
 					size={20}
 					iconColor={theme.colors.primary}
 					onPress={() => adjust(1)}
-					disabled={!isValid}
+					disabled={!Number.isFinite(effective)}
 					accessibilityLabel={t("common.bpm.increaseOne")}
 				/>
 				<IconButton
@@ -471,7 +480,7 @@ export function TempoControl({
 					size={20}
 					iconColor={theme.colors.primary}
 					onPress={() => adjust(5)}
-					disabled={!isValid}
+					disabled={!Number.isFinite(effective)}
 					accessibilityLabel={t("common.bpm.increaseFive")}
 				/>
 			</View>
@@ -493,7 +502,7 @@ export function TempoControl({
 				</Button>
 				{stopRef !== undefined && (
 					<MetronomeButton
-						bpm={value}
+						bpm={Number.isFinite(effective) ? effective.toString() : value}
 						beatsPerBar={beatsPerBar}
 						disabled={!!error}
 						stopRef={stopRef}
