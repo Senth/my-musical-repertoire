@@ -17,6 +17,7 @@ import { LegalLinks } from "@/components/legal/LegalLinks";
 import { FormTextField } from "@/components/ui/FormTextField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsCompact } from "@/hooks/use-is-compact";
+import { usePageInset } from "@/hooks/use-page-inset";
 import { contentWidth, space } from "@/theme/tokens";
 
 type Mode = "signIn" | "register";
@@ -32,6 +33,7 @@ export default function LoginScreen() {
 	const { passwordSet } = useLocalSearchParams<{ passwordSet?: string }>();
 	const theme = useTheme();
 	const isCompact = useIsCompact();
+	const pageInset = usePageInset();
 
 	const [mode, setMode] = useState<Mode>("signIn");
 	const [email, setEmail] = useState("");
@@ -292,7 +294,7 @@ export default function LoginScreen() {
 					minHeight: 0,
 					justifyContent: "center",
 					alignItems: "center",
-					paddingHorizontal: 16,
+					paddingHorizontal: pageInset,
 				}}
 			>
 				<View

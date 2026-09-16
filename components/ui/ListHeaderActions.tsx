@@ -1,6 +1,9 @@
 import { View } from "react-native";
 import { IconButton, useTheme } from "react-native-paper";
-import { border } from "@/theme/tokens";
+import { border, radius } from "@/theme/tokens";
+
+/** The filter-active badge dot's diameter. */
+const DOT_SIZE = 10;
 
 interface ListHeaderActionsProps {
 	sortLabel: string;
@@ -43,9 +46,9 @@ export function ListHeaderActions({
 							position: "absolute",
 							top: 6,
 							right: 6,
-							width: 10,
-							height: 10,
-							borderRadius: 5,
+							width: DOT_SIZE,
+							height: DOT_SIZE,
+							borderRadius: radius.full,
 							backgroundColor: theme.colors.primary,
 							borderWidth: border.hairline,
 							borderColor: theme.colors.elevation.level2,

@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { Text } from "react-native-paper";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { useAppTheme } from "@/theme";
+import { space } from "@/theme/tokens";
 
 /**
  * Slim status bar shown while the browser reports no connection. Sits above the
@@ -20,8 +21,8 @@ export function OfflineBar() {
 			accessibilityRole="alert"
 			style={{
 				backgroundColor: theme.colors.warningContainer,
-				paddingVertical: 4,
-				paddingHorizontal: 12,
+				paddingVertical: space.xs,
+				paddingHorizontal: space.md,
 			}}
 		>
 			<Text

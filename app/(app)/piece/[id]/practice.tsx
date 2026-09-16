@@ -49,6 +49,7 @@ import {
 	PracticeMistakes,
 	type PracticeTrigger,
 } from "@/models/practice";
+import { space } from "@/theme/tokens";
 import {
 	effortOptions,
 	mistakeOptions,
@@ -579,7 +580,7 @@ export function PiecePracticeContent({
 						paddingBottom={12}
 						style={{ flex: 1 }}
 					>
-						<View style={{ gap: 2 }}>
+						<View style={{ gap: space.xxs }}>
 							<Text variant="titleMedium" numberOfLines={1}>
 								{scopedSection ? scopedSection.label : piece.title}
 							</Text>

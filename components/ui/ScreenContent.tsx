@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 import { ScrollView, View } from "react-native";
-import { useIsCompact } from "@/hooks/use-is-compact";
+import { usePageInset } from "@/hooks/use-page-inset";
 import { contentWidth, space } from "@/theme/tokens";
 
 const GAP = {
@@ -27,24 +27,25 @@ interface ScreenContentProps {
 
 /**
  * Shared layout for centered page content: applies the responsive horizontal
- * page padding (`isCompact ? 16 : 24`) and constrains content to a centered
- * `max-w-xl` band. The horizontal padding is intentionally not configurable —
- * it is the invariant every screen must share so the metronome (and everything
- * else) keeps a consistent width across pages.
+ * page inset (`inset.compact` / `inset.roomy`) and constrains content to a
+ * centered band at `contentWidth.page`. The horizontal padding is
+ * intentionally not configurable — it is the invariant every screen must share
+ * so the metronome (and everything else) keeps a consistent width across
+ * pages.
  */
 export function ScreenContent({
 	children,
 	gap = 6,
-	paddingTop = 24,
+	paddingTop = space.xl,
 	paddingBottom = 0,
 	scroll = true,
 	style,
 }: ScreenContentProps) {
-	const isCompact = useIsCompact();
+	const pageInset = usePageInset();
 	const body = (
 		<View
 			style={{
-				paddingHorizontal: isCompact ? 16 : 24,
+				paddingHorizontal: pageInset,
 				paddingTop,
 				paddingBottom,
 			}}

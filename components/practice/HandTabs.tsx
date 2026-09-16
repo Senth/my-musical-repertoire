@@ -6,7 +6,7 @@ import type { ModeDraft } from "@/hooks/use-mode-drafts";
 import { parseBpm } from "@/hooks/use-mode-drafts";
 import type { PracticeDrill } from "@/models/practice";
 import { HANDS_MODES, type HandsMode, type ModeKey } from "@/models/practice";
-import { border } from "@/theme/tokens";
+import { border, space } from "@/theme/tokens";
 import { parseModeKey } from "@/utils/practice-modes";
 
 const HANDS_ICON: Record<HandsMode, string> = {
@@ -87,7 +87,7 @@ export function HandTabs({
 	if (available.length <= 1 && !tally && !chip) return null;
 
 	return (
-		<View style={{ gap: 8 }}>
+		<View style={{ gap: space.sm }}>
 			{available.length > 1 && (
 				<View
 					style={{
@@ -128,7 +128,7 @@ export function HandTabs({
 									flexDirection: "row",
 									alignItems: "center",
 									justifyContent: "center",
-									gap: 4,
+									gap: space.xs,
 									backgroundColor: selected
 										? theme.colors.secondaryContainer
 										: "transparent",
@@ -153,7 +153,7 @@ export function HandTabs({
 					style={{
 						flexDirection: "row",
 						alignItems: "center",
-						gap: 8,
+						gap: space.sm,
 					}}
 				>
 					<Text
@@ -162,7 +162,7 @@ export function HandTabs({
 						style={{
 							color: theme.colors.onSurfaceVariant,
 							flex: 1,
-							minHeight: 16,
+							minHeight: 16, // invariants:allow — holds the tally line's height when the text is empty
 						}}
 					>
 						{tally ?? ""}

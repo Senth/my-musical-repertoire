@@ -7,6 +7,7 @@ import { Appbar, Button, Card, HelperText, useTheme } from "react-native-paper";
 import { FormTextField } from "@/components/ui/FormTextField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsCompact } from "@/hooks/use-is-compact";
+import { usePageInset } from "@/hooks/use-page-inset";
 import { contentWidth, space } from "@/theme/tokens";
 
 export default function ResetPasswordScreen() {
@@ -16,6 +17,7 @@ export default function ResetPasswordScreen() {
 	const router = useRouter();
 	const theme = useTheme();
 	const isCompact = useIsCompact();
+	const pageInset = usePageInset();
 
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,7 +37,7 @@ export default function ResetPasswordScreen() {
 					justifyContent: "center",
 					alignItems: "center",
 					backgroundColor: theme.colors.background,
-					paddingHorizontal: 16,
+					paddingHorizontal: pageInset,
 				}}
 			>
 				<HelperText type="error" visible>
@@ -149,7 +151,7 @@ export default function ResetPasswordScreen() {
 					minHeight: 0,
 					justifyContent: "center",
 					alignItems: "center",
-					paddingHorizontal: 16,
+					paddingHorizontal: pageInset,
 				}}
 			>
 				<View

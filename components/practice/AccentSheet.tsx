@@ -12,6 +12,7 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { useIsCompact } from "@/hooks/use-is-compact";
+import { inset, radius, space } from "@/theme/tokens";
 import {
 	formatTimeSignature,
 	NOTE_VALUES,
@@ -98,32 +99,32 @@ export function AccentSheet({
 				style={isCompact ? { justifyContent: "flex-end" } : undefined}
 				contentContainerStyle={{
 					backgroundColor: theme.colors.elevation.level3,
-					marginHorizontal: isCompact ? 0 : 24,
+					marginHorizontal: isCompact ? 0 : inset.roomy,
 					alignSelf: "center",
 					width: "100%",
 					maxWidth: isCompact ? undefined : 480,
 					maxHeight: "80%",
-					borderTopLeftRadius: 28,
-					borderTopRightRadius: 28,
-					borderBottomLeftRadius: isCompact ? 0 : 28,
-					borderBottomRightRadius: isCompact ? 0 : 28,
+					borderTopLeftRadius: radius.card,
+					borderTopRightRadius: radius.card,
+					borderBottomLeftRadius: isCompact ? 0 : radius.card,
+					borderBottomRightRadius: isCompact ? 0 : radius.card,
 					overflow: "hidden",
 				}}
 			>
-				<View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
+				<View style={{ paddingHorizontal: space.xl, paddingTop: space.xl }}>
 					<Text variant="titleLarge">{t("common.metronome.accent.title")}</Text>
 				</View>
 
 				<ScrollView
 					contentContainerStyle={{
-						paddingHorizontal: 24,
-						paddingVertical: 16,
-						gap: 20,
+						paddingHorizontal: space.xl,
+						paddingVertical: space.lg,
+						gap: space.xl,
 					}}
 				>
 					{editing ? (
 						<>
-							<View style={{ gap: 8 }}>
+							<View style={{ gap: space.sm }}>
 								<Text
 									variant="labelLarge"
 									style={{ color: theme.colors.onSurfaceVariant }}
@@ -135,7 +136,7 @@ export function AccentSheet({
 										flexDirection: "row",
 										alignItems: "center",
 										justifyContent: "center",
-										gap: 12,
+										gap: space.md,
 									}}
 								>
 									<SegmentedButtons
@@ -175,7 +176,7 @@ export function AccentSheet({
 									/>
 								</View>
 							</View>
-							<View style={{ gap: 8 }}>
+							<View style={{ gap: space.sm }}>
 								<Text
 									variant="labelLarge"
 									style={{ color: theme.colors.onSurfaceVariant }}
@@ -186,7 +187,7 @@ export function AccentSheet({
 									style={{
 										flexDirection: "row",
 										flexWrap: "wrap",
-										gap: 8,
+										gap: space.sm,
 									}}
 								>
 									{NOTE_VALUES.map((value) => (
@@ -208,7 +209,7 @@ export function AccentSheet({
 							style={{
 								flexDirection: "row",
 								flexWrap: "wrap",
-								gap: 8,
+								gap: space.sm,
 							}}
 						>
 							<Chip
@@ -250,9 +251,9 @@ export function AccentSheet({
 					style={{
 						flexDirection: "row",
 						alignItems: "center",
-						gap: 12,
-						paddingHorizontal: 16,
-						paddingVertical: 12,
+						gap: space.md,
+						paddingHorizontal: space.lg,
+						paddingVertical: space.md,
 					}}
 				>
 					<Text

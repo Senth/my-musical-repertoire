@@ -33,7 +33,7 @@ import {
 	type PresetLines,
 	SCRATCH_PRESET_ID,
 } from "@/models/session-preset";
-import { space } from "@/theme/tokens";
+import { radius, space } from "@/theme/tokens";
 import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
 import { buildPlan, planTotalMinutes } from "@/utils/session-planner";
 import { writeActiveSession } from "@/utils/session-storage";
@@ -230,6 +230,10 @@ export default function SessionSetupScreen() {
 	);
 }
 
+/** Checkbox column width — the stale note lines up under the label, not the
+ * box; `Checkbox.Item` renders its own box column here. */
+const OPTIN_INDENT = 48;
+
 function OmittedRow({ slot }: { slot: OmittedSlot }) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -346,7 +350,7 @@ function OptInRow({
 					flexDirection: "row",
 					alignItems: "center",
 					gap: space.sm,
-					paddingLeft: 48,
+					paddingLeft: OPTIN_INDENT,
 				}}
 			>
 				<Text
@@ -359,9 +363,9 @@ function OptInRow({
 					<View
 						style={{
 							backgroundColor: theme.colors.tertiaryContainer,
-							borderRadius: 8,
-							paddingHorizontal: 8,
-							paddingVertical: 2,
+							borderRadius: radius.chip,
+							paddingHorizontal: space.sm,
+							paddingVertical: space.xxs,
 						}}
 					>
 						<Text

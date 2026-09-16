@@ -201,7 +201,9 @@ export default function SectionEditScreen() {
 				>
 					{t("screen.pieceSections.form.barsLabel")}
 				</Text>
-				<View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+				<View
+					style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}
+				>
 					<TextInput
 						style={{ flex: 1 }}
 						label={t("screen.pieceSections.form.startBarLabel")}

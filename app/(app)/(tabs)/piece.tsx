@@ -36,10 +36,11 @@ import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
 import { useIsCompact } from "@/hooks/use-is-compact";
 import { useListPrefs } from "@/hooks/use-list-prefs";
+import { usePageInset } from "@/hooks/use-page-inset";
 import { usePieceScores } from "@/hooks/use-piece-scores";
 import { useDeletePiece, usePieces } from "@/hooks/use-pieces";
 import { PIECE_STATES, type Piece } from "@/models/piece";
-import { size, space } from "@/theme/tokens";
+import { scrollTail, size, space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
 import {
 	availableCollections,
@@ -102,6 +103,7 @@ export default function PiecesScreen() {
 	);
 	const [filterOpen, setFilterOpen] = useState(false);
 	const isCompact = useIsCompact();
+	const pageInset = usePageInset();
 
 	const { prefs, setPrefs } = useListPrefs(
 		DEFAULT_PIECE_LIST_PREFS,
@@ -468,7 +470,7 @@ export default function PiecesScreen() {
 		>
 			<View
 				style={{
-					paddingHorizontal: space.lg,
+					paddingHorizontal: pageInset,
 					paddingTop: space.md,
 					paddingBottom: space.sm,
 				}}
@@ -512,7 +514,7 @@ export default function PiecesScreen() {
 				<ScreenContent
 					gap={3}
 					paddingTop={0}
-					paddingBottom={100}
+					paddingBottom={scrollTail.fab}
 					style={{ flex: 1 }}
 				>
 					{visiblePieces.map((item) => (
