@@ -7,6 +7,10 @@ import {
 	sanitizeTechniqueListPrefs,
 	type TechniqueListPrefs,
 } from "./list-prefs";
+import {
+	type TimeSignature,
+	timeSignatureFromFirestore,
+} from "./time-signature";
 
 function activeSessionKey(uid: string): string {
 	return `active-session:${uid}`;
@@ -68,8 +72,9 @@ export async function writeInstallPromptDismissed(uid: string): Promise<void> {
 }
 
 /**
- * The metronome accent on/off flag is a device preference; the signature itself
- * lives on the piece / section / technique.
+ * The metronome accent on/off flag is a device preference; the signature
+ * itself lives on the piece / section / technique — except sight-reading,
+ * which has no entity behind it and stores its signature below.
  */
 function metronomeAccentKey(uid: string): string {
 	return `metronome-accent:${uid}`;
@@ -84,6 +89,33 @@ export async function writeMetronomeAccent(
 	accent: boolean,
 ): Promise<void> {
 	await AsyncStorage.setItem(metronomeAccentKey(uid), accent ? "1" : "0");
+}
+
+/** Sight-reading has no piece or technique behind it, so its bar signature is a device preference beside the sight-reading tempo. */
+function sightReadingSignatureKey(uid: string): string {
+	return `sight-reading-signature:${uid}`;
+}
+
+export async function readSightReadingSignature(
+	uid: string,
+): Promise<TimeSignature | null> {
+	const raw = await AsyncStorage.getItem(sightReadingSignatureKey(uid));
+	if (!raw) return null;
+	try {
+		return timeSignatureFromFirestore(JSON.parse(raw));
+	} catch {
+		return null;
+	}
+}
+
+export async function writeSightReadingSignature(
+	uid: string,
+	signature: TimeSignature | null,
+): Promise<void> {
+	await AsyncStorage.setItem(
+		sightReadingSignatureKey(uid),
+		JSON.stringify(signature),
+	);
 }
 
 /**
@@ -187,6 +219,7 @@ export async function clearLocalUserData(uid: string): Promise<void> {
 		sightReadingBpmKey(uid),
 		installPromptDismissedKey(uid),
 		metronomeAccentKey(uid),
+		sightReadingSignatureKey(uid),
 		pieceScoresKey(uid),
 		pieceListPrefsKey(uid),
 		techniqueListPrefsKey(uid),

@@ -13,12 +13,14 @@ import {
 	readPieceListPrefs,
 	readPieceScores,
 	readSightReadingBpm,
+	readSightReadingSignature,
 	readTechniqueListPrefs,
 	writeActiveSession,
 	writeMetronomeAccent,
 	writePieceListPrefs,
 	writePieceScores,
 	writeSightReadingBpm,
+	writeSightReadingSignature,
 	writeTechniqueListPrefs,
 } from "./session-storage";
 
@@ -127,6 +129,22 @@ describe("session-storage", () => {
 		expect(await readMetronomeAccent("u1")).toBe(false);
 	});
 
+	it("round trips the sight-reading signature per uid and reads malformed as null", async () => {
+		expect(await readSightReadingSignature("u1")).toBeNull();
+		await writeSightReadingSignature("u1", { beats: 6, noteValue: 8 });
+		expect(await readSightReadingSignature("u1")).toEqual({
+			beats: 6,
+			noteValue: 8,
+		});
+		expect(await readSightReadingSignature("u2")).toBeNull();
+
+		mocked.__store.set("sight-reading-signature:u1", "{broken");
+		expect(await readSightReadingSignature("u1")).toBeNull();
+
+		await writeSightReadingSignature("u1", null);
+		expect(await readSightReadingSignature("u1")).toBeNull();
+	});
+
 	it("round trips cached piece scores per uid", async () => {
 		expect(await readPieceScores("u1")).toBeNull();
 		const cache = { scores: { p1: 42, p2: 0 }, computedAt: 1_700_000_000_000 };
@@ -180,6 +198,7 @@ describe("session-storage", () => {
 			"sight-reading-bpm",
 			"installPromptDismissed",
 			"metronome-accent",
+			"sight-reading-signature",
 			"piece-scores",
 			"pieces-list-prefs",
 			"technique-list-prefs",
