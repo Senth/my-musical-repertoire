@@ -21,6 +21,15 @@ class FakeGain {
 	connect() {}
 }
 
+class FakeBufferSource {
+	buffer: unknown = null;
+	started = false;
+	connect() {}
+	start() {
+		this.started = true;
+	}
+}
+
 class FakeContext {
 	static instances: FakeContext[] = [];
 	currentTime = 0;
@@ -28,9 +37,20 @@ class FakeContext {
 	destination = {};
 	oscillators: FakeOscillator[] = [];
 	gains: FakeGain[] = [];
+	bufferSources: FakeBufferSource[] = [];
 
 	constructor() {
 		FakeContext.instances.push(this);
+	}
+
+	createBufferSource() {
+		const source = new FakeBufferSource();
+		this.bufferSources.push(source);
+		return source;
+	}
+
+	createBuffer() {
+		return {};
 	}
 
 	createOscillator() {
@@ -96,6 +116,17 @@ describe("useMetronome time signature", () => {
 		expect(scheduledFrequencies()).toEqual([
 			1320, 880, 880, 880, 1320, 880, 880, 880, 1320,
 		]);
+	});
+
+	it("starts a silent unlock buffer on toggle, as iOS Safari requires", async () => {
+		const { result } = await renderHook(() => useMetronome(120, 4));
+		await act(() => {
+			result.current.toggle();
+		});
+		const ctx = FakeContext.instances[0];
+
+		expect(ctx.bufferSources).toHaveLength(1);
+		expect(ctx.bufferSources[0].started).toBe(true);
 	});
 
 	it("starts a new bar when the time signature changes mid-run", async () => {
