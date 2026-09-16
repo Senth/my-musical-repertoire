@@ -14,6 +14,7 @@ const FADE_MS = 150;
 function CrossFadeText({ text }: { text: string }) {
 	const theme = useTheme();
 	const fade = useRef(new Animated.Value(1)).current;
+	const out = useRef(new Animated.Value(1)).current;
 	const [current, setCurrent] = useState(text);
 	const [previous, setPrevious] = useState<string | null>(null);
 	const painted = useRef(false);
@@ -27,20 +28,33 @@ function CrossFadeText({ text }: { text: string }) {
 		setPrevious(current);
 		setCurrent(text);
 		fade.setValue(0);
-		Animated.timing(fade, {
-			toValue: 1,
-			duration: FADE_MS,
-			useNativeDriver: true,
-		}).start(({ finished }) => {
+		out.setValue(1);
+		Animated.parallel([
+			Animated.timing(fade, {
+				toValue: 1,
+				duration: FADE_MS,
+				useNativeDriver: true,
+			}),
+			Animated.timing(out, {
+				toValue: 0,
+				duration: FADE_MS,
+				useNativeDriver: true,
+			}),
+		]).start(({ finished }) => {
 			if (finished) setPrevious(null);
 		});
-	}, [text, current, fade]);
+	}, [text, current, fade, out]);
 
 	return (
 		<View style={{ flex: 1 }}>
 			{previous != null && (
 				<Animated.View
-					style={{ position: "absolute", left: 0, right: 0 }}
+					style={{
+						position: "absolute",
+						left: 0,
+						right: 0,
+						opacity: out,
+					}}
 					pointerEvents="none"
 				>
 					<Text

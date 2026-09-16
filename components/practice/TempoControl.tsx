@@ -119,10 +119,14 @@ function MarkerArrow({
 	const target = lifted ? -MARKER_ARROW_LIFT : 0;
 	const y = useRef(new Animated.Value(target)).current;
 	const at = useRef(target);
+	const entered = useRef(false);
 	useEffect(() => {
 		if (target === at.current) return;
 		at.current = target;
-		if (reducedMotion) {
+		// The first geometry-known transition is arrival, not motion — the
+		// pre-layout render always reports unlifted, so nothing animates on entry.
+		if (!entered.current || reducedMotion) {
+			entered.current = true;
 			y.setValue(target);
 			return;
 		}
