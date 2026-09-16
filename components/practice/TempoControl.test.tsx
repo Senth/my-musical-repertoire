@@ -1,5 +1,5 @@
-import type { MutableRefObject } from "react";
 import { fireEvent, render } from "@testing-library/react-native";
+import type { MutableRefObject } from "react";
 import "@/i18n";
 import { parseBpm } from "@/hooks/use-mode-drafts";
 import { TempoControl } from "./TempoControl";
