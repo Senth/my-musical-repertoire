@@ -26,6 +26,12 @@ describe("chooseStrategy", () => {
 		expect(chooseStrategy({ ...GET, sameOrigin: false })).toBe("passthrough");
 	});
 
+	it("passes through Firebase's reserved /__/ namespace", () => {
+		expect(chooseStrategy({ ...GET, pathname: "/__/auth/handler" })).toBe(
+			"passthrough",
+		);
+	});
+
 	it("leaves cross-origin navigations alone too", () => {
 		expect(
 			chooseStrategy({ ...GET, sameOrigin: false, mode: "navigate" }),

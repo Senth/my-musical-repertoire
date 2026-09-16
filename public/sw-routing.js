@@ -19,6 +19,10 @@ function chooseStrategy({ method, mode, sameOrigin, pathname }) {
 	// Firestore, Google auth and fonts run their own offline handling — the
 	// Firestore write queue in particular breaks if we answer for it.
 	if (!sameOrigin) return "passthrough";
+	// Firebase's reserved `__/` namespace (auth handlers, dynamic links). The
+	// auth domain is cross-origin today, so this is insurance for the day it
+	// is not — but a reserved path must never be answered from a cache.
+	if (pathname.startsWith("/__/")) return "passthrough";
 	// The app shell has to come from the network when there is one, so a new
 	// deploy lands on the next reload instead of on the next service worker.
 	if (mode === "navigate") return "navigate";
