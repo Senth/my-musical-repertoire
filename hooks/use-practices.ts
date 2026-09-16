@@ -125,19 +125,19 @@ export function useSavePractice() {
 			});
 		}
 
-		// Demotions go through the shared helper so they stamp `phaseChangedAt`
+		// Demotions go through the shared helper so they stamp `stateChangedAt`
 		// and leave an audit row like every other state change.
 		for (const sectionId of demotions) {
 			const demoted = sections.find((s) => s.id === sectionId);
 			queueStateChange(batch, user.uid, {
 				pieceId,
 				sectionId,
-				fromPhase: "maintenance",
-				toPhase: "stabilizing",
+				fromState: "maintenance",
+				toState: "stabilizing",
 				trigger: "run-through",
 				achievedBpmAtEvent: achievedBpm ?? null,
 				qualityAtEvent: demoted?.byMode?.HT?.quality ?? null,
-				priorPhaseChangedAt: demoted?.phaseChangedAt ?? null,
+				priorStateChangedAt: demoted?.stateChangedAt ?? null,
 				sessionId: sessionId ?? null,
 				date,
 			});

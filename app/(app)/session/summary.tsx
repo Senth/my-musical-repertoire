@@ -84,12 +84,12 @@ export default function SessionSummaryScreen() {
 			await changeSectionState({
 				pieceId,
 				sectionId: nudge.section.id,
-				fromPhase: nudge.section.state,
-				toPhase: "learning",
+				fromState: nudge.section.state,
+				toState: "learning",
 				trigger: "advance-button",
 				achievedBpmAtEvent: nudge.section.byMode?.HT?.bpm ?? null,
 				qualityAtEvent: nudge.section.byMode?.HT?.quality ?? null,
-				priorPhaseChangedAt: nudge.section.phaseChangedAt ?? null,
+				priorStateChangedAt: nudge.section.stateChangedAt ?? null,
 			});
 		} catch {
 			// Non-fatal: the nudge simply stays until the next session.

@@ -2154,7 +2154,7 @@ describe("run-through credit invariants", () => {
 	describe("stabilizingLinePool state coverage", () => {
 		const days = new Date(NOW.getTime() - 5 * 86400000);
 
-		it("scores all three phases inside a stabilizing-state piece", () => {
+		it("scores all three states inside a stabilizing-state piece", () => {
 			const pieces: Piece[] = [makePiece({ id: "ps", state: "stabilizing" })];
 			const sections: Section[] = [
 				makeSection({ id: "a", pieceId: "ps", state: "learning", order: 0 }),
@@ -2165,30 +2165,30 @@ describe("run-through credit invariants", () => {
 			expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b", "c"]);
 		});
 
-		it.each(["maintenance", "performance"] as const)(
-			"takes only learning and stabilizing sections out of a %s piece",
-			(state) => {
-				const pieces: Piece[] = [
-					makePiece({ id: "pm", state, lastPracticed: days }),
-				];
-				const sections: Section[] = [
-					makeSection({ id: "a", pieceId: "pm", state: "learning", order: 0 }),
-					makeSection({
-						id: "b",
-						pieceId: "pm",
-						state: "stabilizing",
-						order: 1,
-					}),
-					makeSection({
-						id: "c",
-						pieceId: "pm",
-						state: "maintenance",
-						order: 2,
-					}),
-				];
-				const pool = stabilizingLinePool(pieces, sections, NOW);
-				expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b"]);
-			},
-		);
+		it.each([
+			"maintenance",
+			"performance",
+		] as const)("takes only learning and stabilizing sections out of a %s piece", (state) => {
+			const pieces: Piece[] = [
+				makePiece({ id: "pm", state, lastPracticed: days }),
+			];
+			const sections: Section[] = [
+				makeSection({ id: "a", pieceId: "pm", state: "learning", order: 0 }),
+				makeSection({
+					id: "b",
+					pieceId: "pm",
+					state: "stabilizing",
+					order: 1,
+				}),
+				makeSection({
+					id: "c",
+					pieceId: "pm",
+					state: "maintenance",
+					order: 2,
+				}),
+			];
+			const pool = stabilizingLinePool(pieces, sections, NOW);
+			expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b"]);
+		});
 	});
 });

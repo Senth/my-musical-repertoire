@@ -145,13 +145,13 @@ export default function SectionEditScreen() {
 			if (isNew) {
 				await addSection(pieceId, sectionData);
 			} else if (sectionId) {
-				// Every state change stamps `phaseChangedAt` so the cycling guard can
+				// Every state change stamps `stateChangedAt` so the cycling guard can
 				// see it. No transition row here — the form is a field editor, not one
 				// of the coached triggers the audit trail is about.
 				await updateSection(pieceId, sectionId, {
 					...sectionData,
 					...(section && state !== section.state
-						? { phaseChangedAt: new Date() }
+						? { stateChangedAt: new Date() }
 						: {}),
 				});
 			}

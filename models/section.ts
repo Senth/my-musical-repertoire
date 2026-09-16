@@ -39,33 +39,34 @@ export interface Section {
 	 * predate the field — never backfilled, so it reads as null and the cycling
 	 * guard stays quiet.
 	 */
-	phaseChangedAt?: Date | null;
+	stateChangedAt?: Date | null;
 }
 
 /** What caused a state change (or a declined offer). */
-export type PhaseTransitionTrigger =
+export type StateTransitionTrigger =
 	| "advance-button"
 	| "demote-button"
-	| "phase-chip"
+	| "state-chip"
 	| "run-through";
 
-export type PhaseTransitionOutcome = "accepted" | "dismissed";
+export type StateTransitionOutcome = "accepted" | "dismissed";
 
 /**
- * One row of `sections/{id}/phaseTransitions`. Written on every state change and
+ * One row of `sections/{id}/phaseTransitions` — the stored path keeps the old
+ * word, see #84's follow-up. Written on every state change and
  * on every declined nudge — the dismissals are what say whether the advance
  * thresholds are set too high.
  */
-export interface PhaseTransition {
+export interface StateTransition {
 	id?: string;
-	fromPhase: SectionState;
-	/** Equal to `fromPhase` when the outcome is `dismissed`. */
-	toPhase: SectionState;
-	trigger: PhaseTransitionTrigger;
-	outcome: PhaseTransitionOutcome;
+	fromState: SectionState;
+	/** Equal to `fromState` when the outcome is `dismissed`. */
+	toState: SectionState;
+	trigger: StateTransitionTrigger;
+	outcome: StateTransitionOutcome;
 	achievedBpmAtEvent: number | null;
 	qualityAtEvent: number | null;
-	daysInPriorPhase: number | null;
+	daysInPriorState: number | null;
 	sessionId: string | null;
 	date: Date;
 }

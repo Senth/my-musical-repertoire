@@ -13,10 +13,10 @@ import { useCallback, useEffect, useState } from "react";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type {
-	PhaseTransition,
-	PhaseTransitionOutcome,
-	PhaseTransitionTrigger,
 	SectionState,
+	StateTransition,
+	StateTransitionOutcome,
+	StateTransitionTrigger,
 } from "@/models/section";
 import { awaitWrite } from "@/utils/firestore-write";
 import { daysBetween } from "@/utils/section-progression";
@@ -36,14 +36,14 @@ export const STATE_HISTORY_LIMIT = 10;
 export interface StateEvent {
 	pieceId: string;
 	sectionId: string;
-	fromPhase: SectionState;
-	/** Where the section lands. Equal to `fromPhase` for a dismissal. */
-	toPhase: SectionState;
-	trigger: PhaseTransitionTrigger;
+	fromState: SectionState;
+	/** Where the section lands. Equal to `fromState` for a dismissal. */
+	toState: SectionState;
+	trigger: StateTransitionTrigger;
 	achievedBpmAtEvent?: number | null;
 	qualityAtEvent?: number | null;
-	/** The section's `phaseChangedAt` *before* this event. */
-	priorPhaseChangedAt?: Date | null;
+	/** The section's `stateChangedAt` *before* this event. */
+	priorStateChangedAt?: Date | null;
 	sessionId?: string | null;
 	/** Defaults to now. */
 	date?: Date;
@@ -53,28 +53,30 @@ function sectionRef(userId: string, pieceId: string, sectionId: string) {
 	return doc(db, "users", userId, "pieces", pieceId, "sections", sectionId);
 }
 
-export function phaseTransitionsRef(
+export function stateTransitionsRef(
 	userId: string,
 	pieceId: string,
 	sectionId: string,
 ) {
+	// The stored path keeps the old word: renaming it needs a document copy,
+	// which is its own follow-up issue rather than part of #84.
 	return collection(sectionRef(userId, pieceId, sectionId), "phaseTransitions");
 }
 
 function transitionDoc(
 	event: StateEvent,
-	outcome: PhaseTransitionOutcome,
+	outcome: StateTransitionOutcome,
 	date: Date,
 ) {
 	return {
-		fromPhase: event.fromPhase,
-		toPhase: outcome === "dismissed" ? event.fromPhase : event.toPhase,
+		fromState: event.fromState,
+		toState: outcome === "dismissed" ? event.fromState : event.toState,
 		trigger: event.trigger,
 		outcome,
 		achievedBpmAtEvent: event.achievedBpmAtEvent ?? null,
 		qualityAtEvent: event.qualityAtEvent ?? null,
-		daysInPriorPhase: event.priorPhaseChangedAt
-			? daysBetween(event.priorPhaseChangedAt, date)
+		daysInPriorState: event.priorStateChangedAt
+			? daysBetween(event.priorStateChangedAt, date)
 			: null,
 		sessionId: event.sessionId ?? null,
 		date: Timestamp.fromDate(date),
@@ -93,11 +95,11 @@ export function queueStateChange(
 ): void {
 	const date = event.date ?? new Date();
 	batch.update(sectionRef(userId, event.pieceId, event.sectionId), {
-		state: event.toPhase,
-		phaseChangedAt: Timestamp.fromDate(date),
+		state: event.toState,
+		stateChangedAt: Timestamp.fromDate(date),
 	});
 	batch.set(
-		doc(phaseTransitionsRef(userId, event.pieceId, event.sectionId)),
+		doc(stateTransitionsRef(userId, event.pieceId, event.sectionId)),
 		transitionDoc(event, "accepted", date),
 	);
 }
@@ -109,7 +111,7 @@ export function queueStateDismissal(
 	event: StateEvent,
 ): void {
 	batch.set(
-		doc(phaseTransitionsRef(userId, event.pieceId, event.sectionId)),
+		doc(stateTransitionsRef(userId, event.pieceId, event.sectionId)),
 		transitionDoc(event, "dismissed", event.date ?? new Date()),
 	);
 }
@@ -127,7 +129,7 @@ export function useChangeSectionState() {
 		[user],
 	);
 
-	const dismissPhaseOffer = useCallback(
+	const dismissStateOffer = useCallback(
 		async (event: StateEvent) => {
 			if (!user) throw new Error("Not authenticated");
 			const batch = writeBatch(db);
@@ -137,23 +139,23 @@ export function useChangeSectionState() {
 		[user],
 	);
 
-	return { changeSectionState, dismissPhaseOffer };
+	return { changeSectionState, dismissStateOffer };
 }
 
 function fromFirestore(
 	id: string,
 	data: Record<string, unknown>,
-): PhaseTransition {
+): StateTransition {
 	const at = data.date as { toDate?: () => Date } | null;
 	return {
 		id,
-		fromPhase: data.fromPhase as SectionState,
-		toPhase: data.toPhase as SectionState,
-		trigger: data.trigger as PhaseTransitionTrigger,
-		outcome: data.outcome as PhaseTransitionOutcome,
+		fromState: data.fromState as SectionState,
+		toState: data.toState as SectionState,
+		trigger: data.trigger as StateTransitionTrigger,
+		outcome: data.outcome as StateTransitionOutcome,
 		achievedBpmAtEvent: (data.achievedBpmAtEvent as number) ?? null,
 		qualityAtEvent: (data.qualityAtEvent as number) ?? null,
-		daysInPriorPhase: (data.daysInPriorPhase as number) ?? null,
+		daysInPriorState: (data.daysInPriorState as number) ?? null,
 		sessionId: (data.sessionId as string) ?? null,
 		date: typeof at?.toDate === "function" ? at.toDate() : new Date(0),
 	};
@@ -169,7 +171,7 @@ export function useSectionStateHistory(
 	sectionId: string | null | undefined,
 ) {
 	const { user } = useAuth();
-	const [transitions, setTransitions] = useState<PhaseTransition[]>([]);
+	const [transitions, setTransitions] = useState<StateTransition[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	const reload = useCallback(() => {
@@ -181,7 +183,7 @@ export function useSectionStateHistory(
 		setLoading(true);
 		getDocs(
 			query(
-				phaseTransitionsRef(user.uid, pieceId, sectionId),
+				stateTransitionsRef(user.uid, pieceId, sectionId),
 				orderBy("date", "desc"),
 				limit(STATE_HISTORY_LIMIT),
 			),

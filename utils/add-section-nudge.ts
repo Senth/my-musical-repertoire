@@ -9,7 +9,7 @@ export type SectionNudge =
  * Whether a learning piece is ready for new material, and which suggestion to
  * make. When the piece still has not-started sections, the nudge asks to move
  * the next one into learning rather than adding more passages. Only when every
- * active section has left both phases does it ask to add the next passage —
+ * active section has left both of those states does it ask to add the next passage —
  * named by the furthest one along, the one that just cleared learning.
  *
  * Fires at *stabilizing*, not maintenance: that is the window where there is

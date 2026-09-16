@@ -649,7 +649,7 @@
 				"backToPieces": "Back to Pieces",
 				"backToPiece": "Back to Piece"
 			},
-			"phaseOffer": {
+			"stateOffer": {
 				"title": {
 					"advance": {
 						"stabilizing": "Ready to move this to stabilizing?",
@@ -690,9 +690,9 @@
 					"noTarget": "Set a target tempo to track progress"
 				},
 				"cyclingGuard": {
-					"today": "Moved to {{phase}} today — change it again?",
-					"yesterday": "Moved to {{phase}} yesterday — change it again?",
-					"daysAgo": "Moved to {{phase}} {{count}} days ago — change it again?"
+					"today": "Moved to {{state}} today — change it again?",
+					"yesterday": "Moved to {{state}} yesterday — change it again?",
+					"daysAgo": "Moved to {{state}} {{count}} days ago — change it again?"
 				}
 			},
 			"notRated": "not rated yet",
@@ -1022,7 +1022,7 @@
 			},
 			"addNextNudge": {
 				"title": "Ready for the next passage?",
-				"body": "Section {{section}} is {{phase}} — ready to add the next passage of {{piece}}?",
+				"body": "Section {{section}} is {{state}} — ready to add the next passage of {{piece}}?",
 				"transitionBody": "Section {{section}} of {{piece}} is not started — ready to start learning it?",
 				"add": "Add section",
 				"transition": "Move to learning",

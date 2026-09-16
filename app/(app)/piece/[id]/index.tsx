@@ -86,12 +86,12 @@ export default function PieceDetailScreen() {
 			await changeSectionState({
 				pieceId: id,
 				sectionId: section.id,
-				fromPhase: section.state,
-				toPhase: "learning",
+				fromState: section.state,
+				toState: "learning",
 				trigger: "advance-button",
 				achievedBpmAtEvent: section.byMode?.HT?.bpm ?? null,
 				qualityAtEvent: section.byMode?.HT?.quality ?? null,
-				priorPhaseChangedAt: section.phaseChangedAt ?? null,
+				priorStateChangedAt: section.stateChangedAt ?? null,
 			});
 		} catch {
 			setError(t("error.firebase"));
@@ -526,12 +526,12 @@ export default function PieceDetailScreen() {
 											changeSectionState({
 												pieceId: id,
 												sectionId: s.id,
-												fromPhase: s.state,
-												toPhase: state,
-												trigger: "phase-chip",
+												fromState: s.state,
+												toState: state,
+												trigger: "state-chip",
 												achievedBpmAtEvent: s.byMode?.HT?.bpm ?? null,
 												qualityAtEvent: s.byMode?.HT?.quality ?? null,
-												priorPhaseChangedAt: s.phaseChangedAt ?? null,
+												priorStateChangedAt: s.stateChangedAt ?? null,
 											}).catch(() => setError(t("error.firebase")));
 										}}
 									/>

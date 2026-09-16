@@ -60,7 +60,7 @@ export function AddNextSectionNudge({
 								})
 							: t("screen.pieceSections.addNextNudge.body", {
 									section: sectionLabel,
-									phase: stateLabel.toLowerCase(),
+									state: stateLabel.toLowerCase(),
 									piece: pieceTitle,
 								})}
 					</Text>

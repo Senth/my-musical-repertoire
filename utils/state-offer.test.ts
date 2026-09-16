@@ -1,8 +1,8 @@
 import type { ByMode } from "@/models/practice";
-import type { PhaseTransition, SectionState } from "@/models/section";
-import { decidePhaseOffer, type PhaseOfferInput } from "./phase-offer";
+import type { SectionState, StateTransition } from "@/models/section";
 import type { ModeEntry } from "./practice-modes";
 import type { ProgressionLog } from "./section-progression";
+import { decideStateOffer, type StateOfferInput } from "./state-offer";
 import { makePiece, makeSection } from "./test-factories";
 
 const TARGET = 120;
@@ -24,15 +24,15 @@ function entry(over: Partial<ModeEntry> = {}): ModeEntry {
 	return { hands: "HT", drill: null, bpm: 116, quality: 5, effort: 3, ...over };
 }
 
-function dismissal(over: Partial<PhaseTransition> = {}): PhaseTransition {
+function dismissal(over: Partial<StateTransition> = {}): StateTransition {
 	return {
-		fromPhase: "learning",
-		toPhase: "learning",
+		fromState: "learning",
+		toState: "learning",
 		trigger: "advance-button",
 		outcome: "dismissed",
 		achievedBpmAtEvent: null,
 		qualityAtEvent: null,
-		daysInPriorPhase: null,
+		daysInPriorState: null,
 		sessionId: null,
 		date: NOW,
 		...over,
@@ -40,21 +40,21 @@ function dismissal(over: Partial<PhaseTransition> = {}): PhaseTransition {
 }
 
 function decide(
-	over: Partial<PhaseOfferInput> & {
+	over: Partial<StateOfferInput> & {
 		state?: SectionState;
 		targetTempoBpm?: number | null;
-		phaseChangedAt?: Date | null;
+		stateChangedAt?: Date | null;
 	} = {},
 ) {
 	const {
 		state = "learning",
 		targetTempoBpm = TARGET,
-		phaseChangedAt = null,
+		stateChangedAt = null,
 		...rest
 	} = over;
 	const byMode: ByMode = { HT: { bpm: 116, quality: 5, effort: 3 } };
-	return decidePhaseOffer({
-		section: makeSection({ id: "s1", pieceId: "p1", state, phaseChangedAt }),
+	return decideStateOffer({
+		section: makeSection({ id: "s1", pieceId: "p1", state, stateChangedAt }),
 		piece: makePiece({ id: "p1", targetTempoBpm }),
 		byMode,
 		// One clean day already in history; the save adds today's.
@@ -67,14 +67,14 @@ function decide(
 	});
 }
 
-describe("decidePhaseOffer", () => {
+describe("decideStateOffer", () => {
 	it("offers the advance when the criteria are met", () => {
 		const { offer, status } = decide();
 		expect(status).toBeNull();
 		expect(offer).toMatchObject({
 			kind: "advance",
-			fromPhase: "learning",
-			toPhase: "stabilizing",
+			fromState: "learning",
+			toState: "stabilizing",
 			htBpm: 116,
 			cleanDays: 2,
 			cyclingDays: null,
@@ -94,8 +94,8 @@ describe("decidePhaseOffer", () => {
 		});
 		expect(offer).toMatchObject({
 			kind: "demote",
-			fromPhase: "maintenance",
-			toPhase: "stabilizing",
+			fromState: "maintenance",
+			toState: "stabilizing",
 			demoteReason: { kind: "low-quality", quality: 1 },
 		});
 	});
@@ -111,7 +111,7 @@ describe("decidePhaseOffer", () => {
 	});
 
 	it("carries the cycling-guard age when the state moved recently", () => {
-		const { offer } = decide({ phaseChangedAt: new Date(2026, 7, 6, 12, 0) });
+		const { offer } = decide({ stateChangedAt: new Date(2026, 7, 6, 12, 0) });
 		expect(offer?.cyclingDays).toBe(2);
 	});
 
@@ -206,7 +206,7 @@ describe("decidePhaseOffer", () => {
 	});
 
 	it("says nothing for a section with no id", () => {
-		const result = decidePhaseOffer({
+		const result = decideStateOffer({
 			section: makeSection({ id: "", pieceId: "p1" }),
 			piece: makePiece({ id: "p1", targetTempoBpm: TARGET }),
 			byMode: { HT: { bpm: 116 } },

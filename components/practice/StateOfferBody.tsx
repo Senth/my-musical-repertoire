@@ -3,43 +3,43 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Checkbox, Text, useTheme } from "react-native-paper";
 import { space } from "@/theme/tokens";
-import type { PhaseOffer } from "@/utils/phase-offer";
 import type { DemoteReason } from "@/utils/section-progression";
+import type { StateOffer } from "@/utils/state-offer";
 
 /** Which self-report questions gate which transition. */
 export type OfferCheck = "memory" | "continuity";
 
-export function checksFor(offer: PhaseOffer): OfferCheck[] {
+export function checksFor(offer: StateOffer): OfferCheck[] {
 	if (offer.kind === "demote") return [];
-	if (offer.toPhase === "stabilizing") return ["memory"];
+	if (offer.toState === "stabilizing") return ["memory"];
 	return ["memory", "continuity"];
 }
 
-export function offerTitleKey(offer: PhaseOffer): string {
-	return `screen.practice.phaseOffer.title.${offer.kind}.${offer.toPhase}`;
+export function offerTitleKey(offer: StateOffer): string {
+	return `screen.practice.stateOffer.title.${offer.kind}.${offer.toState}`;
 }
 
 /** "today" / "yesterday" read as a warning; "0 days ago" reads as a bug. */
 function cyclingGuardKey(days: number): string {
-	const prefix = "screen.practice.phaseOffer.cyclingGuard";
+	const prefix = "screen.practice.stateOffer.cyclingGuard";
 	if (days === 0) return `${prefix}.today`;
 	if (days === 1) return `${prefix}.yesterday`;
 	return `${prefix}.daysAgo`;
 }
 
 /**
- * The shared body of a phase nudge — title, the one line of evidence, the
+ * The shared body of a state nudge — title, the one line of evidence, the
  * cycling-guard warning, and the self-report checkboxes. The card and the coach
  * dialog wrap it with their own actions.
  *
  * `onChecksChange` reports whether every checkbox shown has been ticked, so the
  * wrapper can enable its primary action.
  */
-export function PhaseOfferBody({
+export function StateOfferBody({
 	offer,
 	onReadyChange,
 }: {
-	offer: PhaseOffer;
+	offer: StateOffer;
 	onReadyChange: (ready: boolean) => void;
 }) {
 	const { t } = useTranslation();
@@ -74,7 +74,7 @@ export function PhaseOfferBody({
 			{offer.cyclingDays != null && (
 				<Text variant="bodySmall" style={{ color: theme.colors.error }}>
 					{t(cyclingGuardKey(offer.cyclingDays), {
-						phase: t(`section.state.${offer.fromPhase}`).toLowerCase(),
+						state: t(`section.state.${offer.fromState}`).toLowerCase(),
 						count: offer.cyclingDays,
 					})}
 				</Text>
@@ -83,7 +83,7 @@ export function PhaseOfferBody({
 			{checks.map((check) => (
 				<Checkbox.Item
 					key={check}
-					label={t(`screen.practice.phaseOffer.check.${check}`)}
+					label={t(`screen.practice.stateOffer.check.${check}`)}
 					status={ticked.includes(check) ? "checked" : "unchecked"}
 					onPress={() => toggle(check)}
 					position="leading"
@@ -98,14 +98,14 @@ export function PhaseOfferBody({
 type Translate = ReturnType<typeof useTranslation>["t"];
 
 /** The single line of evidence under the title. */
-export function offerReasonText(offer: PhaseOffer, t: Translate): string {
+export function offerReasonText(offer: StateOffer, t: Translate): string {
 	if (offer.kind === "advance") {
 		// No HT tempo on an advance means the hands-only gate passed (#173) —
 		// there are no clean HT days to quote either.
 		if (offer.htBpm == null) {
-			return t("screen.practice.phaseOffer.reason.advanceHands");
+			return t("screen.practice.stateOffer.reason.advanceHands");
 		}
-		return t("screen.practice.phaseOffer.reason.advance", {
+		return t("screen.practice.stateOffer.reason.advance", {
 			bpm: offer.htBpm,
 			count: offer.cleanDays,
 		});
@@ -114,18 +114,18 @@ export function offerReasonText(offer: PhaseOffer, t: Translate): string {
 }
 
 function demoteReasonText(reason: DemoteReason | null, t: Translate): string {
-	if (!reason) return t("screen.practice.phaseOffer.reason.demoteGeneric");
+	if (!reason) return t("screen.practice.stateOffer.reason.demoteGeneric");
 	switch (reason.kind) {
 		case "bpm-drop":
-			return t("screen.practice.phaseOffer.reason.bpmDrop", {
+			return t("screen.practice.stateOffer.reason.bpmDrop", {
 				percent: Math.round((1 - reason.bpm / reason.previousBpm) * 100),
 			});
 		case "low-quality":
-			return t("screen.practice.phaseOffer.reason.lowQuality", {
+			return t("screen.practice.stateOffer.reason.lowQuality", {
 				quality: reason.quality,
 			});
 		default:
-			return t("screen.practice.phaseOffer.reason.strain", {
+			return t("screen.practice.stateOffer.reason.strain", {
 				quality: reason.quality,
 			});
 	}

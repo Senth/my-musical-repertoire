@@ -1,8 +1,8 @@
 import type { ByMode } from "@/models/practice";
 import type {
-	PhaseTransition,
-	PhaseTransitionTrigger,
 	SectionState,
+	StateTransition,
+	StateTransitionTrigger,
 } from "@/models/section";
 import { hsTarget, type ModeEntry } from "./practice-modes";
 import {
@@ -94,15 +94,15 @@ function demote(
 	);
 }
 
-function transition(over: Partial<PhaseTransition>): PhaseTransition {
+function transition(over: Partial<StateTransition>): StateTransition {
 	return {
-		fromPhase: "learning",
-		toPhase: "learning",
+		fromState: "learning",
+		toState: "learning",
 		trigger: "advance-button",
 		outcome: "dismissed",
 		achievedBpmAtEvent: null,
 		qualityAtEvent: null,
-		daysInPriorPhase: null,
+		daysInPriorState: null,
 		sessionId: null,
 		date: NOW,
 		...over,
@@ -112,9 +112,9 @@ function transition(over: Partial<PhaseTransition>): PhaseTransition {
 /** `n` dismissals of `trigger`, the newest `ageDays` old, one per day. */
 function dismissals(
 	n: number,
-	trigger: PhaseTransitionTrigger = "advance-button",
+	trigger: StateTransitionTrigger = "advance-button",
 	ageDays = 0,
-): PhaseTransition[] {
+): StateTransition[] {
 	return Array.from({ length: n }, (_, i) =>
 		transition({
 			trigger,
@@ -297,7 +297,7 @@ describe("evaluateAdvance — learning → stabilizing", () => {
 	it("is eligible when every criterion passes", () => {
 		const result = advance();
 		expect(result.eligible).toBe(true);
-		expect(result.toPhase).toBe("stabilizing");
+		expect(result.toState).toBe("stabilizing");
 		expect(result.failing).toEqual([]);
 		expect(result.htBpm).toBe(116);
 		expect(result.cleanDays).toBe(CLEAN_DAYS_STABILIZING);
@@ -400,7 +400,7 @@ describe("evaluateAdvance — learning → stabilizing", () => {
 			],
 		});
 		expect(result.eligible).toBe(true);
-		expect(result.toPhase).toBe("stabilizing");
+		expect(result.toState).toBe("stabilizing");
 		expect(result.htBpm).toBeNull();
 		expect(result.cleanDays).toBe(0);
 	});
@@ -487,7 +487,7 @@ describe("evaluateAdvance — stabilizing → maintenance", () => {
 	it("is eligible when every criterion passes", () => {
 		const result = stabilizing();
 		expect(result.eligible).toBe(true);
-		expect(result.toPhase).toBe("maintenance");
+		expect(result.toState).toBe("maintenance");
 	});
 
 	it("gives no discount — 95% of target is not enough", () => {
@@ -523,7 +523,7 @@ describe("evaluateAdvance — stabilizing → maintenance", () => {
 			],
 		});
 		expect(result.eligible).toBe(true);
-		expect(result.toPhase).toBe("maintenance");
+		expect(result.toState).toBe("maintenance");
 	});
 
 	it("fails on a sliding tempo alone", () => {
@@ -547,7 +547,7 @@ describe("evaluateAdvance — maintenance", () => {
 	it("offers nothing above maintenance", () => {
 		const result = advance({ state: "maintenance", byMode: { HT: mode(200) } });
 		expect(result.eligible).toBe(false);
-		expect(result.toPhase).toBeNull();
+		expect(result.toState).toBeNull();
 		expect(result.failing).toEqual([]);
 	});
 });
@@ -556,14 +556,14 @@ describe("evaluateDemote", () => {
 	it("never demotes a learning section", () => {
 		const result = demote("learning", [entry({ quality: 1 })]);
 		expect(result.eligible).toBe(false);
-		expect(result.toPhase).toBeNull();
+		expect(result.toState).toBeNull();
 	});
 
 	it.each([
 		["stabilizing", "learning"],
 		["maintenance", "stabilizing"],
 	] as const)("targets %s → %s", (from, to) => {
-		expect(demote(from, [entry({ quality: 1 })]).toPhase).toBe(to);
+		expect(demote(from, [entry({ quality: 1 })]).toState).toBe(to);
 	});
 
 	it("stays quiet on a good session", () => {

@@ -86,7 +86,7 @@ describe("scoreSectionCandidate", () => {
 		).toBe(3 + 18);
 	});
 
-	it("never-practiced returns 999 days × phaseScore", () => {
+	it("never-practiced returns 999 days × stateScore", () => {
 		const piece = makePiece({ id: "p1" });
 		const score = scoreSectionCandidate(piece, "stabilizing", null, null, NOW);
 		expect(score).toBe(STATE_SCORE.stabilizing * 999);

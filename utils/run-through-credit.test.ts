@@ -44,42 +44,44 @@ function maintenanceSection(over: Partial<Section> & { id: string }): Section {
 
 describe("computeRunThroughEffects", () => {
 	describe("piece-state gating", () => {
-		it.each(["maintenance", "performance"] as const)(
-			"acts on a %s piece",
-			(state) => {
-				const result = run({
-					piece: makePiece({ id: "p1", state }),
-					sections: [maintenanceSection({ id: "s1" })],
-				});
-				expect(result.credits).toHaveLength(1);
-			},
-		);
+		it.each([
+			"maintenance",
+			"performance",
+		] as const)("acts on a %s piece", (state) => {
+			const result = run({
+				piece: makePiece({ id: "p1", state }),
+				sections: [maintenanceSection({ id: "s1" })],
+			});
+			expect(result.credits).toHaveLength(1);
+		});
 
-		it.each(["learning", "stabilizing", "on_hold", "shelved"] as const)(
-			"writes nothing for a %s piece",
-			(state) => {
-				const result = run({
-					piece: makePiece({ id: "p1", state }),
-					sections: [maintenanceSection({ id: "s1" })],
-					flaggedSectionIds: ["s1"],
-				});
-				expect(result).toEqual({ credits: [], demotions: [] });
-			},
-		);
+		it.each([
+			"learning",
+			"stabilizing",
+			"on_hold",
+			"shelved",
+		] as const)("writes nothing for a %s piece", (state) => {
+			const result = run({
+				piece: makePiece({ id: "p1", state }),
+				sections: [maintenanceSection({ id: "s1" })],
+				flaggedSectionIds: ["s1"],
+			});
+			expect(result).toEqual({ credits: [], demotions: [] });
+		});
 	});
 
 	describe("state gating", () => {
-		it.each(["learning", "stabilizing"] as const)(
-			"leaves a %s-state section alone whether ticked or not",
-			(state) => {
-				const sections = [
-					maintenanceSection({ id: "s1", state }),
-					maintenanceSection({ id: "s2", state }),
-				];
-				const result = run({ sections, flaggedSectionIds: ["s2"] });
-				expect(result).toEqual({ credits: [], demotions: [] });
-			},
-		);
+		it.each([
+			"learning",
+			"stabilizing",
+		] as const)("leaves a %s-state section alone whether ticked or not", (state) => {
+			const sections = [
+				maintenanceSection({ id: "s1", state }),
+				maintenanceSection({ id: "s2", state }),
+			];
+			const result = run({ sections, flaggedSectionIds: ["s2"] });
+			expect(result).toEqual({ credits: [], demotions: [] });
+		});
 
 		it("skips archived sections", () => {
 			const result = run({
@@ -220,19 +222,19 @@ describe("computeRunThroughEffects", () => {
 			expect(result.credits[0].log.quality).toBeNull();
 		});
 
-		it.each([PracticeMistakes.none, PracticeMistakes.few])(
-			"rises one step after a clean run (mistakes level %s)",
-			(level) => {
-				const result = run({
-					sections: [
-						maintenanceSection({ id: "s1", byMode: ht({ quality: 3 }) }),
-					],
-					technicalMistakes: level,
-					memoryMistakes: level,
-				});
-				expect(result.credits[0].byMode.HT?.quality).toBe(4);
-			},
-		);
+		it.each([
+			PracticeMistakes.none,
+			PracticeMistakes.few,
+		])("rises one step after a clean run (mistakes level %s)", (level) => {
+			const result = run({
+				sections: [
+					maintenanceSection({ id: "s1", byMode: ht({ quality: 3 }) }),
+				],
+				technicalMistakes: level,
+				memoryMistakes: level,
+			});
+			expect(result.credits[0].byMode.HT?.quality).toBe(4);
+		});
 
 		it.each([
 			PracticeMistakes.some,

@@ -36,6 +36,8 @@ interface FirestoreSection {
 	lastQuality?: 1 | 2 | 3 | 4 | 5 | null;
 	lastEffort?: 1 | 2 | 3 | 4 | 5 | null;
 	byMode?: unknown;
+	stateChangedAt?: { toDate: () => Date } | null;
+	/** Legacy field name from before #84; read as a fallback until the migration has run everywhere. */
 	phaseChangedAt?: { toDate: () => Date } | null;
 	timeSignatureOverride?: unknown;
 }
@@ -64,7 +66,9 @@ function fromFirestore(
 		lastQuality: data.lastQuality ?? null,
 		lastEffort: data.lastEffort ?? null,
 		byMode: byModeFromFirestore(data.byMode),
-		phaseChangedAt: data.phaseChangedAt?.toDate() ?? null,
+		// Dual-read during the #84 rollout: pre-migration docs carry `phaseChangedAt`.
+		stateChangedAt:
+			(data.stateChangedAt ?? data.phaseChangedAt)?.toDate() ?? null,
 		timeSignatureOverride: timeSignatureFromFirestore(
 			data.timeSignatureOverride,
 		),
@@ -208,7 +212,7 @@ export function useUpdateSection() {
 				| "lastQuality"
 				| "lastEffort"
 				| "byMode"
-				| "phaseChangedAt"
+				| "stateChangedAt"
 			>
 		>,
 	) => {

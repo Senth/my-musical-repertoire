@@ -1,10 +1,10 @@
 import type { Piece } from "@/models/piece";
 import type { ByMode, HandsMode, PracticeDrill } from "@/models/practice";
 import type {
-	PhaseTransition,
-	PhaseTransitionTrigger,
 	Section,
 	SectionState,
+	StateTransition,
+	StateTransitionTrigger,
 } from "@/models/section";
 import { dayKey } from "./day-boundary";
 import { hsTarget, type ModeEntry } from "./practice-modes";
@@ -104,7 +104,7 @@ export type AdvanceCriterion =
 export interface AdvanceEvaluation {
 	eligible: boolean;
 	/** The state the offer would move to; null when there is nothing above. */
-	toPhase: SectionState | null;
+	toState: SectionState | null;
 	failing: AdvanceCriterion[];
 	/** HT tempo the offer would quote, for the copy and the audit row. */
 	htBpm: number | null;
@@ -120,7 +120,7 @@ export type DemoteReason =
 
 export interface DemoteEvaluation {
 	eligible: boolean;
-	toPhase: SectionState | null;
+	toState: SectionState | null;
 	reason: DemoteReason | null;
 }
 
@@ -246,17 +246,17 @@ export function evaluateAdvance(
 	logs: ProgressionLog[],
 	savedEntries: ModeEntry[],
 ): AdvanceEvaluation {
-	const toPhase = nextState(section.state);
+	const toState = nextState(section.state);
 	const htBpm = byMode?.HT?.bpm ?? null;
-	if (!toPhase) {
-		return { eligible: false, toPhase: null, failing: [], htBpm, cleanDays: 0 };
+	if (!toState) {
+		return { eligible: false, toState: null, failing: [], htBpm, cleanDays: 0 };
 	}
 
 	const target = effectiveTargetBpm(section, piece);
 	if (target == null) {
 		return {
 			eligible: false,
-			toPhase,
+			toState,
 			failing: [{ kind: "no-target" }],
 			htBpm,
 			cleanDays: 0,
@@ -265,7 +265,7 @@ export function evaluateAdvance(
 
 	const failing: AdvanceCriterion[] = [];
 	const ratio =
-		toPhase === "stabilizing"
+		toState === "stabilizing"
 			? ADVANCE_HT_RATIO_STABILIZING
 			: ADVANCE_HT_RATIO_MAINTENANCE;
 	const requiredHs = hsTarget(target) ?? 0;
@@ -282,7 +282,7 @@ export function evaluateAdvance(
 
 		// Hands-separate is proven at the learning gate only; the maintenance
 		// gate does not re-check it.
-		if (toPhase === "stabilizing") {
+		if (toState === "stabilizing") {
 			for (const hands of ["LH", "RH"] as HandsMode[]) {
 				// A mode never practised is not required. One that has been practised
 				// and lags — or was rated without a tempo — blocks the advance.
@@ -306,7 +306,7 @@ export function evaluateAdvance(
 		}
 
 		const requiredDays =
-			toPhase === "stabilizing"
+			toState === "stabilizing"
 				? CLEAN_DAYS_STABILIZING
 				: CLEAN_DAYS_MAINTENANCE;
 		const clean = cleanHtDays(logs, requiredDays);
@@ -319,7 +319,7 @@ export function evaluateAdvance(
 		}
 
 		if (
-			toPhase === "maintenance" &&
+			toState === "maintenance" &&
 			clean.met &&
 			!isTempoNonDecreasing(clean.days)
 		) {
@@ -352,7 +352,7 @@ export function evaluateAdvance(
 
 	return {
 		eligible: failing.length === 0,
-		toPhase,
+		toState,
 		failing,
 		htBpm,
 		cleanDays,
@@ -388,8 +388,8 @@ export function evaluateDemote(
 	savedEntries: ModeEntry[],
 	priorLogs: ProgressionLog[],
 ): DemoteEvaluation {
-	const toPhase = previousState(section.state);
-	if (!toPhase) return { eligible: false, toPhase: null, reason: null };
+	const toState = previousState(section.state);
+	if (!toState) return { eligible: false, toState: null, reason: null };
 
 	const plain = savedEntries.filter((e) => !e.drill);
 
@@ -401,7 +401,7 @@ export function evaluateDemote(
 		if (entry.bpm < DEMOTE_BPM_DROP_RATIO * previous) {
 			return {
 				eligible: true,
-				toPhase,
+				toState,
 				reason: {
 					kind: "bpm-drop",
 					hands: entry.hands,
@@ -416,7 +416,7 @@ export function evaluateDemote(
 		if (entry.quality <= DEMOTE_MAX_QUALITY) {
 			return {
 				eligible: true,
-				toPhase,
+				toState,
 				reason: {
 					kind: "low-quality",
 					hands: entry.hands,
@@ -433,7 +433,7 @@ export function evaluateDemote(
 		) {
 			return {
 				eligible: true,
-				toPhase,
+				toState,
 				reason: {
 					kind: "strain",
 					hands: entry.hands,
@@ -444,7 +444,7 @@ export function evaluateDemote(
 		}
 	}
 
-	return { eligible: false, toPhase, reason: null };
+	return { eligible: false, toState, reason: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -460,8 +460,8 @@ export function evaluateDemote(
  * any accepted row (whatever its trigger) resets the tally.
  */
 export function isSuppressed(
-	transitions: PhaseTransition[],
-	trigger: PhaseTransitionTrigger,
+	transitions: StateTransition[],
+	trigger: StateTransitionTrigger,
 	now: Date,
 ): boolean {
 	const sorted = [...transitions].sort(
@@ -486,11 +486,11 @@ export function isSuppressed(
  * warning on the next offer. A warning, never a block.
  */
 export function cyclingGuardDays(
-	phaseChangedAt: Date | null | undefined,
+	stateChangedAt: Date | null | undefined,
 	now: Date,
 ): number | null {
-	if (!phaseChangedAt) return null;
-	const days = daysBetween(phaseChangedAt, now);
+	if (!stateChangedAt) return null;
+	const days = daysBetween(stateChangedAt, now);
 	if (days < 0 || days >= CYCLING_GUARD_DAYS) return null;
 	return days;
 }
