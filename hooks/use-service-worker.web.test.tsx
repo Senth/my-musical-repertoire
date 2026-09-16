@@ -124,9 +124,10 @@ function Probe({ onValue }: { onValue: (v: ServiceWorkerHook) => void }) {
 }
 
 describe("useServiceWorker", () => {
-	it("reloads a stale shell once at boot, then the flap guard holds", async () => {
+	it("reloads a stale shell once at boot, then the banner takes over", async () => {
 		fetchMock.mockResolvedValue(ok(STALE));
-		await render(<Probe onValue={jest.fn()} />);
+		const onValue = jest.fn();
+		await render(<Probe onValue={onValue} />);
 		await flush();
 
 		expect(fetchMock).toHaveBeenCalledWith(
@@ -139,6 +140,7 @@ describe("useServiceWorker", () => {
 		await fire("online");
 		await flush();
 		expect(reload).toHaveBeenCalledTimes(1);
+		expect(onValue.mock.calls.at(-1)?.[0].updateReady).toBe(true);
 	});
 
 	it("does nothing on a fresh shell", async () => {
@@ -183,7 +185,7 @@ describe("useServiceWorker", () => {
 		expect(reload).toHaveBeenCalledTimes(1);
 	});
 
-	it("suppresses the auto reload when a previous page load already reloaded", async () => {
+	it("offers the banner, not a second auto reload, when a previous load already reloaded", async () => {
 		store.set(RELOADED_FLAG, "1");
 		fetchMock.mockResolvedValue(ok(STALE));
 		const onValue = jest.fn();
@@ -191,6 +193,6 @@ describe("useServiceWorker", () => {
 		await flush();
 
 		expect(reload).not.toHaveBeenCalled();
-		expect(onValue.mock.calls.at(-1)?.[0].updateReady).toBe(false);
+		expect(onValue.mock.calls.at(-1)?.[0].updateReady).toBe(true);
 	});
 });

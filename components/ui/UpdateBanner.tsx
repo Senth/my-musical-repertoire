@@ -4,7 +4,8 @@ import { useHasActiveSession } from "@/hooks/use-has-active-session";
 import { useServiceWorker } from "@/hooks/use-service-worker";
 
 /**
- * Offers a reload once a new service worker is waiting.
+ * Offers a reload once the freshness check finds the deployed build differs
+ * from the one running.
  *
  * Held back while a session is in progress — the reload discards the current
  * block's unsaved input — and re-offered on the next navigation without one.

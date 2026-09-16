@@ -15,7 +15,7 @@ export function isStale(fetched: string | null, running: string): boolean {
 	return fetched !== null && fetched !== running;
 }
 
-export type ReloadDecision = "reload" | "prompt" | "ignore";
+export type ReloadDecision = "reload" | "prompt";
 
 /**
  * Why 10s: a PWA launch off a sleeping phone spends its first seconds on the
@@ -31,7 +31,6 @@ export function reloadDecision({
 	bootWindowMs: number;
 	alreadyReloaded: boolean;
 }): ReloadDecision {
-	if (alreadyReloaded) return "ignore";
-	if (msSinceBoot < bootWindowMs) return "reload";
+	if (!alreadyReloaded && msSinceBoot < bootWindowMs) return "reload";
 	return "prompt";
 }

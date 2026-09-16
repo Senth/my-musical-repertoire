@@ -48,9 +48,12 @@ describe("reloadDecision", () => {
 		expect(reloadDecision({ ...base, msSinceBoot: 600_000 })).toBe("prompt");
 	});
 
-	it("already having reloaded beats everything, so a flapping connection stops", () => {
+	it("already having reloaded still offers the banner, but never auto-reloads again", () => {
 		expect(
 			reloadDecision({ ...base, msSinceBoot: 0, alreadyReloaded: true }),
-		).toBe("ignore");
+		).toBe("prompt");
+		expect(
+			reloadDecision({ ...base, msSinceBoot: 600_000, alreadyReloaded: true }),
+		).toBe("prompt");
 	});
 });
