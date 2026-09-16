@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 import type { NormalizedLastLog } from "@/hooks/use-last-practice-log";
 import { PracticeMistakes } from "@/models/practice";
+import { space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
 
 const AFTER_BREAK_DAYS = 10;
@@ -75,7 +76,7 @@ export function LastSessionCard({
 			: t("screen.practice.lastSession.tempoNone");
 
 	return (
-		<View style={{ gap: 4 }}>
+		<View style={{ gap: space.xs }}>
 			<Text
 				variant="bodySmall"
 				style={{ color: theme.colors.onSurfaceVariant }}

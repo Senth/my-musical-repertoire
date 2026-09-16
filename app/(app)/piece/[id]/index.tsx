@@ -25,12 +25,13 @@ import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { useFabStyleStack } from "@/hooks/use-fab-style";
+import { usePageInset } from "@/hooks/use-page-inset";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useChangeSectionPhase } from "@/hooks/use-section-phase";
 import { useReorderSections, useSections } from "@/hooks/use-sections";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { Section } from "@/models/section";
-import { contentWidth, space } from "@/theme/tokens";
+import { contentWidth, scrollTail, space } from "@/theme/tokens";
 import { sectionNudge } from "@/utils/add-section-nudge";
 import { formatDaysAgo } from "@/utils/date";
 import { formatBarRange, formatComposerLine } from "@/utils/piece-display";
@@ -45,6 +46,7 @@ export default function PieceDetailScreen() {
 	const { pieces, loading: piecesLoading } = usePieces();
 	const { sections, loading: sectionsLoading } = useSections(id ?? "");
 	const fabStyle = useFabStyleStack();
+	const pageInset = usePageInset();
 	const { deletePiece } = useDeletePiece();
 	const { updatePiece } = useUpdatePiece();
 	const { reorderSections } = useReorderSections();
@@ -155,7 +157,7 @@ export default function PieceDetailScreen() {
 							flexDirection: "row",
 							alignItems: "center",
 							paddingVertical: space.sm,
-							paddingHorizontal: space.lg,
+							paddingHorizontal: pageInset,
 							backgroundColor: theme.colors.surface,
 						}}
 					>
@@ -183,7 +185,7 @@ export default function PieceDetailScreen() {
 				</ScaleDecorator>
 			);
 		},
-		[t, theme.colors.surface, theme.colors.onSurfaceVariant],
+		[t, pageInset, theme.colors.surface, theme.colors.onSurfaceVariant],
 	);
 
 	if (piecesLoading) {
@@ -232,7 +234,7 @@ export default function PieceDetailScreen() {
 							flexDirection: "row",
 							alignItems: "center",
 							justifyContent: "space-between",
-							paddingHorizontal: space.lg,
+							paddingHorizontal: pageInset,
 							paddingVertical: space.sm,
 						}}
 					>
@@ -252,11 +254,11 @@ export default function PieceDetailScreen() {
 						renderItem={renderDragItem}
 						onDragEnd={handleDragEnd}
 						activationDistance={8}
-						contentContainerStyle={{ paddingBottom: 96 }}
+						contentContainerStyle={{ paddingBottom: scrollTail.fab }}
 					/>
 				</GestureHandlerRootView>
 			) : (
-				<ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
+				<ScrollView contentContainerStyle={{ paddingBottom: scrollTail.fab }}>
 					<View
 						style={{
 							width: "100%",
@@ -267,7 +269,7 @@ export default function PieceDetailScreen() {
 						{/* Piece header info */}
 						<View
 							style={{
-								paddingHorizontal: space.lg,
+								paddingHorizontal: pageInset,
 								paddingTop: space.lg,
 								gap: space.sm,
 							}}
@@ -293,7 +295,7 @@ export default function PieceDetailScreen() {
 						{/* Practice button (promoted above metadata) */}
 						<View
 							style={{
-								paddingHorizontal: space.lg,
+								paddingHorizontal: pageInset,
 								paddingTop: space.lg,
 							}}
 						>
@@ -302,7 +304,7 @@ export default function PieceDetailScreen() {
 								onPress={() =>
 									router.push(`/piece/${id}/practice?from=piece-detail`)
 								}
-								contentStyle={{ paddingVertical: 4 }}
+								contentStyle={{ paddingVertical: space.xs }}
 							>
 								{t("screen.pieceDetail.practice")}
 							</Button>
@@ -311,7 +313,7 @@ export default function PieceDetailScreen() {
 						{/* Compact meta line */}
 						<View
 							style={{
-								paddingHorizontal: space.lg,
+								paddingHorizontal: pageInset,
 								paddingTop: space.sm,
 							}}
 						>
@@ -328,7 +330,7 @@ export default function PieceDetailScreen() {
 						{/* Notes section */}
 						<View
 							style={{
-								paddingHorizontal: space.lg,
+								paddingHorizontal: pageInset,
 								paddingTop: space.lg,
 								gap: space.sm,
 							}}
@@ -415,7 +417,7 @@ export default function PieceDetailScreen() {
 								flexDirection: "row",
 								alignItems: "center",
 								justifyContent: "space-between",
-								paddingHorizontal: space.lg,
+								paddingHorizontal: pageInset,
 								paddingTop: space.lg,
 							}}
 						>
@@ -453,7 +455,10 @@ export default function PieceDetailScreen() {
 
 						{nudge && (
 							<View
-								style={{ paddingHorizontal: space.lg, paddingBottom: space.sm }}
+								style={{
+									paddingHorizontal: pageInset,
+									paddingBottom: space.sm,
+								}}
 							>
 								<AddNextSectionNudge
 									pieceTitle={piece.title}
@@ -475,7 +480,7 @@ export default function PieceDetailScreen() {
 									alignItems: "center",
 									paddingVertical: space.xxl,
 									gap: space.lg,
-									paddingHorizontal: space.lg,
+									paddingHorizontal: pageInset,
 								}}
 							>
 								<IconButton

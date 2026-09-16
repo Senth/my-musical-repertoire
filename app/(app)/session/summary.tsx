@@ -19,6 +19,9 @@ import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
 import { planTotalMinutes } from "@/utils/session-planner";
 import { clearActiveSession } from "@/utils/session-storage";
 
+/** Fixed column under the ⤬ / ✓ / · marker, so the block lines up past it. */
+const SUMMARY_GLYPH_WIDTH = 20;
+
 export default function SessionSummaryScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -227,7 +230,9 @@ function SummaryRow({
 				gap: space.sm,
 			}}
 		>
-			<Text style={{ width: 20 }}>{skipped ? "⤬" : completed ? "✓" : "·"}</Text>
+			<Text style={{ width: SUMMARY_GLYPH_WIDTH }}>
+				{skipped ? "⤬" : completed ? "✓" : "·"}
+			</Text>
 			<View style={{ flex: 1, minHeight: 0 }}>
 				<Text variant="bodyLarge">
 					{kindLabel}

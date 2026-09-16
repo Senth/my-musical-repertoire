@@ -47,7 +47,7 @@ import {
 	SCRATCH_PRESET_ID,
 	type SessionPreset,
 } from "@/models/session-preset";
-import { space } from "@/theme/tokens";
+import { radius, space } from "@/theme/tokens";
 import { displayMinutes } from "@/utils/format-minutes";
 import { shouldOfferInstall } from "@/utils/install-gating";
 import { modeLabelLong } from "@/utils/mode-label";
@@ -411,20 +411,23 @@ export default function OverviewScreen() {
 								right: fabStyle.right as number,
 								bottom: (fabStyle.bottom as number) + 56 + 8,
 								alignItems: "flex-end",
-								gap: 8,
+								gap: space.sm,
 							}}
 						>
 							<View
 								style={{
 									flexDirection: "row",
 									alignItems: "center",
-									gap: 12,
+									gap: space.md,
 								}}
 							>
-								<Surface style={{ borderRadius: 4, elevation: 2 }}>
+								<Surface style={{ borderRadius: radius.chip, elevation: 2 }}>
 									<Text
 										variant="labelLarge"
-										style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+										style={{
+											paddingHorizontal: space.md,
+											paddingVertical: space.sm,
+										}}
 									>
 										{t("a11y.fab.addTechnique")}
 									</Text>
@@ -443,13 +446,16 @@ export default function OverviewScreen() {
 								style={{
 									flexDirection: "row",
 									alignItems: "center",
-									gap: 12,
+									gap: space.md,
 								}}
 							>
-								<Surface style={{ borderRadius: 4, elevation: 2 }}>
+								<Surface style={{ borderRadius: radius.chip, elevation: 2 }}>
 									<Text
 										variant="labelLarge"
-										style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+										style={{
+											paddingHorizontal: space.md,
+											paddingVertical: space.sm,
+										}}
 									>
 										{t("a11y.fab.addPiece")}
 									</Text>
@@ -588,8 +594,8 @@ function SessionEntryBlock({
 							flexDirection: "row",
 							alignItems: "center",
 							minHeight: SESSION_ROW_HEIGHT,
-							paddingLeft: 16,
-							paddingRight: 4,
+							paddingLeft: space.lg,
+							paddingRight: space.xs,
 						}}
 					>
 						<View
@@ -677,8 +683,8 @@ function SessionEntryBlock({
 						flexDirection: "row",
 						alignItems: "center",
 						minHeight: SESSION_ROW_HEIGHT,
-						paddingLeft: 16,
-						paddingRight: 4,
+						paddingLeft: space.lg,
+						paddingRight: space.xs,
 					}}
 				>
 					<View

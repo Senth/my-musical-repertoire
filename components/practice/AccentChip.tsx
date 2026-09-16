@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import { Icon, Text, useTheme } from "react-native-paper";
-import { border } from "@/theme/tokens";
+import { border, radius, space } from "@/theme/tokens";
 import type {
 	TimeSignature,
 	TimeSignatureWritePlan,
@@ -45,15 +45,15 @@ export function AccentChip({
 
 	return (
 		<View>
-			{/* r8's `.split`: one 40px pill, radius 20, visibly two halves with a
-			    divider between them — tinted while sounding, outlined when silent. */}
+			{/* r8's `.split`: one 40px pill, visibly two halves with a divider
+			    between them — tinted while sounding, outlined when silent. */}
 			<View
 				style={{
 					flexDirection: "row",
 					alignItems: "center",
 					height: CHIP_HEIGHT,
-					borderRadius: 20,
-					borderWidth: sounding ? 0 : 1,
+					borderRadius: radius.full,
+					borderWidth: sounding ? 0 : border.hairline,
 					borderColor: theme.colors.outline,
 					backgroundColor: sounding
 						? theme.colors.secondaryContainer
@@ -69,9 +69,9 @@ export function AccentChip({
 					style={{
 						flexDirection: "row",
 						alignItems: "center",
-						gap: 5,
+						gap: space.xs,
 						height: CHIP_HEIGHT,
-						paddingLeft: 12,
+						paddingLeft: space.md,
 					}}
 				>
 					<Icon
@@ -92,7 +92,7 @@ export function AccentChip({
 					style={{
 						height: CHIP_HEIGHT,
 						justifyContent: "center",
-						paddingHorizontal: 9,
+						paddingHorizontal: space.sm,
 						borderLeftWidth: border.hairline,
 						borderLeftColor: sounding
 							? theme.colors.outline

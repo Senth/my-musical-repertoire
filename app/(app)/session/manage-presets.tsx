@@ -31,7 +31,11 @@ import {
 	presetTotalMinutes,
 	type SessionPreset,
 } from "@/models/session-preset";
-import { contentWidth, space } from "@/theme/tokens";
+import { contentWidth, inset, space } from "@/theme/tokens";
+
+/** The preset row keeps a hand above MD3's touch minimum so the drag handle
+ * and both icon buttons stay comfortable in a scrolling list. */
+const PRESET_ROW_MIN_HEIGHT = 56;
 
 export default function ManagePresetsScreen() {
 	const { t } = useTranslation();
@@ -84,12 +88,12 @@ export default function ManagePresetsScreen() {
 						style={{
 							flexDirection: "row",
 							alignItems: "center",
-							minHeight: 56,
-							paddingLeft: 16,
-							paddingRight: 4,
+							minHeight: PRESET_ROW_MIN_HEIGHT,
+							paddingLeft: space.lg,
+							paddingRight: space.xs,
 						}}
 					>
-						<View style={{ flex: 1, minHeight: 0, paddingVertical: 8 }}>
+						<View style={{ flex: 1, minHeight: 0, paddingVertical: space.sm }}>
 							<Text variant="bodyLarge">{preset.name}</Text>
 							<Text
 								variant="bodySmall"
@@ -226,11 +230,12 @@ export default function ManagePresetsScreen() {
 					}
 					contentContainerStyle={{
 						width: "100%",
-						maxWidth: contentWidth.page + (isCompact ? 32 : 48),
+						maxWidth:
+							contentWidth.page + (isCompact ? inset.compact : inset.roomy) * 2,
 						alignSelf: "center",
-						paddingHorizontal: isCompact ? 16 : 24,
-						paddingTop: 24,
-						paddingBottom: 32,
+						paddingHorizontal: isCompact ? inset.compact : inset.roomy,
+						paddingTop: space.xl,
+						paddingBottom: space.xxl,
 					}}
 				/>
 			</GestureHandlerRootView>

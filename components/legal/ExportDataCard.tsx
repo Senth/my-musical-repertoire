@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, Card, Text, useTheme } from "react-native-paper";
 import { useAuth } from "@/contexts/AuthContext";
+import { space } from "@/theme/tokens";
 import { collectExportData } from "@/utils/export-data";
 import { saveExport } from "./save-export";
 
@@ -39,7 +40,7 @@ export function ExportDataCard() {
 	return (
 		<Card mode="outlined">
 			<Card.Content>
-				<View style={{ gap: 12 }}>
+				<View style={{ gap: space.md }}>
 					<Text variant="bodyMedium">{t("screen.exportData.body")}</Text>
 					<Button
 						mode="outlined"

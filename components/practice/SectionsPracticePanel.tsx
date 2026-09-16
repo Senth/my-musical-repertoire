@@ -11,7 +11,7 @@ import {
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import type { Piece } from "@/models/piece";
 import type { Section, SectionPhase } from "@/models/section";
-import { space } from "@/theme/tokens";
+import { radius, space } from "@/theme/tokens";
 import { deriveCurrentBpm } from "@/utils/practice-modes";
 
 interface SectionsPracticePanelProps {
@@ -73,21 +73,21 @@ export function SectionsPracticePanel({
 						style={{
 							flexDirection: "row",
 							alignItems: "center",
-							gap: 8,
+							gap: space.sm,
 							flex: 1,
-							paddingVertical: 4,
+							paddingVertical: space.xs,
 						}}
 					>
 						{isCheckbox && (
 							<Checkbox.Android status={checked ? "checked" : "unchecked"} />
 						)}
-						<View style={{ flex: 1, gap: 4 }}>
+						<View style={{ flex: 1, gap: space.xs }}>
 							<View
 								style={{
 									flexDirection: "row",
 									alignItems: "center",
 									flexWrap: "wrap",
-									gap: 8,
+									gap: space.sm,
 								}}
 							>
 								<Text variant="bodyLarge">{section.label}</Text>
@@ -127,7 +127,7 @@ export function SectionsPracticePanel({
 						style={{
 							flexDirection: "row",
 							alignItems: "center",
-							gap: 8,
+							gap: space.sm,
 						}}
 					>
 						{isCheckbox ? (
@@ -139,7 +139,7 @@ export function SectionsPracticePanel({
 								)}
 								accessibilityRole="checkbox"
 								accessibilityState={{ checked }}
-								style={{ flex: 1, borderRadius: 8 }}
+								style={{ flex: 1, borderRadius: radius.chip }}
 							>
 								{rowContent}
 							</TouchableRipple>
@@ -149,7 +149,7 @@ export function SectionsPracticePanel({
 						<Button
 							mode="outlined"
 							onPress={() => onPractice(sid)}
-							contentStyle={{ paddingHorizontal: 8 }}
+							contentStyle={{ paddingHorizontal: space.sm }}
 							accessibilityLabel={t(
 								"screen.practice.sectionsPanel.a11yPractice",
 								{ label: section.label },

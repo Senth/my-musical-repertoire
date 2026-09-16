@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import { Icon, Text, TextInput, useTheme } from "react-native-paper";
+import { space } from "@/theme/tokens";
 
 interface StandingNoteProps {
 	/** The entity's standing note (`Section.notes` / `Piece.notes` / `Technique.notes`). */
@@ -30,7 +31,7 @@ export function StandingNote({ value, onSave }: StandingNoteProps) {
 	};
 
 	return (
-		<View style={{ gap: 8 }}>
+		<View style={{ gap: space.sm }}>
 			<View style={{ flexDirection: "row", alignItems: "center" }}>
 				<Text variant="labelLarge">
 					{t("screen.practice.standingNote.heading")}
@@ -48,7 +49,7 @@ export function StandingNote({ value, onSave }: StandingNoteProps) {
 					}}
 					accessibilityRole="button"
 					accessibilityLabel={t("screen.practice.standingNote.editA11y")}
-					style={{ marginLeft: "auto", padding: 4 }}
+					style={{ marginLeft: "auto", padding: space.xs }}
 				>
 					<Icon
 						source="pencil"

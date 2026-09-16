@@ -13,7 +13,7 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { useAuth } from "@/contexts/AuthContext";
-import { border } from "@/theme/tokens";
+import { border, size, space } from "@/theme/tokens";
 import {
 	readMetronomeAccent,
 	writeMetronomeAccent,
@@ -26,6 +26,9 @@ import type {
 } from "@/utils/time-signature";
 import { AccentChip } from "./AccentChip";
 import { MetronomeButton } from "./MetronomeButton";
+
+/** The lane above the slider that holds the last/target marker labels. */
+const MARKER_LANE_HEIGHT = 30;
 
 export interface AccentControl {
 	signature: TimeSignature | null;
@@ -204,13 +207,13 @@ export function TempoControl({
 	};
 
 	return (
-		<View style={{ gap: 12 }}>
+		<View style={{ gap: space.md }}>
 			<Text variant="labelLarge">{t("common.tempo.heading")}</Text>
 
 			{/* r8's `.sld`: markers and track in one block, lifted -10px toward the
 			    heading, with the chevron tips touching the track's top edge. */}
 			<View style={{ marginTop: -10 }}>
-				<View style={{ height: 30 }}>
+				<View style={{ height: MARKER_LANE_HEIGHT }}>
 					{lastPos != null && (
 						<TempoMarker
 							label={t("common.tempo.last", { bpm: last })}
@@ -246,7 +249,7 @@ export function TempoControl({
 					flexDirection: "row",
 					alignItems: "center",
 					justifyContent: "center",
-					gap: 12,
+					gap: space.md,
 				}}
 			>
 				<IconButton
@@ -278,7 +281,7 @@ export function TempoControl({
 						selectTextOnFocus
 						onBlur={handleBlur}
 						onSubmitEditing={handleBlur}
-						style={{ width: 96, textAlign: "center" }}
+						style={{ width: size.md, textAlign: "center" }}
 						accessibilityLabel={t("common.tempo.editA11y")}
 					/>
 				) : (
@@ -288,7 +291,11 @@ export function TempoControl({
 						accessibilityLabel={t("common.tempo.editA11y")}
 					>
 						<View
-							style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}
+							style={{
+								flexDirection: "row",
+								alignItems: "baseline",
+								gap: space.xs,
+							}}
 						>
 							{/* An untouched tempo displays the slider's minimum, where the
 							    thumb already sits — display only: the draft stays empty and
@@ -337,13 +344,13 @@ export function TempoControl({
 					flexDirection: "row",
 					alignItems: "center",
 					justifyContent: "center",
-					gap: 8,
+					gap: space.sm,
 				}}
 			>
 				<Button
 					mode="outlined"
 					onPress={tap}
-					contentStyle={{ paddingHorizontal: 6 }}
+					contentStyle={{ paddingHorizontal: space.xs }}
 				>
 					{t("common.bpm.tap")}
 				</Button>

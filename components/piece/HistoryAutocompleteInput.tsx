@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { HelperText, Text, TextInput, useTheme } from "react-native-paper";
+import { radius, space } from "@/theme/tokens";
 
 interface Props {
 	value: string;
@@ -64,9 +65,9 @@ export function HistoryAutocompleteInput({
 							zIndex: 1000,
 							elevation: 4,
 							backgroundColor: theme.colors.surface,
-							borderRadius: 4,
+							borderRadius: radius.hairline,
 							shadowColor: theme.colors.scrim,
-							shadowOffset: { width: 0, height: 2 },
+							shadowOffset: { width: 0, height: 2 }, // invariants:allow — shadow geometry, not layout
 							shadowOpacity: 0.15,
 							shadowRadius: 3,
 						}}
@@ -76,8 +77,8 @@ export function HistoryAutocompleteInput({
 								key={suggestion}
 								onPress={() => handleSelect(suggestion)}
 								style={({ pressed }) => ({
-									paddingHorizontal: 16,
-									paddingVertical: 14,
+									paddingHorizontal: space.lg,
+									paddingVertical: space.md,
 									backgroundColor: pressed
 										? theme.colors.surfaceVariant
 										: "transparent",

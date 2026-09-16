@@ -1,5 +1,7 @@
 import { ScrollView, View } from "react-native";
 import { Button, Chip } from "react-native-paper";
+import { usePageInset } from "@/hooks/use-page-inset";
+import { space } from "@/theme/tokens";
 
 export interface FilterPillItem {
 	id: string;
@@ -25,6 +27,7 @@ export function FilterPillRow({
 	onClearAll,
 	clearAllLabel,
 }: FilterPillRowProps) {
+	const pageInset = usePageInset();
 	if (pills.length === 0) return null;
 
 	return (
@@ -35,9 +38,9 @@ export function FilterPillRow({
 			// would claim half the screen's height and push the list off-screen.
 			style={{ flexGrow: 0, flexShrink: 0 }}
 			contentContainerStyle={{
-				paddingHorizontal: 16,
-				paddingBottom: 8,
-				gap: 8,
+				paddingHorizontal: pageInset,
+				paddingBottom: space.sm,
+				gap: space.sm,
 				alignItems: "center",
 			}}
 		>

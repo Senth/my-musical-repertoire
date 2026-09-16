@@ -36,6 +36,7 @@ import type {
 	BlockExecutionState,
 	PlannedBlock,
 } from "@/models/session";
+import { space } from "@/theme/tokens";
 import type { PendingPhaseOffer } from "@/utils/phase-offer";
 import { playBlockEndCue } from "@/utils/session-cue";
 import { planTotalMinutes } from "@/utils/session-planner";
@@ -533,7 +534,7 @@ function DurationPromptDialog({
 						mode="outlined"
 						keyboardType="numeric"
 						error={!valid}
-						style={{ marginTop: 12 }}
+						style={{ marginTop: space.md }}
 					/>
 					<HelperText type="error" visible={!valid}>
 						{t("screen.session.coach.durationPrompt.invalid")}
@@ -605,7 +606,7 @@ function FreeformBlockBody({ label }: { label: string }) {
 					minHeight: 0,
 					alignItems: "center",
 					justifyContent: "center",
-					padding: 24,
+					padding: space.xl,
 					backgroundColor: theme.colors.background,
 				}}
 			>

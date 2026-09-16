@@ -18,11 +18,13 @@ export const space = {
 } as const;
 
 /** Radius steps: the smallest for the progress bar and hairline wells, one
- * step up for chips, the card step for cards, sheets and dialogs. */
+ * step up for chips, the card step for cards, sheets and dialogs, and full
+ * for buttons, the FAB, the search field and pills. */
 export const radius = {
 	hairline: 3,
 	chip: 6,
 	card: 12,
+	full: 999,
 } as const;
 
 /** Paper elevation levels as shadow depths. The level *colours* live in the
@@ -42,8 +44,10 @@ export const contentWidth = {
 	page: 576,
 } as const;
 
-/** Fixed widget widths that are neither spacing nor a touch target. */
+/** Fixed widget widths and heights that are neither spacing nor a touch
+ * target. `track` is the progress bar's height, everywhere it is drawn. */
 export const size = {
+	track: 6,
 	md: 96,
 } as const;
 
@@ -72,9 +76,25 @@ export const breakpoints = {
 	compact: 600,
 } as const;
 
-/** Type scale. `labelSmall` is the small segment/chip label size. */
+/** Type scale. `labelSmall` is the small segment/chip label size, with its
+ * line height. */
 export const type = {
 	labelSmall: 11,
+	labelSmallLineHeight: 16,
+} as const;
+
+/** The one horizontal page inset, from the compact/roomy pair. Screens pay it
+ * once: through `ScreenContent`, `FormScaffold`, or their own frame. */
+export const inset = {
+	compact: 16,
+	roomy: 24,
+} as const;
+
+/** Scroll-tail room a scrolling screen leaves at the bottom: under the FAB
+ * where one floats over the list, plain room where nothing overlaps it. */
+export const scrollTail = {
+	fab: 96,
+	plain: 40,
 } as const;
 
 /** Pre-JS page paint colours: the static HTML shell and the auth loading view
