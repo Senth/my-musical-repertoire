@@ -125,7 +125,6 @@ async function addPiece(
 	return page.url();
 }
 
-/** Adds a section to a piece already on screen; returns the new section's id. */
 /**
  * Rewrites a section the app just created so it carries the pre-#84 field
  * names, using the emulator's REST API because the app itself can no longer
@@ -180,6 +179,7 @@ async function rewriteSectionAsLegacy(label: string): Promise<void> {
 	}
 }
 
+/** Adds a section to a piece already on screen; returns the new section's id. */
 async function addSection(
 	page: Page,
 	pieceUrl: string,

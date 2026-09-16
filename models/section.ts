@@ -56,6 +56,12 @@ export type StateTransitionOutcome = "accepted" | "dismissed";
  * word, see #84's follow-up. Written on every state change and
  * on every declined nudge — the dismissals are what say whether the advance
  * thresholds are set too high.
+ *
+ * Rows written before #84 store `fromPhase`/`toPhase`/`daysInPriorPhase` and a
+ * `phase-chip` trigger, and nothing reads them back under the new names. That
+ * is inert rather than fixed: the only consumer, `isSuppressed`, reads
+ * `outcome`, `trigger` and `date`. Anything that starts displaying transition
+ * history needs those old rows migrated first — same follow-up as the path.
  */
 export interface StateTransition {
 	id?: string;
