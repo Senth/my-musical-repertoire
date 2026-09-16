@@ -2,7 +2,7 @@ import Slider from "@react-native-community/slider";
 import type { MutableRefObject } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, View } from "react-native";
+import { AccessibilityInfo, Animated, Pressable, View } from "react-native";
 import {
 	Button,
 	HelperText,
@@ -19,6 +19,11 @@ import {
 	writeMetronomeAccent,
 } from "@/utils/session-storage";
 import { addTap, bpmFromTaps } from "@/utils/tap-tempo";
+import {
+	type PlacedTempoMark,
+	placeTempoMarkers,
+	type TempoMark,
+} from "@/utils/tempo-markers";
 import { tempoSliderRange } from "@/utils/tempo-slider";
 import type {
 	TimeSignature,
@@ -26,9 +31,6 @@ import type {
 } from "@/utils/time-signature";
 import { AccentChip } from "./AccentChip";
 import { MetronomeButton } from "./MetronomeButton";
-
-/** The lane above the slider that holds the last/target marker labels. */
-const MARKER_LANE_HEIGHT = 30;
 
 export interface AccentControl {
 	signature: TimeSignature | null;
@@ -59,58 +61,148 @@ interface TempoControlProps {
 
 const BPM_MIN = 20;
 const BPM_MAX = 240;
-/** Two markers closer than this share the midpoint instead of overlapping. */
-const MARKER_GAP_PCT = 14;
+/** Strip above the slider that holds the markers; collapses when there is
+ * nothing to mark, so a block with no markers sits tight under its heading. */
+const MARKER_STRIP_HEIGHT = 30;
+/** Seated 8px into the slider's own top padding, so the chevron tip touches
+ * the track's top edge the way round 8 draws it. */
+const MARKER_ARROW_BOTTOM = -8;
+const MARKER_ARROW_SIZE = 15;
+/** Three more pixels of air between a label and the arrow beneath it. */
+const MARKER_LABEL_AIR = 3;
+const MARKER_LABEL_BOTTOM =
+	MARKER_ARROW_BOTTOM + MARKER_ARROW_SIZE + MARKER_LABEL_AIR;
+/** Half the chevron's visible width — the box a lifted arrow occupies in the
+ * label's band. */
+const MARKER_ARROW_HALF = 6;
+/** How far the covered arrow rises clear of the thumb standing on it. */
+const MARKER_ARROW_LIFT = 10;
+/** Knob overlap plus 2px: a marker this close to the thumb is under it. */
+const MARKER_LIFT_OVERLAP = 15;
+const LIFT_MS = 150;
 
 function clamp(n: number): number {
 	return Math.max(BPM_MIN, Math.min(BPM_MAX, n));
 }
 
-/**
- * Which part of the label sits at `percent`: centered on it, or held inside
- * the track's edge by its leading ("start") or trailing ("end") edge — an
- * absolutely-positioned box shrinks to the space right of `left`, so a
- * centered marker near an edge would wrap and lose its chevron.
- */
-type MarkerAnchor = "start" | "center" | "end";
+/** `prefers-reduced-motion`, via the platform's accessibility info. */
+function useReducedMotion(): boolean {
+	const [reduced, setReduced] = useState(false);
+	useEffect(() => {
+		let active = true;
+		AccessibilityInfo.isReduceMotionEnabled().then((value) => {
+			if (active) setReduced(value);
+		});
+		const sub = AccessibilityInfo.addEventListener(
+			"reduceMotionChanged",
+			setReduced,
+		);
+		return () => {
+			active = false;
+			sub.remove();
+		};
+	}, []);
+	return reduced;
+}
 
-function TempoMarker({
-	label,
+function MarkerArrow({
 	percent,
-	anchor,
 	color,
+	lifted,
+	reducedMotion,
 }: {
-	label: string;
 	percent: number;
-	anchor: MarkerAnchor;
 	color: string;
+	lifted: boolean;
+	reducedMotion: boolean;
 }) {
+	const target = lifted ? -MARKER_ARROW_LIFT : 0;
+	const y = useRef(new Animated.Value(target)).current;
+	const at = useRef(target);
+	const entered = useRef(false);
+	useEffect(() => {
+		if (target === at.current) return;
+		at.current = target;
+		// The first geometry-known transition is arrival, not motion — the
+		// pre-layout render always reports unlifted, so nothing animates on entry.
+		if (!entered.current || reducedMotion) {
+			entered.current = true;
+			y.setValue(target);
+			return;
+		}
+		Animated.timing(y, {
+			toValue: target,
+			duration: LIFT_MS,
+			useNativeDriver: true,
+		}).start();
+	}, [target, reducedMotion, y]);
 	return (
 		<View
-			pointerEvents="none"
 			style={{
 				position: "absolute",
-				// Seated 8px into the slider's own top padding, so the chevron tip
-				// touches the track's top edge the way round 8 draws it.
-				bottom: -8,
-				...(anchor === "end"
-					? { right: `${Math.max(0, 100 - percent)}%` }
-					: { left: `${Math.min(100, Math.max(0, percent))}%` }),
-				transform: [{ translateX: anchor === "center" ? "-50%" : "0%" }],
-				alignItems:
-					anchor === "end"
-						? "flex-end"
-						: anchor === "start"
-							? "flex-start"
-							: "center",
-				paddingHorizontal: anchor === "center" ? 0 : 4,
+				bottom: MARKER_ARROW_BOTTOM,
+				left: `${percent}%`,
+				transform: [{ translateX: "-50%" }],
 			}}
 		>
-			<Text variant="labelSmall" style={{ color }}>
-				{label}
-			</Text>
-			<Icon source="menu-down" size={15} color={color} />
+			<Animated.View style={{ transform: [{ translateY: y }] }}>
+				<Icon source="menu-down" size={MARKER_ARROW_SIZE} color={color} />
+			</Animated.View>
 		</View>
+	);
+}
+
+function TempoMarkerLabel({
+	text,
+	color,
+	box,
+	reducedMotion,
+	onMeasure,
+}: {
+	text: string;
+	color: string;
+	box: PlacedTempoMark | undefined;
+	reducedMotion: boolean;
+	onMeasure: (width: number) => void;
+}) {
+	const x = useRef(new Animated.Value(0)).current;
+	const at = useRef<number | null>(null);
+	useEffect(() => {
+		if (!box || at.current === box.left) return;
+		// First paint with a placed box is arrival, not motion — nothing
+		// animates on entry.
+		const entry = at.current === null;
+		at.current = box.left;
+		if (entry || reducedMotion) {
+			x.setValue(box.left);
+			return;
+		}
+		Animated.timing(x, {
+			toValue: box.left,
+			duration: LIFT_MS,
+			useNativeDriver: true,
+		}).start();
+	}, [box, reducedMotion, x]);
+	return (
+		<Animated.View
+			style={{
+				position: "absolute",
+				bottom: MARKER_LABEL_BOTTOM,
+				// Position rides the transform so a sideways move animates;
+				// the label keeps one height throughout.
+				transform: [{ translateX: x }],
+				// Held invisible until measured: placement needs the label's width.
+				...(box ? null : { opacity: 0 }),
+			}}
+		>
+			<Text
+				variant="labelSmall"
+				onLayout={(e) => onMeasure(e.nativeEvent.layout.width)}
+				style={{ color }}
+			>
+				{text}
+			</Text>
+		</Animated.View>
 	);
 }
 
@@ -157,10 +249,15 @@ export function TempoControl({
 		fullRange,
 	});
 	const sliderValue = isValid ? clamp(parsed) : range.min;
+	// The working BPM: a valid draft, or the slider minimum the untouched thumb
+	// sits on. Steppers and the metronome work from it, so the one gesture that
+	// fixes a 20 can be made — but mid-edit the typed text governs, so a
+	// half-typed "2" is not a 20.
+	const effective = isValid ? clamp(parsed) : editing ? NaN : range.min;
 
 	function adjust(delta: number) {
-		if (!isValid) return;
-		onChangeText(clamp(parsed + delta).toString());
+		if (!Number.isFinite(effective)) return;
+		onChangeText(clamp(effective + delta).toString());
 	}
 
 	function tap() {
@@ -186,25 +283,54 @@ export function TempoControl({
 		((bpm - range.min) / (range.max - range.min)) * 100;
 	const lastPos = last != null ? percent(clamp(last)) : null;
 	const targetPos = target != null ? percent(clamp(target)) : null;
-	const close =
-		lastPos != null &&
-		targetPos != null &&
-		Math.abs(lastPos - targetPos) < MARKER_GAP_PCT;
-	const mid =
-		close && lastPos != null && targetPos != null
-			? (lastPos + targetPos) / 2
-			: null;
+	const hasMarkers = lastPos != null || targetPos != null;
 
 	const accentTint = theme.colors.onSurfaceVariant;
 	const beatsPerBar =
 		accentOn && accent?.signature ? accent.signature.beats : null;
-	// Near an edge the marker holds inside the track by that edge instead of
-	// centering — a centered box at 94% has only 6% of width left and wraps.
-	const edgeAnchor = (percent: number): MarkerAnchor => {
-		if (percent > 88) return "end";
-		if (percent < 12) return "start";
-		return "center";
-	};
+
+	const [trackWidth, setTrackWidth] = useState(0);
+	const [labelWidths, setLabelWidths] = useState<{
+		last: number | null;
+		target: number | null;
+	}>({ last: null, target: null });
+	const reducedMotion = useReducedMotion();
+	const thumbX = (percent(sliderValue) / 100) * trackWidth;
+	const lifted = (x: number) => Math.abs(x - thumbX) < MARKER_LIFT_OVERLAP;
+	const lastX =
+		lastPos != null && trackWidth > 0 ? (lastPos / 100) * trackWidth : null;
+	const targetX =
+		targetPos != null && trackWidth > 0 ? (targetPos / 100) * trackWidth : null;
+	const marks: TempoMark[] = [];
+	if (last != null && lastX != null && labelWidths.last) {
+		marks.push({
+			id: "last",
+			value: clamp(last),
+			x: lastX,
+			width: labelWidths.last,
+			lifted: lifted(lastX),
+		});
+	}
+	if (target != null && targetX != null && labelWidths.target) {
+		marks.push({
+			id: "target",
+			value: clamp(target),
+			x: targetX,
+			width: labelWidths.target,
+			lifted: lifted(targetX),
+		});
+	}
+	const placedMarks =
+		marks.length > 0
+			? placeTempoMarkers({
+					trackWidth,
+					gap: space.sm,
+					sideGap: space.sm,
+					arrowHalf: MARKER_ARROW_HALF,
+					marks,
+				})
+			: [];
+	const boxFor = (id: TempoMark["id"]) => placedMarks.find((p) => p.id === id);
 
 	return (
 		<View style={{ gap: space.md }}>
@@ -213,21 +339,47 @@ export function TempoControl({
 			{/* r8's `.sld`: markers and track in one block, lifted -10px toward the
 			    heading, with the chevron tips touching the track's top edge. */}
 			<View style={{ marginTop: -10 }}>
-				<View style={{ height: MARKER_LANE_HEIGHT }}>
+				<View
+					pointerEvents="none"
+					style={{ height: hasMarkers ? MARKER_STRIP_HEIGHT : 0 }}
+					onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+				>
 					{lastPos != null && (
-						<TempoMarker
-							label={t("common.tempo.last", { bpm: last })}
-							percent={close && mid != null ? mid : lastPos}
-							anchor={close ? "end" : edgeAnchor(lastPos)}
+						<TempoMarkerLabel
+							text={t("common.tempo.last", { bpm: last })}
 							color={accentTint}
+							box={boxFor("last")}
+							reducedMotion={reducedMotion}
+							onMeasure={(width) =>
+								setLabelWidths((w) => ({ ...w, last: width }))
+							}
 						/>
 					)}
 					{targetPos != null && (
-						<TempoMarker
-							label={t("common.tempo.target", { bpm: target })}
-							percent={close && mid != null ? mid : targetPos}
-							anchor={close ? "start" : edgeAnchor(targetPos)}
+						<TempoMarkerLabel
+							text={t("common.tempo.target", { bpm: target })}
 							color={accentTint}
+							box={boxFor("target")}
+							reducedMotion={reducedMotion}
+							onMeasure={(width) =>
+								setLabelWidths((w) => ({ ...w, target: width }))
+							}
+						/>
+					)}
+					{lastPos != null && (
+						<MarkerArrow
+							percent={lastPos}
+							color={accentTint}
+							lifted={lastX != null && lifted(lastX)}
+							reducedMotion={reducedMotion}
+						/>
+					)}
+					{targetPos != null && (
+						<MarkerArrow
+							percent={targetPos}
+							color={accentTint}
+							lifted={targetX != null && lifted(targetX)}
+							reducedMotion={reducedMotion}
 						/>
 					)}
 				</View>
@@ -258,7 +410,7 @@ export function TempoControl({
 					size={20}
 					iconColor={theme.colors.primary}
 					onPress={() => adjust(-5)}
-					disabled={!isValid}
+					disabled={!Number.isFinite(effective)}
 					accessibilityLabel={t("common.bpm.decreaseFive")}
 				/>
 				<IconButton
@@ -267,7 +419,7 @@ export function TempoControl({
 					size={20}
 					iconColor={theme.colors.primary}
 					onPress={() => adjust(-1)}
-					disabled={!isValid}
+					disabled={!Number.isFinite(effective)}
 					accessibilityLabel={t("common.bpm.decreaseOne")}
 				/>
 				{editing ? (
@@ -297,9 +449,11 @@ export function TempoControl({
 								gap: space.xs,
 							}}
 						>
-							{/* An untouched tempo displays the slider's minimum, where the
-							    thumb already sits — display only: the draft stays empty and
-							    an untouched tempo still saves as no tempo at all. */}
+							{/* An untouched tempo displays the slider's minimum, where
+							    the thumb already sits. Display only: the draft stays
+							    empty and an untouched tempo still saves as no tempo at
+							    all — but a stepper press is deliberate and starts from
+							    the displayed value. */}
 							<Text
 								variant="displaySmall"
 								style={{
@@ -308,7 +462,7 @@ export function TempoControl({
 									borderBottomColor: theme.colors.outline,
 								}}
 							>
-								{isValid ? parsed : range.min}
+								{Number.isFinite(effective) ? effective : range.min}
 							</Text>
 							<Text
 								variant="bodySmall"
@@ -325,7 +479,7 @@ export function TempoControl({
 					size={20}
 					iconColor={theme.colors.primary}
 					onPress={() => adjust(1)}
-					disabled={!isValid}
+					disabled={!Number.isFinite(effective)}
 					accessibilityLabel={t("common.bpm.increaseOne")}
 				/>
 				<IconButton
@@ -334,7 +488,7 @@ export function TempoControl({
 					size={20}
 					iconColor={theme.colors.primary}
 					onPress={() => adjust(5)}
-					disabled={!isValid}
+					disabled={!Number.isFinite(effective)}
 					accessibilityLabel={t("common.bpm.increaseFive")}
 				/>
 			</View>
@@ -356,7 +510,7 @@ export function TempoControl({
 				</Button>
 				{stopRef !== undefined && (
 					<MetronomeButton
-						bpm={value}
+						bpm={Number.isFinite(effective) ? effective.toString() : value}
 						beatsPerBar={beatsPerBar}
 						disabled={!!error}
 						stopRef={stopRef}

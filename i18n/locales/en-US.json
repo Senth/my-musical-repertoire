@@ -83,6 +83,7 @@
 				"landsPiece": "Saved with the piece",
 				"landsSection": "Saved with this passage",
 				"landsTechnique": "Saved with the technique",
+				"landsSightReading": "Saved for sight-reading",
 				"landsNone": "Already the piece's signature"
 			}
 		},
@@ -576,19 +577,18 @@
 			"pieceNotFound": "Piece not found",
 			"dateLabel": "Date",
 			"lastPracticed": "Last practiced: {{when}}",
+			"heading": {
+				"separator": " · ",
+				"technique": "Technique"
+			},
 			"technicalMistakes": "Wrong notes?",
 			"memoryMistakes": "Memory slips?",
 			"save": "Save",
-			"lastSession": {
-				"header": "Last session · {{when}}",
-				"headerAfterBreak": "Last session · {{when}} · after a break",
-				"tempo": "Tempo",
-				"tempoTarget": "(target {{bpm}})",
-				"tempoNone": "—",
-				"quality": "Quality",
-				"effort": "Effort",
-				"technical": "Technical",
-				"memory": "Memory",
+			"meta": {
+				"saving": "Saving: {{tally}}",
+				"saved": "{{mode}} {{bpm}} {{quality}}",
+				"inProgress": "{{mode}} in progress",
+				"lastPractised": "Last practised {{when}}",
 				"firstPractice": "First practice — no reference yet"
 			},
 			"sectionsPanel": {
@@ -696,15 +696,11 @@
 				}
 			},
 			"notRated": "not rated yet",
+			"previousAnswer": "· was {{answer}}",
 			"standingNote": {
 				"heading": "Note",
 				"editA11y": "Edit note",
 				"placeholder": "Add a note"
-			},
-			"tally": {
-				"prefix": "Saving: {{tally}}",
-				"saved": "{{mode}} {{bpm}} {{quality}}",
-				"inProgress": "{{mode}} in progress"
 			}
 		},
 		"editPiece": {
@@ -912,6 +908,7 @@
 				"skip": "Skip",
 				"extend": "+2 min",
 				"sightReadingBody": "Sight-reading — pick your material",
+				"sightReadingTitle": "Sight-reading",
 				"warmupBody": "Warmup — gentle scales of your choice",
 				"done": "Done",
 				"durationPrompt": {

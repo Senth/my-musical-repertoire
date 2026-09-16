@@ -26,6 +26,7 @@ const LANDING_KEYS = {
 	piece: "landsPiece",
 	section: "landsSection",
 	technique: "landsTechnique",
+	sightReading: "landsSightReading",
 	none: "landsNone",
 } as const;
 

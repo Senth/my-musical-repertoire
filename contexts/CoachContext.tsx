@@ -15,6 +15,11 @@ interface CoachSaveResult {
 type SaveFn = () => Promise<CoachSaveResult>;
 type ValidateFn = () => boolean;
 
+export interface PracticeHeading {
+	title: string;
+	subtitle?: string | null;
+}
+
 export interface CoachContextValue {
 	inCoach: boolean;
 	sessionId: string | null;
@@ -31,6 +36,12 @@ export interface CoachContextValue {
 	 * the block advances, so a snackbar it owns would never be seen.
 	 */
 	notify: (message: string) => void;
+	/**
+	 * Title/subtitle for the coach app bar, published by the block body now on
+	 * screen. The body cannot render into the app bar itself — it unmounts the
+	 * moment the block advances, and the shell owns that bar.
+	 */
+	setHeading: (heading: PracticeHeading | null) => void;
 	/**
 	 * Block controls for the body's pinned footer. The footer owns the buttons;
 	 * the coach owns what they do. No-ops outside the coach.
@@ -51,6 +62,7 @@ export function CoachProvider({
 	validateHandlerRef,
 	phaseOfferRef,
 	notify,
+	setHeading,
 	saveAndNext,
 	skipBlock,
 	extendBlock,
@@ -63,6 +75,7 @@ export function CoachProvider({
 	validateHandlerRef: MutableRefObject<ValidateFn | null>;
 	phaseOfferRef: MutableRefObject<PendingPhaseOffer | null>;
 	notify: (message: string) => void;
+	setHeading: (heading: PracticeHeading | null) => void;
 	saveAndNext: () => void;
 	skipBlock: () => void;
 	extendBlock: () => void;
@@ -77,6 +90,7 @@ export function CoachProvider({
 			validateHandlerRef,
 			phaseOfferRef,
 			notify,
+			setHeading,
 			saveAndNext,
 			skipBlock,
 			extendBlock,
@@ -89,6 +103,7 @@ export function CoachProvider({
 			validateHandlerRef,
 			phaseOfferRef,
 			notify,
+			setHeading,
 			saveAndNext,
 			skipBlock,
 			extendBlock,
@@ -109,6 +124,7 @@ const NOOP_OFFER_REF: MutableRefObject<PendingPhaseOffer | null> = {
 };
 const NOOP_NOTIFY = () => {};
 const NOOP_BLOCK_CONTROL = () => {};
+const NOOP_SET_HEADING = () => {};
 
 export function useCoach(): CoachContextValue {
 	const ctx = useContext(CoachContext);
@@ -120,11 +136,28 @@ export function useCoach(): CoachContextValue {
 		validateHandlerRef: NOOP_VALIDATE_REF,
 		phaseOfferRef: NOOP_OFFER_REF,
 		notify: NOOP_NOTIFY,
+		setHeading: NOOP_SET_HEADING,
 		saveAndNext: NOOP_BLOCK_CONTROL,
 		skipBlock: NOOP_BLOCK_CONTROL,
 		extendBlock: NOOP_BLOCK_CONTROL,
 		saving: false,
 	};
+}
+
+/**
+ * Publishes the block body's name into the coach app bar and clears it on
+ * unmount. Inert outside the coach, where each screen renders its own app bar.
+ */
+export function usePracticeHeading(
+	title: string,
+	subtitle: string | null,
+): void {
+	const { inCoach, setHeading } = useCoach();
+	useEffect(() => {
+		if (!inCoach) return;
+		setHeading({ title, subtitle });
+		return () => setHeading(null);
+	}, [inCoach, setHeading, title, subtitle]);
 }
 
 export function useRegisterCoachSave(

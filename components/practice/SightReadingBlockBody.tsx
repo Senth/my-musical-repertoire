@@ -4,11 +4,14 @@ import { View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCoach } from "@/contexts/CoachContext";
+import { useCoach, usePracticeHeading } from "@/contexts/CoachContext";
 import {
 	readSightReadingBpm,
+	readSightReadingSignature,
 	writeSightReadingBpm,
+	writeSightReadingSignature,
 } from "@/utils/session-storage";
+import type { TimeSignature } from "@/utils/time-signature";
 import { validateBpm } from "@/utils/validation";
 import { PracticeFooter } from "./PracticeFooter";
 import { TempoControl } from "./TempoControl";
@@ -27,6 +30,8 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 	/** The value as it was on mount — the `last` marker must not follow the thumb. */
 	const [savedBpm, setSavedBpm] = useState<number | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
+	/** Bar signature for the metronome accent, stored on the device: no piece or technique sits behind this block. */
+	const [signature, setSignature] = useState<TimeSignature | null>(null);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
@@ -37,6 +42,9 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 			setBpm(saved);
 			const parsed = Number.parseInt(saved, 10);
 			if (!Number.isNaN(parsed)) setSavedBpm(parsed);
+		});
+		readSightReadingSignature(user.uid).then((saved) => {
+			if (active) setSignature(saved);
 		});
 		return () => {
 			active = false;
@@ -61,6 +69,7 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 	}, []);
 
 	const coach = useCoach();
+	usePracticeHeading(t("screen.session.coach.sightReadingTitle"), null);
 
 	return (
 		<View style={{ flex: 1 }}>
@@ -79,6 +88,19 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 					stopRef={stopRef}
 					fullRange
 					last={savedBpm}
+					accent={{
+						signature,
+						// Writes land on the device key — planTimeSignatureWrite has no sight-reading leg.
+						planFor: () => ({ target: "sightReading" }),
+						onChange: (next) => {
+							setSignature(next);
+							if (user) void writeSightReadingSignature(user.uid, next);
+						},
+						onClear: () => {
+							setSignature(null);
+							if (user) void writeSightReadingSignature(user.uid, null);
+						},
+					}}
 				/>
 			</ScreenContent>
 			<PracticeFooter

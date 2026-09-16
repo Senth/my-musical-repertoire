@@ -8,21 +8,22 @@ import {
 	Divider,
 	Menu,
 	SegmentedButtons,
-	Text,
 	useTheme,
 } from "react-native-paper";
+import { PracticeAppbarContent } from "@/components/practice/CoachShell";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { HandTabs } from "@/components/practice/HandTabs";
-import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import { PracticeFooter } from "@/components/practice/PracticeFooter";
+import { PracticeMeta } from "@/components/practice/PracticeMeta";
 import { StandingNote } from "@/components/practice/StandingNote";
 import { TempoControl } from "@/components/practice/TempoControl";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueLogComparison } from "@/components/technique/TechniqueLogComparison";
+import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
-import { useCoach } from "@/contexts/CoachContext";
+import { useCoach, usePracticeHeading } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { useModeDrafts } from "@/hooks/use-mode-drafts";
 import { usePracticeSave } from "@/hooks/use-practice-save";
@@ -36,6 +37,7 @@ import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import type { ModeKey, PracticeDrill } from "@/models/practice";
 import { type } from "@/theme/tokens";
+import { formatDaysAgo } from "@/utils/date";
 import { effortOptions, qualityOptions } from "@/utils/estimation-options";
 import {
 	availableHandsModes,
@@ -44,6 +46,7 @@ import {
 	parseModeKey,
 	targetForMode,
 } from "@/utils/practice-modes";
+import { practiceTally } from "@/utils/practice-tally";
 import { planTimeSignatureWrite } from "@/utils/time-signature";
 import { validateBpm as validateBpmRange } from "@/utils/validation";
 
@@ -52,12 +55,15 @@ export interface TechniquePracticeContentProps {
 	from?: string;
 	/** Mode to open on — the session coach passes the block's planned mode. */
 	preselectMode?: ModeKey | null;
+	/** True while the coach session is paused; freezes the mode-touched clock. */
+	clockPaused?: boolean;
 }
 
 export function TechniquePracticeContent({
 	techniqueId,
 	from,
 	preselectMode,
+	clockPaused,
 }: TechniquePracticeContentProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -88,6 +94,10 @@ export function TechniquePracticeContent({
 		[technique?.activeDrills],
 	);
 
+	// Pocket time is not practice: the clock stops while the coach is paused
+	// or the screen has lost focus.
+	const clockRunning = useIsFocused() && !clockPaused;
+
 	const modes = useModeDrafts({
 		byMode: technique?.byMode,
 		available,
@@ -95,7 +105,14 @@ export function TechniquePracticeContent({
 		effectiveTarget,
 		preselect: preselectMode,
 		ready: !!technique,
+		clockRunning,
 	});
+
+	// The app bar names the exercise; the kind word is the whole subtitle.
+	usePracticeHeading(
+		technique?.title ?? "",
+		t("screen.practice.heading.technique"),
+	);
 
 	const getBackDestination = (): string => {
 		if (from === "overview") return "/(app)/(tabs)/overview";
@@ -230,7 +247,12 @@ export function TechniquePracticeContent({
 			{!inCoach && (
 				<Appbar.Header>
 					<Appbar.BackAction onPress={goBack} />
-					<Appbar.Content title="" />
+					<PracticeAppbarContent
+						heading={{
+							title: technique.title,
+							subtitle: t("screen.practice.heading.technique"),
+						}}
+					/>
 					<Menu
 						visible={headerMenuVisible}
 						onDismiss={() => setHeaderMenuVisible(false)}
@@ -294,10 +316,6 @@ export function TechniquePracticeContent({
 						paddingBottom={12}
 						style={{ flex: 1 }}
 					>
-						<Text variant="titleMedium" numberOfLines={1}>
-							{technique.title}
-						</Text>
-
 						<HandTabs
 							available={available}
 							hands={modes.hands}
@@ -345,15 +363,27 @@ export function TechniquePracticeContent({
 							/>
 						)}
 
-						<LastSessionCard
-							lastLog={logsByMode[modes.currentKey] ?? null}
-							loading={lastLogLoading}
-							scope="technique"
-							targetBpm={targetForMode(
-								modes.hands,
-								effectiveTarget,
-								hasTogether,
-							)}
+						<PracticeMeta
+							tally={practiceTally({
+								drafts: modes.drafts,
+								available,
+								drills,
+								dirty: modes.dirty,
+								t,
+							})}
+							lastLine={
+								lastLogLoading
+									? null
+									: logsByMode[modes.currentKey]
+										? t("screen.practice.meta.lastPractised", {
+												when: formatDaysAgo(
+													logsByMode[modes.currentKey].date,
+													t,
+												),
+											})
+										: t("screen.practice.meta.firstPractice")
+							}
+							chip={<TechniqueStateChip state={technique.state} />}
 						/>
 
 						<TempoControl
@@ -390,6 +420,7 @@ export function TechniquePracticeContent({
 							value={modes.draft.quality}
 							onChange={modes.setQuality}
 							options={qualityOptions(t)}
+							previous={logsByMode[modes.currentKey]?.quality ?? null}
 						/>
 
 						<EstimationField
@@ -397,6 +428,7 @@ export function TechniquePracticeContent({
 							value={modes.draft.effort}
 							onChange={modes.setEffort}
 							options={effortOptions(t)}
+							previous={logsByMode[modes.currentKey]?.effort ?? null}
 						/>
 
 						<StandingNote

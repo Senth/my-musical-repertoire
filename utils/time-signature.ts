@@ -50,7 +50,7 @@ export function resolveTimeSignature(
 }
 
 export interface TimeSignatureWritePlan {
-	target: "piece" | "section" | "technique" | "none";
+	target: "piece" | "section" | "technique" | "sightReading" | "none";
 	/** New value for `piece.timeSignature`, present when `target` is "piece". */
 	piece?: TimeSignature;
 	/**

@@ -9,18 +9,19 @@ import {
 	Divider,
 	Menu,
 	Snackbar,
-	Text,
 	useTheme,
 } from "react-native-paper";
+import { PieceStateChip } from "@/components/piece/PieceStateChip";
+import { PracticeAppbarContent } from "@/components/practice/CoachShell";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { HandTabs } from "@/components/practice/HandTabs";
-import { LastSessionCard } from "@/components/practice/LastSessionCard";
 import {
 	PhaseOfferCard,
 	PhaseStatusLine,
 } from "@/components/practice/PhaseOfferCard";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { PracticeFooter } from "@/components/practice/PracticeFooter";
+import { PracticeMeta } from "@/components/practice/PracticeMeta";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
 import { StandingNote } from "@/components/practice/StandingNote";
 import { TempoControl } from "@/components/practice/TempoControl";
@@ -30,7 +31,7 @@ import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
-import { useCoach } from "@/contexts/CoachContext";
+import { useCoach, usePracticeHeading } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { parseBpm, useModeDrafts } from "@/hooks/use-mode-drafts";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
@@ -49,7 +50,7 @@ import {
 	PracticeMistakes,
 	type PracticeTrigger,
 } from "@/models/practice";
-import { space } from "@/theme/tokens";
+import { formatDaysAgo } from "@/utils/date";
 import {
 	effortOptions,
 	mistakeOptions,
@@ -67,6 +68,7 @@ import {
 	parseModeKey,
 	targetForMode,
 } from "@/utils/practice-modes";
+import { practiceTally } from "@/utils/practice-tally";
 import {
 	planTimeSignatureWrite,
 	resolveTimeSignature,
@@ -85,6 +87,8 @@ export interface PiecePracticeContentProps {
 	triggerOverride?: PracticeTrigger;
 	/** Mode to open on — the session coach passes the block's planned mode. */
 	preselectMode?: ModeKey | null;
+	/** True while the coach session is paused; freezes the mode-touched clock. */
+	clockPaused?: boolean;
 }
 
 export function PiecePracticeContent({
@@ -93,6 +97,7 @@ export function PiecePracticeContent({
 	from,
 	triggerOverride,
 	preselectMode,
+	clockPaused,
 }: PiecePracticeContentProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -190,6 +195,22 @@ export function PiecePracticeContent({
 		? (sections.find((s) => s.id === sectionIdProp) ?? null)
 		: null;
 
+	const barRangeText = scopedSection ? formatBarRange(scopedSection, t) : null;
+
+	// The app bar names the passage: on a section the subtitle carries the
+	// piece, the composer and the bars; on a whole piece the composer alone.
+	const headingTitle = scopedSection
+		? scopedSection.label
+		: (piece?.title ?? "");
+	const headingSubtitle = (
+		scopedSection
+			? [piece?.title ?? "", piece?.composer ?? "", barRangeText]
+			: [piece?.composer ?? ""]
+	)
+		.filter(Boolean)
+		.join(t("screen.practice.heading.separator"));
+	usePracticeHeading(headingTitle, headingSubtitle || null);
+
 	const accent = useMemo(() => {
 		if (!piece) return undefined;
 		return {
@@ -225,6 +246,10 @@ export function PiecePracticeContent({
 		? (scopedSection.targetBpmOverride ?? piece?.targetTempoBpm ?? null)
 		: (piece?.targetTempoBpm ?? null);
 
+	// Pocket time is not practice: the clock stops while the coach is paused
+	// or the screen has lost focus.
+	const clockRunning = useIsFocused() && !clockPaused;
+
 	const modes = useModeDrafts({
 		byMode: scopedSection?.byMode,
 		available: HANDS_MODES,
@@ -233,6 +258,7 @@ export function PiecePracticeContent({
 		preselect: preselectMode,
 		ready: !!scopedSection,
 		carryBpm: achievedBpm,
+		clockRunning,
 	});
 
 	const handleBpmBlur = (text: string) => {
@@ -485,7 +511,22 @@ export function PiecePracticeContent({
 
 	const mistakes = mistakeOptions(t);
 
-	const barRangeText = scopedSection ? formatBarRange(scopedSection, t) : null;
+	const scopedLog = scopedSection
+		? (logsByMode[modes.currentKey] ?? null)
+		: lastLog;
+	const lastLine = lastLogLoading
+		? null
+		: scopedLog
+			? t("screen.practice.meta.lastPractised", {
+					when: formatDaysAgo(scopedLog.date, t),
+				})
+			: t("screen.practice.meta.firstPractice");
+
+	const metaChip = scopedSection ? (
+		<SectionPhaseChip phase={scopedSection.phase} />
+	) : (
+		<PieceStateChip state={piece.state} />
+	);
 
 	return (
 		<View
@@ -498,7 +539,9 @@ export function PiecePracticeContent({
 			{!inCoach && (
 				<Appbar.Header>
 					<Appbar.BackAction onPress={goBack} />
-					<Appbar.Content title="" />
+					<PracticeAppbarContent
+						heading={{ title: headingTitle, subtitle: headingSubtitle }}
+					/>
 					<Menu
 						visible={headerMenuVisible}
 						onDismiss={() => setHeaderMenuVisible(false)}
@@ -580,27 +623,6 @@ export function PiecePracticeContent({
 						paddingBottom={12}
 						style={{ flex: 1 }}
 					>
-						<View style={{ gap: space.xxs }}>
-							<Text variant="titleMedium" numberOfLines={1}>
-								{scopedSection ? scopedSection.label : piece.title}
-							</Text>
-							<Text
-								variant="bodySmall"
-								numberOfLines={1}
-								style={{ color: theme.colors.onSurfaceVariant }}
-							>
-								{[
-									// The name line above already carries the piece on a
-									// whole-piece block — r8's frame 5 repeats only the composer.
-									...(scopedSection ? [piece.title] : []),
-									piece.composer,
-									barRangeText,
-								]
-									.filter(Boolean)
-									.join(" · ")}
-							</Text>
-						</View>
-
 						{scopedSection && (
 							<HandTabs
 								available={HANDS_MODES}
@@ -608,21 +630,23 @@ export function PiecePracticeContent({
 								onChangeHands={modes.setHands}
 								drafts={modes.drafts}
 								drills={NO_DRILLS}
-								chip={<SectionPhaseChip phase={scopedSection.phase} />}
 							/>
 						)}
 
-						<LastSessionCard
-							lastLog={
-								scopedSection ? (logsByMode[modes.currentKey] ?? null) : lastLog
-							}
-							loading={lastLogLoading}
-							scope={scopedSection ? "section" : "piece"}
-							targetBpm={
+						<PracticeMeta
+							tally={
 								scopedSection
-									? targetForMode(modes.hands, effectiveTarget)
-									: effectiveTarget
+									? practiceTally({
+											drafts: modes.drafts,
+											available: HANDS_MODES,
+											drills: NO_DRILLS,
+											dirty: modes.dirty,
+											t,
+										})
+									: undefined
 							}
+							lastLine={lastLine}
+							chip={metaChip}
 						/>
 
 						<TempoControl
@@ -652,12 +676,14 @@ export function PiecePracticeContent({
 									value={modes.draft.quality}
 									onChange={modes.setQuality}
 									options={qualityOptions(t)}
+									previous={logsByMode[modes.currentKey]?.quality ?? null}
 								/>
 								<EstimationField
 									label={t("screen.practiceTechnique.effortLabel")}
 									value={modes.draft.effort}
 									onChange={modes.setEffort}
 									options={effortOptions(t)}
+									previous={logsByMode[modes.currentKey]?.effort ?? null}
 								/>
 							</>
 						) : (
@@ -667,12 +693,14 @@ export function PiecePracticeContent({
 									value={technicalMistakes}
 									onChange={setTechnicalMistakes}
 									options={mistakes}
+									previous={lastLog?.technicalMistakes ?? null}
 								/>
 								<EstimationField
 									label={t("screen.practice.memoryMistakes")}
 									value={memoryMistakes}
 									onChange={setMemoryMistakes}
 									options={mistakes}
+									previous={lastLog?.memoryMistakes ?? null}
 								/>
 							</>
 						)}

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Appbar, Text } from "react-native-paper";
+import type { PracticeHeading } from "@/contexts/CoachContext";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
 import { useAppTheme } from "@/theme";
 import { radius, size, space } from "@/theme/tokens";
@@ -14,6 +15,7 @@ export interface CoachShellProps {
 	sessionTotalSeconds: number;
 	blockElapsedSeconds: number;
 	blockTotalSeconds: number;
+	heading: PracticeHeading | null;
 	onExit: () => void;
 	children: ReactNode;
 }
@@ -24,6 +26,45 @@ export function formatMMSS(seconds: number): string {
 	const m = Math.floor(abs / 60);
 	const s = abs % 60;
 	return `${sign}${m}:${s.toString().padStart(2, "0")}`;
+}
+
+/**
+ * The title and subtitle a practice screen carries in its app bar, shared by
+ * the coach shell and the standalone practice screens. Paper 5.15's
+ * `Appbar.Content` only renders `subtitle` under the v2 theme, so the pair is
+ * passed as the title node, each line truncating to one.
+ */
+export function PracticeAppbarContent({
+	heading,
+}: {
+	heading: PracticeHeading | null;
+}) {
+	const theme = useAppTheme();
+	if (!heading) return <Appbar.Content title="" />;
+	return (
+		<Appbar.Content
+			title={
+				<View>
+					<Text
+						variant="titleMedium"
+						numberOfLines={1}
+						accessibilityRole="header"
+					>
+						{heading.title}
+					</Text>
+					{heading.subtitle ? (
+						<Text
+							variant="bodySmall"
+							numberOfLines={1}
+							style={{ color: theme.colors.onSurfaceVariant }}
+						>
+							{heading.subtitle}
+						</Text>
+					) : null}
+				</View>
+			}
+		/>
+	);
 }
 
 /**
@@ -38,6 +79,7 @@ export function CoachShell({
 	sessionTotalSeconds,
 	blockElapsedSeconds,
 	blockTotalSeconds,
+	heading,
 	onExit,
 	children,
 }: CoachShellProps) {
@@ -55,7 +97,7 @@ export function CoachShell({
 					onPress={onExit}
 					accessibilityLabel={t("screen.session.resume.end")}
 				/>
-				<Appbar.Content title="" />
+				<PracticeAppbarContent heading={heading} />
 				<View style={{ alignItems: "flex-end", paddingRight: space.xs }}>
 					<Text
 						variant="labelMedium"

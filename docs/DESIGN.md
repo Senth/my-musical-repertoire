@@ -198,12 +198,13 @@ The canonical implementation owns the styling. Extend it. **Restyling a copy is 
 
 Functional. Paper's defaults and almost nothing else, on transform and opacity only.
 
-**Animates:** the FAB, snackbar entry, menu and dialog transitions, the progress bar.
+**Animates:** anything the user interacts with, or that their interaction moves. Anything new
+that appears on a page already on screen without the user having asked for it. Anything that
+earns its keep by animating continuously.
 **Never animates:** lists, cards, chips, screen content. Nothing the user asked for animates
 on entry — a suggestion card that fades in is a suggestion arriving late.
 
-The metronome beat pulse (#39) is the one custom animation with a case, and the one that
-most needs `prefers-reduced-motion`: it runs while somebody is trying to concentrate.
+All of it honours `prefers-reduced-motion`.
 
 ## Voice
 

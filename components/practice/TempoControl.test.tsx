@@ -1,4 +1,5 @@
-import { render } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
+import type { MutableRefObject } from "react";
 import "@/i18n";
 import { parseBpm } from "@/hooks/use-mode-drafts";
 import { TempoControl } from "./TempoControl";
@@ -32,7 +33,20 @@ jest.mock("react-native-paper", () => {
 });
 
 jest.mock("./AccentChip", () => ({ AccentChip: () => null }));
-jest.mock("./MetronomeButton", () => ({ MetronomeButton: () => null }));
+
+// A probe rather than a plain null: what the untouched default feeds the
+// metronome is part of the enabled-at-default contract.
+const mockMetronomeProbe: {
+	bpm: string | undefined;
+	disabled: boolean | undefined;
+} = { bpm: undefined, disabled: undefined };
+jest.mock("./MetronomeButton", () => ({
+	MetronomeButton: (props: { bpm: string; disabled: boolean }) => {
+		mockMetronomeProbe.bpm = props.bpm;
+		mockMetronomeProbe.disabled = props.disabled;
+		return null;
+	},
+}));
 
 jest.mock("@react-native-community/slider", () => {
 	const { View } = require("react-native");
@@ -40,7 +54,11 @@ jest.mock("@react-native-community/slider", () => {
 	return { __esModule: true, default: MockSlider };
 });
 
-async function renderTempo(value: string, onChangeText = jest.fn()) {
+async function renderTempo(
+	value: string,
+	onChangeText = jest.fn(),
+	stopRef?: MutableRefObject<(() => void) | null>,
+) {
 	const onBlur = jest.fn();
 	const screen = await render(
 		<TempoControl
@@ -48,6 +66,7 @@ async function renderTempo(value: string, onChangeText = jest.fn()) {
 			onChangeText={onChangeText}
 			error={null}
 			onBlur={onBlur}
+			stopRef={stopRef}
 		/>,
 	);
 	return { screen, onChangeText, onBlur };
@@ -70,5 +89,40 @@ describe("TempoControl with no BPM set", () => {
 		const { screen, onChangeText } = await renderTempo("96");
 		expect(screen.getByText("96")).toBeTruthy();
 		expect(onChangeText).not.toHaveBeenCalled();
+	});
+});
+
+describe("TempoControl at the untouched default of 20", () => {
+	const enabled = (el: { props: { disabled?: boolean } }) =>
+		el.props.disabled !== true;
+
+	it("keeps all four steppers live", async () => {
+		const { screen } = await renderTempo("");
+		for (const label of [
+			"Decrease BPM by 5",
+			"Decrease BPM by 1",
+			"Increase BPM by 1",
+			"Increase BPM by 5",
+		]) {
+			expect(enabled(screen.getByLabelText(label))).toBe(true);
+		}
+	});
+
+	it("steps up from 20 with +1", async () => {
+		const { screen, onChangeText } = await renderTempo("");
+		fireEvent.press(screen.getByLabelText("Increase BPM by 1"));
+		expect(onChangeText).toHaveBeenCalledWith("21");
+	});
+
+	it("feeds the metronome the untouched 20, enabled", async () => {
+		await renderTempo("", jest.fn(), { current: null });
+		expect(mockMetronomeProbe.bpm).toBe("20");
+		expect(mockMetronomeProbe.disabled).toBe(false);
+	});
+
+	it("still saves no tempo when nothing was touched", async () => {
+		const { onChangeText } = await renderTempo("");
+		expect(onChangeText).not.toHaveBeenCalled();
+		expect(parseBpm("")).toBeNull();
 	});
 });
