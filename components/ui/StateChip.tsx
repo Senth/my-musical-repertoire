@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Chip, useTheme } from "react-native-paper";
-import { radius, type } from "@/theme/tokens";
+import { radius, space, type } from "@/theme/tokens";
 import { type StateVisual, withAlpha } from "@/utils/state-colors";
 
 interface StateChipProps {
@@ -12,10 +12,10 @@ interface StateChipProps {
 /** Shared geometry for every informational chip, so none out-sizes its neighbour. */
 const CHIP_TEXT_STYLE = {
 	fontSize: type.labelSmall,
-	lineHeight: 16,
+	lineHeight: type.labelSmallLineHeight,
 	letterSpacing: 0.3,
-	marginVertical: 3,
-	marginHorizontal: 9,
+	marginVertical: space.xxs,
+	marginHorizontal: space.sm,
 } as const;
 
 /**

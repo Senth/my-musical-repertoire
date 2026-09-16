@@ -3,7 +3,7 @@ import { Pressable, View } from "react-native";
 import { Icon, Text, useTheme } from "react-native-paper";
 import type { ModeDraft } from "@/hooks/use-mode-drafts";
 import type { HandsMode, ModeKey, PracticeDrill } from "@/models/practice";
-import { border } from "@/theme/tokens";
+import { border, space } from "@/theme/tokens";
 import { parseModeKey } from "@/utils/practice-modes";
 
 const HANDS_ICON: Record<HandsMode, string> = {
@@ -81,7 +81,7 @@ export function HandTabs({
 							flexDirection: "row",
 							alignItems: "center",
 							justifyContent: "center",
-							gap: 4,
+							gap: space.xs,
 							backgroundColor: selected
 								? theme.colors.secondaryContainer
 								: "transparent",

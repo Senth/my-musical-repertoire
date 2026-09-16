@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Button, useTheme } from "react-native-paper";
-import { useIsCompact } from "@/hooks/use-is-compact";
-import { border, contentWidth } from "@/theme/tokens";
+import { usePageInset } from "@/hooks/use-page-inset";
+import { border, contentWidth, space } from "@/theme/tokens";
 
 interface PracticeFooterProps {
 	primaryLabel: string;
@@ -27,7 +27,7 @@ export function PracticeFooter({
 }: PracticeFooterProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
-	const isCompact = useIsCompact();
+	const pageInset = usePageInset();
 
 	return (
 		<View
@@ -35,15 +35,15 @@ export function PracticeFooter({
 				borderTopWidth: border.hairline,
 				borderTopColor: theme.colors.outlineVariant,
 				backgroundColor: theme.colors.background,
-				paddingHorizontal: isCompact ? 16 : 24,
-				paddingVertical: 10,
+				paddingHorizontal: pageInset,
+				paddingVertical: space.md,
 			}}
 		>
 			<View
 				style={{
 					flexDirection: "row",
 					alignItems: "center",
-					gap: 10,
+					gap: space.sm,
 					width: "100%",
 					maxWidth: contentWidth.page,
 					alignSelf: "center",

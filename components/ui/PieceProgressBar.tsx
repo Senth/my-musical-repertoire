@@ -2,13 +2,17 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { ProgressBar, Text, useTheme } from "react-native-paper";
 import { PracticeMistakes } from "@/models/practice";
-import { radius, space } from "@/theme/tokens";
+import { radius, size, space } from "@/theme/tokens";
 
 interface PieceProgressBarProps {
 	technicalMistakes?: PracticeMistakes;
 	memoryMistakes?: PracticeMistakes;
 	showLabel?: boolean;
 }
+
+/** Column under the score label, so the bar's width stops jumping between
+ * "9.9", "–" and nothing. */
+const SCORE_LABEL_WIDTH = 32;
 
 export function calculateScore(
 	technicalMistakes?: PracticeMistakes,
@@ -43,13 +47,16 @@ export function PieceProgressBar({
 				<ProgressBar
 					progress={score !== null ? score / 10 : 0}
 					color={theme.colors.primary}
-					style={{ height: 6, borderRadius: radius.hairline }}
+					style={{ height: size.track, borderRadius: radius.hairline }}
 				/>
 			</View>
 			{showLabel && (
 				<Text
 					variant="labelSmall"
-					style={{ color: theme.colors.onSurfaceVariant, minWidth: 32 }}
+					style={{
+						color: theme.colors.onSurfaceVariant,
+						minWidth: SCORE_LABEL_WIDTH,
+					}}
 				>
 					{score !== null
 						? t("common.score", { score: Math.round(score) })

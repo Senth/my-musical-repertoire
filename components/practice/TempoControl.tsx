@@ -13,7 +13,7 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { useAuth } from "@/contexts/AuthContext";
-import { border, space } from "@/theme/tokens";
+import { border, size, space } from "@/theme/tokens";
 import {
 	readMetronomeAccent,
 	writeMetronomeAccent,
@@ -333,7 +333,7 @@ export function TempoControl({
 	const boxFor = (id: TempoMark["id"]) => placedMarks.find((p) => p.id === id);
 
 	return (
-		<View style={{ gap: 12 }}>
+		<View style={{ gap: space.md }}>
 			<Text variant="labelLarge">{t("common.tempo.heading")}</Text>
 
 			{/* r8's `.sld`: markers and track in one block, lifted -10px toward the
@@ -401,7 +401,7 @@ export function TempoControl({
 					flexDirection: "row",
 					alignItems: "center",
 					justifyContent: "center",
-					gap: 12,
+					gap: space.md,
 				}}
 			>
 				<IconButton
@@ -433,7 +433,7 @@ export function TempoControl({
 						selectTextOnFocus
 						onBlur={handleBlur}
 						onSubmitEditing={handleBlur}
-						style={{ width: 96, textAlign: "center" }}
+						style={{ width: size.md, textAlign: "center" }}
 						accessibilityLabel={t("common.tempo.editA11y")}
 					/>
 				) : (
@@ -443,7 +443,11 @@ export function TempoControl({
 						accessibilityLabel={t("common.tempo.editA11y")}
 					>
 						<View
-							style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}
+							style={{
+								flexDirection: "row",
+								alignItems: "baseline",
+								gap: space.xs,
+							}}
 						>
 							{/* An untouched tempo displays the slider's minimum, where
 							    the thumb already sits. Display only: the draft stays
@@ -494,13 +498,13 @@ export function TempoControl({
 					flexDirection: "row",
 					alignItems: "center",
 					justifyContent: "center",
-					gap: 8,
+					gap: space.sm,
 				}}
 			>
 				<Button
 					mode="outlined"
 					onPress={tap}
-					contentStyle={{ paddingHorizontal: 6 }}
+					contentStyle={{ paddingHorizontal: space.xs }}
 				>
 					{t("common.bpm.tap")}
 				</Button>

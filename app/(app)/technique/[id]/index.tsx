@@ -8,9 +8,10 @@ import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { MetaChip } from "@/components/ui/StateChip";
+import { usePageInset } from "@/hooks/use-page-inset";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
-import { contentWidth, space } from "@/theme/tokens";
+import { contentWidth, scrollTail, space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
 
 export default function TechniqueDetailScreen() {
@@ -24,6 +25,7 @@ export default function TechniqueDetailScreen() {
 	const { deleteTechnique } = useDeleteTechnique();
 
 	const item = techniques.find((tech) => tech.id === id);
+	const pageInset = usePageInset();
 
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
@@ -74,7 +76,7 @@ export default function TechniqueDetailScreen() {
 				/>
 			</Appbar.Header>
 
-			<ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+			<ScrollView contentContainerStyle={{ paddingBottom: scrollTail.plain }}>
 				<View
 					style={{
 						width: "100%",
@@ -85,7 +87,7 @@ export default function TechniqueDetailScreen() {
 					{/* Header info */}
 					<View
 						style={{
-							paddingHorizontal: space.lg,
+							paddingHorizontal: pageInset,
 							paddingTop: space.lg,
 							gap: space.sm,
 						}}
@@ -130,7 +132,7 @@ export default function TechniqueDetailScreen() {
 					{/* Practice button */}
 					<View
 						style={{
-							paddingHorizontal: space.lg,
+							paddingHorizontal: pageInset,
 							paddingTop: space.lg,
 						}}
 					>
@@ -139,7 +141,7 @@ export default function TechniqueDetailScreen() {
 							onPress={() =>
 								router.push(`/technique/${id}/practice?from=technique-detail`)
 							}
-							contentStyle={{ paddingVertical: 4 }}
+							contentStyle={{ paddingVertical: space.xs }}
 						>
 							{t("screen.techniqueDetail.practice")}
 						</Button>
@@ -150,7 +152,7 @@ export default function TechniqueDetailScreen() {
 							<Divider style={{ marginTop: space.xl }} />
 							<View
 								style={{
-									paddingHorizontal: space.lg,
+									paddingHorizontal: pageInset,
 									paddingTop: space.lg,
 									gap: space.sm,
 								}}

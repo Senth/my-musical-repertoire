@@ -19,10 +19,10 @@
 # unresolvable, it is a hard error — a CI expression that evaluates to an empty
 # string must never read as a pass.
 #
-# Checks 7-9 are the token rule from #127. Check 9 covers `fontSize` and the
-# border widths — the properties that are clean today. The spacing, radius and
-# size properties still carry pre-token literals that #31 / #113 / #26 own;
-# the pattern widens to them inside those PRs, not here.
+# Checks 7-9 are the token rule from #127. Check 9 covers `fontSize`, the
+# border widths and, since #31, the spacing, radius and size properties: a
+# literal in a style prop reads from `theme/tokens.ts` or carries a
+# `// invariants:allow` naming why it is not a scale value.
 #
 # Requires: git, grep, jq, and bash 4.4+ for `mapfile -d`.
 set -uo pipefail
@@ -251,15 +251,23 @@ fi
 # ---------------------------------------------------------------------------
 # 9. Style props read the token scale
 #
-# Scoped today to fontSize and the border widths, which are clean; the spacing,
-# radius and size properties still carry pre-token literals that #31 / #113 /
-# #26 pay off, and the pattern widens to them there.
+# `fontSize`, the border widths, and — since #31 paid the literals off — the
+# spacing, radius and size properties. A zero is allowed: resetting a padding
+# or margin to none is not an off-scale value. `app/+html.tsx` renders in Node
+# during `expo export` and cannot reach the token graph, as in check 8.
 # ---------------------------------------------------------------------------
-PATTERN='(fontSize|border[A-Za-z]*Width):[[:space:]]*[0-9]'
-hits=$(scan "${SRC[@]}" | drop_allowed | strip_comments)
+TOKEN_SRC=()
+for f in "${SRC[@]}"; do
+	[[ "$f" == "app/+html.tsx" ]] && continue
+	# theme/ is the value home the rule points at — its literals are the scale.
+	[[ "$f" =~ ^theme/ ]] && continue
+	TOKEN_SRC+=("$f")
+done
+PATTERN='(fontSize|border[A-Za-z]*(Width|Radius)|(padding|margin)[A-Za-z]*|gap|((min|max)[A-Za-z]*)?[Ww]idth|((min|max)[A-Za-z]*)?[Hh]eight):[[:space:]]*[1-9]'
+hits=$(scan "${TOKEN_SRC[@]}" | drop_allowed | strip_comments)
 if [[ -n "$hits" ]]; then
 	report 9 "style props read the token scale" FAIL "$hits" \
-		"Read it from theme/tokens.ts."
+		"Read it from theme/tokens.ts, or justify it with // invariants:allow."
 else
 	report 9 "style props read the token scale" ok
 fi

@@ -10,6 +10,7 @@ import {
 	useTheme,
 } from "react-native-paper";
 import { useIsCompact } from "@/hooks/use-is-compact";
+import { inset, radius, space } from "@/theme/tokens";
 
 export interface FilterOption {
 	value: string;
@@ -72,31 +73,31 @@ export function FilterSheet({
 				style={isCompact ? { justifyContent: "flex-end" } : undefined}
 				contentContainerStyle={{
 					backgroundColor: theme.colors.elevation.level3,
-					marginHorizontal: isCompact ? 0 : 24,
+					marginHorizontal: isCompact ? 0 : inset.roomy,
 					alignSelf: "center",
 					width: "100%",
 					maxWidth: isCompact ? undefined : 480,
 					maxHeight: "80%",
-					borderTopLeftRadius: 28,
-					borderTopRightRadius: 28,
-					borderBottomLeftRadius: isCompact ? 0 : 28,
-					borderBottomRightRadius: isCompact ? 0 : 28,
+					borderTopLeftRadius: radius.card,
+					borderTopRightRadius: radius.card,
+					borderBottomLeftRadius: isCompact ? 0 : radius.card,
+					borderBottomRightRadius: isCompact ? 0 : radius.card,
 					overflow: "hidden",
 				}}
 			>
-				<View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
+				<View style={{ paddingHorizontal: space.xl, paddingTop: space.xl }}>
 					<Text variant="titleLarge">{title}</Text>
 				</View>
 
 				<ScrollView
 					contentContainerStyle={{
-						paddingHorizontal: 24,
-						paddingVertical: 16,
-						gap: 20,
+						paddingHorizontal: space.xl,
+						paddingVertical: space.lg,
+						gap: space.xl,
 					}}
 				>
 					{sections.map((section) => (
-						<View key={section.id} style={{ gap: 8 }}>
+						<View key={section.id} style={{ gap: space.sm }}>
 							<Text
 								variant="labelLarge"
 								style={{ color: theme.colors.onSurfaceVariant }}
@@ -108,7 +109,7 @@ export function FilterSheet({
 									style={{
 										flexDirection: "row",
 										flexWrap: "wrap",
-										gap: 8,
+										gap: space.sm,
 									}}
 								>
 									{section.options.map((option) => (
@@ -124,7 +125,7 @@ export function FilterSheet({
 									))}
 								</View>
 							) : (
-								<View style={{ flexDirection: "row", gap: 12 }}>
+								<View style={{ flexDirection: "row", gap: space.md }}>
 									<TextInput
 										mode="outlined"
 										dense
@@ -155,8 +156,8 @@ export function FilterSheet({
 						flexDirection: "row",
 						justifyContent: "space-between",
 						alignItems: "center",
-						paddingHorizontal: 16,
-						paddingVertical: 12,
+						paddingHorizontal: space.lg,
+						paddingVertical: space.md,
 					}}
 				>
 					<Button mode="text" onPress={onClearAll}>

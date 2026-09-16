@@ -3,7 +3,8 @@ import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { Appbar, Card, useTheme } from "react-native-paper";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { useIsCompact } from "@/hooks/use-is-compact";
-import { contentWidth } from "@/theme/tokens";
+import { usePageInset } from "@/hooks/use-page-inset";
+import { contentWidth, scrollTail, space } from "@/theme/tokens";
 
 interface FormScaffoldProps {
 	title: string;
@@ -29,6 +30,7 @@ export function FormScaffold({
 }: FormScaffoldProps) {
 	const theme = useTheme();
 	const isCompact = useIsCompact();
+	const pageInset = usePageInset();
 
 	return (
 		<View
@@ -49,9 +51,9 @@ export function FormScaffold({
 			>
 				<ScrollView
 					contentContainerStyle={{
-						paddingHorizontal: isCompact ? 16 : 24,
-						paddingTop: 24,
-						paddingBottom: 40,
+						paddingHorizontal: pageInset,
+						paddingTop: space.xl,
+						paddingBottom: scrollTail.plain,
 					}}
 					keyboardShouldPersistTaps="handled"
 				>

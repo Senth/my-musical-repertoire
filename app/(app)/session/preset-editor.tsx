@@ -212,7 +212,7 @@ export default function PresetEditorScreen() {
 						flexDirection: "row",
 						alignItems: "center",
 						justifyContent: "space-between",
-						paddingVertical: 12,
+						paddingVertical: space.md,
 					}}
 				>
 					<Text variant="bodyLarge" style={{ fontWeight: "600" }}>
@@ -234,7 +234,9 @@ export default function PresetEditorScreen() {
 					</Text>
 				)}
 
-				<View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
+				<View
+					style={{ flexDirection: "row", gap: space.sm, marginTop: space.sm }}
+				>
 					{isCustom ? (
 						<>
 							<Button
@@ -287,6 +289,9 @@ export default function PresetEditorScreen() {
 /** Checkbox column width — the ⓘ text lines up under the label, not the box. */
 const LABEL_INDENT = 40;
 
+/** The minutes column: wide enough for "44 min" without the row jumping. */
+const MINUTES_WIDTH = 56;
+
 /**
  * One line: a checkbox that switches the category off entirely, a slider whose
  * minimum is the category's floor, and an ⓘ that expands into what the category
@@ -316,7 +321,7 @@ function LineRow({
 	const label = t(`screen.session.editor.line.${lineKey}` as const);
 
 	return (
-		<View style={{ paddingBottom: 4 }}>
+		<View style={{ paddingBottom: space.xs }}>
 			<View style={{ flexDirection: "row", alignItems: "center" }}>
 				{/* Wrapped rather than flexed directly: Checkbox.Item does not
 				    stretch its own touchable, so the minutes column would drift. */}
@@ -337,7 +342,7 @@ function LineRow({
 				<Text
 					variant="bodyMedium"
 					style={{
-						minWidth: 56,
+						minWidth: MINUTES_WIDTH,
 						textAlign: "right",
 						color: enabled
 							? theme.colors.onSurface
@@ -394,7 +399,7 @@ function LineRow({
 						style={{
 							color: theme.colors.onSurfaceVariant,
 							paddingLeft: LABEL_INDENT,
-							paddingTop: 4,
+							paddingTop: space.xs,
 						}}
 					>
 						{t(`screen.session.editor.info.${lineKey}` as const)}

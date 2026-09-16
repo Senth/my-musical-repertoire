@@ -37,13 +37,14 @@ import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
 import { useIsCompact } from "@/hooks/use-is-compact";
 import { useListPrefs } from "@/hooks/use-list-prefs";
+import { usePageInset } from "@/hooks/use-page-inset";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
 import {
 	TECHNIQUE_STATES,
 	TECHNIQUE_TYPES,
 	type TechniqueItem,
 } from "@/models/technique";
-import { space } from "@/theme/tokens";
+import { scrollTail, space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
 import {
 	DEFAULT_TECHNIQUE_FILTERS,
@@ -91,6 +92,7 @@ export default function TechniquesScreen() {
 	);
 	const [filterOpen, setFilterOpen] = useState(false);
 	const isCompact = useIsCompact();
+	const pageInset = usePageInset();
 
 	const { prefs, setPrefs } = useListPrefs(
 		DEFAULT_TECHNIQUE_LIST_PREFS,
@@ -389,7 +391,7 @@ export default function TechniquesScreen() {
 		>
 			<View
 				style={{
-					paddingHorizontal: space.lg,
+					paddingHorizontal: pageInset,
 					paddingTop: space.md,
 					paddingBottom: space.sm,
 				}}
@@ -433,7 +435,7 @@ export default function TechniquesScreen() {
 				<ScreenContent
 					gap={3}
 					paddingTop={0}
-					paddingBottom={100}
+					paddingBottom={scrollTail.fab}
 					style={{ flex: 1 }}
 				>
 					{visibleTechniques.map((item) => (

@@ -4,7 +4,7 @@ import { IconButton, ProgressBar, Text } from "react-native-paper";
 import { SectionPhaseChip } from "@/components/section/SectionPhaseChip";
 import type { Section, SectionPhase } from "@/models/section";
 import { useAppTheme } from "@/theme";
-import { space } from "@/theme/tokens";
+import { size, space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
 import { formatBarRange } from "@/utils/piece-display";
 import { deriveCurrentBpm } from "@/utils/practice-modes";
@@ -77,7 +77,7 @@ export function SectionDetailRow({
 				style={{
 					flexDirection: "row",
 					alignItems: "center",
-					paddingRight: 8,
+					paddingRight: space.sm,
 				}}
 			>
 				<Pressable
@@ -157,7 +157,7 @@ export function SectionDetailRow({
 				<ProgressBar
 					progress={fillRatio}
 					color={progressColor}
-					style={{ height: 4 }}
+					style={{ height: size.track }}
 				/>
 			)}
 		</View>

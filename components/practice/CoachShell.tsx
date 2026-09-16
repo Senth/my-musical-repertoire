@@ -5,6 +5,7 @@ import { Appbar, Text } from "react-native-paper";
 import type { PracticeHeading } from "@/contexts/CoachContext";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
 import { useAppTheme } from "@/theme";
+import { radius, size, space } from "@/theme/tokens";
 import { coachSegments } from "@/utils/coach-progress";
 
 export interface CoachShellProps {
@@ -97,7 +98,7 @@ export function CoachShell({
 					accessibilityLabel={t("screen.session.resume.end")}
 				/>
 				<PracticeAppbarContent heading={heading} />
-				<View style={{ alignItems: "flex-end", paddingRight: 4 }}>
+				<View style={{ alignItems: "flex-end", paddingRight: space.xs }}>
 					<Text
 						variant="labelMedium"
 						style={{
@@ -139,15 +140,21 @@ export function CoachShell({
 				</View>
 			</Appbar.Header>
 
-			<View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-				<View style={{ flexDirection: "row", gap: 3, height: 6 }}>
+			<View style={{ paddingHorizontal: space.lg, paddingBottom: space.sm }}>
+				<View
+					style={{
+						flexDirection: "row",
+						gap: space.xxs,
+						height: size.track,
+					}}
+				>
 					{segments.map((segment) => (
 						<View
 							key={segment.id}
 							style={{
 								flex: Math.max(segment.minutes, 0.5),
-								height: 6,
-								borderRadius: 3,
+								height: size.track,
+								borderRadius: radius.hairline,
 								backgroundColor: theme.colors.outlineVariant,
 								overflow: "hidden",
 							}}

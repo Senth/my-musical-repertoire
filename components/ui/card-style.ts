@@ -22,7 +22,8 @@ export const CARD_TITLE_STYLE: TextStyle = {
  * quantises in 2px steps, so 11px exactly is not reachable (48px gives 10px).
  */
 export const TITLE_ONLY_CARD_STYLE: ViewStyle = {
-	minHeight: 50,
+	// 50px centres a title-only card; 48px quantises to 10px. See note above.
+	minHeight: 50, // invariants:allow
 };
 
 /** The card's left accent stripe. Shelved/retired fade so they stay hindmost. */

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { SegmentedButtons, Text, useTheme } from "react-native-paper";
-import { border, type } from "@/theme/tokens";
+import { border, space, type } from "@/theme/tokens";
 
 export interface EstimationOption<V extends string | number> {
 	value: V;
@@ -42,8 +42,10 @@ export function EstimationField<V extends string | number>({
 	const previousOption = options.find((o) => o.value === previous);
 
 	return (
-		<View style={{ gap: 8 }}>
-			<View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+		<View style={{ gap: space.sm }}>
+			<View
+				style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}
+			>
 				<Text variant="labelLarge">{label}</Text>
 				<Text
 					variant="bodySmall"

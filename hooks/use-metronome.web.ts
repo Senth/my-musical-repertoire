@@ -12,6 +12,7 @@ const CLICK_FREQ_HZ = 880;
 const ACCENT_FREQ_HZ = 1320;
 const CLICK_DUR_S = 0.03;
 const CLICK_GAIN_PEAK = 4.0; // above 1.0 is safe — DynamicsCompressorNode prevents hard clipping
+const UNLOCK_SAMPLE_RATE_HZ = 22050;
 
 export function useMetronome(
 	bpm: number,
@@ -104,6 +105,13 @@ export function useMetronome(
 		if (ctx.state === "suspended") {
 			void ctx.resume();
 		}
+		// iOS Safari keeps an AudioContext silent until a buffer source starts
+		// inside the user gesture that created or resumed it. Every click here is
+		// an oscillator scheduled later, so without this the session stays locked.
+		const unlock = ctx.createBufferSource();
+		unlock.buffer = ctx.createBuffer(1, 1, UNLOCK_SAMPLE_RATE_HZ);
+		unlock.connect(ctx.destination);
+		unlock.start(0);
 		nextNoteTimeRef.current = ctx.currentTime + 0.05;
 		beatInBarRef.current = 0;
 		intervalRef.current = setInterval(scheduler, SCHEDULER_INTERVAL_MS);
