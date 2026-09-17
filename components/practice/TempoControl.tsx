@@ -73,7 +73,7 @@ const MARKER_LABEL_AIR = 3;
 const MARKER_LABEL_BOTTOM =
 	MARKER_ARROW_BOTTOM + MARKER_ARROW_SIZE + MARKER_LABEL_AIR;
 /** How far the covered arrow rises clear of the thumb standing on it. */
-const MARKER_ARROW_LIFT = 10;
+const MARKER_ARROW_LIFT = 8;
 /** Knob overlap plus 2px: a marker this close to the thumb is under it. */
 const MARKER_LIFT_OVERLAP = 15;
 const LIFT_MS = 150;
