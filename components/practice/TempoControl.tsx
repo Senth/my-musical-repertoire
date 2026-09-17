@@ -73,9 +73,13 @@ const MARKER_LABEL_AIR = 3;
 const MARKER_LABEL_BOTTOM =
 	MARKER_ARROW_BOTTOM + MARKER_ARROW_SIZE + MARKER_LABEL_AIR;
 /** How far the covered arrow rises clear of the thumb standing on it. */
-const MARKER_ARROW_LIFT = 8;
+const MARKER_ARROW_LIFT = 7;
 /** Knob overlap plus 2px: a marker this close to the thumb is under it. */
 const MARKER_LIFT_OVERLAP = 15;
+/** Half of the slider's 20px knob. The knob's centre stops a radius short of
+ * each end, so a marker placed on the raw percentage of the track misses the
+ * value it marks. */
+const SLIDER_THUMB_RADIUS = 10;
 const LIFT_MS = 150;
 
 function clamp(n: number): number {
@@ -103,12 +107,12 @@ function useReducedMotion(): boolean {
 }
 
 function MarkerArrow({
-	percent,
+	x,
 	color,
 	lifted,
 	reducedMotion,
 }: {
-	percent: number;
+	x: number;
 	color: string;
 	lifted: boolean;
 	reducedMotion: boolean;
@@ -138,7 +142,7 @@ function MarkerArrow({
 			style={{
 				position: "absolute",
 				bottom: MARKER_ARROW_BOTTOM,
-				left: `${percent}%`,
+				left: x,
 				transform: [{ translateX: "-50%" }],
 			}}
 		>
@@ -276,11 +280,7 @@ export function TempoControl({
 		onBlur(value);
 	};
 
-	const percent = (bpm: number) =>
-		((bpm - range.min) / (range.max - range.min)) * 100;
-	const lastPos = last != null ? percent(clamp(last)) : null;
-	const targetPos = target != null ? percent(clamp(target)) : null;
-	const hasMarkers = lastPos != null || targetPos != null;
+	const hasMarkers = last != null || target != null;
 
 	const accentTint = theme.colors.onSurfaceVariant;
 	const beatsPerBar =
@@ -292,12 +292,14 @@ export function TempoControl({
 		target: number | null;
 	}>({ last: null, target: null });
 	const reducedMotion = useReducedMotion();
-	const thumbX = (percent(sliderValue) / 100) * trackWidth;
+	const trackX = (bpm: number) =>
+		SLIDER_THUMB_RADIUS +
+		((clamp(bpm) - range.min) / (range.max - range.min)) *
+			(trackWidth - SLIDER_THUMB_RADIUS * 2);
+	const thumbX = trackX(sliderValue);
 	const lifted = (x: number) => Math.abs(x - thumbX) < MARKER_LIFT_OVERLAP;
-	const lastX =
-		lastPos != null && trackWidth > 0 ? (lastPos / 100) * trackWidth : null;
-	const targetX =
-		targetPos != null && trackWidth > 0 ? (targetPos / 100) * trackWidth : null;
+	const lastX = last != null && trackWidth > 0 ? trackX(last) : null;
+	const targetX = target != null && trackWidth > 0 ? trackX(target) : null;
 	const marks: TempoMark[] = [];
 	if (last != null && lastX != null && labelWidths.last) {
 		marks.push({
@@ -333,7 +335,7 @@ export function TempoControl({
 					style={{ height: hasMarkers ? MARKER_STRIP_HEIGHT : 0 }}
 					onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
 				>
-					{lastPos != null && (
+					{last != null && (
 						<TempoMarkerLabel
 							text={t("common.tempo.last", { bpm: last })}
 							color={accentTint}
@@ -344,7 +346,7 @@ export function TempoControl({
 							}
 						/>
 					)}
-					{targetPos != null && (
+					{target != null && (
 						<TempoMarkerLabel
 							text={t("common.tempo.target", { bpm: target })}
 							color={accentTint}
@@ -355,19 +357,19 @@ export function TempoControl({
 							}
 						/>
 					)}
-					{lastPos != null && (
+					{lastX != null && (
 						<MarkerArrow
-							percent={lastPos}
+							x={lastX}
 							color={accentTint}
-							lifted={lastX != null && lifted(lastX)}
+							lifted={lifted(lastX)}
 							reducedMotion={reducedMotion}
 						/>
 					)}
-					{targetPos != null && (
+					{targetX != null && (
 						<MarkerArrow
-							percent={targetPos}
+							x={targetX}
 							color={accentTint}
-							lifted={targetX != null && lifted(targetX)}
+							lifted={lifted(targetX)}
 							reducedMotion={reducedMotion}
 						/>
 					)}
