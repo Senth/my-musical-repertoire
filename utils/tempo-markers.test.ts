@@ -2,17 +2,9 @@ import { placeTempoMarkers, type TempoMark } from "./tempo-markers";
 
 const TRACK = 330;
 const GAP = 8;
-const SIDE_GAP = 8;
-const ARROW_HALF = 6;
 
 const place = (marks: TempoMark[]) =>
-	placeTempoMarkers({
-		trackWidth: TRACK,
-		gap: GAP,
-		sideGap: SIDE_GAP,
-		arrowHalf: ARROW_HALF,
-		marks,
-	});
+	placeTempoMarkers({ trackWidth: TRACK, gap: GAP, marks });
 
 const x = (bpm: number, max: number) => ((bpm - 20) / (max - 20)) * TRACK;
 
@@ -21,8 +13,7 @@ const mark = (
 	value: number,
 	pos: number,
 	width: number,
-	lifted = false,
-): TempoMark => ({ id, value, x: pos, width, lifted });
+): TempoMark => ({ id, value, x: pos, width });
 
 const byId = (placed: ReturnType<typeof place>, id: TempoMark["id"]) => {
 	const found = placed.find((p) => p.id === id);
@@ -130,20 +121,16 @@ describe("placeTempoMarkers", () => {
 		expect(target.left).toBeCloseTo(last.right + GAP, 2);
 	});
 
-	it("a lifted last frees the target to stay centred on its own arrow", () => {
-		const posLast = x(92, 147);
-		const posTarget = x(110, 147);
+	it("far apart: both stay centred on their own arrows", () => {
+		const posLast = x(40, 240);
+		const posTarget = x(200, 240);
 		const placed = place([
-			mark("last", 92, posLast, 47, true),
-			mark("target", 110, posTarget, 58),
+			mark("last", 40, posLast, 47),
+			mark("target", 200, posTarget, 58),
 		]);
-		const last = byId(placed, "last");
-		const target = byId(placed, "target");
-		expect(last.anchored).toBe(true);
-		expect(last.side).toBe("left");
-		expect(last.right).toBeCloseTo(posLast - ARROW_HALF - SIDE_GAP, 2);
-		expect(target.anchored).toBe(false);
-		expect(target.side).toBe("centre");
-		expect(target.left).toBeCloseTo(posTarget - 29, 2);
+		expect(byId(placed, "last").side).toBe("centre");
+		expect(byId(placed, "last").anchored).toBe(false);
+		expect(byId(placed, "target").side).toBe("centre");
+		expect(byId(placed, "target").anchored).toBe(false);
 	});
 });

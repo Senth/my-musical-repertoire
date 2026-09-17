@@ -1,8 +1,9 @@
 /**
  * One rule for where a tempo marker's label sits: centred on its own arrow,
- * and if that would collide it sits beside the arrow instead — the lower value
- * to its arrow's left, the higher to its arrow's right. Arrows stay pinned to
- * the value they mark; only labels move.
+ * and if that would collide with the other label it sits beside the arrow
+ * instead — the lower value to its arrow's left, the higher to its arrow's
+ * right. Arrows stay pinned to the value they mark, and a lifted arrow does
+ * not move a label: only the other label's box does.
  */
 
 export type TempoMarkerId = "last" | "target";
@@ -15,7 +16,6 @@ export interface TempoMark {
 	x: number;
 	/** Label width, in px. */
 	width: number;
-	lifted: boolean;
 }
 
 export interface PlacedTempoMark {
@@ -25,7 +25,7 @@ export interface PlacedTempoMark {
 	right: number;
 	/** Where the label ended up relative to its own arrow. */
 	side: TempoMarkerSide;
-	/** True when the label was pushed off its arrow (lifted, or centring collided). */
+	/** True when the label was pushed off its arrow by the other label. */
 	anchored: boolean;
 }
 
@@ -43,10 +43,6 @@ function centredBox(m: TempoMark): Box {
 	return { left: m.x - m.width / 2, right: m.x + m.width / 2 };
 }
 
-function arrowBox(m: TempoMark, arrowHalf: number): Box {
-	return { left: m.x - arrowHalf, right: m.x + arrowHalf };
-}
-
 /** Which side of its own arrow the label prefers: lower value left, higher right. */
 function preferredSide(marks: TempoMark[], m: TempoMark): "left" | "right" {
 	const others = marks.filter((o) => o.id !== m.id);
@@ -58,17 +54,12 @@ function preferredSide(marks: TempoMark[], m: TempoMark): "left" | "right" {
 }
 
 /**
- * A mark anchors when it is lifted, or when centring it would collide with
- * another mark's label or a lifted arrow box. Anchored labels stop being
- * obstacles themselves, so the set is iterated to a fixed point — anchoring
- * one can free another.
+ * A mark anchors when centring it would collide with another mark's label.
+ * Anchored labels stop being obstacles themselves, so the set is iterated to a
+ * fixed point — anchoring one can free another.
  */
-function computeAnchored(
-	marks: TempoMark[],
-	gap: number,
-	arrowHalf: number,
-): Set<TempoMarkerId> {
-	const anchored = new Set(marks.filter((m) => m.lifted).map((m) => m.id));
+function computeAnchored(marks: TempoMark[], gap: number): Set<TempoMarkerId> {
+	const anchored = new Set<TempoMarkerId>();
 	let grew = true;
 	while (grew) {
 		grew = false;
@@ -76,11 +67,12 @@ function computeAnchored(
 		for (const m of marks) {
 			if (settled.has(m.id)) continue;
 			const box = centredBox(m);
-			const blocked = marks.some((o) => {
-				if (o.id === m.id) return false;
-				if (o.lifted) return collide(box, arrowBox(o, arrowHalf), gap);
-				return !settled.has(o.id) && collide(box, centredBox(o), gap);
-			});
+			const blocked = marks.some(
+				(o) =>
+					o.id !== m.id &&
+					!settled.has(o.id) &&
+					collide(box, centredBox(o), gap),
+			);
 			if (blocked) {
 				anchored.add(m.id);
 				grew = true;
@@ -93,47 +85,33 @@ function computeAnchored(
 export function placeTempoMarkers({
 	trackWidth,
 	gap,
-	sideGap,
-	arrowHalf,
 	marks,
 }: {
 	trackWidth: number;
 	gap: number;
-	sideGap: number;
-	arrowHalf: number;
 	marks: TempoMark[];
 }): PlacedTempoMark[] {
-	const anchored = computeAnchored(marks, gap, arrowHalf);
+	const anchored = computeAnchored(marks, gap);
 
-	const boxFor = (m: TempoMark, side: "left" | "right", pad: number): Box =>
+	const boxFor = (m: TempoMark, side: "left" | "right"): Box =>
 		side === "left"
-			? { left: m.x - pad - m.width, right: m.x - pad }
-			: { left: m.x + pad, right: m.x + pad + m.width };
+			? { left: m.x - m.width, right: m.x }
+			: { left: m.x, right: m.x + m.width };
 
-	// Lifted arrow boxes are permanent obstacles in the label band; each label
-	// joins them as it is placed.
-	const obstacles: Box[] = marks
-		.filter((m) => m.lifted)
-		.map((m) => arrowBox(m, arrowHalf));
-
+	const obstacles: Box[] = [];
 	const inside = (b: Box) => b.left >= 0 && b.right <= trackWidth;
 	const clear = (b: Box) => !obstacles.some((o) => collide(b, o, gap));
 
-	// Lifted marks place first — their arrows are already standing in the
-	// band — then everything by position, so left marks claim their side
-	// before right ones are shoved.
-	const order = [...marks].sort(
-		(a, b) => Number(b.lifted) - Number(a.lifted) || a.x - b.x,
-	);
+	// By position, so left marks claim their side before right ones are shoved.
+	const order = [...marks].sort((a, b) => a.x - b.x);
 
 	const placed = new Map<TempoMarkerId, Box>();
 	for (const m of order) {
-		const pad = m.lifted ? arrowHalf + sideGap : 0;
 		const side = preferredSide(marks, m);
 		const other = side === "left" ? "right" : "left";
 		const desired: Box[] = anchored.has(m.id)
-			? [boxFor(m, side, pad), boxFor(m, other, pad)]
-			: [centredBox(m), boxFor(m, side, pad), boxFor(m, other, pad)];
+			? [boxFor(m, side), boxFor(m, other)]
+			: [centredBox(m), boxFor(m, side), boxFor(m, other)];
 
 		let box = desired.find((b) => inside(b) && clear(b)) ?? null;
 		if (!box) {

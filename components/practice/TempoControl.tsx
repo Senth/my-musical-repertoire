@@ -72,9 +72,6 @@ const MARKER_ARROW_SIZE = 15;
 const MARKER_LABEL_AIR = 3;
 const MARKER_LABEL_BOTTOM =
 	MARKER_ARROW_BOTTOM + MARKER_ARROW_SIZE + MARKER_LABEL_AIR;
-/** Half the chevron's visible width — the box a lifted arrow occupies in the
- * label's band. */
-const MARKER_ARROW_HALF = 6;
 /** How far the covered arrow rises clear of the thumb standing on it. */
 const MARKER_ARROW_LIFT = 10;
 /** Knob overlap plus 2px: a marker this close to the thumb is under it. */
@@ -308,7 +305,6 @@ export function TempoControl({
 			value: clamp(last),
 			x: lastX,
 			width: labelWidths.last,
-			lifted: lifted(lastX),
 		});
 	}
 	if (target != null && targetX != null && labelWidths.target) {
@@ -317,18 +313,11 @@ export function TempoControl({
 			value: clamp(target),
 			x: targetX,
 			width: labelWidths.target,
-			lifted: lifted(targetX),
 		});
 	}
 	const placedMarks =
 		marks.length > 0
-			? placeTempoMarkers({
-					trackWidth,
-					gap: space.sm,
-					sideGap: space.sm,
-					arrowHalf: MARKER_ARROW_HALF,
-					marks,
-				})
+			? placeTempoMarkers({ trackWidth, gap: space.sm, marks })
 			: [];
 	const boxFor = (id: TempoMark["id"]) => placedMarks.find((p) => p.id === id);
 
