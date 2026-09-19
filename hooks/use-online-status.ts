@@ -14,7 +14,10 @@ function readOnline(): boolean {
  * user — Firestore queues its own writes and does not need us to gate on this.
  */
 export function useOnlineStatus(): boolean {
-	const [online, setOnline] = useState(readOnline);
+	// Seeded `true` to match the static export, which always renders connected:
+	// reading `navigator.onLine` here would have an offline boot hydrate the
+	// offline bar over HTML that does not have it. The effect below re-reads.
+	const [online, setOnline] = useState(true);
 
 	useEffect(() => {
 		if (Platform.OS !== "web" || typeof window === "undefined") return;
