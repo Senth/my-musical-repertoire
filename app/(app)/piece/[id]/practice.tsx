@@ -198,13 +198,15 @@ export function PiecePracticeContent({
 	const barRangeText = scopedSection ? formatBarRange(scopedSection, t) : null;
 
 	// The app bar names the passage: on a section the subtitle carries the
-	// piece, the composer and the bars; on a whole piece the composer alone.
+	// bars, the piece and the composer; on a whole piece the composer alone.
+	// The bars lead because the subtitle is one truncated line, and a long
+	// title plus composer would push them out of sight.
 	const headingTitle = scopedSection
 		? scopedSection.label
 		: (piece?.title ?? "");
 	const headingSubtitle = (
 		scopedSection
-			? [piece?.title ?? "", piece?.composer ?? "", barRangeText]
+			? [barRangeText, piece?.title ?? "", piece?.composer ?? ""]
 			: [piece?.composer ?? ""]
 	)
 		.filter(Boolean)

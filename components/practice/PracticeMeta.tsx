@@ -6,6 +6,10 @@ import { space } from "@/theme/tokens";
 
 const FADE_MS = 150;
 
+/** Holds the last-practised row at one line while the history loads, so the
+ * line arriving does not push the controls below it down. */
+const RESERVED_LINE = "\u00a0";
+
 /**
  * The muted meta line. It cross-fades when its text changes after first paint —
  * whoever changed it — and does not animate on mount, per the motion rule that
@@ -98,7 +102,7 @@ interface PracticeMetaProps {
  */
 export function PracticeMeta({ tally, lastLine, chip }: PracticeMetaProps) {
 	const showTallyRow = tally !== undefined && (!!tally || !!chip);
-	const showLastRow = lastLine != null || (!!chip && !showTallyRow);
+	const showLastRow = showTallyRow || lastLine != null || !!chip;
 	if (!showTallyRow && !showLastRow) return null;
 
 	const rowStyle = {
@@ -117,11 +121,7 @@ export function PracticeMeta({ tally, lastLine, chip }: PracticeMetaProps) {
 			)}
 			{showLastRow && (
 				<View style={rowStyle}>
-					{lastLine != null ? (
-						<CrossFadeText text={lastLine} />
-					) : (
-						<View style={{ flex: 1 }} />
-					)}
+					<CrossFadeText text={lastLine ?? RESERVED_LINE} />
 					{!showTallyRow && chip}
 				</View>
 			)}

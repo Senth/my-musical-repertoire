@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { SegmentedButtons, Text, useTheme } from "react-native-paper";
-import { border, space, type } from "@/theme/tokens";
+import { border, radius, size, space, type } from "@/theme/tokens";
 
 export interface EstimationOption<V extends string | number> {
 	value: V;
@@ -40,6 +40,8 @@ export function EstimationField<V extends string | number>({
 	const theme = useTheme();
 	const selected = options.find((o) => o.value === value);
 	const previousOption = options.find((o) => o.value === previous);
+	// Under the chosen segment the fill wins, so the tick is dropped.
+	const showTick = !!previousOption && previousOption.value !== value;
 
 	return (
 		<View style={{ gap: space.sm }}>
@@ -67,36 +69,68 @@ export function EstimationField<V extends string | number>({
 					)}
 				</Text>
 			</View>
-			<SegmentedButtons
-				style={{ width: "100%" }}
-				value={value?.toString() ?? ""}
-				onValueChange={(v) => {
-					const match = options.find((o) => o.value.toString() === v);
-					if (match) onChange(match.value);
+			{/* Clipped to the row's own pill so a full-width tick under an end
+			    segment stops where that segment's rounded outline does. */}
+			<View
+				style={{
+					width: "100%",
+					borderRadius: radius.full,
+					overflow: "hidden",
 				}}
-				buttons={options.map((o) => ({
-					value: o.value.toString(),
-					label: o.short,
-					// Paper floors each segment at minWidth 76 — five of them measure
-					// 380px against the 358px band and overflow at 390. minWidth 0
-					// lets them flex; 11px is round 8's small-segment size, which
-					// fits the words inside the label's max-width.
-					style: {
-						minWidth: 0,
-						// The previous answer's tick: a hairline under its own segment.
-						// Muted, never the accent — the accent means chosen, and the
-						// previous answer is not a choice. When it sits under the
-						// chosen segment the fill wins and the tick is dropped.
-						...(previousOption &&
-							o.value === previousOption.value &&
-							previousOption.value !== value && {
-								borderBottomWidth: border.hairline,
-								borderBottomColor: theme.colors.onSurfaceVariant,
-							}),
-					},
-					labelStyle: { fontSize: type.labelSmall, marginHorizontal: 0 },
-				}))}
-			/>
+			>
+				<SegmentedButtons
+					style={{ width: "100%" }}
+					value={value?.toString() ?? ""}
+					onValueChange={(v) => {
+						const match = options.find((o) => o.value.toString() === v);
+						if (match) onChange(match.value);
+					}}
+					buttons={options.map((o) => ({
+						value: o.value.toString(),
+						label: o.short,
+						// Paper floors each segment at minWidth 76 — five of them measure
+						// 380px against the 358px band and overflow at 390. minWidth 0
+						// lets them flex; 11px is round 8's small-segment size, which
+						// fits the words inside the label's max-width.
+						style: { minWidth: 0 },
+						labelStyle: { fontSize: type.labelSmall, marginHorizontal: 0 },
+					}))}
+				/>
+				{showTick && (
+					// The previous answer's tick, drawn over the row rather than as the
+					// segment's own bottom border: a border would add to that one
+					// segment's height and tilt the whole row. The overlay mirrors the
+					// row's geometry — one flex cell per segment, same order — so the
+					// bar spans exactly its own segment whatever the band measures.
+					// Never the accent: the accent means chosen, and the previous
+					// answer is not a choice. It takes the marker weight and the text
+					// colour because a hairline in `onSurfaceVariant` reads as part of
+					// the segment's own outline in dark mode.
+					<View
+						pointerEvents="none"
+						style={{
+							position: "absolute",
+							left: 0,
+							right: 0,
+							bottom: border.hairline,
+							flexDirection: "row",
+						}}
+					>
+						{options.map((o) => (
+							<View key={o.value} style={{ flex: 1 }}>
+								{o.value === previousOption?.value && (
+									<View
+										style={{
+											height: size.marker,
+											backgroundColor: theme.colors.onSurface,
+										}}
+									/>
+								)}
+							</View>
+						))}
+					</View>
+				)}
+			</View>
 		</View>
 	);
 }
