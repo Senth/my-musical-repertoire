@@ -19,6 +19,8 @@ import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { PracticeFooter } from "@/components/practice/PracticeFooter";
 import { PracticeMeta } from "@/components/practice/PracticeMeta";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
+import { SpanSeamChecks } from "@/components/practice/SpanSeamChecks";
+import { SpanSectionsBlock } from "@/components/practice/SpanSectionsBlock";
 import { StandingNote } from "@/components/practice/StandingNote";
 import {
 	StateOfferCard,
@@ -33,7 +35,11 @@ import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useCoach, usePracticeHeading } from "@/contexts/CoachContext";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
-import { parseBpm, useModeDrafts } from "@/hooks/use-mode-drafts";
+import {
+	type ModeDraft,
+	parseBpm,
+	useModeDrafts,
+} from "@/hooks/use-mode-drafts";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { usePracticeSave } from "@/hooks/use-practice-save";
 import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
@@ -46,6 +52,7 @@ import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import {
 	HANDS_MODES,
+	type HandsMode,
 	type ModeKey,
 	PracticeMistakes,
 	type PracticeTrigger,
@@ -64,6 +71,9 @@ import {
 	targetForMode,
 } from "@/utils/practice-modes";
 import { practiceTally } from "@/utils/practice-tally";
+import type { SpanSection } from "@/utils/span-detection";
+import { spanBarRange } from "@/utils/span-display";
+import { spanModeStats, spanPreselectHands } from "@/utils/span-modes";
 import {
 	decideStateOffer,
 	type PendingStateOffer,
@@ -80,9 +90,13 @@ import { validateBpm as validateBpmRange } from "@/utils/validation";
 /** Sections always have all three hand modes and never have drills. */
 const NO_DRILLS: never[] = [];
 
+const EMPTY_MODE_DRAFT: ModeDraft = { bpm: "", quality: null, effort: null };
+
 export interface PiecePracticeContentProps {
 	pieceId: string;
 	sectionId?: string | null;
+	/** Comma-separated section ids, in play order — a combined-sections span. */
+	sectionIds?: string | null;
 	from?: string;
 	triggerOverride?: PracticeTrigger;
 	/** Mode to open on — the session coach passes the block's planned mode. */
@@ -94,6 +108,7 @@ export interface PiecePracticeContentProps {
 export function PiecePracticeContent({
 	pieceId,
 	sectionId: sectionIdProp,
+	sectionIds: sectionIdsProp,
 	from,
 	triggerOverride,
 	preselectMode,
@@ -191,23 +206,72 @@ export function PiecePracticeContent({
 		[sections],
 	);
 
+	const spanIds = useMemo(
+		() => (sectionIdsProp ? sectionIdsProp.split(",").filter(Boolean) : []),
+		[sectionIdsProp],
+	);
+
+	// Structural validation only, per URL id order: exists, not archived,
+	// carries both bars, is still stabilizing or maintenance, and stays
+	// bar-adjacent to the one before it. The trigger and window scoring are
+	// never re-run — that question was answered when the block was planned.
+	const spanCandidates = useMemo((): SpanSection[] => {
+		if (spanIds.length === 0) return [];
+		const byId = new Map(sections.map((s) => [s.id, s]));
+		const chain: SpanSection[] = [];
+		for (const id of spanIds) {
+			const candidate = byId.get(id);
+			if (
+				!candidate ||
+				candidate.archived ||
+				candidate.startBar == null ||
+				candidate.endBar == null ||
+				(candidate.state !== "stabilizing" && candidate.state !== "maintenance")
+			) {
+				continue;
+			}
+			const spanSection = candidate as SpanSection;
+			const prev = chain[chain.length - 1];
+			if (prev && spanSection.startBar > prev.endBar + 1) continue;
+			chain.push(spanSection);
+		}
+		return chain;
+	}, [spanIds, sections]);
+
+	const isSpan = spanCandidates.length >= 2;
+	// Exactly one structurally valid survivor drops to ordinary single-section
+	// practice; zero survivors falls back to the whole-piece body below.
+	const spanFallbackId =
+		spanCandidates.length === 1 ? (spanCandidates[0].id ?? null) : null;
+
 	const scopedSection = sectionIdProp
 		? (sections.find((s) => s.id === sectionIdProp) ?? null)
-		: null;
+		: !isSpan && spanFallbackId
+			? (sections.find((s) => s.id === spanFallbackId) ?? null)
+			: null;
 
 	const barRangeText = scopedSection ? formatBarRange(scopedSection, t) : null;
+	// Bars are always present on a span — adjacency requires them — so there
+	// is no "bars omitted" branch to write here.
+	const spanBarRangeText = isSpan
+		? formatBarRange(spanBarRange(spanCandidates), t)
+		: null;
 
-	// The app bar names the passage: on a section the subtitle carries the
-	// bars, the piece and the composer; on a whole piece the composer alone.
-	// The bars lead because the subtitle is one truncated line, and a long
-	// title plus composer would push them out of sight.
-	const headingTitle = scopedSection
-		? scopedSection.label
-		: (piece?.title ?? "");
+	// The app bar names the passage: on a section or a span the subtitle
+	// carries the bars, the piece and the composer; on a whole piece the
+	// composer alone. The bars lead because the subtitle is one truncated
+	// line, and a long title plus composer would push them out of sight.
+	const headingTitle = isSpan
+		? t("screen.practice.span.heading.title")
+		: scopedSection
+			? scopedSection.label
+			: (piece?.title ?? "");
 	const headingSubtitle = (
-		scopedSection
-			? [barRangeText, piece?.title ?? "", piece?.composer ?? ""]
-			: [piece?.composer ?? ""]
+		isSpan
+			? [spanBarRangeText, piece?.title ?? "", piece?.composer ?? ""]
+			: scopedSection
+				? [barRangeText, piece?.title ?? "", piece?.composer ?? ""]
+				: [piece?.composer ?? ""]
 	)
 		.filter(Boolean)
 		.join(t("screen.practice.heading.separator"));
@@ -266,6 +330,66 @@ export function PiecePracticeContent({
 	const handleBpmBlur = (text: string) => {
 		setBpmError(validateBpm(text));
 	};
+
+	// Span mode/quality/effort drafts, one per hand. Priors and the prefill
+	// both come from the included sections, not from span history, so seeding
+	// runs straight off `spanCandidates` rather than the coach's `useModeDrafts`
+	// (built for one section's `byMode`).
+	const [spanHands, setSpanHands] = useState<HandsMode>("LH");
+	const [spanDrafts, setSpanDrafts] = useState<Record<ModeKey, ModeDraft>>({});
+	const [spanDirty, setSpanDirty] = useState<Set<ModeKey>>(() => new Set());
+	const [spanBpmError, setSpanBpmError] = useState<string | null>(null);
+	const [seamChecked, setSeamChecked] = useState<boolean[]>([]);
+	const spanSeeded = useRef(false);
+
+	useEffect(() => {
+		if (!isSpan || !piece || spanSeeded.current) return;
+		const seededDrafts: Record<ModeKey, ModeDraft> = {};
+		for (const hand of HANDS_MODES) {
+			seededDrafts[hand] = {
+				bpm: spanModeStats(spanCandidates, hand).bpm?.toString() ?? "",
+				quality: null,
+				effort: null,
+			};
+		}
+		setSpanDrafts(seededDrafts);
+		setSpanHands(spanPreselectHands(spanCandidates, piece));
+		// Every seam box starts ticked — the student unticks what broke.
+		setSeamChecked(spanCandidates.slice(1).map(() => true));
+		spanSeeded.current = true;
+	}, [isSpan, spanCandidates, piece]);
+
+	const spanDraft = spanDrafts[spanHands] ?? EMPTY_MODE_DRAFT;
+
+	const patchSpanDraft = (changes: Partial<ModeDraft>) => {
+		setSpanDrafts((prev) => ({
+			...prev,
+			[spanHands]: { ...(prev[spanHands] ?? EMPTY_MODE_DRAFT), ...changes },
+		}));
+		setSpanDirty((prev) =>
+			prev.has(spanHands) ? prev : new Set(prev).add(spanHands),
+		);
+	};
+
+	const spanTargets = spanCandidates
+		.map((s) => s.targetBpmOverride ?? piece?.targetTempoBpm ?? null)
+		.filter((v): v is number => v != null);
+	const spanEffectiveTarget = spanTargets.length
+		? Math.min(...spanTargets)
+		: null;
+	const spanStats = spanModeStats(spanCandidates, spanHands);
+	const spanLastLine = spanStats.lastPracticed
+		? t("screen.practice.meta.lastPractised", {
+				when: formatDaysAgo(spanStats.lastPracticed, t),
+			})
+		: t("screen.practice.meta.firstPractice");
+	const spanTally = practiceTally({
+		drafts: spanDrafts,
+		available: HANDS_MODES,
+		drills: NO_DRILLS,
+		dirty: spanDirty,
+		t,
+	});
 
 	// The whole-piece screen keeps its single BPM field; sections use per-mode drafts.
 	// A section deep link never auto-fills it: a tempo typed during the load goes
@@ -511,6 +635,13 @@ export function PiecePracticeContent({
 		return <LoadingScreen />;
 	}
 
+	// The span/single-section/whole-piece bodies diverge structurally the same
+	// way — a span URL must not render before `sections` resolves which one
+	// this is.
+	if (spanIds.length > 0 && sectionsLoading) {
+		return <LoadingScreen />;
+	}
+
 	const mistakes = mistakeOptions(t);
 
 	const scopedLog = scopedSection
@@ -625,12 +756,14 @@ export function PiecePracticeContent({
 						paddingBottom={12}
 						style={{ flex: 1 }}
 					>
-						{scopedSection && (
+						{isSpan && <SpanSectionsBlock sections={spanCandidates} />}
+
+						{(scopedSection || isSpan) && (
 							<HandTabs
 								available={HANDS_MODES}
-								hands={modes.hands}
-								onChangeHands={modes.setHands}
-								drafts={modes.drafts}
+								hands={isSpan ? spanHands : modes.hands}
+								onChangeHands={isSpan ? setSpanHands : modes.setHands}
+								drafts={isSpan ? spanDrafts : modes.drafts}
 								drills={NO_DRILLS}
 							/>
 						)}
@@ -645,28 +778,50 @@ export function PiecePracticeContent({
 											dirty: modes.dirty,
 											t,
 										})
-									: undefined
+									: isSpan
+										? spanTally
+										: undefined
 							}
-							lastLine={lastLine}
-							chip={metaChip}
+							lastLine={isSpan ? spanLastLine : lastLine}
+							chip={isSpan ? undefined : metaChip}
 						/>
 
 						<TempoControl
-							value={scopedSection ? modes.draft.bpm : achievedBpm}
-							onChangeText={scopedSection ? modes.setBpm : setAchievedBpm}
-							error={bpmError}
-							onBlur={handleBpmBlur}
+							value={
+								scopedSection
+									? modes.draft.bpm
+									: isSpan
+										? spanDraft.bpm
+										: achievedBpm
+							}
+							onChangeText={
+								scopedSection
+									? modes.setBpm
+									: isSpan
+										? (bpm) => patchSpanDraft({ bpm })
+										: setAchievedBpm
+							}
+							error={isSpan ? spanBpmError : bpmError}
+							onBlur={
+								isSpan
+									? () => setSpanBpmError(validateBpm(spanDraft.bpm))
+									: handleBpmBlur
+							}
 							stopRef={metronomeStopRef}
-							accent={accent}
+							accent={isSpan ? undefined : accent}
 							target={
 								scopedSection
 									? targetForMode(modes.hands, effectiveTarget)
-									: effectiveTarget
+									: isSpan
+										? targetForMode(spanHands, spanEffectiveTarget)
+										: effectiveTarget
 							}
 							last={
 								scopedSection
 									? (scopedSection.byMode?.[modes.currentKey]?.bpm ?? null)
-									: (piece?.lastAchievedTempoBpm ?? null)
+									: isSpan
+										? spanStats.bpm
+										: (piece?.lastAchievedTempoBpm ?? null)
 							}
 						/>
 						<Divider />
@@ -688,6 +843,23 @@ export function PiecePracticeContent({
 									previous={logsByMode[modes.currentKey]?.effort ?? null}
 								/>
 							</>
+						) : isSpan ? (
+							<>
+								<EstimationField
+									label={t("screen.practiceTechnique.qualityLabel")}
+									value={spanDraft.quality}
+									onChange={(quality) => patchSpanDraft({ quality })}
+									options={qualityOptions(t)}
+									previous={spanStats.quality}
+								/>
+								<EstimationField
+									label={t("screen.practiceTechnique.effortLabel")}
+									value={spanDraft.effort}
+									onChange={(effort) => patchSpanDraft({ effort })}
+									options={effortOptions(t)}
+									previous={spanStats.effort}
+								/>
+							</>
 						) : (
 							<>
 								<EstimationField
@@ -707,7 +879,19 @@ export function PiecePracticeContent({
 							</>
 						)}
 
-						{!scopedSection && (
+						{isSpan && (
+							<SpanSeamChecks
+								sections={spanCandidates}
+								checked={seamChecked}
+								onToggle={(seamIndex) =>
+									setSeamChecked((prev) =>
+										prev.map((v, i) => (i === seamIndex ? !v : v)),
+									)
+								}
+							/>
+						)}
+
+						{!scopedSection && !isSpan && (
 							<>
 								<SectionsPracticePanel
 									sections={activeSections}
@@ -763,17 +947,21 @@ export function PiecePracticeContent({
 							}}
 						/>
 					</ScreenContent>
-					<PracticeFooter
-						primaryLabel={
-							inCoach
-								? t("screen.session.coach.saveAndNext")
-								: t("screen.practice.save")
-						}
-						onPrimary={inCoach ? coach.saveAndNext : handleSave}
-						primaryLoading={inCoach ? coach.saving : loading}
-						onSkip={inCoach ? coach.skipBlock : undefined}
-						onExtend={inCoach ? coach.extendBlock : undefined}
-					/>
+					{/* The span save is wired in a later phase; the footer's primary
+					    action stays hidden here rather than pointing at nothing. */}
+					{!isSpan && (
+						<PracticeFooter
+							primaryLabel={
+								inCoach
+									? t("screen.session.coach.saveAndNext")
+									: t("screen.practice.save")
+							}
+							onPrimary={inCoach ? coach.saveAndNext : handleSave}
+							primaryLoading={inCoach ? coach.saving : loading}
+							onSkip={inCoach ? coach.skipBlock : undefined}
+							onExtend={inCoach ? coach.extendBlock : undefined}
+						/>
+					)}
 				</View>
 			)}
 
@@ -804,10 +992,11 @@ export function PiecePracticeContent({
 }
 
 export default function PracticeScreen() {
-	const { id, from, sectionId, mode } = useLocalSearchParams<{
+	const { id, from, sectionId, sectionIds, mode } = useLocalSearchParams<{
 		id: string;
 		from?: string;
 		sectionId?: string;
+		sectionIds?: string;
 		mode?: string;
 	}>();
 	// Standalone practice only: inside the coach the wake lock belongs to the
@@ -817,6 +1006,7 @@ export default function PracticeScreen() {
 		<PiecePracticeContent
 			pieceId={id}
 			sectionId={sectionId ?? null}
+			sectionIds={sectionIds ?? null}
 			from={from}
 			preselectMode={(mode as ModeKey) ?? null}
 		/>

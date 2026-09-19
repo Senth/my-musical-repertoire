@@ -602,6 +602,20 @@
 			},
 			"demoted_one": "{{count}} section moved back to stabilizing",
 			"demoted_other": "{{count}} sections moved back to stabilizing",
+			"span": {
+				"heading": {
+					"title": "Combined sections"
+				},
+				"chip": {
+					"bars": "{{start}}–{{end}}"
+				},
+				"seam": {
+					"title": "Did the joins hold?",
+					"joinHeld": "Join held",
+					"bars": "Bars {{start}}–{{end}}",
+					"a11yToggle": "Join between {{first}} and {{second}} held"
+				}
+			},
 			"modes": {
 				"hands": {
 					"LH": "LH",
