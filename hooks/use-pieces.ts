@@ -150,6 +150,8 @@ export function useUpdatePiece() {
 				| "notes"
 				| "durationSeconds"
 				| "allSectionsAdded"
+				| "lastSpanPracticedAt"
+				| "practiceDaysSinceSpan"
 			>
 		>,
 	) => {

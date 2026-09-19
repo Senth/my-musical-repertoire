@@ -353,9 +353,9 @@ export function PiecePracticeContent({
 			const triggeredFrom: PracticeTrigger =
 				triggerOverride ?? (scopedSection ? "section-panel" : "full-piece");
 			if (scopedSection) {
-				if (!scopedSection.id) return { ok: false };
+				if (!scopedSection.id || !piece) return { ok: false };
 				const mergedByMode = await saveSectionPractice(
-					pieceId,
+					piece,
 					scopedSection.id,
 					practiceDate,
 					modes.entries,

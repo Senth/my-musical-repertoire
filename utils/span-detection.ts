@@ -3,6 +3,15 @@ import type { Section, SectionState } from "@/models/section";
 /** Longest span we ever book — three sections joined is already a long stretch. */
 export const SPAN_WINDOW_MAX = 3;
 
+/** A section counts as span-ready once its HT tempo clears this share of target. */
+export const SPAN_READY_RATIO = 0.85;
+
+/** A span fires once this many practice days have passed since the last one. */
+export const SPAN_PRACTICE_DAYS_TRIGGER = 4;
+
+/** A span fires once this many calendar days have passed, practice days or not. */
+export const SPAN_STALE_DAYS = 7;
+
 /** A section that carries both bars, is not archived, and is held well enough
  * that joining it to a neighbour is a fair ask. */
 export interface SpanSection extends Section {

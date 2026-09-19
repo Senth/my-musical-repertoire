@@ -24,6 +24,7 @@ import {
 	mergeByMode,
 } from "@/utils/practice-modes";
 import { computeRunThroughEffects } from "@/utils/run-through-credit";
+import { nextPracticeDaysSinceSpan } from "@/utils/span-cadence";
 import { useUpdatePiece } from "./use-pieces";
 import { queueStateChange } from "./use-section-state";
 
@@ -92,6 +93,11 @@ export function useSavePractice() {
 			lastTechnicalMistakes: technicalMistakes,
 			lastMemoryMistakes: memoryMistakes,
 			...(achievedBpm != null ? { lastAchievedTempoBpm: achievedBpm } : {}),
+			practiceDaysSinceSpan: nextPracticeDaysSinceSpan(
+				piece.practiceDaysSinceSpan,
+				piece.lastPracticed,
+				date,
+			),
 		});
 
 		const { credits, demotions } = computeRunThroughEffects({
@@ -161,7 +167,7 @@ export function useSaveSectionPractice() {
 	 * against what was just written rather than the stale snapshot.
 	 */
 	const saveSectionPractice = async (
-		pieceId: string,
+		piece: Piece,
 		sectionId: string,
 		date: Date,
 		entries: ModeEntry[],
@@ -170,6 +176,8 @@ export function useSaveSectionPractice() {
 	): Promise<ByMode | null> => {
 		if (!user) throw new Error("Not authenticated");
 		if (entries.length === 0) return null;
+		const pieceId = piece.id;
+		if (!pieceId) throw new Error("Piece has no id");
 
 		const sectionRef = doc(
 			db,
@@ -219,6 +227,11 @@ export function useSaveSectionPractice() {
 		await updatePiece(pieceId, {
 			lastPracticed: date,
 			...(derived.bpm != null ? { lastAchievedTempoBpm: derived.bpm } : {}),
+			practiceDaysSinceSpan: nextPracticeDaysSinceSpan(
+				piece.practiceDaysSinceSpan,
+				piece.lastPracticed,
+				date,
+			),
 		});
 
 		return byMode;

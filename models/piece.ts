@@ -38,4 +38,8 @@ export interface Piece {
 	durationSeconds?: number | null; // full play-through estimate; null if unknown
 	/** Silences the add-next-section nudge — there is no more material to add. */
 	allSectionsAdded?: boolean;
+	/** When a span across this piece's sections last saved. Null means never. */
+	lastSpanPracticedAt?: Date | null;
+	/** Practice days since the last span save, for `spanIsDue`. */
+	practiceDaysSinceSpan?: number;
 }
