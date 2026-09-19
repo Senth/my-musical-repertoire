@@ -42,7 +42,11 @@ import {
 } from "@/hooks/use-mode-drafts";
 import { useDeletePiece, usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { usePracticeSave } from "@/hooks/use-practice-save";
-import { useSavePractice, useSaveSectionPractice } from "@/hooks/use-practices";
+import {
+	useSavePractice,
+	useSaveSectionPractice,
+	useSaveSpanPractice,
+} from "@/hooks/use-practices";
 import {
 	useChangeSectionState,
 	useSectionStateHistory,
@@ -123,6 +127,7 @@ export function PiecePracticeContent({
 	const { sections, loading: sectionsLoading } = useSections(pieceId);
 	const { savePractice } = useSavePractice();
 	const { saveSectionPractice } = useSaveSectionPractice();
+	const { saveSpanPractice } = useSaveSpanPractice();
 	const { deletePiece } = useDeletePiece();
 	const { changeSectionState, dismissStateOffer } = useChangeSectionState();
 	const { updatePiece } = useUpdatePiece();
@@ -391,6 +396,36 @@ export function PiecePracticeContent({
 		t,
 	});
 
+	const spanEntries = useMemo(
+		(): ModeEntry[] =>
+			HANDS_MODES.filter((hands) => {
+				const d = spanDrafts[hands];
+				return d?.quality != null && d?.effort != null;
+			}).map((hands) => {
+				const d = spanDrafts[hands];
+				return {
+					hands,
+					drill: null,
+					bpm: parseBpm(d.bpm),
+					quality: d.quality as 1 | 2 | 3 | 4 | 5,
+					effort: d.effort as 1 | 2 | 3 | 4 | 5,
+				};
+			}),
+		[spanDrafts],
+	);
+
+	/** First touched-but-unrated mode, or the mode on screen when nothing is
+	 * rated yet. `null` means the span save is allowed. */
+	const spanBlockingKey: ModeKey | null = (() => {
+		for (const hands of HANDS_MODES) {
+			const d = spanDrafts[hands];
+			if (spanDirty.has(hands) && !(d?.quality != null && d?.effort != null)) {
+				return hands;
+			}
+		}
+		return spanEntries.length === 0 ? spanHands : null;
+	})();
+
 	// The whole-piece screen keeps its single BPM field; sections use per-mode drafts.
 	// A section deep link never auto-fills it: a tempo typed during the load goes
 	// across as carryBpm instead of being mixed with the piece's stored tempo.
@@ -440,7 +475,26 @@ export function PiecePracticeContent({
 	const performSave = useCallback(async (): Promise<{ ok: boolean }> => {
 		if (!pieceId) return { ok: false };
 
-		if (scopedSection) {
+		if (isSpan) {
+			for (const hands of HANDS_MODES) {
+				const err = validateBpm(spanDrafts[hands]?.bpm ?? "");
+				if (err) {
+					setSpanHands(hands);
+					setSpanBpmError(err);
+					return { ok: false };
+				}
+			}
+			setSpanBpmError(null);
+			if (spanBlockingKey) {
+				setSpanHands(spanBlockingKey as HandsMode);
+				setError(
+					t("screen.practice.modes.incompleteMode", {
+						mode: t(`screen.practice.modes.handsLong.${spanBlockingKey}`),
+					}),
+				);
+				return { ok: false };
+			}
+		} else if (scopedSection) {
 			// Show the offending mode's BPM error on its own chip, not the current one.
 			for (const [key, draft] of Object.entries(modes.drafts)) {
 				const err = validateBpm(draft.bpm);
@@ -475,8 +529,24 @@ export function PiecePracticeContent({
 		try {
 			const practiceDate = new Date();
 			const triggeredFrom: PracticeTrigger =
-				triggerOverride ?? (scopedSection ? "section-panel" : "full-piece");
-			if (scopedSection) {
+				triggerOverride ??
+				(isSpan ? "direct" : scopedSection ? "section-panel" : "full-piece");
+			if (isSpan) {
+				if (!piece) return { ok: false };
+				await saveSpanPractice({
+					piece,
+					window: spanCandidates,
+					entries: spanEntries,
+					seamChecked,
+					date: practiceDate,
+					triggeredFrom,
+					sessionId,
+				});
+				setSavedEntries(spanEntries);
+				// No advance, no demote, no state offer from a span, ever.
+				setPendingOffer(null);
+				setOfferStatus(null);
+			} else if (scopedSection) {
 				if (!scopedSection.id || !piece) return { ok: false };
 				const mergedByMode = await saveSectionPractice(
 					piece,
@@ -556,6 +626,13 @@ export function PiecePracticeContent({
 		transitions,
 		inCoach,
 		triggerOverride,
+		isSpan,
+		spanCandidates,
+		spanEntries,
+		spanDrafts,
+		spanBlockingKey,
+		seamChecked,
+		saveSpanPractice,
 		scopedSection,
 		flaggedSectionIds,
 		savePractice,
@@ -947,21 +1024,17 @@ export function PiecePracticeContent({
 							}}
 						/>
 					</ScreenContent>
-					{/* The span save is wired in a later phase; the footer's primary
-					    action stays hidden here rather than pointing at nothing. */}
-					{!isSpan && (
-						<PracticeFooter
-							primaryLabel={
-								inCoach
-									? t("screen.session.coach.saveAndNext")
-									: t("screen.practice.save")
-							}
-							onPrimary={inCoach ? coach.saveAndNext : handleSave}
-							primaryLoading={inCoach ? coach.saving : loading}
-							onSkip={inCoach ? coach.skipBlock : undefined}
-							onExtend={inCoach ? coach.extendBlock : undefined}
-						/>
-					)}
+					<PracticeFooter
+						primaryLabel={
+							inCoach
+								? t("screen.session.coach.saveAndNext")
+								: t("screen.practice.save")
+						}
+						onPrimary={inCoach ? coach.saveAndNext : handleSave}
+						primaryLoading={inCoach ? coach.saving : loading}
+						onSkip={inCoach ? coach.skipBlock : undefined}
+						onExtend={inCoach ? coach.extendBlock : undefined}
+					/>
 				</View>
 			)}
 

@@ -543,6 +543,24 @@ describe("evaluateAdvance — stabilizing → maintenance", () => {
 	});
 });
 
+describe("evaluateAdvance — source filter", () => {
+	it("a span log neither counts as a clean day nor breaks the streak", () => {
+		const clean = cleanDays(CLEAN_DAYS_STABILIZING);
+		const spanNoise = log(7, { quality: 1, source: "span" });
+		const withSpan = advance({ logs: [spanNoise, ...clean] });
+		const withoutSpan = advance({ logs: clean });
+		expect(withSpan.eligible).toBe(withoutSpan.eligible);
+		expect(withSpan.cleanDays).toBe(withoutSpan.cleanDays);
+	});
+
+	it("a run-through log (no source) still counts", () => {
+		const result = advance({
+			logs: cleanDays(CLEAN_DAYS_STABILIZING, { source: "run-through" }),
+		});
+		expect(result.eligible).toBe(true);
+	});
+});
+
 describe("evaluateAdvance — maintenance", () => {
 	it("offers nothing above maintenance", () => {
 		const result = advance({ state: "maintenance", byMode: { HT: mode(200) } });
@@ -632,6 +650,28 @@ describe("evaluateDemote", () => {
 			[log(7, { drill: "staccato", achievedBpm: 200 })],
 		);
 		expect(result.eligible).toBe(false);
+	});
+
+	it("a span log does not trip the BPM-drop demote", () => {
+		const previous = 120;
+		const bpm = Math.floor(previous * DEMOTE_BPM_DROP_RATIO) - 1;
+		const result = demote(
+			"maintenance",
+			[entry({ bpm })],
+			[log(7, { achievedBpm: previous, source: "span" })],
+		);
+		expect(result.eligible).toBe(false);
+	});
+
+	it("a run-through log (no source) still trips the BPM-drop demote", () => {
+		const previous = 120;
+		const bpm = Math.floor(previous * DEMOTE_BPM_DROP_RATIO) - 1;
+		const result = demote(
+			"maintenance",
+			[entry({ bpm })],
+			[log(7, { achievedBpm: previous, source: "run-through" })],
+		);
+		expect(result.eligible).toBe(true);
 	});
 
 	it("ignores a drill entry in the save itself", () => {

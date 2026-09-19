@@ -24,7 +24,12 @@ import {
 	mergeByMode,
 } from "@/utils/practice-modes";
 import { computeRunThroughEffects } from "@/utils/run-through-credit";
-import { nextPracticeDaysSinceSpan } from "@/utils/span-cadence";
+import {
+	nextPracticeDaysSinceSpan,
+	resetSpanCadence,
+} from "@/utils/span-cadence";
+import { computeSpanCredit } from "@/utils/span-credit";
+import type { SpanSection } from "@/utils/span-detection";
 import { useUpdatePiece } from "./use-pieces";
 import { queueStateChange } from "./use-section-state";
 
@@ -238,4 +243,86 @@ export function useSaveSectionPractice() {
 	};
 
 	return { saveSectionPractice };
+}
+
+export interface SaveSpanPracticeInput {
+	piece: Piece;
+	/** The validated window, in play order. */
+	window: SpanSection[];
+	entries: ModeEntry[];
+	/** One entry per join, `window.length - 1` long. */
+	seamChecked: boolean[];
+	date: Date;
+	triggeredFrom?: PracticeTrigger;
+	sessionId?: string | null;
+}
+
+export function useSaveSpanPractice() {
+	const { user } = useAuth();
+
+	/**
+	 * Saves a joined-sections span: one row per practised mode per section, the
+	 * credited `byMode`, and the piece's span cadence fields, all in one batch
+	 * through `awaitWrite`. No advance, no demote, no state offer — a span
+	 * never calls `decideStateOffer`.
+	 */
+	const saveSpanPractice = async ({
+		piece,
+		window,
+		entries,
+		seamChecked,
+		date,
+		triggeredFrom,
+		sessionId,
+	}: SaveSpanPracticeInput): Promise<void> => {
+		if (!user) throw new Error("Not authenticated");
+		const pieceId = piece.id;
+		if (!pieceId) throw new Error("Piece has no id");
+
+		const batch = writeBatch(db);
+		const pieceRef = doc(db, "users", user.uid, "pieces", pieceId);
+		const sectionsRef = collection(pieceRef, "sections");
+
+		const credits = computeSpanCredit({
+			window,
+			entries,
+			seamChecked,
+			now: date,
+		});
+
+		for (const credit of credits) {
+			const sectionRef = doc(sectionsRef, credit.sectionId);
+			for (const log of credit.logs) {
+				batch.set(doc(collection(sectionRef, "practiceLogs")), {
+					date: Timestamp.fromDate(log.date),
+					quality: log.quality,
+					effort: log.effort,
+					achievedBpm: log.achievedBpm,
+					hands: log.hands,
+					drill: log.drill,
+					sectionIds: log.sectionIds,
+					seamBefore: log.seamBefore,
+					seamAfter: log.seamAfter,
+					source: log.source,
+					triggeredFrom: triggeredFrom ?? null,
+					sessionId: sessionId ?? null,
+				});
+			}
+			batch.update(sectionRef, {
+				byMode: credit.byMode,
+				lastPracticed: credit.derived.lastPracticed ?? date,
+				lastQuality: credit.derived.quality,
+				lastEffort: credit.derived.effort,
+			});
+		}
+
+		batch.update(pieceRef, {
+			lastPracticed: date,
+			...resetSpanCadence(date),
+		});
+
+		await awaitWrite(batch.commit());
+	};
+
+	return { saveSpanPractice };
 }

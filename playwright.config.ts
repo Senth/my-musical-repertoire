@@ -22,6 +22,14 @@ export const AUTH_STATE = ".tmp/e2e/auth.json";
  */
 export const OVERVIEW_AUTH_STATE = ".tmp/e2e/overview-suggestions-auth.json";
 
+/**
+ * `span.spec.ts` needs a `learning` piece with no target tempo and three
+ * never-practised `stabilizing` sections — a fixture `.emulator-seed` cannot
+ * express (#202) — so it registers its own throwaway account too, in
+ * `span.setup.ts`.
+ */
+export const SPAN_AUTH_STATE = ".tmp/e2e/span-auth.json";
+
 export default defineConfig({
 	testDir: "./e2e",
 	// The fixture builder is not part of a run — it has its own config.
@@ -44,6 +52,7 @@ export default defineConfig({
 	projects: [
 		{ name: "setup", testMatch: /auth\.setup\.ts/ },
 		{ name: "overview-setup", testMatch: /overview-suggestions\.setup\.ts/ },
+		{ name: "span-setup", testMatch: /span\.setup\.ts/ },
 
 		// A claim that does not depend on width is measured once. Running every
 		// spec on both viewports doubles the suite for identical results, which
@@ -55,6 +64,7 @@ export default defineConfig({
 				/\.desktop\.spec\.ts/,
 				/\.setup\.ts/,
 				/overview-suggestions\.spec\.ts/,
+				/span\.spec\.ts/,
 			],
 			use: {
 				...devices["Pixel 7"],
@@ -84,6 +94,16 @@ export default defineConfig({
 			use: {
 				...devices["Pixel 7"],
 				storageState: OVERVIEW_AUTH_STATE,
+			},
+		},
+		// Its own project on its own throwaway account — see `SPAN_AUTH_STATE`.
+		{
+			name: "span",
+			dependencies: ["span-setup"],
+			testMatch: /span\.spec\.ts/,
+			use: {
+				...devices["Pixel 7"],
+				storageState: SPAN_AUTH_STATE,
 			},
 		},
 	],
