@@ -72,6 +72,7 @@ export function AccentChip({
 						gap: space.xs,
 						height: CHIP_HEIGHT,
 						paddingLeft: space.md,
+						paddingRight: space.md,
 					}}
 				>
 					<Icon
