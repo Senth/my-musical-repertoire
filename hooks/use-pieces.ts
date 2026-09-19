@@ -34,6 +34,8 @@ interface FirestorePiece {
 	durationSeconds?: number | null;
 	allSectionsAdded?: boolean;
 	timeSignature?: unknown;
+	lastSpanPracticedAt?: Timestamp | null;
+	practiceDaysSinceSpan?: number;
 }
 
 export function fromFirestore(
@@ -59,6 +61,8 @@ export function fromFirestore(
 		durationSeconds: data.durationSeconds ?? null,
 		allSectionsAdded: data.allSectionsAdded ?? false,
 		timeSignature: timeSignatureFromFirestore(data.timeSignature),
+		lastSpanPracticedAt: data.lastSpanPracticedAt?.toDate() ?? null,
+		practiceDaysSinceSpan: data.practiceDaysSinceSpan ?? 0,
 	};
 }
 

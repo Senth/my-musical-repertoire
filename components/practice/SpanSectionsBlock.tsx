@@ -68,7 +68,12 @@ export function SpanSectionsBlock({ sections }: SpanSectionsBlockProps) {
 							</Text>
 							<Text
 								variant="labelSmall"
-								style={{ color: visual.accent, opacity: 0.75 }}
+								numberOfLines={1}
+								style={{
+									color: visual.accent,
+									opacity: 0.75,
+									flexShrink: 0,
+								}}
 							>
 								{t("screen.practice.span.chip.bars", {
 									start: section.startBar,

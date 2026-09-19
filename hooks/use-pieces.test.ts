@@ -93,3 +93,31 @@ describe("fromFirestore timeSignature mapping", () => {
 		expect(piece.timeSignature).toBeNull();
 	});
 });
+
+describe("fromFirestore span cadence mapping", () => {
+	const stamp = new Date("2026-09-01T10:00:00Z");
+	const asTimestamp = { toDate: () => stamp } as unknown as Parameters<
+		typeof fromFirestore
+	>[1]["lastSpanPracticedAt"];
+
+	it("maps a stored span stamp and counter through", () => {
+		const piece = fromFirestore(
+			"id1",
+			{
+				title: "A",
+				composer: "C",
+				lastSpanPracticedAt: asTimestamp,
+				practiceDaysSinceSpan: 3,
+			},
+			"user1",
+		);
+		expect(piece.lastSpanPracticedAt).toEqual(stamp);
+		expect(piece.practiceDaysSinceSpan).toBe(3);
+	});
+
+	it("defaults a piece that has never spanned", () => {
+		const piece = fromFirestore("id1", { title: "A", composer: "C" }, "user1");
+		expect(piece.lastSpanPracticedAt).toBeNull();
+		expect(piece.practiceDaysSinceSpan).toBe(0);
+	});
+});
