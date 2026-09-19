@@ -1,5 +1,6 @@
 import { render } from "@testing-library/react-native";
 import "@/i18n";
+import { size } from "@/theme/tokens";
 import { EstimationField } from "./EstimationField";
 
 const OPTIONS = [
@@ -22,9 +23,11 @@ async function renderField(value: number | null, previous?: number | null) {
 	);
 }
 
-/** The tick is the hairline under the previous segment; nothing else sets a bottom border colour. */
+/** The tick is the only bar drawn at the marker weight; the segments carry no other fixed height. */
 function tickCount(screen: { toJSON: () => unknown }): number {
-	return JSON.stringify(screen.toJSON()).split("borderBottomColor").length - 1;
+	return (
+		JSON.stringify(screen.toJSON()).split(`"height":${size.marker}`).length - 1
+	);
 }
 
 describe("EstimationField previous answer", () => {
@@ -39,6 +42,11 @@ describe("EstimationField previous answer", () => {
 		const screen = await renderField(3, 4);
 		expect(screen.getByText(/^· was Good$/)).toBeTruthy();
 		expect(tickCount(screen)).toBe(1);
+	});
+
+	it("draws the tick without a border, so no segment grows taller", async () => {
+		const screen = await renderField(3, 4);
+		expect(JSON.stringify(screen.toJSON())).not.toContain("borderBottomWidth");
 	});
 
 	it("drops the tick but keeps the words when previous equals chosen", async () => {

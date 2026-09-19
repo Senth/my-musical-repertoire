@@ -45,8 +45,11 @@ export const contentWidth = {
 } as const;
 
 /** Fixed widget widths and heights that are neither spacing nor a touch
- * target. `track` is the progress bar's height, everywhere it is drawn. */
+ * target. `track` is the progress bar's height, everywhere it is drawn, and
+ * `marker` the height of a bar drawn over a control to point at one part of
+ * it — thick enough to read as deliberate beside a hairline outline. */
 export const size = {
+	marker: 2,
 	track: 6,
 	md: 96,
 } as const;
