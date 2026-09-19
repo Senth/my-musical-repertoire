@@ -10,9 +10,9 @@ import { t } from "./support/app";
  * "The e2e fixture, and why it is shaped this way".
  *
  * The overview's own "Combined sections" card and its route into this screen
- * are phase 5 (#198 plan). This spec reaches the span route directly with
- * `sectionIds`, exactly as phase 3 made reachable, which is enough to prove
- * every phase 4 acceptance bullet without depending on unshipped phase 5 work.
+ * are phase 5 (#198 plan): the spec drives through that card, the fresh
+ * throwaway account guaranteeing it is the only "Combined sections" card on
+ * the page.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -106,25 +106,31 @@ test("joined-sections span: chips, seams, credit, and no offer", async ({
 	// round trips than the default 30s budget comfortably covers under load.
 	test.setTimeout(60_000);
 	const pieceUrl = await addPiece(page, PIECE);
-	const idA = await addSection(page, pieceUrl, {
-		label: SECTION_A,
-		from: 1,
-		to: 20,
-	});
-	const idB = await addSection(page, pieceUrl, {
-		label: SECTION_B,
-		from: 21,
-		to: 30,
-	});
-	const idC = await addSection(page, pieceUrl, {
-		label: SECTION_C,
-		from: 31,
-		to: 40,
-	});
+	await addSection(page, pieceUrl, { label: SECTION_A, from: 1, to: 20 });
+	await addSection(page, pieceUrl, { label: SECTION_B, from: 21, to: 30 });
+	await addSection(page, pieceUrl, { label: SECTION_C, from: 31, to: 40 });
 
-	await page.goto(
-		`${pieceUrl}/practice?sectionIds=${idA},${idB},${idC}&from=overview`,
-	);
+	await page.goto("/overview");
+	const spanCard = page
+		.locator("div")
+		.filter({ hasText: t("screen.practice.span.heading.title") })
+		.filter({
+			has: page.getByRole("button", {
+				name: t("screen.overview.practice"),
+				exact: true,
+			}),
+		})
+		.last();
+	await expect(spanCard).toBeVisible({ timeout: 10_000 });
+	await spanCard
+		.getByRole("button", { name: t("screen.overview.practice"), exact: true })
+		.click();
+	await page.waitForURL(/\/practice\?sectionIds=/);
+	// The SPA router keeps the overview screen mounted off-screen rather than
+	// unmounting it, so its own span card — with the same chip text — is
+	// still in the DOM and can satisfy a `.first()` lookup below. A full
+	// reload drops it.
+	await page.goto(page.url());
 
 	// The three chips, in play order.
 	await expect(page.getByText(SECTION_A, { exact: true }).first()).toBeVisible({

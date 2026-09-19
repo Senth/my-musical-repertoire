@@ -544,7 +544,9 @@
 				"daysSince": "{{days}} day(s) since last practice",
 				"lastResultPoor": "Last session needs cleanup",
 				"mistakes": "Mistakes to clean up",
-				"withMode": "{{mode}} · {{reason}}"
+				"withMode": "{{mode}} · {{reason}}",
+				"spanDue": "Joins not played for {{days}} day(s)",
+				"spanNeverPracticed": "Joins never practiced together"
 			},
 			"emptyState": {
 				"noActivePieces": "Start by adding a piece to your repertoire.",

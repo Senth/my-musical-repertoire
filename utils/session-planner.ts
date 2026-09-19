@@ -29,6 +29,8 @@ import {
 	STABILIZING_BLOCK_MAX,
 	splitStabilizingLine,
 } from "./session-split";
+import { selectSpanWindow, spanWindowsFor } from "./span-detection";
+import { spanIsDue, spanIsReady } from "./span-trigger";
 
 /**
  * One canonical order for every preset. Reading sits directly after warmup: it
@@ -58,6 +60,15 @@ function clamp(n: number, min: number, max: number): number {
 
 function compareTitle(a: string, b: string): number {
 	return a.localeCompare(b);
+}
+
+/**
+ * A block's sections, in play order. `sectionIds` is what every producer
+ * writes; `sectionId` is read only here, for a `SessionPlan` persisted before
+ * `sectionIds` existed.
+ */
+export function blockSectionIds(block: PlannedBlock): string[] {
+	return block.sectionIds ?? (block.sectionId ? [block.sectionId] : []);
 }
 
 /**
@@ -199,6 +210,7 @@ function sectionBlock(
 		allocatedMinutes,
 		pieceId: candidate.piece.id ?? null,
 		sectionId: candidate.section?.id ?? null,
+		sectionIds: candidate.section?.id ? [candidate.section.id] : null,
 		title: candidate.piece.title,
 		subtitle: candidate.section?.label ?? null,
 		score: candidate.score,
@@ -238,6 +250,54 @@ export function pickRepertoireSection(
 	const kind: BlockKind =
 		slot === "learning" ? "repertoire-learning" : "repertoire-stabilizing";
 	return sectionBlock(kind, best, allocatedMinutes);
+}
+
+/**
+ * The piece's best due-and-ready span window, or `null`. Only `learning`
+ * pieces ever get one — `pieces` is already narrowed to that state by every
+ * caller of `learningLinePool`.
+ */
+function bestSpanWindow(piece: Piece, sections: Section[], now: Date) {
+	if (!spanIsDue(piece, now)) return null;
+	const pieceSections = sections.filter((s) => s.pieceId === piece.id);
+	const ready = spanWindowsFor(pieceSections).filter((w) =>
+		spanIsReady(piece, w),
+	);
+	return selectSpanWindow(ready);
+}
+
+/**
+ * Walks the review blocks in score order (their given order) and upgrades the
+ * first one whose piece has a due, ready window containing that block's own
+ * section. Stops after one, which is what gives "at most one span per
+ * session". Any other review block whose section is now inside that span is
+ * dropped, so the section is not booked twice in the same session.
+ */
+function upgradeOneReviewBlockToSpan(
+	reviewBlocks: PlannedBlock[],
+	pieces: Piece[],
+	sections: Section[],
+	now: Date,
+): PlannedBlock[] {
+	let window: string[] | null = null;
+	const upgraded = reviewBlocks.map((block) => {
+		if (window) return block;
+		const sectionId = blockSectionIds(block)[0];
+		if (!sectionId || !block.pieceId) return block;
+		const piece = pieces.find((p) => p.id === block.pieceId);
+		if (!piece) return block;
+		const win = bestSpanWindow(piece, sections, now);
+		if (!win?.some((s) => s.id === sectionId)) return block;
+		window = win.map((s) => s.id).filter((id): id is string => Boolean(id));
+		return { ...block, sectionIds: window };
+	});
+	return window
+		? upgraded.filter(
+				(block) =>
+					blockSectionIds(block).length > 1 ||
+					!(window as string[]).includes(blockSectionIds(block)[0]),
+			)
+		: upgraded;
 }
 
 export interface LearningLineResult {
@@ -490,6 +550,7 @@ function maintenanceBlock(piece: Piece, score: number): PlannedBlock {
 		allocatedMinutes: maintenanceCost(piece),
 		pieceId: piece.id ?? null,
 		sectionId: null,
+		sectionIds: null,
 		title: piece.title,
 		subtitle: piece.composer,
 		score,
@@ -933,7 +994,7 @@ export function buildPlan(
 
 	const markUsed = (blocks: PlannedBlock[]): void => {
 		for (const b of blocks) {
-			if (b.sectionId) usedSectionIds.add(b.sectionId);
+			for (const id of blockSectionIds(b)) usedSectionIds.add(id);
 			if (b.pieceId) usedPieceIds.add(b.pieceId);
 		}
 	};
@@ -945,6 +1006,12 @@ export function buildPlan(
 		now,
 		usedSectionIds,
 		usedPieceIds,
+	);
+	learning.reviewBlocks = upgradeOneReviewBlockToSpan(
+		learning.reviewBlocks,
+		pieces,
+		sections,
+		now,
 	);
 	markUsed([...learning.reviewBlocks, ...learning.learningBlocks]);
 

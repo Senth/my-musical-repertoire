@@ -1,8 +1,9 @@
 import type { Piece, PieceState } from "@/models/piece";
 import type { Section } from "@/models/section";
-import type { SessionAllocation } from "@/models/session";
+import type { PlannedBlock, SessionAllocation } from "@/models/session";
 import type { TechniqueItem, TechniqueState } from "@/models/technique";
 import {
+	blockSectionIds,
 	buildPlan,
 	CANONICAL_BLOCK_ORDER,
 	pickRepertoireLearningBlocks,
@@ -2190,5 +2191,152 @@ describe("run-through credit invariants", () => {
 			const pool = stabilizingLinePool(pieces, sections, NOW);
 			expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b"]);
 		});
+	});
+});
+
+describe("blockSectionIds", () => {
+	it("reads sectionIds when present", () => {
+		expect(
+			blockSectionIds({
+				kind: "repertoire-review",
+				allocatedMinutes: 6,
+				sectionIds: ["a", "b"],
+			}),
+		).toEqual(["a", "b"]);
+	});
+
+	it("falls back to the deprecated sectionId for a plan stored before sectionIds existed", () => {
+		expect(
+			blockSectionIds({
+				kind: "repertoire-review",
+				allocatedMinutes: 6,
+				sectionId: "a",
+			}),
+		).toEqual(["a"]);
+	});
+
+	it("is empty for a block with neither field", () => {
+		expect(
+			blockSectionIds({ kind: "sight-reading", allocatedMinutes: 4 }),
+		).toEqual([]);
+	});
+});
+
+describe("producers write sectionIds", () => {
+	it("pickRepertoireSection writes a one-element array", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({ id: "s1", pieceId: "p1", state: "learning" }),
+		];
+		const b = pickRepertoireSection("learning", pieces, sections, 10, NOW);
+		expect(b?.sectionIds).toEqual(["s1"]);
+	});
+
+	it("pickRepertoireMaintenanceBlocks writes null, no section involved", () => {
+		const days = new Date(NOW.getTime() - 30 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({ id: "pm", state: "maintenance", lastPracticed: days }),
+		];
+		const { blocks } = pickRepertoireMaintenanceBlocks(pieces, 10, NOW);
+		expect(blocks[0]?.sectionIds).toBeNull();
+	});
+});
+
+describe("span upgrade in buildPlan", () => {
+	function spannablePieceSections(pieceId: string): Section[] {
+		return [
+			makeSection({
+				id: `${pieceId}-a`,
+				pieceId,
+				state: "stabilizing",
+				order: 0,
+				startBar: 1,
+				endBar: 20,
+			}),
+			makeSection({
+				id: `${pieceId}-b`,
+				pieceId,
+				state: "stabilizing",
+				order: 1,
+				startBar: 21,
+				endBar: 30,
+			}),
+		];
+	}
+
+	it("upgrades the review block into a span when its window is due and ready", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+		];
+		const sections = spannablePieceSections("p1");
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const review = plan.blocks.filter((b) => b.kind === "repertoire-review");
+		expect(review).toHaveLength(1);
+		expect(blockSectionIds(review[0])).toEqual(["p1-a", "p1-b"]);
+		expect(review[0].allocatedMinutes).toBeGreaterThanOrEqual(6);
+		expect(review[0].allocatedMinutes).toBeLessThanOrEqual(9);
+	});
+
+	it("marks every span section used, so the stabilizing line cannot re-book one", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+		];
+		const sections = spannablePieceSections("p1");
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		expect(
+			plan.blocks.filter((b) => b.kind === "repertoire-stabilizing"),
+		).toHaveLength(0);
+	});
+
+	it("books at most one span per session, even with three due pieces", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+			makePiece({ id: "p2", state: "learning", lastSpanPracticedAt: null }),
+			makePiece({ id: "p3", state: "learning", lastSpanPracticedAt: null }),
+		];
+		const sections = [
+			...spannablePieceSections("p1"),
+			...spannablePieceSections("p2"),
+			...spannablePieceSections("p3"),
+		];
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const spanBlocks = plan.blocks.filter((b) => blockSectionIds(b).length > 1);
+		expect(spanBlocks).toHaveLength(1);
+	});
+
+	it("keeps the piece's repertoire-learning block for its new bars alongside the span", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+		];
+		const sections = [
+			...spannablePieceSections("p1"),
+			makeSection({
+				id: "p1-new",
+				pieceId: "p1",
+				state: "learning",
+				order: 2,
+				startBar: 31,
+				endBar: 40,
+			}),
+		];
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const learning = plan.blocks.find((b) => b.kind === "repertoire-learning");
+		expect(learning?.pieceId).toBe("p1");
+		expect(blockSectionIds(learning as PlannedBlock)).toEqual(["p1-new"]);
+	});
+
+	it("does not upgrade a piece whose span is not due", () => {
+		const pieces: Piece[] = [
+			makePiece({
+				id: "p1",
+				state: "learning",
+				lastSpanPracticedAt: NOW,
+				practiceDaysSinceSpan: 0,
+			}),
+		];
+		const sections = spannablePieceSections("p1");
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const spanBlocks = plan.blocks.filter((b) => blockSectionIds(b).length > 1);
+		expect(spanBlocks).toHaveLength(0);
 	});
 });

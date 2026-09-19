@@ -16,11 +16,17 @@ import {
 	scoreTechnique,
 } from "./planner-scoring";
 import { parseModeKey, targetForMode } from "./practice-modes";
+import { selectSpanWindow, spanWindowsFor } from "./span-detection";
+import { spanIsDue, spanIsReady } from "./span-trigger";
 
 export interface SuggestedPiece {
 	piece: Piece;
-	/** The passage the card names; `null` for whole-piece suggestions. */
-	section: Section | null;
+	/**
+	 * The passage the card names. Empty for a whole-piece suggestion, one
+	 * element for an ordinary passage, two or three for a combined-sections
+	 * span.
+	 */
+	sections: Section[];
 	/** The mode that won the score, so the card can open that hand. */
 	modeKey: ModeKey | null;
 	score: number;
@@ -153,7 +159,7 @@ function sectionBasedSuggestions(
 		.filter((c) => !c.practicedToday)
 		.map((c) => ({
 			piece: c.piece,
-			section: c.section,
+			sections: c.section ? [c.section] : [],
 			score: c.score,
 			...reasonForCandidate(c, now),
 		}));
@@ -177,9 +183,23 @@ function breadthFirst(
 		if (queue) queue.push(s);
 		else byPiece.set(id, [s]);
 	}
+	// A span sits at the head of its piece's queue regardless of score, so
+	// the joined work comes first on the day the joins are due. Cross-piece
+	// order still runs off the true best score in the queue, so nothing
+	// reorders across pieces.
 	const queues = Array.from(byPiece.values())
-		.map((q) => q.sort((a, b) => b.score - a.score))
-		.sort((a, b) => b[0].score - a[0].score);
+		.map((q) =>
+			q.sort((a, b) => {
+				const aSpan = a.sections.length > 1;
+				const bSpan = b.sections.length > 1;
+				if (aSpan !== bSpan) return aSpan ? -1 : 1;
+				return b.score - a.score;
+			}),
+		)
+		.sort(
+			(a, b) =>
+				Math.max(...b.map((s) => s.score)) - Math.max(...a.map((s) => s.score)),
+		);
 
 	const out: SuggestedPiece[] = [];
 	for (let round = 0; out.length < cap; round++) {
@@ -199,11 +219,51 @@ function maintenanceBasedSuggestions(
 ): SuggestedPiece[] {
 	return pieces.map((piece) => ({
 		piece,
-		section: null,
+		sections: [],
 		modeKey: null,
 		score: scoreMaintenancePiece(piece, now),
 		...reasonForMaintenancePiece(piece, now),
 	}));
+}
+
+/**
+ * The piece's best due, ready span window as a card, or `null`. Only a
+ * `learning` piece ever gets one — `sectionBasedSuggestions("learning")` is
+ * the only caller. The score is the maximum among the window's members, from
+ * the same scoring `sectionBasedSuggestions` already used for the ordinary
+ * cards, so the span never out- or under-ranks the passages it is made of.
+ */
+function spanSuggestion(
+	piece: Piece,
+	pieceSections: Section[],
+	memberScores: Map<string, number>,
+	now: Date,
+): SuggestedPiece | null {
+	if (!spanIsDue(piece, now)) return null;
+	const windows = spanWindowsFor(pieceSections).filter((w) =>
+		spanIsReady(piece, w),
+	);
+	const window = selectSpanWindow(windows);
+	if (!window) return null;
+	const score = Math.max(
+		...window.map((s) => memberScores.get(s.id ?? "") ?? 0),
+	);
+	const lastSpanPracticedAt = piece.lastSpanPracticedAt ?? null;
+	return {
+		piece,
+		sections: window,
+		modeKey: null,
+		score,
+		...(lastSpanPracticedAt == null
+			? {
+					reasonKey: "screen.overview.pieceReason.spanNeverPracticed",
+					reasonParams: {},
+				}
+			: {
+					reasonKey: "screen.overview.pieceReason.spanDue",
+					reasonParams: { days: daysSince(lastSpanPracticedAt, now) },
+				}),
+	};
 }
 
 export function suggestPieces(
@@ -234,9 +294,35 @@ export function suggestPieces(
 	const inState = (state: Piece["state"]) =>
 		activePieces.filter((p) => p.state === state);
 
+	// Spans are booked only on pieces whose piece state is `learning`,
+	// mirroring the session planner's narrowing.
+	const spanSuggestionsForLearning = (): SuggestedPiece[] => {
+		const learningPieces = inState("learning");
+		if (learningPieces.length === 0) return [];
+		const memberScores = new Map(
+			buildSectionCandidates(learningPieces, sections, now).map((c) => [
+				c.section?.id ?? "",
+				c.score,
+			]),
+		);
+		return learningPieces
+			.map((piece) =>
+				spanSuggestion(
+					piece,
+					sections.filter((s) => s.pieceId === piece.id),
+					memberScores,
+					now,
+				),
+			)
+			.filter((s): s is SuggestedPiece => s != null);
+	};
+
 	const bySection = (state: Piece["state"]) =>
 		breadthFirst(
-			sectionBasedSuggestions(inState(state), sections, now),
+			[
+				...sectionBasedSuggestions(inState(state), sections, now),
+				...(state === "learning" ? spanSuggestionsForLearning() : []),
+			],
 			PIECE_CAP,
 		);
 
