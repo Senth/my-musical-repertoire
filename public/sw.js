@@ -16,9 +16,9 @@
 
 importScripts("./sw-routing.js");
 
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = `repertoire-${VERSION}`;
-/** Enough to boot the SPA offline; every route renders from this shell. */
+/** Prerendered root page; also the offline fallback for routes never visited. */
 const SHELL_URL = "/";
 const PRECACHE_URLS = [SHELL_URL, "/icons/icon-192.png"];
 
@@ -82,19 +82,26 @@ function isCacheable(response) {
 
 async function networkFirst(request) {
 	const cache = await caches.open(CACHE);
+	// Key navigations by pathname, not one shared shell: each exported route has
+	// its own prerender, and an offline relaunch must be served the prerender of
+	// the route it opens — a foreign route's markup trips React hydration (#418).
+	// The query is dropped on purpose: the exported HTML does not vary with it.
+	const key = new URL(request.url).pathname;
 	try {
 		// Bypass the browser HTTP cache: an hour-old shell naming an hour-old
 		// bundle is exactly the stale build this worker exists to prevent.
 		const response = await fetch(request, { cache: "no-store" });
-		// Every route is stored as the one shell, never under its own URL. A
-		// per-route copy would go stale independently, and because each exported
-		// HTML file names a content-hashed bundle, an old copy would boot old app
-		// code offline while other routes ran the new build.
-		if (isCacheable(response)) await cache.put(SHELL_URL, response.clone());
+		if (isCacheable(response)) await cache.put(key, response.clone());
 		return response;
 	} catch {
-		// The shell renders any route client-side, so one entry covers them all.
-		return (await cache.match(SHELL_URL)) ?? Response.error();
+		// A route visited online before has its own prerender. For one that has
+		// not, the root prerender is the least wrong answer: the client re-renders
+		// the right route from the bundle, which beats a browser error page.
+		return (
+			(await cache.match(key)) ??
+			(await cache.match(SHELL_URL)) ??
+			Response.error()
+		);
 	}
 }
 
