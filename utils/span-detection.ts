@@ -1,5 +1,8 @@
 import type { Section, SectionState } from "@/models/section";
 
+/** Fewest sections that make a span — one section is ordinary practice. */
+export const SPAN_MIN_SECTIONS = 2;
+
 /** Longest span we ever book — three sections joined is already a long stretch. */
 export const SPAN_WINDOW_MAX = 3;
 
@@ -54,7 +57,7 @@ export function buildSpanRuns(sections: Section[]): SpanSection[][] {
 	let current: SpanSection[] = [];
 
 	const close = () => {
-		if (current.length >= 2) runs.push(current);
+		if (current.length >= SPAN_MIN_SECTIONS) runs.push(current);
 		current = [];
 	};
 
@@ -87,7 +90,7 @@ export function buildSpanRuns(sections: Section[]): SpanSection[][] {
 /** Every window of `min(run.length, SPAN_WINDOW_MAX)` consecutive sections. */
 export function enumerateSpanWindows(run: SpanSection[]): SpanSection[][] {
 	const size = Math.min(run.length, SPAN_WINDOW_MAX);
-	if (run.length < 2) return [];
+	if (run.length < SPAN_MIN_SECTIONS) return [];
 
 	const windows: SpanSection[][] = [];
 	for (let start = 0; start + size <= run.length; start++) {

@@ -16,7 +16,7 @@ import type { BlockExecutionState, PlannedBlock } from "@/models/session";
 import { space } from "@/theme/tokens";
 import { sectionNudge } from "@/utils/add-section-nudge";
 import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
-import { planTotalMinutes } from "@/utils/session-planner";
+import { blockSectionIds, planTotalMinutes } from "@/utils/session-planner";
 import { clearActiveSession } from "@/utils/session-storage";
 
 /** Fixed column under the ⤬ / ✓ / · marker, so the block lines up past it. */
@@ -171,7 +171,7 @@ export default function SessionSummaryScreen() {
 				</Text>
 
 				{session.plan.blocks.map((block, idx) => {
-					const k = `${block.kind}:${block.pieceId ?? ""}:${block.sectionId ?? ""}:${block.techniqueId ?? ""}:${block.allocatedMinutes}`;
+					const k = `${block.kind}:${block.pieceId ?? ""}:${blockSectionIds(block).join(",")}:${block.techniqueId ?? ""}:${block.allocatedMinutes}`;
 					return (
 						<SummaryRow
 							key={k}

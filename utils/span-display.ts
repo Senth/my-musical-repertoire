@@ -1,3 +1,6 @@
+/** Bars shown either side of a seam, so the join has context around it. */
+export const SEAM_PADDING_BARS = 1;
+
 export interface BarRange {
 	startBar: number;
 	endBar: number;
@@ -23,7 +26,10 @@ export function spanBarRange(sections: BarRange[]): BarRange {
 export function seamBarRange(a: BarRange, b: BarRange): BarRange {
 	const seam = Math.min(a.endBar, b.startBar);
 	return {
-		startBar: Math.max(a.startBar, seam - 1),
-		endBar: Math.min(b.endBar, Math.max(a.endBar, b.startBar) + 1),
+		startBar: Math.max(a.startBar, seam - SEAM_PADDING_BARS),
+		endBar: Math.min(
+			b.endBar,
+			Math.max(a.endBar, b.startBar) + SEAM_PADDING_BARS,
+		),
 	};
 }
