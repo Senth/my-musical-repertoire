@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,7 +20,7 @@ import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
 import { planTotalMinutes } from "@/utils/session-planner";
 import { clearActiveSession } from "@/utils/session-storage";
 
-/** Fixed column under the ⤬ / ✓ / · marker, so the block lines up past it. */
+/** Fixed column under the status icon, so the block lines up past it. */
 const SUMMARY_GLYPH_WIDTH = 20;
 
 export default function SessionSummaryScreen() {
@@ -230,9 +231,13 @@ function SummaryRow({
 				gap: space.sm,
 			}}
 		>
-			<Text style={{ width: SUMMARY_GLYPH_WIDTH }}>
-				{skipped ? "⤬" : completed ? "✓" : "·"}
-			</Text>
+			<View style={{ width: SUMMARY_GLYPH_WIDTH }}>
+				<MaterialCommunityIcons
+					name={skipped ? "close" : completed ? "check" : "circle-small"}
+					size={20}
+					color={theme.colors.onSurface}
+				/>
+			</View>
 			<View style={{ flex: 1, minHeight: 0 }}>
 				<Text variant="bodyLarge">
 					{kindLabel}
