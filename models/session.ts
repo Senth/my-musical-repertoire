@@ -51,7 +51,15 @@ export interface PlannedBlock {
 	kind: BlockKind;
 	allocatedMinutes: number;
 	pieceId?: string | null;
+	/**
+	 * @deprecated Read through `blockSectionIds` (`utils/session-planner.ts`).
+	 * Kept only so a `SessionPlan` persisted before `sectionIds` existed still
+	 * resolves. Removal is #201.
+	 */
 	sectionId?: string | null;
+	/** The block's sections, in play order. One element is ordinary practice;
+	 * two or three is a combined-sections span. Written by every producer. */
+	sectionIds?: string[] | null;
 	techniqueId?: string | null;
 	title?: string | null;
 	subtitle?: string | null;

@@ -39,7 +39,7 @@ import type {
 } from "@/models/session";
 import { space } from "@/theme/tokens";
 import { playBlockEndCue } from "@/utils/session-cue";
-import { planTotalMinutes } from "@/utils/session-planner";
+import { blockSectionIds, planTotalMinutes } from "@/utils/session-planner";
 import { writeActiveSession } from "@/utils/session-storage";
 import type { PendingStateOffer } from "@/utils/state-offer";
 
@@ -424,11 +424,13 @@ export default function CoachScreen() {
 		case "repertoire-stabilizing":
 		case "repertoire-maintenance": {
 			if (currentBlock.pieceId) {
+				const ids = blockSectionIds(currentBlock);
 				body = (
 					<PiecePracticeContent
 						key={session.currentBlockIndex}
 						pieceId={currentBlock.pieceId}
-						sectionId={currentBlock.sectionId ?? null}
+						sectionId={ids.length === 1 ? ids[0] : null}
+						sectionIds={ids.length >= 2 ? ids.join(",") : null}
 						preselectMode={currentBlock.modeKey ?? null}
 						triggerOverride="session-coach"
 						clockPaused={!!session.pausedAt}

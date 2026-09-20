@@ -544,7 +544,9 @@
 				"daysSince": "{{days}} day(s) since last practice",
 				"lastResultPoor": "Last session needs cleanup",
 				"mistakes": "Mistakes to clean up",
-				"withMode": "{{mode}} · {{reason}}"
+				"withMode": "{{mode}} · {{reason}}",
+				"spanDue": "Joins not played for {{days}} day(s)",
+				"spanNeverPracticed": "Joins never practiced together"
 			},
 			"emptyState": {
 				"noActivePieces": "Start by adding a piece to your repertoire.",
@@ -602,6 +604,20 @@
 			},
 			"demoted_one": "{{count}} section moved back to stabilizing",
 			"demoted_other": "{{count}} sections moved back to stabilizing",
+			"span": {
+				"heading": {
+					"title": "Combined sections"
+				},
+				"chip": {
+					"bars": "{{start}}–{{end}}"
+				},
+				"seam": {
+					"title": "Did the joins hold?",
+					"joinHeld": "Join held",
+					"bars": "Bars {{start}}–{{end}}",
+					"a11yToggle": "Join between {{first}} and {{second}} held"
+				}
+			},
 			"modes": {
 				"hands": {
 					"LH": "LH",

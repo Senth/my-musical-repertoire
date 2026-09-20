@@ -249,7 +249,7 @@ describe("suggestPieces", () => {
 				makeSection({ id: "s2", pieceId: "p1", lastPracticed: TWO_DAYS_AGO }),
 			];
 			const result = suggestPieces(pieces, sections, NOW);
-			expect(result.suggestions.map((s) => s.section?.id)).toEqual([
+			expect(result.suggestions.map((s) => s.sections[0]?.id)).toEqual([
 				"s1",
 				"s2",
 			]);
@@ -265,7 +265,7 @@ describe("suggestPieces", () => {
 				makeSection({ id: "s3", pieceId: "p2", lastPracticed: TWO_DAYS_AGO }),
 			];
 			const result = suggestPieces(pieces, sections, NOW);
-			expect(result.suggestions.map((s) => s.section?.id)).toEqual([
+			expect(result.suggestions.map((s) => s.sections[0]?.id)).toEqual([
 				"s1",
 				"s3",
 			]);
@@ -304,7 +304,7 @@ describe("suggestPieces", () => {
 			];
 			const result = suggestPieces(pieces, partly, NOW);
 			expect(result.emptyStateKey).toBeNull();
-			expect(result.suggestions.map((s) => s.section?.id)).toEqual(["s2"]);
+			expect(result.suggestions.map((s) => s.sections[0]?.id)).toEqual(["s2"]);
 		});
 
 		it("keeps a section whose piece was practised today for a mode that was not", () => {
@@ -331,7 +331,7 @@ describe("suggestPieces", () => {
 			const result = suggestPieces(pieces, sections, NOW);
 			expect(result.suggestions).toHaveLength(1);
 			expect(result.suggestions[0].modeKey).toBe("RH");
-			expect(result.suggestions[0].section?.id).toBe("s1");
+			expect(result.suggestions[0].sections[0]?.id).toBe("s1");
 		});
 	});
 
@@ -449,6 +449,113 @@ describe("suggestPieces", () => {
 			const result = suggestPieces(pieces, [], NOW);
 			expect(result.suggestions).toHaveLength(1);
 			expect(result.emptyStateKey).toBeNull();
+		});
+	});
+
+	describe("span suggestion", () => {
+		function spanSections(pieceId: string): Section[] {
+			return [
+				makeSection({
+					id: `${pieceId}-a`,
+					pieceId,
+					state: "stabilizing",
+					order: 0,
+					startBar: 1,
+					endBar: 20,
+				}),
+				makeSection({
+					id: `${pieceId}-b`,
+					pieceId,
+					state: "stabilizing",
+					order: 1,
+					startBar: 21,
+					endBar: 30,
+				}),
+			];
+		}
+
+		it("offers a span card for a due, ready window on a learning piece", () => {
+			const pieces = [
+				makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+			];
+			const sections = spanSections("p1");
+			const result = suggestPieces(pieces, sections, NOW);
+			const span = result.suggestions.find((s) => s.sections.length > 1);
+			expect(span?.sections.map((s) => s.id)).toEqual(["p1-a", "p1-b"]);
+			expect(span?.reasonKey).toBe(
+				"screen.overview.pieceReason.spanNeverPracticed",
+			);
+		});
+
+		it("sits at the head of its piece's queue", () => {
+			const pieces = [
+				makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+			];
+			const sections = spanSections("p1");
+			const result = suggestPieces(pieces, sections, NOW);
+			const p1 = result.suggestions.filter((s) => s.piece.id === "p1");
+			expect(p1[0].sections.length).toBeGreaterThan(1);
+		});
+
+		it("consumes a normal slot under the piece cap", () => {
+			const pieces = [
+				makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+			];
+			const sections = spanSections("p1");
+			const result = suggestPieces(pieces, sections, NOW);
+			const p1 = result.suggestions.filter((s) => s.piece.id === "p1");
+			expect(p1.length).toBeLessThanOrEqual(2);
+		});
+
+		it("no card when the piece has a due span but no eligible window", () => {
+			const pieces = [
+				makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+			];
+			// A single stabilizing section can never form a run of two.
+			const sections = [
+				makeSection({
+					id: "p1-a",
+					pieceId: "p1",
+					state: "stabilizing",
+					startBar: 1,
+					endBar: 20,
+				}),
+			];
+			const result = suggestPieces(pieces, sections, NOW);
+			expect(result.suggestions.every((s) => s.sections.length <= 1)).toBe(
+				true,
+			);
+		});
+
+		it("uses the daysSince variant with a stamped lastSpanPracticedAt", () => {
+			const pieces = [
+				makePiece({
+					id: "p1",
+					state: "learning",
+					lastSpanPracticedAt: new Date(NOW.getTime() - 9 * 86_400_000),
+					practiceDaysSinceSpan: 4,
+				}),
+			];
+			const sections = spanSections("p1");
+			const result = suggestPieces(pieces, sections, NOW);
+			const span = result.suggestions.find((s) => s.sections.length > 1);
+			expect(span?.reasonKey).toBe("screen.overview.pieceReason.spanDue");
+			expect(span?.reasonParams.days).toBe(9);
+		});
+
+		it("no span card for a stabilizing piece, spans are learning-only", () => {
+			const pieces = [
+				makePiece({
+					id: "p1",
+					state: "stabilizing",
+					lastSpanPracticedAt: null,
+				}),
+			];
+			const sections = spanSections("p1");
+			const result = suggestPieces(pieces, sections, NOW);
+			expect(result.suggestions.every((s) => s.sections.length <= 1)).toBe(
+				true,
+			);
 		});
 	});
 });

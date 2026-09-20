@@ -18,6 +18,7 @@ import {
 } from "react-native-paper";
 import { LegalLinks } from "@/components/legal/LegalLinks";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
+import { SpanSectionsBlock } from "@/components/practice/SpanSectionsBlock";
 import { SectionStateChip } from "@/components/section/SectionStateChip";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
@@ -41,6 +42,7 @@ import {
 	useSessionPresets,
 } from "@/hooks/use-session-presets";
 import { useTechniques } from "@/hooks/use-techniques";
+import { SECTION_STATES } from "@/models/section";
 import { type ActiveSession, planPresetName } from "@/models/session";
 import {
 	presetTotalMinutes,
@@ -53,6 +55,7 @@ import { shouldOfferInstall } from "@/utils/install-gating";
 import { modeLabelLong } from "@/utils/mode-label";
 import { suggestPieces, suggestTechniques } from "@/utils/overview-suggestions";
 import {
+	formatBarRange,
 	formatComposerLine,
 	formatSectionPassage,
 } from "@/utils/piece-display";
@@ -63,6 +66,7 @@ import {
 	readInstallPromptDismissed,
 	writeInstallPromptDismissed,
 } from "@/utils/session-storage";
+import { spanBarRange } from "@/utils/span-display";
 import {
 	pieceStateVisual,
 	sectionStateVisual,
@@ -202,12 +206,30 @@ export default function OverviewScreen() {
 				)}
 
 				{pieceSuggestions.suggestions.map((s) => {
-					const subtitle = s.section
-						? formatComposerLine(
+					const isSpan = s.sections.length > 1;
+					const section = s.sections.length === 1 ? s.sections[0] : null;
+					const subtitle = isSpan
+						? [
+								formatBarRange(
+									spanBarRange(
+										s.sections.map((sec) => ({
+											startBar: sec.startBar ?? 0,
+											endBar: sec.endBar ?? 0,
+										})),
+									),
+									t,
+								),
+								s.piece.title,
 								s.piece.composer,
-								formatSectionPassage(s.section, t),
-							)
-						: s.piece.composer;
+							]
+								.filter(Boolean)
+								.join(t("screen.practice.heading.separator"))
+						: section
+							? formatComposerLine(
+									s.piece.composer,
+									formatSectionPassage(section, t),
+								)
+							: s.piece.composer;
 					const reasonText = t(
 						s.reasonKey as Parameters<typeof t>[0],
 						s.reasonParams,
@@ -219,36 +241,66 @@ export default function OverviewScreen() {
 							})
 						: reasonText;
 					const practiceQuery = [
-						s.section ? `sectionId=${s.section.id}` : null,
-						s.section && s.modeKey
+						isSpan
+							? `sectionIds=${s.sections.map((sec) => sec.id).join(",")}`
+							: section
+								? `sectionId=${section.id}`
+								: null,
+						!isSpan && section && s.modeKey
 							? `mode=${encodeURIComponent(s.modeKey)}`
 							: null,
 						"from=overview",
 					]
 						.filter(Boolean)
 						.join("&");
+					// The weakest state in the span decides the stripe, matching the
+					// stripe a lone card of that state would carry.
+					const weakestSpanState = isSpan
+						? s.sections.reduce((worst, sec) =>
+								SECTION_STATES.indexOf(sec.state) <
+								SECTION_STATES.indexOf(worst.state)
+									? sec
+									: worst,
+							)
+						: null;
 
 					return (
 						<Card
-							key={`${s.piece.id}-${s.section?.id ?? "piece"}`}
+							key={`${s.piece.id}-${s.sections.map((sec) => sec.id).join("-") || "piece"}`}
 							mode="elevated"
 							onPress={() => router.push(`/piece/${s.piece.id}`)}
 							style={accentBorderStyle(
-								s.section
-									? sectionStateVisual(s.section.state, theme.dark)
-									: pieceStateVisual(s.piece.state, theme.dark),
+								weakestSpanState
+									? sectionStateVisual(weakestSpanState.state, theme.dark)
+									: section
+										? sectionStateVisual(section.state, theme.dark)
+										: pieceStateVisual(s.piece.state, theme.dark),
 							)}
 						>
 							<Card.Title
-								title={s.piece.title}
+								title={
+									isSpan
+										? t("screen.practice.span.heading.title")
+										: s.piece.title
+								}
 								titleStyle={CARD_TITLE_STYLE}
 								subtitle={subtitle}
 								subtitleStyle={{ color: theme.colors.onSurfaceVariant }}
 							/>
 							<Card.Content>
 								<View style={{ gap: space.sm }}>
-									{s.section ? (
-										<SectionStateChip state={s.section.state} />
+									{isSpan ? (
+										<SpanSectionsBlock
+											sections={s.sections.map((sec) => ({
+												id: sec.id,
+												label: sec.label,
+												state: sec.state,
+												startBar: sec.startBar ?? 0,
+												endBar: sec.endBar ?? 0,
+											}))}
+										/>
+									) : section ? (
+										<SectionStateChip state={section.state} />
 									) : (
 										<PieceStateChip state={s.piece.state} />
 									)}
@@ -277,7 +329,7 @@ export default function OverviewScreen() {
 									    suggested, so the offer to split it rides here: earned
 									    once it has been played through, and silenced by the
 									    same "no more sections" answer the piece page respects. */}
-									{!s.section &&
+									{s.sections.length === 0 &&
 										s.piece.state === "learning" &&
 										s.piece.lastPracticed != null &&
 										!s.piece.allSectionsAdded && (

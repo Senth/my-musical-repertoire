@@ -73,6 +73,10 @@ export interface ProgressionLog {
 	quality?: 1 | 2 | 3 | 4 | 5 | null;
 	effort?: 1 | 2 | 3 | 4 | 5 | null;
 	achievedBpm?: number | null;
+	/** `"span"` rows are excluded from both progression gates — the filter is
+	 * specifically `source !== "span"`, not "source is absent", so a
+	 * run-through row (no `source`) keeps its current behaviour (#205). */
+	source?: string | null;
 }
 
 /** One calendar day's worth of plain HT logs. */
@@ -246,6 +250,7 @@ export function evaluateAdvance(
 	logs: ProgressionLog[],
 	savedEntries: ModeEntry[],
 ): AdvanceEvaluation {
+	logs = logs.filter((l) => l.source !== "span");
 	const toState = nextState(section.state);
 	const htBpm = byMode?.HT?.bpm ?? null;
 	if (!toState) {
@@ -388,6 +393,7 @@ export function evaluateDemote(
 	savedEntries: ModeEntry[],
 	priorLogs: ProgressionLog[],
 ): DemoteEvaluation {
+	priorLogs = priorLogs.filter((l) => l.source !== "span");
 	const toState = previousState(section.state);
 	if (!toState) return { eligible: false, toState: null, reason: null };
 

@@ -35,7 +35,11 @@ import {
 } from "@/models/session-preset";
 import { radius, space } from "@/theme/tokens";
 import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
-import { buildPlan, planTotalMinutes } from "@/utils/session-planner";
+import {
+	blockSectionIds,
+	buildPlan,
+	planTotalMinutes,
+} from "@/utils/session-planner";
 import { writeActiveSession } from "@/utils/session-storage";
 
 /**
@@ -187,7 +191,7 @@ export default function SessionSetupScreen() {
 						{plan && plan.blocks.length > 0 ? (
 							plan.blocks.map((block) => (
 								<PreviewRow
-									key={`${block.kind}:${block.pieceId ?? ""}:${block.sectionId ?? ""}:${block.techniqueId ?? ""}:${block.allocatedMinutes}`}
+									key={`${block.kind}:${block.pieceId ?? ""}:${blockSectionIds(block).join(",")}:${block.techniqueId ?? ""}:${block.allocatedMinutes}`}
 									block={block}
 								/>
 							))

@@ -1,8 +1,9 @@
 import type { Piece, PieceState } from "@/models/piece";
 import type { Section } from "@/models/section";
-import type { SessionAllocation } from "@/models/session";
+import type { PlannedBlock, SessionAllocation } from "@/models/session";
 import type { TechniqueItem, TechniqueState } from "@/models/technique";
 import {
+	blockSectionIds,
 	buildPlan,
 	CANONICAL_BLOCK_ORDER,
 	pickRepertoireLearningBlocks,
@@ -84,7 +85,7 @@ describe("pickRepertoireSection", () => {
 		];
 		const b = pickRepertoireSection("learning", pieces, sections, 10, NOW);
 		expect(b?.pieceId).toBe("p1");
-		expect(b?.sectionId).toBe("s1");
+		expect(blockSectionIds(b as PlannedBlock)).toEqual(["s1"]);
 	});
 
 	it("treats piece with no sections as a virtual section", () => {
@@ -97,7 +98,7 @@ describe("pickRepertoireSection", () => {
 		];
 		const b = pickRepertoireSection("learning", pieces, [], 8, NOW);
 		expect(b?.pieceId).toBe("p1");
-		expect(b?.sectionId).toBeNull();
+		expect(blockSectionIds(b as PlannedBlock)).toEqual([]);
 	});
 
 	it("BPM gap adds to score", () => {
@@ -188,7 +189,7 @@ describe("pickRepertoireSection", () => {
 			}),
 		];
 		const b = pickRepertoireSection("learning", pieces, sections, 10, NOW);
-		expect(b?.sectionId).toBe("s1");
+		expect(blockSectionIds(b as PlannedBlock)).toEqual(["s1"]);
 	});
 });
 
@@ -235,7 +236,8 @@ describe("pickRepertoireLearningBlocks", () => {
 		);
 		const minutes: Record<string, number> = {};
 		for (const b of [...r.learningBlocks, ...r.reviewBlocks]) {
-			if (b.sectionId) minutes[b.sectionId] = b.allocatedMinutes;
+			const sid = blockSectionIds(b)[0];
+			if (sid) minutes[sid] = b.allocatedMinutes;
 		}
 		return { minutes, leftoverMinutes: r.leftoverMinutes };
 	}
@@ -358,8 +360,13 @@ describe("pickRepertoireLearningBlocks", () => {
 		];
 		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
 		// r0 (27) and r1 (12) both out-score yesterday's learning section (10).
-		expect(r.reviewBlocks.map((b) => b.sectionId)).toEqual(["r0", "r1"]);
-		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["s-learn"]);
+		expect(r.reviewBlocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"r0",
+			"r1",
+		]);
+		expect(r.learningBlocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"s-learn",
+		]);
 		for (const b of r.reviewBlocks) {
 			expect(b.allocatedMinutes).toBeGreaterThanOrEqual(6);
 			expect(b.allocatedMinutes).toBeLessThanOrEqual(9);
@@ -394,7 +401,10 @@ describe("pickRepertoireLearningBlocks", () => {
 		];
 		const r = pickRepertoireLearningBlocks(pieces, sections, 24, NOW);
 		// a (30) and b (20) beat c (15), and two 12-minute blocks fill the line.
-		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["a", "b"]);
+		expect(r.learningBlocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"a",
+			"b",
+		]);
 		expect(r.learningBlocks.every((b) => b.allocatedMinutes === 12)).toBe(true);
 		expect(r.reviewBlocks).toEqual([]);
 	});
@@ -420,8 +430,12 @@ describe("pickRepertoireLearningBlocks", () => {
 			}),
 		];
 		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
-		expect(r.reviewBlocks.map((b) => b.sectionId)).toEqual(["c"]);
-		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["a"]);
+		expect(r.reviewBlocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"c",
+		]);
+		expect(r.learningBlocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"a",
+		]);
 	});
 
 	it("moves to the next piece only once the anchor is exhausted", () => {
@@ -444,7 +458,10 @@ describe("pickRepertoireLearningBlocks", () => {
 			}),
 		];
 		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
-		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["a1", "b1"]);
+		expect(r.learningBlocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"a1",
+			"b1",
+		]);
 		expect(r.learningBlocks.every((b) => b.allocatedMinutes === 10)).toBe(true);
 	});
 
@@ -474,8 +491,12 @@ describe("pickRepertoireLearningBlocks", () => {
 			}),
 		];
 		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
-		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["a-learn"]);
-		expect(r.reviewBlocks.map((b) => b.sectionId)).toEqual(["a-review"]);
+		expect(r.learningBlocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"a-learn",
+		]);
+		expect(r.reviewBlocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"a-review",
+		]);
 	});
 
 	it("runs the whole line as review when there is nothing new to acquire", () => {
@@ -493,7 +514,11 @@ describe("pickRepertoireLearningBlocks", () => {
 		);
 		const r = pickRepertoireLearningBlocks(pieces, sections, 20, NOW);
 		expect(r.learningBlocks).toEqual([]);
-		expect(r.reviewBlocks.map((b) => b.sectionId)).toEqual(["r0", "r1", "r2"]);
+		expect(r.reviewBlocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"r0",
+			"r1",
+			"r2",
+		]);
 		expect(r.reviewBlocks.every((b) => b.allocatedMinutes === 20 / 3)).toBe(
 			true,
 		);
@@ -557,7 +582,9 @@ describe("pickRepertoireLearningBlocks", () => {
 			NOW,
 			new Set(["a"]),
 		);
-		expect(r.learningBlocks.map((b) => b.sectionId)).toEqual(["b"]);
+		expect(r.learningBlocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"b",
+		]);
 	});
 });
 
@@ -586,7 +613,9 @@ describe("pickRepertoireStabilizingBlocks", () => {
 			}),
 		];
 		const r = pickRepertoireStabilizingBlocks(pieces, sections, 10, NOW);
-		expect(r.blocks.map((b) => b.sectionId)).toEqual(["problem"]);
+		expect(r.blocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"problem",
+		]);
 	});
 
 	it("never touches a learning-state piece — that is the learning line's job", () => {
@@ -611,7 +640,10 @@ describe("pickRepertoireStabilizingBlocks", () => {
 			}),
 		);
 		const r = pickRepertoireStabilizingBlocks(pieces, sections, 20, NOW);
-		expect(r.blocks.map((b) => b.sectionId)).toEqual(["a", "b"]);
+		expect(r.blocks.map((b) => blockSectionIds(b)[0] ?? null)).toEqual([
+			"a",
+			"b",
+		]);
 		expect(r.blocks.every((b) => b.allocatedMinutes === 10)).toBe(true);
 		expect(r.leftoverMinutes).toBe(0);
 	});
@@ -1728,7 +1760,7 @@ describe("buildPlan", () => {
 		// The stabilizing-state section inside a learning piece — previously
 		// unreachable by any line — is what the review block lands on.
 		const review = plan.blocks.find((b) => b.kind === "repertoire-review");
-		expect(review?.sectionId).toBe("learned");
+		expect(blockSectionIds(review as PlannedBlock)).toEqual(["learned"]);
 	});
 
 	it("does not schedule a piece twice when its problem section takes the stabilizing line", () => {
@@ -1752,7 +1784,11 @@ describe("buildPlan", () => {
 		];
 		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
 		expect(
-			plan.blocks.find((b) => b.kind === "repertoire-stabilizing")?.sectionId,
+			blockSectionIds(
+				plan.blocks.find(
+					(b) => b.kind === "repertoire-stabilizing",
+				) as PlannedBlock,
+			)[0],
 		).toBe("problem");
 		expect(
 			plan.blocks.filter((b) => b.pieceId === "pm").map((b) => b.kind),
@@ -1904,7 +1940,7 @@ describe("same-day exclusion", () => {
 			10,
 			NOW_LOCAL,
 		);
-		expect(block?.sectionId).toBe("s2");
+		expect(blockSectionIds(block as PlannedBlock)).toEqual(["s2"]);
 	});
 
 	it("keeps a section whose other hand is still unpractised today", () => {
@@ -1930,7 +1966,7 @@ describe("same-day exclusion", () => {
 			10,
 			NOW_LOCAL,
 		);
-		expect(block?.sectionId).toBe("s1");
+		expect(blockSectionIds(block as PlannedBlock)).toEqual(["s1"]);
 	});
 
 	it("excludes a section whose every mode was practiced today", () => {
@@ -2147,7 +2183,7 @@ describe("run-through credit invariants", () => {
 		);
 		expect(maint.length).toBeGreaterThan(0);
 		for (const block of maint) {
-			expect(block.sectionId).toBeNull();
+			expect(blockSectionIds(block)).toEqual([]);
 		}
 	});
 
@@ -2190,5 +2226,170 @@ describe("run-through credit invariants", () => {
 			const pool = stabilizingLinePool(pieces, sections, NOW);
 			expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b"]);
 		});
+	});
+});
+
+describe("blockSectionIds", () => {
+	it("reads sectionIds when present", () => {
+		expect(
+			blockSectionIds({
+				kind: "repertoire-review",
+				allocatedMinutes: 6,
+				sectionIds: ["a", "b"],
+			}),
+		).toEqual(["a", "b"]);
+	});
+
+	it("falls back to the deprecated sectionId for a plan stored before sectionIds existed", () => {
+		expect(
+			blockSectionIds({
+				kind: "repertoire-review",
+				allocatedMinutes: 6,
+				sectionId: "a",
+			}),
+		).toEqual(["a"]);
+	});
+
+	it("is empty for a block with neither field", () => {
+		expect(
+			blockSectionIds({ kind: "sight-reading", allocatedMinutes: 4 }),
+		).toEqual([]);
+	});
+});
+
+describe("producers write sectionIds", () => {
+	it("pickRepertoireSection writes a one-element array", () => {
+		const pieces: Piece[] = [makePiece({ id: "p1", state: "learning" })];
+		const sections: Section[] = [
+			makeSection({ id: "s1", pieceId: "p1", state: "learning" }),
+		];
+		const b = pickRepertoireSection("learning", pieces, sections, 10, NOW);
+		expect(b?.sectionIds).toEqual(["s1"]);
+	});
+
+	it("pickRepertoireMaintenanceBlocks writes null, no section involved", () => {
+		const days = new Date(NOW.getTime() - 30 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({ id: "pm", state: "maintenance", lastPracticed: days }),
+		];
+		const { blocks } = pickRepertoireMaintenanceBlocks(pieces, 10, NOW);
+		expect(blocks[0]?.sectionIds).toBeNull();
+	});
+
+	it("no producer writes the deprecated sectionId", () => {
+		const days = new Date(NOW.getTime() - 30 * 86400000);
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning" }),
+			makePiece({ id: "p2", state: "stabilizing" }),
+			makePiece({ id: "pm", state: "maintenance", lastPracticed: days }),
+		];
+		const sections: Section[] = [
+			makeSection({ id: "s1", pieceId: "p1", state: "learning" }),
+			makeSection({ id: "s2", pieceId: "p2", state: "stabilizing" }),
+		];
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		expect(plan.blocks.length).toBeGreaterThan(0);
+		for (const block of plan.blocks) {
+			expect(block.sectionId).toBeUndefined();
+		}
+	});
+});
+
+describe("span upgrade in buildPlan", () => {
+	function spannablePieceSections(pieceId: string): Section[] {
+		return [
+			makeSection({
+				id: `${pieceId}-a`,
+				pieceId,
+				state: "stabilizing",
+				order: 0,
+				startBar: 1,
+				endBar: 20,
+			}),
+			makeSection({
+				id: `${pieceId}-b`,
+				pieceId,
+				state: "stabilizing",
+				order: 1,
+				startBar: 21,
+				endBar: 30,
+			}),
+		];
+	}
+
+	it("upgrades the review block into a span when its window is due and ready", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+		];
+		const sections = spannablePieceSections("p1");
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const review = plan.blocks.filter((b) => b.kind === "repertoire-review");
+		expect(review).toHaveLength(1);
+		expect(blockSectionIds(review[0])).toEqual(["p1-a", "p1-b"]);
+		expect(review[0].allocatedMinutes).toBeGreaterThanOrEqual(6);
+		expect(review[0].allocatedMinutes).toBeLessThanOrEqual(9);
+	});
+
+	it("marks every span section used, so the stabilizing line cannot re-book one", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+		];
+		const sections = spannablePieceSections("p1");
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		expect(
+			plan.blocks.filter((b) => b.kind === "repertoire-stabilizing"),
+		).toHaveLength(0);
+	});
+
+	it("books at most one span per session, even with three due pieces", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+			makePiece({ id: "p2", state: "learning", lastSpanPracticedAt: null }),
+			makePiece({ id: "p3", state: "learning", lastSpanPracticedAt: null }),
+		];
+		const sections = [
+			...spannablePieceSections("p1"),
+			...spannablePieceSections("p2"),
+			...spannablePieceSections("p3"),
+		];
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const spanBlocks = plan.blocks.filter((b) => blockSectionIds(b).length > 1);
+		expect(spanBlocks).toHaveLength(1);
+	});
+
+	it("keeps the piece's repertoire-learning block for its new bars alongside the span", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+		];
+		const sections = [
+			...spannablePieceSections("p1"),
+			makeSection({
+				id: "p1-new",
+				pieceId: "p1",
+				state: "learning",
+				order: 2,
+				startBar: 31,
+				endBar: 40,
+			}),
+		];
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const learning = plan.blocks.find((b) => b.kind === "repertoire-learning");
+		expect(learning?.pieceId).toBe("p1");
+		expect(blockSectionIds(learning as PlannedBlock)).toEqual(["p1-new"]);
+	});
+
+	it("does not upgrade a piece whose span is not due", () => {
+		const pieces: Piece[] = [
+			makePiece({
+				id: "p1",
+				state: "learning",
+				lastSpanPracticedAt: NOW,
+				practiceDaysSinceSpan: 0,
+			}),
+		];
+		const sections = spannablePieceSections("p1");
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const spanBlocks = plan.blocks.filter((b) => blockSectionIds(b).length > 1);
+		expect(spanBlocks).toHaveLength(0);
 	});
 });

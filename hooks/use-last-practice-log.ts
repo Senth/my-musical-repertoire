@@ -21,6 +21,8 @@ export interface NormalizedLastLog {
 	drill?: PracticeDrill | null;
 	/** Free-text "note for next time" left with the log (#16). */
 	note?: string | null;
+	/** `"span"` for a joined-sections row; absent for an ordinary section log. */
+	source?: string | null;
 }
 
 type PieceScope = { type: "piece"; pieceId: string };
@@ -67,6 +69,7 @@ export function normalizeLastLog(
 		hands: (data.hands as HandsMode) ?? null,
 		drill: (data.drill as PracticeDrill) ?? null,
 		note: (data.note as string) ?? null,
+		source: (data.source as string) ?? null,
 	};
 }
 
