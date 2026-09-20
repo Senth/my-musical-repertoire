@@ -638,16 +638,16 @@
 				"everywhere": "All"
 			},
 			"comparison": {
-				"title": "Practice Results",
+				"title": "Practice results",
 				"previous": "Previous",
 				"current": "Current",
 				"improved": "Improved!",
 				"regressed": "Needs work",
 				"same": "Same as before",
-				"firstPractice": "First practice! 🎵",
-				"backToOverview": "Back to Overview",
-				"backToPieces": "Back to Pieces",
-				"backToPiece": "Back to Piece"
+				"firstPractice": "First practice",
+				"backToOverview": "Back to overview",
+				"backToPieces": "Back to pieces",
+				"backToPiece": "Back to piece"
 			},
 			"stateOffer": {
 				"title": {
@@ -825,21 +825,21 @@
 			"effortLabel": "How hard?",
 			"save": "Save",
 			"comparison": {
-				"title": "Practice Results",
+				"title": "Practice results",
 				"savedModes_one": "Saved {{count}} mode",
 				"savedModes_other": "Saved {{count}} modes",
 				"qualityLabel": "Quality",
 				"effortLabel": "Effort",
-				"tempoAchievedLabel": "Tempo Achieved",
+				"tempoAchievedLabel": "Tempo achieved",
 				"tempoTarget": "Target: {{bpm}} BPM",
 				"improved": "Improved!",
 				"regressed": "Needs work",
 				"same": "Same as before",
-				"firstPractice": "First practice! 🎵",
+				"firstPractice": "First practice",
 				"back": "Back",
-				"backToOverview": "Back to Overview",
-				"backToTechniques": "Back to Techniques",
-				"backToTechnique": "Back to Technique"
+				"backToOverview": "Back to overview",
+				"backToTechniques": "Back to techniques",
+				"backToTechnique": "Back to technique"
 			}
 		},
 		"session": {
