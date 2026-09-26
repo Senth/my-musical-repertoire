@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Checkbox, Text, useTheme } from "react-native-paper";
 import { space } from "@/theme/tokens";
+import { formatDaysAgo } from "@/utils/date";
 import type { DemoteReason } from "@/utils/section-progression";
 import type { StateOffer } from "@/utils/state-offer";
 
@@ -13,6 +14,15 @@ export function checksFor(offer: StateOffer): OfferCheck[] {
 	if (offer.kind === "demote") return [];
 	if (offer.toState === "stabilizing") return ["memory"];
 	return ["memory", "continuity"];
+}
+
+/**
+ * A seam the app saw hold is evidence, not an answer (#204): the check starts
+ * ticked so the student confirms rather than re-attests, and can untick it.
+ */
+export function initialChecks(offer: StateOffer): OfferCheck[] {
+	if (offer.seamHeldAt == null) return [];
+	return checksFor(offer).includes("continuity") ? ["continuity"] : [];
 }
 
 export function offerTitleKey(offer: StateOffer): string {
@@ -45,16 +55,18 @@ export function StateOfferBody({
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const checks = useMemo(() => checksFor(offer), [offer]);
-	const [ticked, setTicked] = useState<OfferCheck[]>([]);
+	const [ticked, setTicked] = useState<OfferCheck[]>(() =>
+		initialChecks(offer),
+	);
 
 	// The coach reuses one dialog across blocks, so a new offer must arrive
-	// unticked rather than inheriting the last section's answers. Adjusting
+	// with its own answers rather than inheriting the last section's. Adjusting
 	// during render rather than in an effect avoids a frame showing the stale
 	// ticks with the new offer's copy.
 	const [seenOffer, setSeenOffer] = useState(offer);
 	if (seenOffer !== offer) {
 		setSeenOffer(offer);
-		setTicked([]);
+		setTicked(initialChecks(offer));
 	}
 
 	// A demote has no checkboxes, so it reports ready as soon as it mounts.
@@ -91,6 +103,17 @@ export function StateOfferBody({
 					labelStyle={{ textAlign: "left" }}
 				/>
 			))}
+
+			{offer.seamHeldAt != null && checks.includes("continuity") && (
+				<Text
+					variant="bodySmall"
+					style={{ color: theme.colors.onSurfaceVariant }}
+				>
+					{t("screen.practice.stateOffer.seamHeld", {
+						when: formatDaysAgo(offer.seamHeldAt, t).toLowerCase(),
+					})}
+				</Text>
+			)}
 		</View>
 	);
 }

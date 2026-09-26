@@ -115,6 +115,40 @@ describe("decideStateOffer", () => {
 		expect(offer?.cyclingDays).toBe(2);
 	});
 
+	it("pre-ticks the seam check from the newest held seam (#204)", () => {
+		const held = log(7, { source: "span", seamBefore: "held" });
+		const { offer } = decide({ priorLogs: [held, log(6)] });
+		expect(offer?.seamHeldAt).toEqual(held.date);
+	});
+
+	it("does not pre-tick when the newest seam evidence is broken", () => {
+		const broken = log(7, { source: "span", seamBefore: "broken" });
+		const { offer } = decide({ priorLogs: [broken, log(6)] });
+		expect(offer?.seamHeldAt).toBeNull();
+	});
+
+	it("reads past a span row that carried no incoming seam", () => {
+		const led = log(7, { source: "span", seamBefore: null });
+		const held = log(5, { source: "span", seamBefore: "held" });
+		const { offer } = decide({ priorLogs: [led, log(6), held] });
+		expect(offer?.seamHeldAt).toEqual(held.date);
+	});
+
+	it("carries no seam evidence without span rows", () => {
+		const { offer } = decide({ priorLogs: [log(7)] });
+		expect(offer?.seamHeldAt).toBeNull();
+	});
+
+	it("carries no seam evidence on a demote", () => {
+		const { offer } = decide({
+			state: "maintenance",
+			savedEntries: [entry({ quality: 1 })],
+			priorLogs: [log(7, { source: "span", seamBefore: "held" })],
+		});
+		expect(offer?.kind).toBe("demote");
+		expect(offer?.seamHeldAt).toBeNull();
+	});
+
 	it("drops the offer for a status line once suppressed", () => {
 		const { offer, status } = decide({
 			transitions: [

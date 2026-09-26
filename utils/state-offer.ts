@@ -32,6 +32,9 @@ export interface StateOffer {
 	demoteReason: DemoteReason | null;
 	/** Days since the last state change when it was recent; null otherwise. */
 	cyclingDays: number | null;
+	/** When the newest log with an incoming seam recorded it as held (#204);
+	 * pre-ticks the continuity check. Null on a demote or without evidence. */
+	seamHeldAt: Date | null;
 }
 
 export type StateOfferStatus =
@@ -74,6 +77,21 @@ export interface StateOfferInput {
 }
 
 const NOTHING: StateOfferDecision = { offer: null, status: null };
+
+/**
+ * Logs arrive newest first, so the first row carrying an incoming seam is the
+ * latest word on whether the join held. A `null` seam (the section led its
+ * most recent span) says nothing about the join, so the scan reads past it;
+ * a broken seam is the word and stops it.
+ */
+function newestHeldSeam(logs: ProgressionLog[]): Date | null {
+	for (const log of logs) {
+		if (log.seamBefore != null) {
+			return log.seamBefore === "held" ? log.date : null;
+		}
+	}
+	return null;
+}
 
 /** The just-saved entries as logs, so the criteria see the current session. */
 function savedAsLogs(
@@ -121,6 +139,7 @@ export function decideStateOffer({
 				cleanDays: 0,
 				demoteReason: demote.reason,
 				cyclingDays,
+				seamHeldAt: null,
 			},
 			status: null,
 		};
@@ -140,6 +159,7 @@ export function decideStateOffer({
 				cleanDays: advance.cleanDays,
 				demoteReason: null,
 				cyclingDays,
+				seamHeldAt: newestHeldSeam(priorLogs),
 			},
 			status: null,
 		};
