@@ -45,20 +45,24 @@ start = "scripts/dev-stack.sh up"
 url = "http://localhost:$(scripts/dev-stack.sh ports)"
 # Sign-in is an **email and password form** against the Auth emulator, not a
 # redirect: type pianist@example.com / practice123, then "Sign in with Email".
-# The account and the readiness marker are a contract with `.emulator-seed/`, and
-# they live in `e2e/support/app.ts`. `.tmp/e2e/auth.json` does not shortcut this:
-# it is a Playwright storage state including IndexedDB, and `state-load` restores
-# cookies and `localStorage` only.
+# The account and the readiness marker are a contract with the e2e seed, and
+# they live in `e2e/support/app.ts`. `.tmp/e2e/auth.json` does not shortcut
+# this: it is a Playwright storage state including IndexedDB, and `state-load`
+# restores cookies and `localStorage` only.
 auth = "type pianist@example.com / practice123 -> click 'Sign in with Email'"
 ready = "Suggested Practices"
 
-# What `.emulator-seed` holds, so an empty screen is judged and not reported:
-# four pieces, two techniques, and **no practice history at all**. Every piece
-# therefore reads as never practised, and anything ranking by recency or by a BPM
-# gap is legitimately empty. That is the fixture's cold-start shape. Whether an
-# empty state explains itself is still fair game; reporting the emptiness as data
-# loss is not. A change whose behaviour needs a warm history is a finding that the
-# fixture needs extending, not a bug in the screen.
+# What the e2e seed writes, so an empty screen is judged and not reported.
+# There is no committed fixture export: `e2e/seed.setup.ts` runs as the first
+# Playwright project of every `yarn e2e` and writes the fixture through the
+# app's own Firebase shapes, with dates computed at run time. It holds one
+# account — pianist@example.com — four pieces, two techniques, and **no
+# practice history at all**. Every piece therefore reads as never practised,
+# and anything ranking by recency or by a BPM gap is legitimately empty. That
+# is the fixture's cold-start shape. Whether an empty state explains itself is
+# still fair game; reporting the emptiness as data loss is not. A change whose
+# behaviour needs a warm history is a finding that the seed needs extending
+# (a dated practiceLog), not a bug in the screen.
 
 [design]
 # The contract and the values it is written against. `theme/tokens.ts` is ground

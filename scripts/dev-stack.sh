@@ -3,11 +3,18 @@
 # Boots the stack the e2e suite and the review browser pass run against:
 # the Firebase emulator suite plus an Expo web server wired to it.
 #
-#   scripts/dev-stack.sh up [--no-web] [--fresh]   start what is not already running
-#   scripts/dev-stack.sh down                      stop only what this script started
-#   scripts/dev-stack.sh status                    what is listening, and whose it is
-#   scripts/dev-stack.sh ports                     the e2e web port for this checkout
-#   scripts/dev-stack.sh dev-port                  the hand-driven web port
+#   scripts/dev-stack.sh up [--no-web]   start what is not already running
+#   scripts/dev-stack.sh down            stop only what this script started
+#   scripts/dev-stack.sh status          what is listening, and whose it is
+#   scripts/dev-stack.sh ports           the e2e web port for this checkout
+#   scripts/dev-stack.sh dev-port        the hand-driven web port
+#
+#   --no-web   emulators only; for anything that never renders
+#
+# The emulators always boot empty: the fixture is written programmatically by
+# the e2e suite's own seed project (`e2e/seed.setup.ts`) at the start of every
+# `yarn e2e`, so there is no committed export to import and no `--fresh` to ask
+# for. The first `yarn e2e` after a cold `up` is what populates the account.
 #
 # `up` returns only once the web URL actually answers an HTTP request — the
 # port binding well before the first bundle is compiled is exactly how a CI
@@ -16,16 +23,12 @@
 # already serving returns immediately. `DEV_STACK_WEB_TIMEOUT` overrides the
 # deadline in seconds.
 #
-#   --no-web   emulators only; for seeding and for anything that never renders
-#   --fresh    boot the emulators empty rather than importing .emulator-seed
-#
 # `up` is idempotent and deliberately asymmetric with `down`: a port already
 # listening is left completely alone, and `down` only ever stops what this
 # script started. Reusing a stack you did not start is normal — it is your own
-# `yarn emulators` in another terminal — but the data in it is whatever that
-# session left there, not the committed fixture. `status` says which case you
-# are in, and the review stage reports it, because a review run against a
-# non-pristine emulator has seen different data than the next one will.
+# `yarn emulators` in another terminal — but a run against it still starts by
+# rewriting the fixture account, so only the throwaway accounts of earlier
+# runs linger, not a dirty fixture.
 #
 # Deliberately separate from the dev server you run by hand on 8053/8054:
 # that one talks to the real dev Firebase project and must keep doing so.
@@ -55,7 +58,6 @@ else
 fi
 
 RUN_DIR="$ROOT/.tmp/dev-stack"
-SEED_DIR="$ROOT/.emulator-seed"
 
 listening() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 
@@ -98,39 +100,24 @@ wait_http() { # url, label, seconds
 	done
 }
 
-start_emulators() { # $1 = 1 to import .emulator-seed, 0 for a fresh suite
+start_emulators() {
 	# Both, not either. A suite half up — auth dead, Firestore alive — reads as
 	# reusable and then fails every sign-in with ERR_CONNECTION_REFUSED, which
 	# surfaces as a test that hangs on a form rather than as an infra error.
 	if listening "$FIRESTORE_PORT" && listening "$AUTH_PORT"; then
-		echo "emulators: reused (already listening) — data is whatever the last run left"
+		echo "emulators: reused (already listening) — the fixture account is rewritten by every yarn e2e"
 		return
 	fi
 	if listening "$FIRESTORE_PORT" || listening "$AUTH_PORT"; then
 		echo "dev-stack: emulator suite is half up; run 'scripts/dev-stack.sh down' first" >&2
 		exit 1
 	fi
-	# `--import` refuses to create a missing directory and fails the whole
-	# command, so a lost fixture must not take the stack down with it: it warns
-	# and boots empty, which is what makes the regeneration procedure in
-	# docs/OPERATIONS.md work at all. `--fresh` is the same empty boot asked for
-	# deliberately, and it is how you recover a missing or wrong seed.
-	local import=() origin="empty (--fresh)"
-	if [[ "$1" == 1 ]]; then
-		if [[ -d "$SEED_DIR" ]]; then
-			import=(--import "$SEED_DIR")
-			origin="pristine from $SEED_DIR"
-		else
-			origin="empty (no $SEED_DIR)"
-			echo "dev-stack: no $SEED_DIR — starting empty; the suite will be wrong until you regenerate it with 'yarn fixture' and 'yarn emulators:export'" >&2
-		fi
-	fi
-	setsid yarn --silent firebase emulators:start "${import[@]}" \
+	setsid yarn --silent firebase emulators:start \
 		>"$RUN_DIR/emulators.log" 2>&1 &
 	echo $! >"$RUN_DIR/emulators.pid"
 	wait_for "$FIRESTORE_PORT" "firestore emulator" 120
 	wait_for "$AUTH_PORT" "auth emulator" 30
-	echo "emulators: started, $origin (ui on $UI_PORT)"
+	echo "emulators: started, empty (the e2e seed project populates it) (ui on $UI_PORT)"
 }
 
 start_web() {
@@ -181,11 +168,10 @@ stop_one() { # name, port to wait on
 }
 
 cmd_up() {
-	local web=1 import=1
+	local web=1
 	for arg in "$@"; do
 		case "$arg" in
 		--no-web) web=0 ;;
-		--fresh) import=0 ;;
 		*)
 			echo "dev-stack: unknown option $arg" >&2
 			exit 2
@@ -193,7 +179,7 @@ cmd_up() {
 		esac
 	done
 	mkdir -p "$RUN_DIR"
-	start_emulators "$import"
+	start_emulators
 	[[ "$web" == 1 ]] || return 0
 	start_web
 	echo "WEB_URL=http://localhost:$WEB_PORT"

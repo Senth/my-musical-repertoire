@@ -16,9 +16,7 @@
 		"format": "biome format --write",
 		"test": "jest",
 		"e2e": "playwright test",
-		"fixture": "playwright test --config=playwright.fixture.config.ts",
-		"emulators": "firebase emulators:start --import .emulator-seed",
-		"emulators:export": "firebase emulators:export .emulator-seed --force"
+		"emulators": "firebase emulators:start"
 	},
 	"jest": {
 		"preset": "jest-expo",

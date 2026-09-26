@@ -6,11 +6,6 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": [
-			"**",
-			"!.claude/settings.local.json",
-			"!.emulator-seed",
-			"!.tmp"
-		]
+		"includes": ["**", "!.claude/settings.local.json", "!.tmp"]
 	}
 }

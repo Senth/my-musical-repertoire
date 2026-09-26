@@ -39,14 +39,15 @@ scripts/dev-stack.sh down    # stops only what it started
 ```
 
 `up` is idempotent: it reuses a suite that is already listening rather than
-failing, and reports whether the emulators came up **pristine** from
-`.emulator-seed/` or are carrying whatever a previous run left behind. Say which in
-a review report — a run against dirty data proves less than it looks like it does.
+failing, and the emulators always boot **empty** — the fixture is written
+programmatically at the start of every run, so there is no committed export to
+import. Only the throwaway accounts of earlier runs linger on a reused suite,
+never a dirty fixture.
 
 Emulator ports come from `firebase.json` (`8050` UI, `8051` auth, `8052`
 Firestore), which has no env interpolation, so **every checkout shares one
 emulator suite**. Two checkouts running e2e simultaneously share throwaway data.
-That is an accepted trade: reviews rarely overlap, and the fixture is the thing
+That is an accepted trade: reviews rarely overlap, and the seed is the thing
 that makes a run deterministic.
 
 Services are started with `setsid` so `down` can signal the whole process group.
@@ -55,17 +56,19 @@ the port, which then reads as "reused" on the next `up`.
 
 ## The review fixture
 
-`.emulator-seed/` is committed, and it is **produced by the app**, never
-hand-written — hand-written fixture data drifts from the shapes the app actually
-writes, and the first thing to notice is a test asserting a field the app stopped
-writing months ago.
+There is no committed fixture export. **The e2e suite seeds the emulator
+itself**: `e2e/seed.setup.ts` runs as the first Playwright project of every
+`yarn e2e` (`seed` in `playwright.config.ts`), before any spec. It creates
+**pianist@example.com** in the Auth emulator under a fixed uid, wipes whatever
+a previous run left on that account, and writes the repertoire below through
+the emulator with the app's own Firebase SDK, signed in as the fixture user so
+the Firestore rules are enforced exactly as they are for the app.
 
-```bash
-scripts/dev-stack.sh down && rm -rf .emulator-seed
-scripts/dev-stack.sh up          # empty emulators
-yarn fixture                     # drives the app, e2e/fixture.setup.ts
-yarn emulators:export            # writes .emulator-seed/
-```
+The fixture must stay honest about the shapes the app actually writes —
+hand-invented document shapes drift, and the first thing to notice is a test
+asserting a field the app stopped writing months ago. The seed mirrors the add
+flows field for field (`useAddPiece`, `useAddSection`, `useAddTechnique`), and
+when a warm fixture arrives its practice logs mirror `savePractice`.
 
 It holds one account — **pianist@example.com** — and a small repertoire chosen to
 exercise the screens rather than to look realistic:
@@ -80,21 +83,20 @@ exercise the screens rather than to look realistic:
 
 **It deliberately contains no practice logs.** Every piece is "never practised", so
 the scoring and planner screens render their cold-start paths and nothing else.
-When a review needs a warm history, that is the next thing the fixture should grow
-— extend `e2e/fixture.setup.ts` and regenerate, rather than editing the export.
+When a review needs a warm history, that is a dated practice log written by
+`e2e/seed.setup.ts` — dates are computed at run time, which is the whole point
+of the programmatic seed — not a hand-edited document.
 
-Two traps, both learned the hard way:
+Because the ids are fixed constants (`SEED_IDS` in `e2e/support/app.ts`), a
+rewritten seed overwrites the same documents instead of minting new ones, and
+the routes in that file keep pointing at the same pieces. The fixed uid keeps
+saved Playwright storage states (`.tmp/e2e/auth.json`) valid across an emulator
+restart.
 
-- `--import` refuses to create a missing directory. `scripts/dev-stack.sh` starts
-  empty and warns rather than failing outright, but the suite will be wrong until
-  you regenerate.
-- `biome.json` excludes `.emulator-seed/**`. Without that, `yarn lint --write`
-  pretty-prints the export and the next export minifies it back, forever.
-
-The fixture is a contract with `e2e/support/app.ts`: `SEED_USER`, the `ROUTES`
-readiness markers, and every title a spec waits on. **Regenerating it means
-re-running `yarn e2e` and updating those.** A stale fixture is a `blocking` finding
-against whichever change broke it.
+The fixture is a contract with `e2e/support/app.ts`: `SEED_USER`, `SEED_IDS`,
+the `ROUTES` readiness markers, and every title a spec waits on. Changing the
+seed means re-running `yarn e2e` and updating those. A stale fixture is a
+`blocking` finding against whichever change broke it.
 
 **One spec opts out.** `e2e/overview-suggestions.spec.ts` runs in its own Playwright
 project on a throwaway account registered fresh each run by

@@ -24,13 +24,30 @@ export function t(key: string): string {
 }
 
 /**
- * The account baked into `.emulator-seed/`. The fixture is what makes a run
- * deterministic, so these two values and the seeded repertoire are a contract:
- * regenerating the fixture means re-checking every readiness marker below.
+ * The account the e2e seed (`e2e/seed.setup.ts`) creates and rewrites at the
+ * start of every run. The fixture is what makes a run deterministic, so these
+ * two values, the ids below and the seeded repertoire are a contract: changing
+ * any of them means re-checking every readiness marker in this file.
  */
 export const SEED_USER = {
 	email: "pianist@example.com",
 	password: "practice123",
+} as const;
+
+/**
+ * The fixture's document ids, fixed by the seed and reused here to build the
+ * routes. A fixed id is what makes the seed idempotent — writing the same
+ * document twice overwrites — and what spares a regenerated fixture from
+ * invalidating every route that names it.
+ */
+export const SEED_IDS = {
+	nocturne: "seed-nocturne",
+	invention: "seed-invention",
+	furElise: "seed-fur-elise",
+	gymnopedie: "seed-gymnopedie",
+	exposition: "seed-invention-exposition",
+	scale: "seed-scale",
+	hanon: "seed-hanon",
 } as const;
 
 /**
@@ -60,8 +77,8 @@ export async function expectSignedIn(page: Page): Promise<void> {
 
 /**
  * Every route worth sweeping, with the marker that proves it finished
- * rendering. Detail routes use ids from the fixture, so a regenerated fixture
- * must update them here.
+ * rendering. Detail and practice routes are built on the seed's fixed ids, so
+ * they survive a fixture rewrite.
  */
 export const ROUTES: { path: string; ready: string }[] = [
 	{ path: "/overview", ready: t("screen.overview.practiceToday") },
@@ -71,27 +88,25 @@ export const ROUTES: { path: string; ready: string }[] = [
 	{ path: "/technique/add", ready: t("screen.addTechnique.title") },
 	// Detail routes, on the same fixture ids as the practice routes below.
 	{
-		path: "/piece/Sa8Ub1cHaGRDMWeoF5AU",
+		path: `/piece/${SEED_IDS.nocturne}`,
 		ready: t("screen.pieceDetail.practice"),
 	},
 	{
-		path: "/technique/IG3UUL73rWTEUHFfR3X0",
+		path: `/technique/${SEED_IDS.scale}`,
 		ready: t("screen.techniqueDetail.practice"),
 	},
-	// Practice routes. The ids are read off the Balanced session the seed
-	// produces: piece Sa8Ub1cHaGRDMWeoF5AU, its section hRsrYuP0jnyDjIfev6W5
-	// (of piece jcJQY9qV1R5kVoc2SdMx), technique IG3UUL73rWTEUHFfR3X0.
-	// Regenerating `.emulator-seed` means re-reading them and updating here.
+	// Practice routes: a whole piece, one section of another piece, one
+	// technique — the three practice surfaces on the seeded repertoire.
 	{
-		path: "/piece/Sa8Ub1cHaGRDMWeoF5AU/practice",
+		path: `/piece/${SEED_IDS.nocturne}/practice`,
 		ready: t("common.tempo.heading"),
 	},
 	{
-		path: "/piece/jcJQY9qV1R5kVoc2SdMx/practice?sectionId=hRsrYuP0jnyDjIfev6W5",
+		path: `/piece/${SEED_IDS.invention}/practice?sectionId=${SEED_IDS.exposition}`,
 		ready: t("common.tempo.heading"),
 	},
 	{
-		path: "/technique/IG3UUL73rWTEUHFfR3X0/practice",
+		path: `/technique/${SEED_IDS.scale}/practice`,
 		ready: t("common.tempo.heading"),
 	},
 	{ path: "/privacy", ready: t("screen.privacy.title") },
