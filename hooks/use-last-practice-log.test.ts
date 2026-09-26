@@ -81,6 +81,15 @@ describe("normalizeLastLog", () => {
 			expect(log.quality).toBeNull();
 			expect(log.effort).toBeNull();
 			expect(log.achievedBpm).toBeNull();
+			expect(log.seamBefore).toBeNull();
+		});
+
+		it("reads the incoming seam off a span row (#204)", () => {
+			const log = normalizeLastLog(
+				{ date: ts, source: "span", seamBefore: "held" },
+				"section",
+			);
+			expect(log.seamBefore).toBe("held");
 		});
 	});
 

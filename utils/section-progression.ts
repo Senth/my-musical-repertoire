@@ -77,6 +77,9 @@ export interface ProgressionLog {
 	 * specifically `source !== "span"`, not "source is absent", so a
 	 * run-through row (no `source`) keeps its current behaviour (#205). */
 	source?: string | null;
+	/** The incoming join on a span row (#204): did this section connect
+	 * cleanly to the section before it. Absent on every other row. */
+	seamBefore?: "held" | "broken" | null;
 }
 
 /** One calendar day's worth of plain HT logs. */

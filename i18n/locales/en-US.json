@@ -691,6 +691,7 @@
 					"memory": "I can play this without the score",
 					"continuity": "It connects cleanly to the section before it"
 				},
+				"seamHeld": "You played this join clean {{when}}.",
 				"advanceAction": "Advance",
 				"demoteAction": "Demote",
 				"notYet": "Not yet",

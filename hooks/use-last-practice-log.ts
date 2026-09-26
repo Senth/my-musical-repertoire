@@ -23,6 +23,8 @@ export interface NormalizedLastLog {
 	note?: string | null;
 	/** `"span"` for a joined-sections row; absent for an ordinary section log. */
 	source?: string | null;
+	/** The incoming join on a span row: did this section connect to the one before it. */
+	seamBefore?: "held" | "broken" | null;
 }
 
 type PieceScope = { type: "piece"; pieceId: string };
@@ -70,6 +72,7 @@ export function normalizeLastLog(
 		drill: (data.drill as PracticeDrill) ?? null,
 		note: (data.note as string) ?? null,
 		source: (data.source as string) ?? null,
+		seamBefore: (data.seamBefore as "held" | "broken") ?? null,
 	};
 }
 
