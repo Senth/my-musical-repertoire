@@ -24,16 +24,14 @@ export const OVERVIEW_AUTH_STATE = ".tmp/e2e/overview-suggestions-auth.json";
 
 /**
  * `span.spec.ts` needs a `learning` piece with no target tempo and three
- * never-practised `stabilizing` sections — a fixture `.emulator-seed` cannot
- * express (#202) — so it registers its own throwaway account too, in
- * `span.setup.ts`.
+ * never-practised `stabilizing` sections — state the shared fixture
+ * deliberately never carries (see `.ai/config.toml`) — so it registers its own
+ * throwaway account too, in `span.setup.ts`.
  */
 export const SPAN_AUTH_STATE = ".tmp/e2e/span-auth.json";
 
 export default defineConfig({
 	testDir: "./e2e",
-	// The fixture builder is not part of a run — it has its own config.
-	testIgnore: /fixture\.build\.ts/,
 	outputDir: ".tmp/e2e/results",
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
@@ -50,7 +48,10 @@ export default defineConfig({
 		screenshot: "only-on-failure",
 	},
 	projects: [
-		{ name: "setup", testMatch: /auth\.setup\.ts/ },
+		// Seeds the emulator fixture before anything that reads it runs — see
+		// `e2e/seed.setup.ts`.
+		{ name: "seed", testMatch: /seed\.setup\.ts/ },
+		{ name: "setup", testMatch: /auth\.setup\.ts/, dependencies: ["seed"] },
 		{ name: "overview-setup", testMatch: /overview-suggestions\.setup\.ts/ },
 		{ name: "span-setup", testMatch: /span\.setup\.ts/ },
 

@@ -3,12 +3,11 @@ import { SPAN_AUTH_STATE } from "@/playwright.config";
 import { t } from "./support/app";
 
 /**
- * A fresh throwaway account per run, not `SEED_USER` and not
- * `.emulator-seed`: the fixture this spec needs is a `learning` piece with no
- * target tempo and three never-practised `stabilizing` sections, which
- * `.emulator-seed` does not carry and which a dated fixture cannot express
- * without #202. Registering fresh every run needs no cleanup — the account is
- * never revisited.
+ * A fresh throwaway account per run, not `SEED_USER`: the fixture this spec
+ * needs is a `learning` piece with no target tempo and three never-practised
+ * `stabilizing` sections, which the shared fixture deliberately never carries
+ * (see `.ai/config.toml` — it is a cold-start fixture). Registering fresh
+ * every run needs no cleanup — the account is never revisited.
  */
 const email = `span-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
 const password = "practice123";
