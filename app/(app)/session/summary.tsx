@@ -77,7 +77,10 @@ export default function SessionSummaryScreen() {
 
 	const handleMoveToLearning = async (
 		pieceId: string,
-		nudge: NonNullable<ReturnType<typeof sectionNudge>>,
+		nudge: Extract<
+			NonNullable<ReturnType<typeof sectionNudge>>,
+			{ kind: "transition" }
+		>,
 	) => {
 		if (!nudge.section.id) return;
 		setBusyPieceId(pieceId);
@@ -186,13 +189,17 @@ export default function SessionSummaryScreen() {
 					<AddNextSectionNudge
 						key={piece.id}
 						pieceTitle={piece.title}
-						sectionLabel={nudge.section.label}
-						stateLabel={t(`section.state.${nudge.section.state}`)}
+						sectionLabel={nudge.section?.label}
+						stateLabel={
+							nudge.section && t(`section.state.${nudge.section.state}`)
+						}
 						kind={nudge.kind}
 						busy={busyPieceId === piece.id}
 						onAddSection={() => router.push(`/piece/${piece.id}/section/new`)}
-						onMoveToLearning={() =>
-							handleMoveToLearning(piece.id as string, nudge)
+						onMoveToLearning={
+							nudge.kind === "transition"
+								? () => handleMoveToLearning(piece.id as string, nudge)
+								: undefined
 						}
 						onNoMoreSections={() => handleNoMoreSections(piece.id as string)}
 					/>

@@ -79,7 +79,7 @@ export default function PieceDetailScreen() {
 	};
 
 	const handleMoveToLearning = async () => {
-		const section = nudge?.section;
+		const section = nudge?.kind === "transition" ? nudge.section : null;
 		if (!id || !section?.id) return;
 		setNudgeBusy(true);
 		try {
@@ -462,8 +462,10 @@ export default function PieceDetailScreen() {
 							>
 								<AddNextSectionNudge
 									pieceTitle={piece.title}
-									sectionLabel={nudge.section.label}
-									stateLabel={t(`section.state.${nudge.section.state}`)}
+									sectionLabel={nudge.section?.label}
+									stateLabel={
+										nudge.section && t(`section.state.${nudge.section.state}`)
+									}
 									kind={nudge.kind}
 									busy={nudgeBusy}
 									onAddSection={() => router.push(`/piece/${id}/section/new`)}

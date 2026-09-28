@@ -9,9 +9,9 @@ import { space } from "@/theme/tokens";
 
 interface AddNextSectionNudgeProps {
 	pieceTitle: string;
-	sectionLabel: string;
+	sectionLabel?: string;
 	/** State the named section sits in, for the copy. */
-	stateLabel: string;
+	stateLabel?: string;
 	/** `add` offers a new passage; `transition` offers starting a queued one. */
 	kind: "add" | "transition";
 	busy?: boolean;
@@ -58,11 +58,15 @@ export function AddNextSectionNudge({
 									section: sectionLabel,
 									piece: pieceTitle,
 								})
-							: t("screen.pieceSections.addNextNudge.body", {
-									section: sectionLabel,
-									state: stateLabel.toLowerCase(),
-									piece: pieceTitle,
-								})}
+							: sectionLabel && stateLabel
+								? t("screen.pieceSections.addNextNudge.body", {
+										section: sectionLabel,
+										state: stateLabel.toLowerCase(),
+										piece: pieceTitle,
+									})
+								: t("screen.pieceSections.addNextNudge.firstBody", {
+										piece: pieceTitle,
+									})}
 					</Text>
 					<View
 						style={{

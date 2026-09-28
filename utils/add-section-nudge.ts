@@ -2,7 +2,7 @@ import type { Piece } from "@/models/piece";
 import type { Section } from "@/models/section";
 
 export type SectionNudge =
-	| { kind: "add"; section: Section }
+	| { kind: "add"; section?: Section }
 	| { kind: "transition"; section: Section };
 
 /**
@@ -25,7 +25,7 @@ export function sectionNudge(
 	const active = sections.filter(
 		(s) => !s.archived && s.pieceId === piece.id && s.id,
 	);
-	if (active.length === 0) return null;
+	if (active.length === 0) return { kind: "add" };
 	if (active.filter((s) => s.state === "learning").length >= 2) return null;
 
 	const notStarted = active.filter((s) => s.state === "not_started");
