@@ -201,7 +201,11 @@ export default function SessionSummaryScreen() {
 								? () => handleMoveToLearning(piece.id as string, nudge)
 								: undefined
 						}
-						onNoMoreSections={() => handleNoMoreSections(piece.id as string)}
+						onNoMoreSections={
+							nudge.section
+								? () => handleNoMoreSections(piece.id as string)
+								: undefined
+						}
 					/>
 				))}
 

@@ -453,7 +453,7 @@ export default function PieceDetailScreen() {
 							)}
 						</View>
 
-						{nudge && (
+						{nudge?.section && (
 							<View
 								style={{
 									paddingHorizontal: pageInset,

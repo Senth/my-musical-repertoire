@@ -17,7 +17,7 @@ interface AddNextSectionNudgeProps {
 	busy?: boolean;
 	onAddSection: () => void;
 	onMoveToLearning?: () => void;
-	onNoMoreSections: () => void;
+	onNoMoreSections?: () => void;
 }
 
 /**
@@ -42,7 +42,11 @@ export function AddNextSectionNudge({
 	return (
 		<Card mode="contained">
 			<Card.Title
-				title={t("screen.pieceSections.addNextNudge.title")}
+				title={t(
+					sectionLabel
+						? "screen.pieceSections.addNextNudge.title"
+						: "screen.pieceSections.addNextNudge.firstTitle",
+				)}
 				titleStyle={CARD_TITLE_STYLE}
 				titleNumberOfLines={2}
 				style={TITLE_ONLY_CARD_STYLE}
@@ -77,7 +81,7 @@ export function AddNextSectionNudge({
 					>
 						{kind === "transition" ? (
 							<Button
-								mode="contained"
+								mode="outlined"
 								icon="play"
 								onPress={onMoveToLearning}
 								disabled={busy || !onMoveToLearning}
@@ -86,7 +90,7 @@ export function AddNextSectionNudge({
 							</Button>
 						) : (
 							<Button
-								mode="contained"
+								mode="outlined"
 								icon="plus"
 								onPress={onAddSection}
 								disabled={busy}
@@ -94,7 +98,7 @@ export function AddNextSectionNudge({
 								{t("screen.pieceSections.addNextNudge.add")}
 							</Button>
 						)}
-						{kind === "add" && (
+						{kind === "add" && onNoMoreSections && (
 							<Button mode="text" onPress={onNoMoreSections} disabled={busy}>
 								{t("screen.pieceSections.addNextNudge.noMore")}
 							</Button>
