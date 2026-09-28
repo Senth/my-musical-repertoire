@@ -21,9 +21,9 @@ interface AddNextSectionNudgeProps {
 }
 
 /**
- * Offered when a learning piece has no learning-state sections left: either to
+ * Offered when a learning piece has fewer than two learning-state sections: either to
  * add the next passage, or — when not-started sections are queued — to move the
- * next one into learning. Always one tap to the action — "No more sections" is
+ * next one into learning. Always one tap to the action — "All sections added" is
  * a decision the student records, not a bare dismiss.
  */
 export function AddNextSectionNudge({

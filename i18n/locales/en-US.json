@@ -1043,7 +1043,7 @@
 				"transitionBody": "Section {{section}} of {{piece}} is not started — ready to start learning it?",
 				"add": "Add section",
 				"transition": "Move to learning",
-				"noMore": "No more sections"
+				"noMore": "All sections added"
 			}
 		}
 	}
