@@ -9,21 +9,21 @@ import { space } from "@/theme/tokens";
 
 interface AddNextSectionNudgeProps {
 	pieceTitle: string;
-	sectionLabel: string;
+	sectionLabel?: string;
 	/** State the named section sits in, for the copy. */
-	stateLabel: string;
+	stateLabel?: string;
 	/** `add` offers a new passage; `transition` offers starting a queued one. */
 	kind: "add" | "transition";
 	busy?: boolean;
 	onAddSection: () => void;
 	onMoveToLearning?: () => void;
-	onNoMoreSections: () => void;
+	onNoMoreSections?: () => void;
 }
 
 /**
- * Offered when a learning piece has no learning-state sections left: either to
+ * Offered when a learning piece has fewer than two learning-state sections: either to
  * add the next passage, or — when not-started sections are queued — to move the
- * next one into learning. Always one tap to the action — "No more sections" is
+ * next one into learning. Always one tap to the action — "All sections added" is
  * a decision the student records, not a bare dismiss.
  */
 export function AddNextSectionNudge({
@@ -42,7 +42,11 @@ export function AddNextSectionNudge({
 	return (
 		<Card mode="contained">
 			<Card.Title
-				title={t("screen.pieceSections.addNextNudge.title")}
+				title={t(
+					sectionLabel
+						? "screen.pieceSections.addNextNudge.title"
+						: "screen.pieceSections.addNextNudge.firstTitle",
+				)}
 				titleStyle={CARD_TITLE_STYLE}
 				titleNumberOfLines={2}
 				style={TITLE_ONLY_CARD_STYLE}
@@ -58,11 +62,15 @@ export function AddNextSectionNudge({
 									section: sectionLabel,
 									piece: pieceTitle,
 								})
-							: t("screen.pieceSections.addNextNudge.body", {
-									section: sectionLabel,
-									state: stateLabel.toLowerCase(),
-									piece: pieceTitle,
-								})}
+							: sectionLabel && stateLabel
+								? t("screen.pieceSections.addNextNudge.body", {
+										section: sectionLabel,
+										state: stateLabel.toLowerCase(),
+										piece: pieceTitle,
+									})
+								: t("screen.pieceSections.addNextNudge.firstBody", {
+										piece: pieceTitle,
+									})}
 					</Text>
 					<View
 						style={{
@@ -73,7 +81,7 @@ export function AddNextSectionNudge({
 					>
 						{kind === "transition" ? (
 							<Button
-								mode="contained"
+								mode="outlined"
 								icon="play"
 								onPress={onMoveToLearning}
 								disabled={busy || !onMoveToLearning}
@@ -82,7 +90,7 @@ export function AddNextSectionNudge({
 							</Button>
 						) : (
 							<Button
-								mode="contained"
+								mode="outlined"
 								icon="plus"
 								onPress={onAddSection}
 								disabled={busy}
@@ -90,7 +98,7 @@ export function AddNextSectionNudge({
 								{t("screen.pieceSections.addNextNudge.add")}
 							</Button>
 						)}
-						{kind === "add" && (
+						{kind === "add" && onNoMoreSections && (
 							<Button mode="text" onPress={onNoMoreSections} disabled={busy}>
 								{t("screen.pieceSections.addNextNudge.noMore")}
 							</Button>
