@@ -48,7 +48,13 @@ export function StateChip({
 				minHeight: onPress ? touchTarget.minimum : undefined,
 				minWidth: onPress ? touchTarget.minimum : undefined,
 			}}
-			textStyle={{ ...CHIP_TEXT_STYLE, color: visual.accent }}
+			textStyle={{
+				...CHIP_TEXT_STYLE,
+				color: visual.accent,
+				marginVertical: onPress
+					? (touchTarget.minimum - type.labelSmallLineHeight) / 2
+					: CHIP_TEXT_STYLE.marginVertical,
+			}}
 			onPress={onPress}
 		>
 			{label}

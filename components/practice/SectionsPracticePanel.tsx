@@ -64,6 +64,7 @@ export function SectionsPracticePanel({
 									importantForAccessibility="no-hide-descendants"
 								>
 									<Checkbox.Android
+										pointerEvents="none"
 										status={checked ? "checked" : "unchecked"}
 									/>
 								</View>

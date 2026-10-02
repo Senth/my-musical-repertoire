@@ -36,7 +36,10 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 	if (!chipBox) throw new Error("Section state control not measurable");
 	expect(chipBox.height).toBeGreaterThanOrEqual(48);
 	expect(chipBox.width).toBeGreaterThanOrEqual(48);
-	await body.getByText(t("section.state.learning"), { exact: true }).click();
+	await page.touchscreen.tap(
+		chipBox.x + chipBox.width / 2,
+		chipBox.y + chipBox.height - 2,
+	);
 	await expect(page.getByText(t("section.state.maintenance"))).toBeVisible();
 	expect(consoleErrors).toEqual([]);
 	await expect(
@@ -67,6 +70,69 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 		page.getByText(t("screen.pieceSections.editSection")),
 	).toBeVisible();
 });
+
+for (const width of [412, 1280]) {
+	test(`section indicator and native-column chip edges respond independently at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 900 });
+		const consoleErrors = collectConsoleErrors(page);
+		await page.goto(`/piece/${SEED_IDS.invention}/practice`);
+		await page.getByRole("button", { name: "Some" }).first().click();
+		const flag = page.getByRole("checkbox", {
+			name: "Flag section Middle entries as problematic",
+		});
+		const body = flag.locator("xpath=..");
+		const indicator = body.getByRole("checkbox", {
+			name: "",
+			exact: true,
+			disabled: true,
+		});
+		await indicator.scrollIntoViewIfNeeded();
+		const indicatorBox = await indicator.boundingBox();
+		if (!indicatorBox) throw new Error("Section flag indicator not measurable");
+		const tap = async (x: number, y: number) => {
+			if (width === 412) await page.touchscreen.tap(x, y);
+			else await page.mouse.click(x, y);
+		};
+		await expect(flag).not.toBeChecked();
+		await tap(
+			indicatorBox.x + indicatorBox.width / 2,
+			indicatorBox.y + indicatorBox.height / 2,
+		);
+		await expect(flag).toBeChecked();
+		await tap(
+			indicatorBox.x + indicatorBox.width / 2,
+			indicatorBox.y + indicatorBox.height / 2,
+		);
+		await expect(flag).not.toBeChecked();
+		const chip = body.getByRole("button", {
+			name: t("section.state.learning"),
+			exact: true,
+		});
+		await body.getByTestId("chip-container").evaluate((container) => {
+			container.style.flexDirection = "column";
+		});
+		await chip.scrollIntoViewIfNeeded();
+		const chipBox = await chip.boundingBox();
+		const surfaceBox = await body.getByTestId("chip-container").boundingBox();
+		if (!chipBox || !surfaceBox)
+			throw new Error("Section state control not measurable");
+		expect(chipBox.height).toBeGreaterThanOrEqual(48);
+		expect(chipBox.width).toBeGreaterThanOrEqual(48);
+		await tap(
+			surfaceBox.x + surfaceBox.width / 2,
+			surfaceBox.y + surfaceBox.height - 2,
+		);
+		await expect(page.getByText(t("section.state.maintenance"))).toBeVisible();
+		await expect(flag).not.toBeChecked();
+		await expect(
+			page.getByText(t("screen.pieceSections.editSection")),
+		).toHaveCount(0);
+		await expect(page).toHaveURL(`/piece/${SEED_IDS.invention}/practice`);
+		expect(consoleErrors).toEqual([]);
+	});
+}
 
 test("whole-piece practice flags only when asked and keeps run-through checkboxes", async ({
 	page,
