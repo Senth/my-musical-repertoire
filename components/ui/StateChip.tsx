@@ -1,12 +1,14 @@
-import type { ReactElement } from "react";
-import { Chip, useTheme } from "react-native-paper";
-import { radius, space, touchTarget, type } from "@/theme/tokens";
+import { type ReactElement, useState } from "react";
+import { View } from "react-native";
+import { Chip, TouchableRipple, useTheme } from "react-native-paper";
+import { border, radius, space, touchTarget, type } from "@/theme/tokens";
 import { type StateVisual, withAlpha } from "@/utils/state-colors";
 
 interface StateChipProps {
 	label: string;
 	visual: StateVisual;
 	onPress?: () => void;
+	expanded?: boolean;
 }
 
 /** Shared geometry for every informational chip, so none out-sizes its neighbour. */
@@ -29,12 +31,15 @@ export function StateChip({
 	label,
 	visual,
 	onPress,
+	expanded,
 }: StateChipProps): ReactElement {
 	const theme = useTheme();
+	const [focused, setFocused] = useState(false);
 
-	return (
+	const chip = (
 		<Chip
 			compact
+			accessibilityRole="text"
 			style={{
 				backgroundColor: visual.outlined
 					? "transparent"
@@ -45,20 +50,45 @@ export function StateChip({
 				borderWidth: visual.outlined ? 1 : 0,
 				borderRadius: radius.chip,
 				alignSelf: "flex-start",
-				minHeight: onPress ? touchTarget.minimum : undefined,
-				minWidth: onPress ? touchTarget.minimum : undefined,
 			}}
-			textStyle={{
-				...CHIP_TEXT_STYLE,
-				color: visual.accent,
-				marginVertical: onPress
-					? (touchTarget.minimum - type.labelSmallLineHeight) / 2
-					: CHIP_TEXT_STYLE.marginVertical,
-			}}
-			onPress={onPress}
+			textStyle={{ ...CHIP_TEXT_STYLE, color: visual.accent }}
 		>
 			{label}
 		</Chip>
+	);
+
+	if (!onPress) return chip;
+
+	return (
+		<TouchableRipple
+			onPress={onPress}
+			onFocus={() => setFocused(true)}
+			onBlur={() => setFocused(false)}
+			accessibilityRole="button"
+			accessibilityLabel={label}
+			accessibilityState={{ expanded }}
+			aria-expanded={expanded}
+			style={{
+				minHeight: touchTarget.minimum,
+				minWidth: touchTarget.minimum,
+				alignSelf: "flex-start",
+				alignItems: "center",
+				justifyContent: "center",
+				borderRadius: radius.chip,
+				outlineColor: theme.colors.primary,
+				outlineStyle: "solid",
+				outlineWidth: focused ? border.hairline : 0,
+			}}
+		>
+			<View
+				pointerEvents="none"
+				accessible={false}
+				accessibilityElementsHidden
+				importantForAccessibility="no-hide-descendants"
+			>
+				{chip}
+			</View>
+		</TouchableRipple>
 	);
 }
 

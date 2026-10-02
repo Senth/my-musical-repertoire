@@ -16,20 +16,21 @@ export function SectionStateChip({
 }: SectionStateChipProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
-	const [menuOpen, setMenuOpen] = useState(false);
+	const [menuOpen, setMenuOpen] = useState<boolean | null>(null);
 
 	const chip = (
 		<StateChip
 			label={t(`section.state.${state}`)}
 			visual={sectionStateVisual(state, theme.dark)}
 			onPress={onChangeState ? () => setMenuOpen(true) : undefined}
+			expanded={onChangeState ? menuOpen === true : undefined}
 		/>
 	);
 
-	if (!onChangeState || !menuOpen) return chip;
+	if (!onChangeState || menuOpen === null) return chip;
 
 	return (
-		<Menu visible onDismiss={() => setMenuOpen(false)} anchor={chip}>
+		<Menu visible={menuOpen} onDismiss={() => setMenuOpen(false)} anchor={chip}>
 			{SECTION_STATES.map((p) => (
 				<Menu.Item
 					key={p}

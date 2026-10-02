@@ -1,10 +1,38 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Locator, test } from "@playwright/test";
 import { collectConsoleErrors, SEED_IDS, t } from "./support/app";
 
 const INVENTION_SECTIONS = [
 	{ name: "Exposition", bars: "Bars 1–6" },
 	{ name: "Middle entries", bars: "Bars 7–14" },
 ];
+
+async function chipAppearance(pill: Locator, label: string) {
+	return {
+		pill: await pill.evaluate((element) => {
+			const style = getComputedStyle(element);
+			const { width, height } = element.getBoundingClientRect();
+			return {
+				width,
+				height,
+				background: style.backgroundColor,
+				border: style.border,
+				radius: style.borderRadius,
+				padding: style.padding,
+				margin: style.margin,
+			};
+		}),
+		text: await pill.getByText(label, { exact: true }).evaluate((element) => {
+			const style = getComputedStyle(element);
+			return {
+				color: style.color,
+				fontSize: style.fontSize,
+				lineHeight: style.lineHeight,
+				margin: style.margin,
+				padding: style.padding,
+			};
+		}),
+	};
+}
 
 test("section row keeps bars beside name and opens practice or edit", async ({
 	page,
@@ -44,22 +72,49 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 	if (!nameBox || !barsBox) throw new Error("Section row text not measurable");
 	expect(Math.abs(nameBox.y - barsBox.y)).toBeLessThan(8);
 	expect(nameBox.x + nameBox.width).toBeLessThan(barsBox.x);
-	const chipBox = await body
-		.getByRole("button", { name: t("section.state.learning"), exact: true })
-		.boundingBox();
+	const chip = body.getByRole("button", {
+		name: t("section.state.learning"),
+		exact: true,
+	});
+	await chip.scrollIntoViewIfNeeded();
+	const chipBox = await chip.boundingBox();
 	if (!chipBox) throw new Error("Section state control not measurable");
 	expect(chipBox.height).toBeGreaterThanOrEqual(48);
 	expect(chipBox.width).toBeGreaterThanOrEqual(48);
+	expect(
+		await chip.evaluate((element) => {
+			const box = element.getBoundingClientRect();
+			const hit = document.elementFromPoint(
+				box.x + box.width / 2,
+				box.y + box.height - 2,
+			);
+			return { owned: element.contains(hit), hit: hit?.outerHTML };
+		}),
+	).toMatchObject({ owned: true });
 	await page.touchscreen.tap(
 		chipBox.x + chipBox.width / 2,
 		chipBox.y + chipBox.height - 2,
 	);
+	await expect(chip).toHaveAttribute("aria-expanded", "true");
 	await expect(page.getByText(t("section.state.maintenance"))).toBeVisible();
 	expect(consoleErrors).toEqual([]);
 	await expect(
 		page.getByText(t("screen.pieceSections.editSection")),
 	).toHaveCount(0);
 	await page.keyboard.press("Escape");
+	await expect(chip).toBeFocused();
+	await expect(chip).toHaveCSS("outline-color", "rgb(123, 218, 217)");
+	await expect(chip).toHaveCSS("outline-width", "1px");
+	await expect(chip).toHaveAttribute("aria-expanded", "false");
+	await chip.press("Enter");
+	await expect(page.getByRole("menuitem").first()).toBeFocused();
+	await expect(chip).toHaveAttribute("aria-expanded", "true");
+	await page.keyboard.press("Escape");
+	await expect(chip).toBeFocused();
+	await chip.press("Space");
+	await expect(page.getByRole("menuitem").first()).toBeFocused();
+	await page.keyboard.press("Escape");
+	await expect(chip).toBeFocused();
 	await page
 		.getByRole("button", { name: "Practice section Middle entries" })
 		.click();
@@ -85,12 +140,29 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 	).toBeVisible();
 });
 
-for (const width of [412, 1280]) {
+for (const [width, colorScheme] of [
+	[412, "light"],
+	[1280, "dark"],
+] as const) {
 	test(`section indicator and native-column chip edges respond independently at ${width}px`, async ({
 		page,
 	}) => {
 		await page.setViewportSize({ width, height: 900 });
+		await page.emulateMedia({ colorScheme });
 		const consoleErrors = collectConsoleErrors(page);
+		const label = t("section.state.learning");
+		await page.goto(`/piece/${SEED_IDS.gymnopedie}`);
+		const informationalPill = page
+			.getByTestId("chip-container")
+			.filter({ hasText: label })
+			.first();
+		await expect(informationalPill).toBeVisible();
+		const informationalAppearance = await chipAppearance(
+			informationalPill,
+			label,
+		);
+		expect(informationalAppearance.pill.height).toBe(20);
+		expect(informationalAppearance.text.margin).toBe("2px 12px");
 		await page.goto(`/piece/${SEED_IDS.invention}/practice`);
 		await page.getByRole("button", { name: "Some" }).first().click();
 		const flag = page.getByRole("checkbox", {
@@ -128,22 +200,29 @@ for (const width of [412, 1280]) {
 			container.style.flexDirection = "column";
 		});
 		await chip.scrollIntoViewIfNeeded();
+		const pill = body.getByTestId("chip-container");
+		expect(await chipAppearance(pill, label)).toEqual(informationalAppearance);
+		await expect(chip.locator('button, [role="button"]')).toHaveCount(0);
 		const chipBox = await chip.boundingBox();
-		const surfaceBox = await body.getByTestId("chip-container").boundingBox();
-		if (!chipBox || !surfaceBox)
+		const pillBox = await pill.boundingBox();
+		if (!chipBox || !pillBox)
 			throw new Error("Section state control not measurable");
 		expect(chipBox.height).toBeGreaterThanOrEqual(48);
 		expect(chipBox.width).toBeGreaterThanOrEqual(48);
-		await tap(
-			surfaceBox.x + surfaceBox.width / 2,
-			surfaceBox.y + surfaceBox.height - 2,
-		);
-		await expect(page.getByText(t("section.state.maintenance"))).toBeVisible();
-		await expect(flag).not.toBeChecked();
-		await expect(
-			page.getByText(t("screen.pieceSections.editSection")),
-		).toHaveCount(0);
-		await expect(page).toHaveURL(`/piece/${SEED_IDS.invention}/practice`);
+		const bottom = chipBox.y + chipBox.height - 2;
+		expect(bottom).toBeGreaterThan(pillBox.y + pillBox.height);
+		for (const x of [chipBox.x + chipBox.width / 2, chipBox.x + 1]) {
+			await tap(x, bottom);
+			await expect(
+				page.getByText(t("section.state.maintenance")),
+			).toBeVisible();
+			await expect(flag).not.toBeChecked();
+			await expect(
+				page.getByText(t("screen.pieceSections.editSection")),
+			).toHaveCount(0);
+			await expect(page).toHaveURL(`/piece/${SEED_IDS.invention}/practice`);
+			await page.keyboard.press("Escape");
+		}
 		expect(consoleErrors).toEqual([]);
 	});
 }
