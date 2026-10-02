@@ -14,6 +14,7 @@ interface SectionRowProps {
 	leading?: ReactNode;
 	onPress?: () => void;
 	pressRole?: "button" | "checkbox";
+	pressLabel?: string;
 	checked?: boolean;
 	onPractice?: () => void;
 	onChangeState?: (state: SectionState) => void;
@@ -26,6 +27,7 @@ export function SectionRow({
 	leading,
 	onPress,
 	pressRole = "button",
+	pressLabel,
 	checked,
 	onPractice,
 	onChangeState,
@@ -55,7 +57,8 @@ export function SectionRow({
 					accessibilityState={
 						pressRole === "checkbox" ? { checked } : undefined
 					}
-					accessibilityLabel={section.label}
+					aria-checked={pressRole === "checkbox" ? checked : undefined}
+					accessibilityLabel={pressLabel ?? section.label}
 					style={{
 						flex: 1,
 						minWidth: 0,

@@ -598,7 +598,6 @@
 				"header": "Sections",
 				"headerCheckbox": "Sections — tap the ones that were problematic",
 				"headerRunThrough": "Sections — which ones need work? The rest count as practiced",
-				"practice": "Practice",
 				"a11yToggleFlag": "Flag section {{label}} as problematic"
 			},
 			"demoted_one": "{{count}} section moved back to stabilizing",
