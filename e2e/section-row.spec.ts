@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { SEED_IDS, t } from "./support/app";
+import { collectConsoleErrors, SEED_IDS, t } from "./support/app";
 
 const INVENTION_SECTIONS = [
 	{ name: "Exposition", bars: "Bars 1–6" },
@@ -9,10 +9,14 @@ const INVENTION_SECTIONS = [
 test("section row keeps bars beside name and opens practice or edit", async ({
 	page,
 }) => {
+	const consoleErrors = collectConsoleErrors(page);
 	await page.goto(`/piece/${SEED_IDS.invention}`);
+	await expect(page.locator("button button")).toHaveCount(0);
 	const row = page.getByRole("button", { name: "Middle entries", exact: true });
-	const name = row.getByText("Middle entries");
-	const bars = row.getByText("Bars 7–14");
+	const body = row.locator("xpath=..");
+	await expect(row.locator('button, [role="button"]')).toHaveCount(0);
+	const name = body.getByText("Middle entries");
+	const bars = body.getByText("Bars 7–14");
 	await expect(row).toBeVisible();
 	await expect(bars).toBeVisible();
 	for (const section of INVENTION_SECTIONS) {
@@ -26,14 +30,39 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 	if (!nameBox || !barsBox) throw new Error("Section row text not measurable");
 	expect(Math.abs(nameBox.y - barsBox.y)).toBeLessThan(8);
 	expect(nameBox.x + nameBox.width).toBeLessThan(barsBox.x);
+	const chipBox = await body
+		.getByRole("button", { name: t("section.state.learning"), exact: true })
+		.boundingBox();
+	if (!chipBox) throw new Error("Section state control not measurable");
+	expect(chipBox.height).toBeGreaterThanOrEqual(48);
+	expect(chipBox.width).toBeGreaterThanOrEqual(48);
+	await body.getByText(t("section.state.learning"), { exact: true }).click();
+	await expect(page.getByText(t("section.state.maintenance"))).toBeVisible();
+	expect(consoleErrors).toEqual([]);
+	await expect(
+		page.getByText(t("screen.pieceSections.editSection")),
+	).toHaveCount(0);
+	await page.keyboard.press("Escape");
 	await page
 		.getByRole("button", { name: "Practice section Middle entries" })
 		.click();
 	await expect(page).toHaveURL(/sectionId=seed-invention-middle/);
 	await page.goto(`/piece/${SEED_IDS.invention}`);
-	await page
-		.getByRole("button", { name: "Middle entries", exact: true })
-		.click();
+	const edit = page.getByRole("button", {
+		name: "Middle entries",
+		exact: true,
+	});
+	const editBox = await edit.boundingBox();
+	const barBox = await page
+		.getByText("Bars 7–14", { exact: true })
+		.boundingBox();
+	if (!editBox || !barBox) throw new Error("Section row body not measurable");
+	await edit.click({
+		position: {
+			x: barBox.x + barBox.width / 2 - editBox.x,
+			y: barBox.y + barBox.height / 2 - editBox.y,
+		},
+	});
 	await expect(
 		page.getByText(t("screen.pieceSections.editSection")),
 	).toBeVisible();
@@ -42,6 +71,7 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 test("whole-piece practice flags only when asked and keeps run-through checkboxes", async ({
 	page,
 }) => {
+	const consoleErrors = collectConsoleErrors(page);
 	await page.goto(`/piece/${SEED_IDS.invention}/practice`);
 	for (const section of INVENTION_SECTIONS) {
 		const playLabel = t("section.a11yPractice").replace(
@@ -66,9 +96,28 @@ test("whole-piece practice flags only when asked and keeps run-through checkboxe
 		name: "Flag section Middle entries as problematic",
 	});
 	await expect(flag).not.toBeChecked();
+	await flag
+		.locator("xpath=../..")
+		.getByText(t("section.state.learning"), { exact: true })
+		.click();
+	await expect(page.getByText(t("section.state.maintenance"))).toBeVisible();
+	await expect(flag).not.toBeChecked();
+	expect(consoleErrors).toEqual([]);
+	await page.keyboard.press("Escape");
 	await flag.click();
 	await expect(flag).toBeChecked();
-	await flag.click();
+	const flagBox = await flag.boundingBox();
+	const barsBox = await flag
+		.locator("xpath=..")
+		.getByText("Bars 7–14")
+		.boundingBox();
+	if (!flagBox || !barsBox) throw new Error("Section flag body not measurable");
+	await flag.click({
+		position: {
+			x: barsBox.x + barsBox.width / 2 - flagBox.x,
+			y: barsBox.y + barsBox.height / 2 - flagBox.y,
+		},
+	});
 	await expect(flag).not.toBeChecked();
 	await expect(
 		page.getByRole("button", { name: "Practice section Middle entries" }),

@@ -50,15 +50,7 @@ export function SectionRow({
 			<View
 				style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}
 			>
-				<Pressable
-					onPress={onPress}
-					disabled={!onPress}
-					accessibilityRole={onPress ? pressRole : undefined}
-					accessibilityState={
-						pressRole === "checkbox" ? { checked } : undefined
-					}
-					aria-checked={pressRole === "checkbox" ? checked : undefined}
-					accessibilityLabel={pressLabel ?? section.label}
+				<View
 					style={{
 						flex: 1,
 						minWidth: 0,
@@ -66,8 +58,20 @@ export function SectionRow({
 						alignItems: "center",
 					}}
 				>
-					{leading}
+					<Pressable
+						onPress={onPress}
+						disabled={!onPress}
+						accessibilityRole={onPress ? pressRole : undefined}
+						accessibilityState={
+							pressRole === "checkbox" ? { checked } : undefined
+						}
+						aria-checked={pressRole === "checkbox" ? checked : undefined}
+						accessibilityLabel={pressLabel ?? section.label}
+						style={{ position: "absolute", width: "100%", height: "100%" }}
+					/>
+					<View pointerEvents="box-none">{leading}</View>
 					<View
+						pointerEvents="box-none"
 						style={{
 							flex: 1,
 							minWidth: 0,
@@ -77,6 +81,7 @@ export function SectionRow({
 						}}
 					>
 						<View
+							pointerEvents="none"
 							style={{
 								flexDirection: "row",
 								alignItems: "center",
@@ -102,6 +107,7 @@ export function SectionRow({
 							)}
 						</View>
 						<View
+							pointerEvents="box-none"
 							style={{
 								flexDirection: "row",
 								alignItems: "center",
@@ -110,6 +116,7 @@ export function SectionRow({
 							}}
 						>
 							<View
+								pointerEvents="box-none"
 								style={{
 									flexDirection: "row",
 									alignItems: "center",
@@ -122,13 +129,19 @@ export function SectionRow({
 									onChangeState={onChangeState}
 								/>
 								{lastPracticed != null && (
-									<Text variant="bodySmall" numberOfLines={1} style={quietText}>
+									<Text
+										pointerEvents="none"
+										variant="bodySmall"
+										numberOfLines={1}
+										style={quietText}
+									>
 										{lastPracticed}
 									</Text>
 								)}
 							</View>
 							{tempo != null && (
 								<Text
+									pointerEvents="none"
 									variant="bodySmall"
 									numberOfLines={1}
 									style={{ ...quietText, flexShrink: 0 }}
@@ -138,12 +151,17 @@ export function SectionRow({
 							)}
 						</View>
 						{section.notes ? (
-							<Text variant="bodySmall" numberOfLines={2} style={quietText}>
+							<Text
+								pointerEvents="none"
+								variant="bodySmall"
+								numberOfLines={2}
+								style={quietText}
+							>
 								{section.notes}
 							</Text>
 						) : null}
 					</View>
-				</Pressable>
+				</View>
 				{onPractice && (
 					<IconButton
 						icon="play"

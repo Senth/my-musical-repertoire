@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Chip, useTheme } from "react-native-paper";
-import { radius, space, type } from "@/theme/tokens";
+import { radius, space, touchTarget, type } from "@/theme/tokens";
 import { type StateVisual, withAlpha } from "@/utils/state-colors";
 
 interface StateChipProps {
@@ -45,6 +45,8 @@ export function StateChip({
 				borderWidth: visual.outlined ? 1 : 0,
 				borderRadius: radius.chip,
 				alignSelf: "flex-start",
+				minHeight: onPress ? touchTarget.minimum : undefined,
+				minWidth: onPress ? touchTarget.minimum : undefined,
 			}}
 			textStyle={{ ...CHIP_TEXT_STYLE, color: visual.accent }}
 			onPress={onPress}
