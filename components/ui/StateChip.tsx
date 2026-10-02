@@ -1,10 +1,11 @@
-import { type ReactElement, useState } from "react";
+import { type ReactElement, type Ref, useState } from "react";
 import { View } from "react-native";
 import { Chip, TouchableRipple, useTheme } from "react-native-paper";
 import { border, radius, space, touchTarget, type } from "@/theme/tokens";
 import { type StateVisual, withAlpha } from "@/utils/state-colors";
 
 interface StateChipProps {
+	ref?: Ref<View>;
 	label: string;
 	visual: StateVisual;
 	onPress?: () => void;
@@ -28,6 +29,7 @@ const CHIP_TEXT_STYLE = {
  * least-important states drop the fill entirely and get a hairline instead.
  */
 export function StateChip({
+	ref,
 	label,
 	visual,
 	onPress,
@@ -61,6 +63,7 @@ export function StateChip({
 
 	return (
 		<TouchableRipple
+			ref={ref}
 			onPress={onPress}
 			onFocus={() => setFocused(true)}
 			onBlur={() => setFocused(false)}

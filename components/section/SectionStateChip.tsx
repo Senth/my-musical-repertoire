@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Platform, type View } from "react-native";
 import { Menu, useTheme } from "react-native-paper";
 import { StateChip } from "@/components/ui/StateChip";
 import { SECTION_STATES, type SectionState } from "@/models/section";
@@ -17,9 +18,16 @@ export function SectionStateChip({
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const [menuOpen, setMenuOpen] = useState<boolean | null>(null);
+	const chipRef = useRef<View>(null);
+	const closeMenu = useCallback(() => setMenuOpen(false), []);
+
+	useEffect(() => {
+		if (menuOpen === false && Platform.OS === "web") chipRef.current?.focus();
+	}, [menuOpen]);
 
 	const chip = (
 		<StateChip
+			ref={chipRef}
 			label={t(`section.state.${state}`)}
 			visual={sectionStateVisual(state, theme.dark)}
 			onPress={onChangeState ? () => setMenuOpen(true) : undefined}
@@ -27,17 +35,17 @@ export function SectionStateChip({
 		/>
 	);
 
-	if (!onChangeState || menuOpen === null) return chip;
+	if (!onChangeState || !menuOpen) return chip;
 
 	return (
-		<Menu visible={menuOpen} onDismiss={() => setMenuOpen(false)} anchor={chip}>
+		<Menu visible onDismiss={closeMenu} anchor={chip}>
 			{SECTION_STATES.map((p) => (
 				<Menu.Item
 					key={p}
 					title={t(`section.state.${p}`)}
 					leadingIcon={p === state ? "check" : undefined}
 					onPress={() => {
-						setMenuOpen(false);
+						closeMenu();
 						onChangeState(p);
 					}}
 				/>

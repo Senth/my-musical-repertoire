@@ -294,3 +294,96 @@ test("whole-piece practice flags only when asked and keeps run-through checkboxe
 		page.getByText(t("screen.practice.sectionsPanel.headerRunThrough")),
 	).toBeVisible();
 });
+
+test("section state menu survives rapid Escape and immediate reopen", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 412, height: 900 });
+	const consoleErrors = collectConsoleErrors(page);
+	for (const path of [
+		`/piece/${SEED_IDS.invention}`,
+		`/piece/${SEED_IDS.invention}/practice`,
+	]) {
+		await page.goto(path);
+		if (path.endsWith("/practice"))
+			await page.getByRole("button", { name: "Some" }).first().click();
+		const chip = page
+			.getByRole("button", { name: t("section.state.learning"), exact: true })
+			.last();
+		await chip.scrollIntoViewIfNeeded();
+		const box = await chip.boundingBox();
+		if (!box) throw new Error("Section state control not measurable");
+		const firstItem = page.getByRole("menuitem").first();
+		const backdrop = page.getByRole("button", { name: "Close menu" });
+		const menuOpacity = () =>
+			firstItem.evaluate((element) => {
+				let opacity = 1;
+				for (
+					let node: Element | null = element;
+					node;
+					node = node.parentElement
+				)
+					opacity *= Number(getComputedStyle(node).opacity);
+				return opacity;
+			});
+		const expectOpen = async () => {
+			await expect(chip).toHaveAttribute("aria-expanded", "true");
+			await expect.poll(menuOpacity).toBe(1);
+			await expect(firstItem).toBeFocused();
+		};
+		const expectClosed = async () => {
+			await expect(chip).toHaveAttribute("aria-expanded", "false");
+			await expect(firstItem).toHaveCount(0);
+			await expect(backdrop).toHaveCount(0);
+			await expect(chip).toBeFocused();
+		};
+		for (const activation of ["touch", "Enter", "Space"] as const) {
+			const open = async () => {
+				if (activation === "touch")
+					await page.touchscreen.tap(
+						box.x + box.width / 2,
+						box.y + box.height - 2,
+					);
+				else await page.keyboard.press(activation);
+			};
+			await chip.focus();
+			await open();
+			await expect.poll(menuOpacity, { intervals: [16] }).toBeGreaterThan(0);
+			await page.keyboard.press("Escape");
+			await open();
+			await expectOpen();
+			for (let cycle = 0; cycle < 3; cycle++) {
+				await page.keyboard.press("Escape");
+				await open();
+				await expectOpen();
+			}
+			await page.keyboard.press("Escape");
+			await expectClosed();
+		}
+		await page.keyboard.press("Enter");
+		await expectOpen();
+		await page.keyboard.press("Tab");
+		await expect(page.getByRole("menuitem").nth(1)).toBeFocused();
+		await page.keyboard.press("Enter");
+		await expectClosed();
+		await page.keyboard.press("Space");
+		await expectOpen();
+		await backdrop.click({ position: { x: 1, y: 1 } });
+		await expectClosed();
+		if (path.endsWith("/practice"))
+			await expect(
+				page.getByRole("checkbox", {
+					name: "Flag section Middle entries as problematic",
+				}),
+			).not.toBeChecked();
+		else {
+			await page
+				.getByRole("button", { name: "Middle entries", exact: true })
+				.click();
+			await expect(
+				page.getByText(t("screen.pieceSections.editSection")),
+			).toBeVisible();
+		}
+	}
+	expect(consoleErrors).toEqual([]);
+});
