@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { SEED_IDS, t } from "./support/app";
 
+const INVENTION_SECTIONS = [
+	{ name: "Exposition", bars: "Bars 1–6" },
+	{ name: "Middle entries", bars: "Bars 7–14" },
+];
+
 test("section row keeps bars beside name and opens practice or edit", async ({
 	page,
 }) => {
@@ -10,6 +15,12 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 	const bars = row.getByText("Bars 7–14");
 	await expect(row).toBeVisible();
 	await expect(bars).toBeVisible();
+	for (const section of INVENTION_SECTIONS) {
+		await expect(
+			page.getByRole("button", { name: section.name, exact: true }),
+		).toBeVisible();
+		await expect(page.getByText(section.bars, { exact: true })).toBeVisible();
+	}
 	const nameBox = await name.boundingBox();
 	const barsBox = await bars.boundingBox();
 	if (!nameBox || !barsBox) throw new Error("Section row text not measurable");
@@ -32,8 +43,21 @@ test("whole-piece practice flags only when asked and keeps run-through checkboxe
 	page,
 }) => {
 	await page.goto(`/piece/${SEED_IDS.invention}/practice`);
-	await expect(page.getByText("Bars 7–14")).toBeVisible();
-	await expect(page.getByText("— / 96 BPM")).toHaveCount(0);
+	for (const section of INVENTION_SECTIONS) {
+		const playLabel = t("section.a11yPractice").replace(
+			"{{label}}",
+			section.name,
+		);
+		const playButton = page.getByRole("button", {
+			name: playLabel,
+			exact: true,
+		});
+		await expect(playButton).toBeVisible();
+		const row = playButton.locator("xpath=../..");
+		await expect(row.getByText(section.name, { exact: true })).toBeVisible();
+		await expect(row.getByText(section.bars, { exact: true })).toBeVisible();
+		await expect(row).not.toContainText(/\/ 96 BPM/);
+	}
 	await expect(
 		page.getByRole("checkbox", { name: /Flag section/ }),
 	).toHaveCount(0);
