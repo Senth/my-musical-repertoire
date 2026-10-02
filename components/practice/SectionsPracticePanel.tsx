@@ -102,7 +102,7 @@ export function SectionsPracticePanel({
 										variant="bodySmall"
 										style={{ color: theme.colors.onSurfaceVariant }}
 									>
-										{t("screen.practice.sectionsPanel.bpmLine", {
+										{t("section.tempoOfTarget", {
 											current: currentDisplay,
 											target: targetDisplay,
 										})}

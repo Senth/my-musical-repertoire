@@ -30,7 +30,8 @@
 			"stabilizing": "Stabilizing",
 			"maintenance": "Maintenance"
 		},
-		"practiceLabel": "Practice this section"
+		"practiceLabel": "Practice this section",
+		"tempoOfTarget": "{{current}} / {{target}} BPM"
 	},
 	"common": {
 		"today": "Today",
@@ -597,7 +598,6 @@
 				"header": "Sections",
 				"headerCheckbox": "Sections — tap the ones that were problematic",
 				"headerRunThrough": "Sections — which ones need work? The rest count as practiced",
-				"bpmLine": "{{current}} / {{target}} BPM",
 				"practice": "Practice",
 				"a11yPractice": "Practice section {{label}}",
 				"a11yToggleFlag": "Flag section {{label}} as problematic"

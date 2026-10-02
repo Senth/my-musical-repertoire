@@ -3,12 +3,12 @@ import type { TFunction } from "i18next";
 export function formatDaysAgo(
 	date: Date | null | undefined,
 	t: TFunction,
+	now = new Date(),
 ): string {
 	if (!date) {
 		return t("common.neverPracticed");
 	}
 
-	const now = new Date();
 	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 	const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 	const diffDays = Math.round(
