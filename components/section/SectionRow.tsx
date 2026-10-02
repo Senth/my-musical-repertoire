@@ -166,6 +166,8 @@ export function SectionRow({
 					<IconButton
 						icon="play"
 						mode="contained-tonal"
+						containerColor={theme.colors.secondaryContainer}
+						iconColor={theme.colors.onSecondaryContainer}
 						size={icon.md}
 						onPress={onPractice}
 						accessibilityLabel={t("section.a11yPractice", {

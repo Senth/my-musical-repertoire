@@ -10,7 +10,21 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 	page,
 }) => {
 	const consoleErrors = collectConsoleErrors(page);
-	await page.goto(`/piece/${SEED_IDS.invention}`);
+	const playButton = page.getByRole("button", {
+		name: "Practice section Middle entries",
+	});
+	for (const [colorScheme, containerColor, iconColor] of [
+		["light", "rgb(205, 232, 231)", "rgb(5, 42, 42)"],
+		["dark", "rgb(38, 67, 67)", "rgb(202, 228, 228)"],
+	] as const) {
+		await page.emulateMedia({ colorScheme });
+		await page.goto(`/piece/${SEED_IDS.invention}`);
+		await expect(playButton.locator("xpath=..")).toHaveCSS(
+			"background-color",
+			containerColor,
+		);
+		await expect(playButton.getByRole("img")).toHaveCSS("color", iconColor);
+	}
 	await expect(page.locator("button button")).toHaveCount(0);
 	const row = page.getByRole("button", { name: "Middle entries", exact: true });
 	const body = row.locator("xpath=..");
