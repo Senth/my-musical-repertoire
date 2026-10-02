@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Icon, Text, useTheme } from "react-native-paper";
 import type { SectionState } from "@/models/section";
-import { icon, radius, space } from "@/theme/tokens";
+import { icon, opacity, radius, space } from "@/theme/tokens";
 import { sectionStateVisual, withAlpha } from "@/utils/state-colors";
 
 export interface SpanChipSection {
@@ -71,7 +71,7 @@ export function SpanSectionsBlock({ sections }: SpanSectionsBlockProps) {
 								numberOfLines={1}
 								style={{
 									color: visual.accent,
-									opacity: 0.75,
+									opacity: opacity.quiet,
 									flexShrink: 0,
 								}}
 							>

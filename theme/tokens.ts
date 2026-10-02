@@ -73,6 +73,11 @@ export const touchTarget = {
 	minimum: 48,
 } as const;
 
+/** Lowest onSurfaceVariant opacity meeting the light surface 4.5:1 text floor (4.54:1). */
+export const opacity = {
+	quiet: 0.75,
+} as const;
+
 /** The one breakpoint, MD3's compact/medium window class. Breaks on content,
  * not on a device name. */
 export const breakpoints = {

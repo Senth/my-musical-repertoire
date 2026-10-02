@@ -20,11 +20,11 @@ export function sectionRowFacts(
 	const progress =
 		rawRatio == null
 			? null
-			: {
+			: ({
 					ratio: Math.min(1, Math.sqrt(rawRatio)),
 					tone:
 						rawRatio < 0.7 ? "error" : rawRatio < 0.9 ? "warning" : "success",
-				};
+				} as const);
 
 	return {
 		bars: formatBarRange(section, t),

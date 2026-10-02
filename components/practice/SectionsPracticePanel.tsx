@@ -150,10 +150,9 @@ export function SectionsPracticePanel({
 							mode="outlined"
 							onPress={() => onPractice(sid)}
 							contentStyle={{ paddingHorizontal: space.sm }}
-							accessibilityLabel={t(
-								"screen.practice.sectionsPanel.a11yPractice",
-								{ label: section.label },
-							)}
+							accessibilityLabel={t("section.a11yPractice", {
+								label: section.label,
+							})}
 						>
 							{t("screen.practice.sectionsPanel.practice")}
 						</Button>
