@@ -92,6 +92,10 @@ export const ROUTES: { path: string; ready: string }[] = [
 		ready: t("screen.pieceDetail.practice"),
 	},
 	{
+		path: `/piece/${SEED_IDS.invention}`,
+		ready: t("screen.pieceDetail.practice"),
+	},
+	{
 		path: `/technique/${SEED_IDS.scale}`,
 		ready: t("screen.techniqueDetail.practice"),
 	},

@@ -30,7 +30,8 @@
 			"stabilizing": "Stabilizing",
 			"maintenance": "Maintenance"
 		},
-		"practiceLabel": "Practice this section"
+		"a11yPractice": "Practice section {{label}}",
+		"tempoOfTarget": "{{current}} / {{target}} BPM"
 	},
 	"common": {
 		"today": "Today",
@@ -597,9 +598,6 @@
 				"header": "Sections",
 				"headerCheckbox": "Sections — tap the ones that were problematic",
 				"headerRunThrough": "Sections — which ones need work? The rest count as practiced",
-				"bpmLine": "{{current}} / {{target}} BPM",
-				"practice": "Practice",
-				"a11yPractice": "Practice section {{label}}",
 				"a11yToggleFlag": "Flag section {{label}} as problematic"
 			},
 			"demoted_one": "{{count}} section moved back to stabilizing",
@@ -1014,13 +1012,13 @@
 		},
 		"pieceSections": {
 			"archiveDialog": {
-				"title": "Archive Section",
+				"title": "Archive section",
 				"message": "\"{{name}}\" will be hidden from the list. Its practice history will be preserved.",
 				"confirm": "Archive",
 				"cancel": "Cancel"
 			},
-			"addSection": "Add Section",
-			"editSection": "Edit Section",
+			"addSection": "Add section",
+			"editSection": "Edit section",
 			"barRange": "Bars {{start}}–{{end}}",
 			"barFrom": "From bar {{start}}",
 			"bpm": "{{bpm}} BPM",

@@ -208,7 +208,7 @@ async function addSection(
 	});
 
 	// The id lives in the section's own detail-page URL — click through to read it.
-	await page.getByText(opts.label, { exact: true }).click();
+	await page.getByRole("button", { name: opts.label, exact: true }).click();
 	const url = page.url();
 	await page.goto(pieceUrl);
 	return url.split("/").filter(Boolean).pop() ?? "";
