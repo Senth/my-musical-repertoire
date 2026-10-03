@@ -358,6 +358,129 @@ test("section hit expansion stops before notes without changing their compact li
 	).toBeVisible();
 });
 
+for (const colorScheme of ["light", "dark"] as const) {
+	for (const fixture of [
+		{
+			piece: SEED_IDS.invention,
+			section: "Middle entries",
+			sectionId: "seed-invention-middle",
+			notes: null,
+		},
+		{
+			piece: SEED_IDS.nocturne,
+			section: "B section",
+			sectionId: "seed-nocturne-b",
+			notes: "Keep the left hand quiet.",
+		},
+	]) {
+		test(`normal practice rejects adjusted touchscreen taps outside ${fixture.section} chip in ${colorScheme}`, async ({
+			page,
+		}) => {
+			await page.setViewportSize({ width: 412, height: 900 });
+			await page.emulateMedia({ colorScheme });
+			const consoleErrors = collectConsoleErrors(page);
+			const path = `/piece/${fixture.piece}/practice`;
+			await page.goto(path);
+			const play = page.getByRole("button", {
+				name: `Practice section ${fixture.section}`,
+				exact: true,
+			});
+			const row = play.locator("xpath=../..");
+			const chip = row.getByRole("button", {
+				name: t("section.state.learning"),
+				exact: true,
+			});
+			await chip.scrollIntoViewIfNeeded();
+			await expect(
+				page.getByRole("checkbox", { name: /Flag section/ }),
+			).toHaveCount(0);
+			const hitBox = await chip.boundingBox();
+			const nameBox = await row
+				.getByText(fixture.section, { exact: true })
+				.boundingBox();
+			if (!hitBox || !nameBox)
+				throw new Error("Section state control not measurable");
+			expect(hitBox.height).toBe(fixture.notes ? 28 : 36);
+			const outside = [1, 5].map((inset) => ({
+				x: nameBox.x + nameBox.width / 2,
+				y: nameBox.y + nameBox.height - inset,
+			}));
+			if (fixture.notes) {
+				const notesBox = await row
+					.getByText(fixture.notes, { exact: true })
+					.boundingBox();
+				if (!notesBox) throw new Error("Section notes not measurable");
+				expect(hitBox.y + hitBox.height).toBe(notesBox.y);
+				outside.unshift(
+					...[1, 5].map((inset) => ({
+						x: notesBox.x + 30,
+						y: notesBox.y + inset,
+					})),
+				);
+			}
+			for (const point of outside) {
+				expect(
+					await chip.evaluate(
+						(element, point) =>
+							element.contains(document.elementFromPoint(point.x, point.y)),
+						point,
+					),
+				).toBe(false);
+				await page.mouse.click(point.x, point.y);
+				await expect(chip).toHaveAttribute("aria-expanded", "false");
+				await page.touchscreen.tap(point.x, point.y);
+				await expect(chip).toHaveAttribute("aria-expanded", "false");
+				await expect(page.getByRole("menuitem")).toHaveCount(0);
+				await expect(page).toHaveURL(path);
+			}
+			await chip.evaluate((element) => (element as HTMLElement).click());
+			await expect(chip).toHaveAttribute("aria-expanded", "true");
+			const firstItem = page.getByRole("menuitem").first();
+			await expect(firstItem).toBeFocused();
+			await page
+				.getByRole("menuitem", {
+					name: t("section.state.learning"),
+					exact: true,
+				})
+				.click();
+			await expect(chip).toHaveAttribute("aria-expanded", "false");
+			await expect(chip).toBeFocused();
+			await chip.press("Enter");
+			await expect(chip).toHaveAttribute("aria-expanded", "true");
+			await expect(firstItem).toBeFocused();
+			await page.keyboard.press("Escape");
+			await expect(chip).toBeFocused();
+			await chip.press("Space");
+			await expect(chip).toHaveAttribute("aria-expanded", "true");
+			await expect(firstItem).toBeFocused();
+			await page.keyboard.press("Escape");
+			await expect(chip).toBeFocused();
+			for (const [x, y] of [
+				[hitBox.x + 1, hitBox.y + 1],
+				[hitBox.x + hitBox.width - 1, hitBox.y + 1],
+				[hitBox.x + 1, hitBox.y + hitBox.height - 1],
+				[hitBox.x + hitBox.width - 1, hitBox.y + hitBox.height - 1],
+				[hitBox.x + hitBox.width / 2, hitBox.y + hitBox.height - 1],
+			]) {
+				await page.touchscreen.tap(x, y);
+				await expect(chip).toHaveAttribute("aria-expanded", "true");
+				await expect(firstItem).toBeFocused();
+				await page.keyboard.press("Escape");
+				await expect(chip).toBeFocused();
+			}
+			await expect(
+				page.getByText(t("screen.pieceSections.editSection")),
+			).toHaveCount(0);
+			await play.tap();
+			await expect(page).toHaveURL(
+				`${path}?sectionId=${fixture.sectionId}&from=overview`,
+			);
+			await expect(page.getByRole("menuitem")).toHaveCount(0);
+			expect(consoleErrors).toEqual([]);
+		});
+	}
+}
+
 test("whole-piece practice flags only when asked and keeps run-through checkboxes", async ({
 	page,
 }) => {

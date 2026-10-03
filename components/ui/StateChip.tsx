@@ -1,5 +1,10 @@
-import { type ReactElement, type Ref, useState } from "react";
-import { type Insets, Platform, View } from "react-native";
+import { type ReactElement, type Ref, useRef, useState } from "react";
+import {
+	type GestureResponderEvent,
+	type Insets,
+	Platform,
+	View,
+} from "react-native";
 import { Chip, TouchableRipple, useTheme } from "react-native-paper";
 import { border, radius, space, type } from "@/theme/tokens";
 import { type StateVisual, withAlpha } from "@/utils/state-colors";
@@ -44,6 +49,16 @@ export function StateChip({
 }: StateChipProps): ReactElement {
 	const theme = useTheme();
 	const [focused, setFocused] = useState(false);
+	const touchInBounds = useRef(true);
+	const containsTouch = (event: GestureResponderEvent) => {
+		const touch = event.nativeEvent.changedTouches[0];
+		const rect = (
+			event.currentTarget as unknown as HTMLElement
+		).getBoundingClientRect();
+		const x = touch.pageX - window.scrollX;
+		const y = touch.pageY - window.scrollY;
+		return x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom;
+	};
 
 	const chip = (
 		<Chip
@@ -90,7 +105,36 @@ export function StateChip({
 			>
 				<TouchableRipple
 					ref={ref}
-					onPress={onPress}
+					onTouchStart={
+						Platform.OS === "web"
+							? (event) => {
+									touchInBounds.current = containsTouch(event);
+								}
+							: undefined
+					}
+					onTouchEnd={
+						Platform.OS === "web"
+							? (event) => {
+									touchInBounds.current =
+										touchInBounds.current && containsTouch(event);
+								}
+							: undefined
+					}
+					onPress={(event) => {
+						if (Platform.OS === "web") {
+							const click = event.nativeEvent as unknown as PointerEvent & {
+								sourceCapabilities?: { firesTouchEvents: boolean };
+							};
+							if (
+								click.isTrusted &&
+								(click.pointerType === "touch" ||
+									click.sourceCapabilities?.firesTouchEvents) &&
+								!touchInBounds.current
+							)
+								return;
+						}
+						onPress();
+					}}
 					onFocus={() => setFocused(true)}
 					onBlur={() => setFocused(false)}
 					accessibilityRole="button"
