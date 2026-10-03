@@ -127,6 +127,12 @@ export function SectionRow({
 								<SectionStateChip
 									state={section.state}
 									onChangeState={onChangeState}
+									hitSlop={{
+										top: space.xs,
+										bottom: section.notes ? space.xs : space.md,
+										left: space.lg,
+										right: space.sm,
+									}}
 								/>
 								{lastPracticed != null && (
 									<Text

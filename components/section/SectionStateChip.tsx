@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform, type View } from "react-native";
+import { type Insets, Platform, type View } from "react-native";
 import { Menu, useTheme } from "react-native-paper";
 import { StateChip } from "@/components/ui/StateChip";
 import { SECTION_STATES, type SectionState } from "@/models/section";
@@ -9,11 +9,13 @@ import { sectionStateVisual } from "@/utils/state-colors";
 interface SectionStateChipProps {
 	state: SectionState;
 	onChangeState?: (state: SectionState) => void;
+	hitSlop?: Required<Insets>;
 }
 
 export function SectionStateChip({
 	state,
 	onChangeState,
+	hitSlop,
 }: SectionStateChipProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -30,6 +32,7 @@ export function SectionStateChip({
 			ref={chipRef}
 			label={t(`section.state.${state}`)}
 			visual={sectionStateVisual(state, theme.dark)}
+			hitSlop={hitSlop}
 			onPress={onChangeState ? () => setMenuOpen(true) : undefined}
 			expanded={onChangeState ? menuOpen === true : undefined}
 		/>

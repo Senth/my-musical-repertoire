@@ -79,7 +79,7 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 	await chip.scrollIntoViewIfNeeded();
 	const chipBox = await chip.boundingBox();
 	if (!chipBox) throw new Error("Section state control not measurable");
-	expect(chipBox.height).toBeGreaterThanOrEqual(48);
+	expect(chipBox.height).toBe(36);
 	expect(chipBox.width).toBeGreaterThanOrEqual(48);
 	expect(
 		await chip.evaluate((element) => {
@@ -207,12 +207,27 @@ for (const [width, colorScheme] of [
 		const pillBox = await pill.boundingBox();
 		if (!chipBox || !pillBox)
 			throw new Error("Section state control not measurable");
-		expect(chipBox.height).toBeGreaterThanOrEqual(48);
+		expect(chipBox.height).toBe(36);
 		expect(chipBox.width).toBeGreaterThanOrEqual(48);
+		expect(chipBox.width).toBe(pillBox.width + 24);
+		expect(chipBox.x).toBe(pillBox.x - 16);
+		expect(chipBox.y).toBe(pillBox.y - 4);
 		const bottom = chipBox.y + chipBox.height - 2;
 		expect(bottom).toBeGreaterThan(pillBox.y + pillBox.height);
-		for (const x of [chipBox.x + chipBox.width / 2, chipBox.x + 1]) {
-			await tap(x, bottom);
+		for (const [x, y] of [
+			[chipBox.x + chipBox.width / 2, bottom],
+			[chipBox.x + 1, bottom],
+			[chipBox.x + chipBox.width - 1, chipBox.y + 1],
+			[pillBox.x + 1, pillBox.y + 1],
+		]) {
+			expect(
+				await chip.evaluate(
+					(button, point) =>
+						button.contains(document.elementFromPoint(point.x, point.y)),
+					{ x, y },
+				),
+			).toBe(true);
+			await tap(x, y);
 			await expect(
 				page.getByText(t("section.state.maintenance")),
 			).toBeVisible();
@@ -223,9 +238,125 @@ for (const [width, colorScheme] of [
 			await expect(page).toHaveURL(`/piece/${SEED_IDS.invention}/practice`);
 			await page.keyboard.press("Escape");
 		}
+		const nameBox = await body
+			.getByText("Middle entries", { exact: true })
+			.boundingBox();
+		const barsBox = await body
+			.getByText("Bars 7–14", { exact: true })
+			.boundingBox();
+		if (!nameBox || !barsBox)
+			throw new Error("Section row text not measurable");
+		for (const box of [nameBox, barsBox]) {
+			await tap(box.x + box.width / 2, box.y + box.height - 1);
+			await expect(flag).toBeChecked();
+			await expect(chip).toHaveAttribute("aria-expanded", "false");
+			await tap(
+				indicatorBox.x + indicatorBox.width / 2,
+				indicatorBox.y + indicatorBox.height / 2,
+			);
+			await expect(flag).not.toBeChecked();
+		}
 		expect(consoleErrors).toEqual([]);
 	});
 }
+
+for (const width of [412, 1280]) {
+	test(`invisible section targets leave compact detail geometry unchanged at ${width}px`, async ({
+		page,
+	}, testInfo) => {
+		await page.setViewportSize({ width, height: 900 });
+		await page.goto(`/piece/${SEED_IDS.invention}`);
+		const edit = page.getByRole("button", {
+			name: "Middle entries",
+			exact: true,
+		});
+		const body = edit.locator("xpath=..");
+		const pill = body.getByTestId("chip-container");
+		const chip = body.getByRole("button", {
+			name: t("section.state.learning"),
+			exact: true,
+		});
+		await chip.scrollIntoViewIfNeeded();
+		const metrics = async () => ({
+			row: await edit.boundingBox(),
+			name: await body
+				.getByText("Middle entries", { exact: true })
+				.boundingBox(),
+			bars: await body.getByText("Bars 7–14", { exact: true }).boundingBox(),
+			pill: await pill.boundingBox(),
+			play: await page
+				.getByRole("button", { name: "Practice section Middle entries" })
+				.boundingBox(),
+			previous: await page
+				.getByRole("button", { name: "Exposition", exact: true })
+				.boundingBox(),
+		});
+		const interactive = await metrics();
+		const hitBox = await chip.boundingBox();
+		await testInfo.attach("compact-section-geometry", {
+			body: JSON.stringify({ interactive, hitBox }, null, 2),
+			contentType: "application/json",
+		});
+		await page.screenshot({
+			path: testInfo.outputPath(`detail-${width}.png`),
+			fullPage: true,
+		});
+		await chip.evaluate((button) => {
+			const pill = button.parentElement?.querySelector(
+				'[data-testid="chip-container"]',
+			);
+			if (pill && button.contains(pill)) button.replaceWith(pill);
+			else button.remove();
+		});
+		expect(await metrics()).toEqual(interactive);
+		const { row, pill: pillBox, name, previous } = interactive;
+		if (!row || !pillBox || !name || !previous)
+			throw new Error("Section row geometry not measurable");
+		expect(row.height).toBe(72);
+		expect(pillBox.height).toBe(20);
+		expect(pillBox.y - name.y - name.height).toBe(4);
+		expect(row.y - previous.y).toBe(72);
+		expect(pillBox.x).toBe(name.x);
+		if (width === 412) {
+			expect(name.x).toBe(16);
+			expect(name.y).toBe(492);
+			expect(pillBox.y).toBe(520);
+		}
+	});
+}
+
+test("section hit expansion stops before notes without changing their compact line gap", async ({
+	page,
+}) => {
+	await page.goto(`/piece/${SEED_IDS.nocturne}`);
+	const edit = page.getByRole("button", { name: "B section", exact: true });
+	const body = edit.locator("xpath=..");
+	const chip = body.getByRole("button", {
+		name: t("section.state.learning"),
+		exact: true,
+	});
+	const pill = body.getByTestId("chip-container");
+	const notes = body.getByText("Keep the left hand quiet.", { exact: true });
+	await chip.scrollIntoViewIfNeeded();
+	const hitBox = await chip.boundingBox();
+	const pillBox = await pill.boundingBox();
+	const notesBox = await notes.boundingBox();
+	if (!hitBox || !pillBox || !notesBox)
+		throw new Error("Section notes not measurable");
+	expect(hitBox.height).toBe(28);
+	expect(notesBox.y - pillBox.y - pillBox.height).toBe(4);
+	expect(hitBox.y + hitBox.height).toBe(notesBox.y);
+	await page.touchscreen.tap(
+		hitBox.x + hitBox.width - 1,
+		hitBox.y + hitBox.height - 1,
+	);
+	await expect(chip).toHaveAttribute("aria-expanded", "true");
+	await page.keyboard.press("Escape");
+	await page.touchscreen.tap(notesBox.x + 1, notesBox.y + 1);
+	await expect(
+		page.getByText(t("screen.pieceSections.editSection")),
+	).toBeVisible();
+});
 
 test("whole-piece practice flags only when asked and keeps run-through checkboxes", async ({
 	page,
@@ -257,7 +388,7 @@ test("whole-piece practice flags only when asked and keeps run-through checkboxe
 	await expect(flag).not.toBeChecked();
 	await flag
 		.locator("xpath=../..")
-		.getByText(t("section.state.learning"), { exact: true })
+		.getByRole("button", { name: t("section.state.learning"), exact: true })
 		.click();
 	await expect(page.getByText(t("section.state.maintenance"))).toBeVisible();
 	await expect(flag).not.toBeChecked();

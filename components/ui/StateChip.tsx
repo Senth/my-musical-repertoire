@@ -1,7 +1,7 @@
 import { type ReactElement, type Ref, useState } from "react";
-import { View } from "react-native";
+import { type Insets, Platform, View } from "react-native";
 import { Chip, TouchableRipple, useTheme } from "react-native-paper";
-import { border, radius, space, touchTarget, type } from "@/theme/tokens";
+import { border, radius, space, type } from "@/theme/tokens";
 import { type StateVisual, withAlpha } from "@/utils/state-colors";
 
 interface StateChipProps {
@@ -10,6 +10,7 @@ interface StateChipProps {
 	visual: StateVisual;
 	onPress?: () => void;
 	expanded?: boolean;
+	hitSlop?: Required<Insets>;
 }
 
 /** Shared geometry for every informational chip, so none out-sizes its neighbour. */
@@ -34,6 +35,12 @@ export function StateChip({
 	visual,
 	onPress,
 	expanded,
+	hitSlop = {
+		top: space.xs,
+		bottom: space.xs,
+		left: space.xs,
+		right: space.xs,
+	},
 }: StateChipProps): ReactElement {
 	const theme = useTheme();
 	const [focused, setFocused] = useState(false);
@@ -62,27 +69,7 @@ export function StateChip({
 	if (!onPress) return chip;
 
 	return (
-		<TouchableRipple
-			ref={ref}
-			onPress={onPress}
-			onFocus={() => setFocused(true)}
-			onBlur={() => setFocused(false)}
-			accessibilityRole="button"
-			accessibilityLabel={label}
-			accessibilityState={{ expanded }}
-			aria-expanded={expanded}
-			style={{
-				minHeight: touchTarget.minimum,
-				minWidth: touchTarget.minimum,
-				alignSelf: "flex-start",
-				alignItems: "center",
-				justifyContent: "center",
-				borderRadius: radius.chip,
-				outlineColor: theme.colors.primary,
-				outlineStyle: "solid",
-				outlineWidth: focused ? border.hairline : 0,
-			}}
-		>
+		<View pointerEvents="box-none" style={{ alignSelf: "flex-start" }}>
 			<View
 				pointerEvents="none"
 				accessible={false}
@@ -91,7 +78,41 @@ export function StateChip({
 			>
 				{chip}
 			</View>
-		</TouchableRipple>
+			<View
+				pointerEvents="box-none"
+				style={{
+					position: "absolute",
+					top: -hitSlop.top,
+					bottom: -hitSlop.bottom,
+					left: -hitSlop.left,
+					right: -hitSlop.right,
+				}}
+			>
+				<TouchableRipple
+					ref={ref}
+					onPress={onPress}
+					onFocus={() => setFocused(true)}
+					onBlur={() => setFocused(false)}
+					accessibilityRole="button"
+					accessibilityLabel={label}
+					accessibilityState={{ expanded }}
+					aria-expanded={expanded}
+					hitSlop={Platform.OS === "web" ? undefined : hitSlop}
+					style={{
+						position: "absolute",
+						top: Platform.OS === "web" ? 0 : hitSlop.top,
+						bottom: Platform.OS === "web" ? 0 : hitSlop.bottom,
+						left: Platform.OS === "web" ? 0 : hitSlop.left,
+						right: Platform.OS === "web" ? 0 : hitSlop.right,
+						outlineColor: theme.colors.primary,
+						outlineStyle: "solid",
+						outlineWidth: focused ? border.hairline : 0,
+					}}
+				>
+					<View />
+				</TouchableRipple>
+			</View>
+		</View>
 	);
 }
 
