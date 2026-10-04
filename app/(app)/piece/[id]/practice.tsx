@@ -983,7 +983,7 @@ export function PiecePracticeContent({
 									flaggedIds={flaggedSectionIds}
 									flaggableIds={flaggableIds}
 									onToggleFlag={handleToggleFlag}
-									onPractice={handlePracticeSection}
+									onPractice={inCoach ? undefined : handlePracticeSection}
 									onChangeState={(sectionId, state) => {
 										const target = activeSections.find(
 											(s) => s.id === sectionId,

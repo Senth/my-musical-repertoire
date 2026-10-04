@@ -1,18 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import {
-	Button,
-	Checkbox,
-	Divider,
-	Text,
-	TouchableRipple,
-	useTheme,
-} from "react-native-paper";
-import { SectionStateChip } from "@/components/section/SectionStateChip";
+import { Checkbox, Divider, Text } from "react-native-paper";
+import { SectionRow } from "@/components/section/SectionRow";
 import type { Piece } from "@/models/piece";
 import type { Section, SectionState } from "@/models/section";
-import { radius, space } from "@/theme/tokens";
-import { deriveCurrentBpm } from "@/utils/practice-modes";
+import { space } from "@/theme/tokens";
 
 interface SectionsPracticePanelProps {
 	sections: Section[];
@@ -25,7 +17,7 @@ interface SectionsPracticePanelProps {
 	 */
 	flaggableIds?: string[];
 	onToggleFlag: (sectionId: string) => void;
-	onPractice: (sectionId: string) => void;
+	onPractice?: (sectionId: string) => void;
 	onChangeState?: (sectionId: string, state: SectionState) => void;
 }
 
@@ -40,7 +32,6 @@ export function SectionsPracticePanel({
 	onChangeState,
 }: SectionsPracticePanelProps) {
 	const { t } = useTranslation();
-	const theme = useTheme();
 
 	if (sections.length === 0) return null;
 
@@ -61,103 +52,39 @@ export function SectionsPracticePanel({
 				const checked = flaggedIds.includes(sid);
 				const isCheckbox =
 					showCheckboxes && (flaggableIds?.includes(sid) ?? true);
-				const effectiveTarget =
-					section.targetBpmOverride ?? piece.targetTempoBpm ?? null;
-				const currentBpm = deriveCurrentBpm(section.byMode);
-				const showBpm = currentBpm != null || effectiveTarget != null;
-				const currentDisplay = currentBpm?.toString() ?? "—";
-				const targetDisplay = effectiveTarget?.toString() ?? "—";
-
-				const rowContent = (
-					<View
-						style={{
-							flexDirection: "row",
-							alignItems: "center",
-							gap: space.sm,
-							flex: 1,
-							paddingVertical: space.xs,
-						}}
-					>
-						{isCheckbox && (
-							<Checkbox.Android status={checked ? "checked" : "unchecked"} />
-						)}
-						<View style={{ flex: 1, gap: space.xs }}>
-							<View
-								style={{
-									flexDirection: "row",
-									alignItems: "center",
-									flexWrap: "wrap",
-									gap: space.sm,
-								}}
-							>
-								<Text variant="bodyLarge">{section.label}</Text>
-								<SectionStateChip
-									state={section.state}
-									onChangeState={
-										onChangeState ? (p) => onChangeState(sid, p) : undefined
-									}
-								/>
-								{showBpm && (
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{t("screen.practice.sectionsPanel.bpmLine", {
-											current: currentDisplay,
-											target: targetDisplay,
-										})}
-									</Text>
-								)}
-							</View>
-							{section.notes ? (
-								<Text
-									variant="bodySmall"
-									style={{ color: theme.colors.onSurfaceVariant }}
-								>
-									{section.notes}
-								</Text>
-							) : null}
-						</View>
-					</View>
-				);
-
 				return (
-					<View
+					<SectionRow
 						key={sid}
-						style={{
-							flexDirection: "row",
-							alignItems: "center",
-							gap: space.sm,
-						}}
-					>
-						{isCheckbox ? (
-							<TouchableRipple
-								onPress={() => onToggleFlag(sid)}
-								accessibilityLabel={t(
-									"screen.practice.sectionsPanel.a11yToggleFlag",
-									{ label: section.label },
-								)}
-								accessibilityRole="checkbox"
-								accessibilityState={{ checked }}
-								style={{ flex: 1, borderRadius: radius.chip }}
-							>
-								{rowContent}
-							</TouchableRipple>
-						) : (
-							rowContent
-						)}
-						<Button
-							mode="outlined"
-							onPress={() => onPractice(sid)}
-							contentStyle={{ paddingHorizontal: space.sm }}
-							accessibilityLabel={t(
-								"screen.practice.sectionsPanel.a11yPractice",
-								{ label: section.label },
-							)}
-						>
-							{t("screen.practice.sectionsPanel.practice")}
-						</Button>
-					</View>
+						section={section}
+						pieceTargetBpm={piece.targetTempoBpm}
+						leading={
+							isCheckbox ? (
+								<View
+									pointerEvents="none"
+									importantForAccessibility="no-hide-descendants"
+								>
+									<Checkbox.Android
+										pointerEvents="none"
+										status={checked ? "checked" : "unchecked"}
+									/>
+								</View>
+							) : undefined
+						}
+						onPress={isCheckbox ? () => onToggleFlag(sid) : undefined}
+						pressRole={isCheckbox ? "checkbox" : undefined}
+						checked={checked}
+						pressLabel={
+							isCheckbox
+								? t("screen.practice.sectionsPanel.a11yToggleFlag", {
+										label: section.label,
+									})
+								: undefined
+						}
+						onPractice={onPractice ? () => onPractice(sid) : undefined}
+						onChangeState={
+							onChangeState ? (state) => onChangeState(sid, state) : undefined
+						}
+					/>
 				);
 			})}
 		</View>

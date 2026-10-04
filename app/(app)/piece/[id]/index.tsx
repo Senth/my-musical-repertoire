@@ -20,7 +20,7 @@ import {
 } from "react-native-paper";
 import { AddNextSectionNudge } from "@/components/piece/AddNextSectionNudge";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
-import { SectionDetailRow } from "@/components/section/SectionDetailRow";
+import { SectionRow } from "@/components/section/SectionRow";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { DeletePieceDialog } from "@/components/ui/DeletePieceDialog";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
@@ -513,16 +513,17 @@ export default function PieceDetailScreen() {
 						) : (
 							<View style={{ paddingTop: space.xs }}>
 								{sections.map((s) => (
-									<SectionDetailRow
+									<SectionRow
 										key={s.id}
 										section={s}
 										pieceTargetBpm={piece.targetTempoBpm}
 										onPress={() => router.push(`/piece/${id}/section/${s.id}`)}
-										onPracticePress={() =>
+										onPractice={() =>
 											router.push(
 												`/piece/${id}/practice?sectionId=${s.id}&from=piece-detail`,
 											)
 										}
+										showProgress
 										onChangeState={(state) => {
 											if (!id || !s.id || state === s.state) return;
 											changeSectionState({

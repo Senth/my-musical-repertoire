@@ -89,6 +89,7 @@ const PIECES: {
 		state: SectionState;
 		startBar: number;
 		endBar: number;
+		notes?: string;
 	}[];
 }[] = [
 	{
@@ -113,6 +114,7 @@ const PIECES: {
 				state: "learning",
 				startBar: 17,
 				endBar: 32,
+				notes: "Keep the left hand quiet.",
 			},
 		],
 	},
@@ -293,7 +295,7 @@ setup("seed the emulator fixture", async () => {
 						startBar: section.startBar,
 						endBar: section.endBar,
 						targetBpmOverride: null,
-						notes: null,
+						notes: section.notes ?? null,
 						order,
 						archived: false,
 						createdAt: serverTimestamp(),
