@@ -68,7 +68,7 @@ export const border = {
 	stripe: 4,
 } as const;
 
-/** Shared minimum for anything pressable. #113 enforces it across the app. */
+/** Touch reach, not visible size: the web touch handler extends taps to it. */
 export const touchTarget = {
 	minimum: 48,
 } as const;
