@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import { Icon, Text, useTheme } from "react-native-paper";
-import { border, radius, space } from "@/theme/tokens";
+import { border, radius, space, touchTarget } from "@/theme/tokens";
 import type {
 	TimeSignature,
 	TimeSignatureWritePlan,
@@ -92,6 +92,8 @@ export function AccentChip({
 					accessibilityLabel={t("common.metronome.accent.editA11y")}
 					style={{
 						height: CHIP_HEIGHT,
+						minWidth: touchTarget.minimum,
+						alignItems: "center",
 						justifyContent: "center",
 						paddingHorizontal: space.sm,
 						borderLeftWidth: border.hairline,
