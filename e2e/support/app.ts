@@ -113,6 +113,12 @@ export const ROUTES: { path: string; ready: string }[] = [
 		path: `/technique/${SEED_IDS.scale}/practice`,
 		ready: t("common.tempo.heading"),
 	},
+	// The session preview on the Balanced built-in, the id the overview links
+	// to. `Total` renders only once the plan has blocks, not on the empty state.
+	{
+		path: "/session/setup?presetId=default-balanced",
+		ready: t("screen.session.setup.totalLabel"),
+	},
 	{ path: "/privacy", ready: t("screen.privacy.title") },
 	{ path: "/terms", ready: t("screen.terms.title") },
 ];
