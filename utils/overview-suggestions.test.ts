@@ -153,9 +153,7 @@ describe("suggestPieces", () => {
 		it("neverPracticed reason for piece with no lastPracticed", () => {
 			const pieces = [makePiece({ id: "p1", state: "learning" })];
 			const result = suggestPieces(pieces, [], NOW);
-			expect(result.suggestions[0].reasonKey).toBe(
-				"screen.overview.pieceReason.neverPracticed",
-			);
+			expect(result.suggestions[0].reason.key).toBe("neverPracticed");
 		});
 
 		it("bpmGap reason when gap dominates for learning piece", () => {
@@ -182,10 +180,8 @@ describe("suggestPieces", () => {
 				}),
 			];
 			const result = suggestPieces(pieces, sections, NOW);
-			expect(result.suggestions[0].reasonKey).toBe(
-				"screen.overview.pieceReason.bpmGap",
-			);
-			expect(result.suggestions[0].reasonParams.gap).toBe(110);
+			expect(result.suggestions[0].reason.key).toBe("bpmGap");
+			expect(result.suggestions[0].reason.params.gap).toBe(110);
 		});
 
 		it("mistakes reason when mistakes dominate for maintenance piece", () => {
@@ -199,12 +195,10 @@ describe("suggestPieces", () => {
 				}),
 			];
 			const result = suggestPieces(pieces, [], NOW);
-			expect(result.suggestions[0].reasonKey).toBe(
-				"screen.overview.pieceReason.mistakes",
-			);
+			expect(result.suggestions[0].reason.key).toBe("mistakes");
 		});
 
-		it("lastResultPoor reason when quality/effort bonus dominates for maintenance section", () => {
+		it("notClean reason when quality/effort bonus dominates for maintenance section", () => {
 			const pieces = [makePiece({ id: "p1", state: "learning" })];
 			const sections = [
 				makeSection({
@@ -217,9 +211,7 @@ describe("suggestPieces", () => {
 				}),
 			];
 			const result = suggestPieces(pieces, sections, NOW);
-			expect(result.suggestions[0].reasonKey).toBe(
-				"screen.overview.pieceReason.lastResultPoor",
-			);
+			expect(result.suggestions[0].reason.key).toBe("notClean");
 		});
 
 		it("daysSince reason as default", () => {
@@ -231,10 +223,8 @@ describe("suggestPieces", () => {
 				}),
 			];
 			const result = suggestPieces(pieces, [], NOW);
-			expect(result.suggestions[0].reasonKey).toBe(
-				"screen.overview.pieceReason.daysSince",
-			);
-			expect(result.suggestions[0].reasonParams.days).toBe(2);
+			expect(result.suggestions[0].reason.key).toBe("daysSince");
+			expect(result.suggestions[0].reason.params.count).toBe(2);
 		});
 	});
 
@@ -351,10 +341,8 @@ describe("suggestPieces", () => {
 			];
 			const result = suggestPieces(pieces, sections, NOW);
 			expect(result.suggestions[0].modeKey).toBe("RH");
-			expect(result.suggestions[0].reasonKey).toBe(
-				"screen.overview.pieceReason.daysSince",
-			);
-			expect(result.suggestions[0].reasonParams.days).toBe(5);
+			expect(result.suggestions[0].reason.key).toBe("daysSince");
+			expect(result.suggestions[0].reason.params.count).toBe(5);
 		});
 
 		it("measures a hands-separate gap against the hands-separate target", () => {
@@ -370,11 +358,9 @@ describe("suggestPieces", () => {
 				}),
 			];
 			const result = suggestPieces(pieces, sections, NOW);
-			expect(result.suggestions[0].reasonKey).toBe(
-				"screen.overview.pieceReason.bpmGap",
-			);
+			expect(result.suggestions[0].reason.key).toBe("bpmGap");
 			// 120 × 1.15 = 138, not the 120 the rollup would have used.
-			expect(result.suggestions[0].reasonParams.gap).toBe(128);
+			expect(result.suggestions[0].reason.params.gap).toBe(128);
 		});
 
 		it("reads quality and effort from the winning mode", () => {
@@ -397,9 +383,7 @@ describe("suggestPieces", () => {
 				}),
 			];
 			const result = suggestPieces(pieces, sections, NOW);
-			expect(result.suggestions[0].reasonKey).toBe(
-				"screen.overview.pieceReason.lastResultPoor",
-			);
+			expect(result.suggestions[0].reason.key).toBe("notClean");
 		});
 	});
 
@@ -482,9 +466,7 @@ describe("suggestPieces", () => {
 			const result = suggestPieces(pieces, sections, NOW);
 			const span = result.suggestions.find((s) => s.sections.length > 1);
 			expect(span?.sections.map((s) => s.id)).toEqual(["p1-a", "p1-b"]);
-			expect(span?.reasonKey).toBe(
-				"screen.overview.pieceReason.spanNeverPracticed",
-			);
+			expect(span?.reason.key).toBe("spanNeverPracticed");
 		});
 
 		it("sits at the head of its piece's queue", () => {
@@ -539,8 +521,8 @@ describe("suggestPieces", () => {
 			const sections = spanSections("p1");
 			const result = suggestPieces(pieces, sections, NOW);
 			const span = result.suggestions.find((s) => s.sections.length > 1);
-			expect(span?.reasonKey).toBe("screen.overview.pieceReason.spanDue");
-			expect(span?.reasonParams.days).toBe(9);
+			expect(span?.reason.key).toBe("spanDue");
+			expect(span?.reason.params.count).toBe(9);
 		});
 
 		it("no span card for a stabilizing piece, spans are learning-only", () => {
@@ -607,9 +589,7 @@ describe("suggestTechniques", () => {
 	it("new technique gets neverPracticed reason", () => {
 		const techs = [makeTechnique({ id: "t1", state: "active" })];
 		const result = suggestTechniques(techs, NOW);
-		expect(result.suggestions[0].reasonKey).toBe(
-			"screen.overview.techniqueReason.new",
-		);
+		expect(result.suggestions[0].reason.key).toBe("neverPracticed");
 	});
 
 	it("effort/quality dominant reason fires when bonus > stateScore × days", () => {
@@ -623,9 +603,7 @@ describe("suggestTechniques", () => {
 			}),
 		];
 		const result = suggestTechniques(techs, NOW);
-		expect(result.suggestions[0].reasonKey).toBe(
-			"screen.overview.techniqueReason.effortQuality",
-		);
+		expect(result.suggestions[0].reason.key).toBe("notClean");
 	});
 
 	it("daysSince reason as default", () => {
@@ -637,10 +615,8 @@ describe("suggestTechniques", () => {
 			}),
 		];
 		const result = suggestTechniques(techs, NOW);
-		expect(result.suggestions[0].reasonKey).toBe(
-			"screen.overview.techniqueReason.daysSince",
-		);
-		expect(result.suggestions[0].reasonParams.days).toBe(3);
+		expect(result.suggestions[0].reason.key).toBe("daysSince");
+		expect(result.suggestions[0].reason.params.count).toBe(3);
 	});
 
 	it("sorts by score descending within active and maintenance", () => {
