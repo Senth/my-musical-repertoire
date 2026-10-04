@@ -7,6 +7,7 @@ import {
 	reasonForMaintenancePiece,
 	reasonForSpan,
 	reasonForTechnique,
+	reasonForWarmup,
 	reasonText,
 } from "./block-reasons";
 import { buildSectionCandidates, scoreTechniqueModes } from "./planner-scoring";
@@ -220,6 +221,26 @@ describe("reasonForTechnique", () => {
 		const { modeKey } = scoreTechniqueModes(tech, NOW);
 		expect(modeKey).toBe("RH");
 		expect(reasonForTechnique(tech, modeKey, NOW).key).toBe("feltHard");
+	});
+});
+
+describe("reasonForWarmup", () => {
+	it("is neverPracticed with no history", () => {
+		const tech = makeTechnique({ id: "t1", state: "maintenance" });
+		expect(reasonForWarmup(tech, NOW).key).toBe("neverPracticed");
+	});
+
+	it("is daysSince even when effort would have won the score", () => {
+		const tech = makeTechnique({
+			id: "t1",
+			state: "maintenance",
+			lastPracticedAt: daysAgo(1),
+			lastEffort: 5,
+		});
+		expect(reasonForWarmup(tech, NOW)).toEqual({
+			key: "daysSince",
+			params: { count: 1 },
+		});
 	});
 });
 

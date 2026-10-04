@@ -127,6 +127,12 @@ export function reasonForTechnique(
 	return daysReason("daysSince", days);
 }
 
+/** Warmup is picked on item-level staleness alone, so that is all it can claim. */
+export function reasonForWarmup(tech: TechniqueItem, now: Date): BlockReason {
+	if (!tech.lastPracticedAt) return NEVER_PRACTICED;
+	return daysReason("daysSince", daysSince(tech.lastPracticedAt, now));
+}
+
 export function reasonForSpan(piece: Piece, now: Date): BlockReason {
 	const last = piece.lastSpanPracticedAt ?? null;
 	if (last == null) return { key: "spanNeverPracticed", params: {} };

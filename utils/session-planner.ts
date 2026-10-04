@@ -12,6 +12,14 @@ import {
 } from "@/models/session";
 import type { TechniqueItem } from "@/models/technique";
 import {
+	type BlockReason,
+	reasonForCandidate,
+	reasonForMaintenancePiece,
+	reasonForSpan,
+	reasonForTechnique,
+	reasonForWarmup,
+} from "./block-reasons";
+import {
 	buildSectionCandidates,
 	daysSince,
 	eligibleMaintenancePieces,
@@ -204,6 +212,7 @@ function sectionBlock(
 	kind: BlockKind,
 	candidate: SectionCandidate,
 	allocatedMinutes: number,
+	now: Date,
 ): PlannedBlock {
 	return {
 		kind,
@@ -214,6 +223,7 @@ function sectionBlock(
 		subtitle: candidate.section?.label ?? null,
 		score: candidate.score,
 		modeKey: candidate.modeKey,
+		reason: reasonForCandidate(candidate, now),
 	};
 }
 
@@ -248,7 +258,7 @@ export function pickRepertoireSection(
 	if (!best) return null;
 	const kind: BlockKind =
 		slot === "learning" ? "repertoire-learning" : "repertoire-stabilizing";
-	return sectionBlock(kind, best, allocatedMinutes);
+	return sectionBlock(kind, best, allocatedMinutes, now);
 }
 
 /**
@@ -288,7 +298,7 @@ function upgradeOneReviewBlockToSpan(
 		const win = bestSpanWindow(piece, sections, now);
 		if (!win?.some((s) => s.id === sectionId)) return block;
 		window = win.map((s) => s.id).filter((id): id is string => Boolean(id));
-		return { ...block, sectionIds: window };
+		return { ...block, sectionIds: window, reason: reasonForSpan(piece, now) };
 	});
 	return window
 		? upgraded.filter(
@@ -297,6 +307,25 @@ function upgradeOneReviewBlockToSpan(
 					!(window as string[]).includes(blockSectionIds(block)[0]),
 			)
 		: upgraded;
+}
+
+const LEADS_IN: BlockReason = { key: "leadsIn", params: {} };
+
+/**
+ * The piece anchor in `learningLinePool`, said out loud: a review block booked
+ * on the same piece as new bars is there to warm into them, whatever its own
+ * score. A span keeps its span reason — the joins being due is why it exists.
+ */
+function leadIntoNewBars(
+	reviewBlocks: PlannedBlock[],
+	learningBlocks: PlannedBlock[],
+): PlannedBlock[] {
+	const newBarPieceIds = new Set(learningBlocks.map((b) => b.pieceId));
+	return reviewBlocks.map((b) =>
+		b.pieceId && newBarPieceIds.has(b.pieceId) && blockSectionIds(b).length <= 1
+			? { ...b, reason: LEADS_IN }
+			: b,
+	);
 }
 
 export interface LearningLineResult {
@@ -404,11 +433,11 @@ export function pickRepertoireLearningBlocks(
 		const candidate = ordered[i];
 		if (candidate.state === "learning") {
 			learningBlocks.push(
-				sectionBlock("repertoire-learning", candidate, minutes[n]),
+				sectionBlock("repertoire-learning", candidate, minutes[n], now),
 			);
 		} else {
 			reviewBlocks.push(
-				sectionBlock("repertoire-review", candidate, minutes[n]),
+				sectionBlock("repertoire-review", candidate, minutes[n], now),
 			);
 		}
 	});
@@ -462,7 +491,9 @@ export function pickRepertoireStabilizingBlocks(
 			? allocatedMinutes / wanted.length
 			: Math.min(STABILIZING_BLOCK_MAX, allocatedMinutes / picks.length);
 	return {
-		blocks: picks.map((c) => sectionBlock("repertoire-stabilizing", c, per)),
+		blocks: picks.map((c) =>
+			sectionBlock("repertoire-stabilizing", c, per, now),
+		),
 		leftoverMinutes: Math.max(0, allocatedMinutes - per * picks.length),
 	};
 }
@@ -543,7 +574,11 @@ export interface MaintenancePackResult {
 	optIn: MaintenanceOptIn | null;
 }
 
-function maintenanceBlock(piece: Piece, score: number): PlannedBlock {
+function maintenanceBlock(
+	piece: Piece,
+	score: number,
+	now: Date,
+): PlannedBlock {
 	return {
 		kind: "repertoire-maintenance",
 		allocatedMinutes: maintenanceCost(piece),
@@ -552,6 +587,7 @@ function maintenanceBlock(piece: Piece, score: number): PlannedBlock {
 		title: piece.title,
 		subtitle: piece.composer,
 		score,
+		reason: reasonForMaintenancePiece(piece, now),
 	};
 }
 
@@ -602,7 +638,7 @@ export function pickRepertoireMaintenanceBlocks(
 		if (forced) {
 			const cost = maintenanceCost(forced.piece);
 			return {
-				blocks: [maintenanceBlock(forced.piece, forced.score)],
+				blocks: [maintenanceBlock(forced.piece, forced.score, now)],
 				leftoverMinutes: 0,
 				inflationMinutes: Math.max(0, cost - budgetMinutes),
 				optIn: null,
@@ -619,7 +655,7 @@ export function pickRepertoireMaintenanceBlocks(
 	for (const { piece, score } of scored) {
 		const cost = maintenanceCost(piece);
 		if (used + cost <= allowance + FIT_EPSILON) {
-			blocks.push(maintenanceBlock(piece, score));
+			blocks.push(maintenanceBlock(piece, score, now));
 			used += cost;
 			continue;
 		}
@@ -730,6 +766,7 @@ export function pickTechnique(
 		subtitle: null,
 		score: p.score,
 		modeKey: p.modeKey,
+		reason: reasonForTechnique(p.tech, p.modeKey, now),
 	}));
 	return blocks;
 }
@@ -753,6 +790,7 @@ export function pickWarmup(
 			techniqueId: null,
 			title: null,
 			subtitle: null,
+			reason: null,
 		};
 	}
 	const sorted = pool.slice().sort((a, b) => {
@@ -774,6 +812,7 @@ export function pickWarmup(
 		// Warmup is picked by staleness alone, but the student still deserves to
 		// land on the mode that needs work most within it.
 		modeKey: scoreTechniqueModes(pick, now).modeKey,
+		reason: reasonForWarmup(pick, now),
 	};
 }
 
@@ -1011,6 +1050,10 @@ export function buildPlan(
 		sections,
 		now,
 	);
+	learning.reviewBlocks = leadIntoNewBars(
+		learning.reviewBlocks,
+		learning.learningBlocks,
+	);
 	markUsed([...learning.reviewBlocks, ...learning.learningBlocks]);
 
 	const stabilizing = pickRepertoireStabilizingBlocks(
@@ -1044,6 +1087,7 @@ export function buildPlan(
 					allocatedMinutes: updated.sightReading,
 					title: null,
 					subtitle: null,
+					reason: null,
 				}
 			: null;
 
