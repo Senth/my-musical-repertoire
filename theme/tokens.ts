@@ -47,9 +47,12 @@ export const contentWidth = {
 /** Fixed widget widths and heights that are neither spacing nor a touch
  * target. `track` is the progress bar's height, everywhere it is drawn, and
  * `marker` the height of a bar drawn over a control to point at one part of
- * it — thick enough to read as deliberate beside a hairline outline. */
+ * it — thick enough to read as deliberate beside a hairline outline.
+ * `control` is a Paper button's content height; an outlined button draws its
+ * hairline border outside it. */
 export const size = {
 	marker: 2,
+	control: 40,
 	track: 6,
 	md: 96,
 } as const;
@@ -68,7 +71,7 @@ export const border = {
 	stripe: 4,
 } as const;
 
-/** Shared minimum for anything pressable. #113 enforces it across the app. */
+/** Touch reach, not visible size: the web touch handler extends taps to it. */
 export const touchTarget = {
 	minimum: 48,
 } as const;

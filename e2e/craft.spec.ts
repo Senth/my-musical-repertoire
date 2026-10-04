@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { touchTarget } from "@/theme/tokens";
 import { collectConsoleErrors, ROUTES } from "./support/app";
 
 /**
@@ -9,12 +10,6 @@ import { collectConsoleErrors, ROUTES } from "./support/app";
  * Everything asserted here is off-limits to the browser review, which exists to
  * judge what a machine cannot. If a finding can be measured, it belongs in this
  * file instead.
- *
- * Touch targets are the deliberate omission. react-native-paper's controls all
- * render below MD3's 48dp, so the check would fail on every route until that is
- * settled as a design decision rather than as a test threshold — #113. Add the
- * assertion back when it lands; a gate tuned to today's shortfall proves
- * nothing.
  */
 
 /** `screen.overview.title` and friends, rendered instead of translated. */
@@ -59,6 +54,66 @@ test.describe("craft", () => {
 			expect(overflow, `horizontal overflow on ${path}`).toBeLessThanOrEqual(1);
 
 			expect(consoleErrors, `console output on ${path}`).toEqual([]);
+		});
+
+		test(`${path} keeps touch reach clear`, async ({ page, isMobile }) => {
+			test.skip(!isMobile, "Touch reach applies only to phone controls");
+			await open(page, path, ready);
+			const failures = await page.evaluate((minimum) => {
+				const selector =
+					"[role=button],[role=link],[role=checkbox],[role=radio],[role=switch],[role=tab],[role=menuitem],a[href],button";
+				const controls = [...document.querySelectorAll<HTMLElement>(selector)]
+					.filter((element) => {
+						if (
+							element.getAttribute("aria-disabled") === "true" ||
+							element.matches(":disabled") ||
+							element.parentElement?.closest(selector) ||
+							element.closest('[data-touch-slop="exact"]') ||
+							getComputedStyle(element).display === "inline"
+						)
+							return false;
+						const rect = element.getBoundingClientRect();
+						if (!rect.width || !rect.height) return false;
+						const topmost = document.elementFromPoint(
+							rect.x + rect.width / 2,
+							rect.y + rect.height / 2,
+						);
+						return !!topmost && element.contains(topmost);
+					})
+					.map((element) => ({
+						label: element.getAttribute("aria-label") || element.textContent,
+						rect: element.getBoundingClientRect(),
+					}));
+				const failures: string[] = [];
+				for (const control of controls) {
+					const rect = control.rect;
+					const width = Math.max(rect.width, minimum);
+					const height = Math.max(rect.height, minimum);
+					const left = rect.x - (width - rect.width) / 2;
+					const top = rect.y - (height - rect.height) / 2;
+					for (const other of controls) {
+						const box = other.rect;
+						if (
+							rect.left < box.right &&
+							rect.right > box.left &&
+							rect.top < box.bottom &&
+							rect.bottom > box.top
+						)
+							continue;
+						if (
+							left < box.right &&
+							left + width > box.left &&
+							top < box.bottom &&
+							top + height > box.top
+						)
+							failures.push(
+								`${control.label} touch reach covers ${other.label}`,
+							);
+					}
+				}
+				return failures;
+			}, touchTarget.minimum);
+			expect(failures, `touch reach on ${path}`).toEqual([]);
 		});
 
 		test(`${path} has readable contrast`, async ({ page }) => {

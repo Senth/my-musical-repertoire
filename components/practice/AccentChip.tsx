@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import { Icon, Text, useTheme } from "react-native-paper";
-import { border, radius, space } from "@/theme/tokens";
+import { border, icon, radius, size, space, touchTarget } from "@/theme/tokens";
 import type {
 	TimeSignature,
 	TimeSignatureWritePlan,
@@ -18,8 +18,6 @@ interface AccentChipProps {
 	onChange: (next: TimeSignature) => void;
 	onClear: () => void;
 }
-
-const CHIP_HEIGHT = 40;
 
 /**
  * Split chip: the left half toggles the accent, the chevron opens the sheet.
@@ -45,16 +43,18 @@ export function AccentChip({
 
 	return (
 		<View>
-			{/* r8's `.split`: one 40px pill, visibly two halves with a divider
-			    between them — tinted while sounding, outlined when silent. */}
+			{/* r8's `.split`: one pill as tall as the outlined Paper buttons beside
+			    it, visibly two halves with a divider between them — tinted while
+			    sounding, outlined when silent. */}
 			<View
 				style={{
 					flexDirection: "row",
 					alignItems: "center",
-					height: CHIP_HEIGHT,
 					borderRadius: radius.full,
-					borderWidth: sounding ? 0 : border.hairline,
-					borderColor: theme.colors.outline,
+					borderWidth: border.hairline,
+					borderColor: sounding
+						? theme.colors.secondaryContainer
+						: theme.colors.outline,
 					backgroundColor: sounding
 						? theme.colors.secondaryContainer
 						: "transparent",
@@ -70,14 +70,14 @@ export function AccentChip({
 						flexDirection: "row",
 						alignItems: "center",
 						gap: space.xs,
-						height: CHIP_HEIGHT,
+						height: size.control,
 						paddingLeft: space.md,
 						paddingRight: space.md,
 					}}
 				>
 					<Icon
 						source={sounding ? "music-note" : "close"}
-						size={16}
+						size={icon.sm}
 						color={tint}
 					/>
 					<Text variant="labelLarge" style={{ color: tint }}>
@@ -91,7 +91,9 @@ export function AccentChip({
 					accessibilityRole="button"
 					accessibilityLabel={t("common.metronome.accent.editA11y")}
 					style={{
-						height: CHIP_HEIGHT,
+						height: size.control,
+						minWidth: touchTarget.minimum,
+						alignItems: "center",
 						justifyContent: "center",
 						paddingHorizontal: space.sm,
 						borderLeftWidth: border.hairline,

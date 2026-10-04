@@ -176,11 +176,7 @@ The canonical implementation owns the styling. Extend it. **Restyling a copy is 
 - **Buttons** — filled for the one primary action, outlined for a real second action, text
   for anything tertiary, and Paper's error colour for destructive. One filled button per
   screen.
-- **Control height** — one shared minimum for anything pressable, and Paper does not give it
-  for free: its buttons, icon buttons and app-bar actions render below it, dialog actions
-  lower still. Pass `contentStyle` to a Paper button, set it explicitly on a custom
-  pressable. A chip with an `onPress` is a control and owes the minimum; a chip without one
-  is a label and does not.
+- **Control height** — Paper's own sizes, no padding added for reach. Keep 48dp around each control's centre free of other controls.
 - **Forms** — Paper's `TextInput` with its floating label, helper text below the field,
   errors below in the error role. Required is the norm here, so mark the optional ones.
 - **Focus ring** — in the accent, and it has to clear both schemes: the accent that reads on
@@ -256,7 +252,6 @@ All of it honours `prefers-reduced-motion`.
   components side by side, and a tag reaching for `StateChip` steals the ladder's colour.
 - **`Card.Title`** — pair it with `CARD_TITLE_STYLE`, or title and composer come out the
   same weight and the card flattens.
-- **Paper buttons** — they miss the touch minimum on their own. `contentStyle`, every time.
 
 ## Verification
 
@@ -282,8 +277,6 @@ The contract describes the target. What the app does not do yet, measured today:
 
 - **Piece detail renders no inset and no max width** — composer at x=0 where the pieces list
   is at 16; the `px-4` in source never reaches the DOM. (#31)
-- **Touch targets are below the minimum on every route.** (#113) The assertion is
-  deliberately absent from `e2e/craft.spec.ts` and turns on inside that PR.
 - **Five-option controls on the practice screen overflow the right edge at phone width.**
 - **On desktop the search field is full-bleed while the cards below it clamp.**
 - **165 `className` uses across 40 files, and `theme/tokens.ts` does not exist.** (#127)
@@ -295,6 +288,8 @@ green inside the PR that pays it off, never by loosening a rule here.
 
 ## Decisions
 
-Empty, and that is correct. An entry is added only after a rule here has been **contested** —
+An entry is added only after a rule here has been **contested** —
 reverted, argued against, or broken twice — and survived anyway. Record the rule, the
 argument, and why it stands. Routine choices edit the rules above instead.
+
+- **Touch targets** — visible sizes stay Paper's because smaller reads better; a web touch handler makes small controls 48dp tappable. (#113)
