@@ -279,4 +279,13 @@ describe("reasonText", () => {
 			"Right hand · Last time wasn't clean",
 		);
 	});
+
+	it("drops the mode on reasons about the piece, not the hand", () => {
+		expect(reasonText({ key: "leadsIn", params: {} }, "RH", t)).toBe(
+			"Leads into the new bars",
+		);
+		expect(reasonText({ key: "spanNeverPracticed", params: {} }, "LH", t)).toBe(
+			"Joins never practiced together",
+		);
+	});
 });

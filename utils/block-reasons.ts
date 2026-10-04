@@ -139,13 +139,19 @@ export function reasonForSpan(piece: Piece, now: Date): BlockReason {
 	return daysReason("spanDue", daysSince(last, now));
 }
 
+const MODELESS: ReadonlySet<ReasonKey> = new Set([
+	"leadsIn",
+	"spanDue",
+	"spanNeverPracticed",
+]);
+
 export function reasonText(
 	reason: BlockReason,
 	modeKey: ModeKey | null,
 	t: TFunction,
 ): string {
 	const text = t(`reason.${reason.key}`, reason.params);
-	if (!modeKey) return text;
+	if (!modeKey || MODELESS.has(reason.key)) return text;
 	return t("reason.withMode", {
 		mode: modeLabelLong(modeKey, t),
 		reason: text,

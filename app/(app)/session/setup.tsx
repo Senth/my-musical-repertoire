@@ -34,6 +34,7 @@ import {
 	SCRATCH_PRESET_ID,
 } from "@/models/session-preset";
 import { radius, space } from "@/theme/tokens";
+import { reasonText } from "@/utils/block-reasons";
 import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
 import {
 	blockSectionIds,
@@ -396,6 +397,13 @@ function PreviewRow({ block }: { block: PlannedBlock }) {
 	const subtitleParts = [block.title, block.subtitle]
 		.filter((x): x is string => !!x)
 		.join(" / ");
+	const reason = block.reason
+		? reasonText(
+				block.reason,
+				block.kind === "warmup" ? null : (block.modeKey ?? null),
+				t,
+			)
+		: null;
 
 	return (
 		<View
@@ -414,6 +422,14 @@ function PreviewRow({ block }: { block: PlannedBlock }) {
 						style={{ color: theme.colors.onSurfaceVariant }}
 					>
 						{subtitleParts}
+					</Text>
+				) : null}
+				{reason ? (
+					<Text
+						variant="bodySmall"
+						style={{ color: theme.colors.onSurfaceVariant }}
+					>
+						{reason}
 					</Text>
 				) : null}
 			</View>
