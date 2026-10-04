@@ -27,6 +27,9 @@ const CHIP_TEXT_STYLE = {
 	marginHorizontal: space.sm,
 } as const;
 
+const EXACT_TOUCH_PROPS: { dataSet?: { "touch-slop": string } } =
+	Platform.OS === "web" ? { dataSet: { "touch-slop": "exact" } } : {};
+
 /**
  * The lifecycle chip used for piece states, technique states and section states.
  *
@@ -104,6 +107,7 @@ export function StateChip({
 				}}
 			>
 				<TouchableRipple
+					{...EXACT_TOUCH_PROPS}
 					ref={ref}
 					onTouchStart={
 						Platform.OS === "web"

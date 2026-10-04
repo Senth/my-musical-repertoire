@@ -9,6 +9,7 @@ import { OfflineBar } from "@/components/ui/OfflineBar";
 import { UpdateBanner } from "@/components/ui/UpdateBanner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useTouchSlop } from "@/hooks/use-touch-slop";
 import { darkTheme, lightTheme } from "@/theme";
 
 function AuthGate() {
@@ -44,6 +45,7 @@ function AuthGate() {
 
 export default function RootLayout() {
 	const colorScheme = useColorScheme();
+	useTouchSlop();
 
 	return (
 		<PaperProvider theme={colorScheme === "dark" ? darkTheme : lightTheme}>
