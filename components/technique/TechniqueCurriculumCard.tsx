@@ -56,8 +56,10 @@ export function TechniqueCurriculumCard({
 	const run = async (write: () => Promise<void>) => {
 		try {
 			await write();
+			return true;
 		} catch {
 			onError(t("error.firebase"));
+			return false;
 		}
 	};
 
@@ -68,8 +70,9 @@ export function TechniqueCurriculumCard({
 
 	const addNew = async () => {
 		setSheetVisible(false);
-		await run(() => advance(tech.id, null));
-		router.push("/technique/add");
+		if (await run(() => advance(tech.id, null))) {
+			router.push("/technique/add");
+		}
 	};
 
 	const snoozeFor = (days: number) => {

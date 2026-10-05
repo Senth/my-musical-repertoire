@@ -26,12 +26,21 @@ export function cleanTechniqueDays(
 	tech: TechniqueItem,
 	logs: ProgressionLog[],
 ): number {
+	// A full window may have cut the oldest day short, so that day is not judged.
+	const cutDay =
+		logs.length >= CURRICULUM_LOG_LIMIT
+			? dayKey(new Date(Math.min(...logs.map((l) => l.date.getTime()))))
+			: null;
 	const days = new Map<string, ProgressionLog[]>();
 	for (const log of logs) {
-		if (log.drill || log.date.getTime() < tech.dateIntroduced.getTime()) {
+		const key = dayKey(log.date);
+		if (
+			key === cutDay ||
+			log.drill ||
+			log.date.getTime() < tech.dateIntroduced.getTime()
+		) {
 			continue;
 		}
-		const key = dayKey(log.date);
 		days.set(key, [...(days.get(key) ?? []), log]);
 	}
 

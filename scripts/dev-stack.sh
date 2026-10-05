@@ -62,6 +62,8 @@ else
 	DEV_PORT=8054
 fi
 WEB_PORT="${E2E_WEB_PORT:-$WEB_PORT}"
+# Keyed by port: a live pid recorded for 8057 says nothing about who serves 8056.
+WEB="web-$WEB_PORT"
 
 RUN_DIR="$ROOT/.tmp/dev-stack"
 
@@ -95,7 +97,7 @@ wait_http() { # url, label, seconds
 		if ((SECONDS >= deadline)); then
 			echo "dev-stack: $label never answered at $url (last status: ${code:-none})" >&2
 			echo "dev-stack: last lines of the web log:" >&2
-			tail -5 "$RUN_DIR/web.log" >&2 2>/dev/null || true
+			tail -5 "$RUN_DIR/$WEB.log" >&2 2>/dev/null || true
 			return 1
 		fi
 		if ((tries % 8 == 7)); then
@@ -127,7 +129,7 @@ start_emulators() {
 }
 
 start_web() {
-	if listening "$WEB_PORT" && ! started_by_us web; then
+	if listening "$WEB_PORT" && ! started_by_us "$WEB"; then
 		echo "dev-stack: $WEB_PORT is served by a web server this checkout did not start," >&2
 		echo "  so it would test another checkout's code. Stop it, or rerun with" >&2
 		echo "  E2E_WEB_PORT=<free port> for both 'scripts/dev-stack.sh up' and 'yarn e2e'." >&2
@@ -147,8 +149,8 @@ start_web() {
 	# bundle for the length of a run is the right behaviour.
 	EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_USE_EMULATORS=1 \
 		setsid yarn --silent expo start --web --port "$WEB_PORT" \
-		</dev/null >"$RUN_DIR/web.log" 2>&1 &
-	echo $! >"$RUN_DIR/web.pid"
+		</dev/null >"$RUN_DIR/$WEB.log" 2>&1 &
+	echo $! >"$RUN_DIR/$WEB.pid"
 	wait_for "$WEB_PORT" "expo web server" 180
 	wait_http "http://localhost:$WEB_PORT" "expo web server (first bundle)" "${DEV_STACK_WEB_TIMEOUT:-420}"
 	echo "web: started on http://localhost:$WEB_PORT (emulator-backed)"
@@ -200,7 +202,7 @@ cmd_up() {
 cmd_status() {
 	local emu_owner="external" web_owner="external" any=0
 	started_by_us emulators && emu_owner="ours"
-	started_by_us web && web_owner="ours"
+	started_by_us "$WEB" && web_owner="ours"
 
 	for port in "$UI_PORT" "$AUTH_PORT" "$FIRESTORE_PORT"; do
 		if listening "$port"; then
@@ -225,7 +227,7 @@ up)
 	cmd_up "$@"
 	;;
 down)
-	stop_one web "$WEB_PORT"
+	stop_one "$WEB" "$WEB_PORT"
 	stop_one emulators "$FIRESTORE_PORT"
 	;;
 status)

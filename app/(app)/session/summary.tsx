@@ -15,7 +15,7 @@ import { useTechniqueLogs } from "@/hooks/use-last-practice-log";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useChangeSectionState } from "@/hooks/use-section-state";
 import { useAllSections } from "@/hooks/use-sections";
-import { useTechniques } from "@/hooks/use-techniques";
+import { useCurriculumTechniques } from "@/hooks/use-techniques";
 import type { Piece } from "@/models/piece";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
 import { space } from "@/theme/tokens";
@@ -44,7 +44,6 @@ export default function SessionSummaryScreen() {
 	const { changeSectionState } = useChangeSectionState();
 	const [busyPieceId, setBusyPieceId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
-	const { techniques } = useTechniques();
 	const techniqueIds = useMemo(
 		() =>
 			session
@@ -52,6 +51,7 @@ export default function SessionSummaryScreen() {
 				: [],
 		[session],
 	);
+	const techniques = useCurriculumTechniques(techniqueIds);
 	const techniqueLogs = useTechniqueLogs(techniqueIds, CURRICULUM_LOG_LIMIT);
 
 	const handleDone = async () => {

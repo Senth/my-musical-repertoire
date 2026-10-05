@@ -3,14 +3,17 @@ import {
 	collection,
 	deleteDoc,
 	doc,
+	documentId,
 	getDoc,
 	onSnapshot,
+	type QuerySnapshot,
 	query,
 	Timestamp,
 	updateDoc,
+	where,
 	writeBatch,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { PracticeDrill, TechniqueHandsMode } from "@/models/practice";
@@ -119,6 +122,46 @@ export function useTechniques() {
 	}, [user]);
 
 	return { techniques, loading };
+}
+
+/**
+ * The listed techniques plus every Not started one: what the session summary's
+ * curriculum card reads. Nothing is subscribed while `ids` is empty.
+ */
+export function useCurriculumTechniques(ids: string[]): TechniqueItem[] {
+	const { user } = useAuth();
+	const [own, setOwn] = useState<TechniqueItem[]>([]);
+	const [queue, setQueue] = useState<TechniqueItem[]>([]);
+	const key = ids.slice(0, 30).join(",");
+
+	useEffect(() => {
+		setOwn([]);
+		setQueue([]);
+		if (!user || !key) return;
+
+		const ref = collection(db, "users", user.uid, "techniques");
+		const items = (snapshot: QuerySnapshot) =>
+			snapshot.docs.map((d) =>
+				fromFirestore(d.id, d.data() as FirestoreTechnique, user.uid),
+			);
+		const unsubscribeOwn = onSnapshot(
+			query(ref, where(documentId(), "in", key.split(","))),
+			(snapshot) => setOwn(items(snapshot)),
+		);
+		const unsubscribeQueue = onSnapshot(
+			query(ref, where("state", "==", "not_started")),
+			(snapshot) => setQueue(items(snapshot)),
+		);
+		return () => {
+			unsubscribeOwn();
+			unsubscribeQueue();
+		};
+	}, [user, key]);
+
+	return useMemo(
+		() => [...own, ...queue.filter((q) => !own.some((o) => o.id === q.id))],
+		[own, queue],
+	);
 }
 
 export function useAddTechnique() {

@@ -2,6 +2,7 @@ import type { BlockExecutionState, PlannedBlock } from "@/models/session";
 import type { ProgressionLog } from "./section-progression";
 import {
 	CLEAN_DAYS_SECURE,
+	CURRICULUM_LOG_LIMIT,
 	cleanTechniqueDays,
 	completedTechniqueIds,
 	nextNotStarted,
@@ -124,6 +125,18 @@ describe("techniqueNudge", () => {
 				{ ...log(10), date: at(10, 4) },
 			]),
 		).toBe(2);
+	});
+	it("does not judge the oldest day of a full window, which may be cut short", () => {
+		const full = [
+			...Array.from({ length: CURRICULUM_LOG_LIMIT - 3 }, (_, i) =>
+				log(10 + (i % 3)),
+			),
+			log(9),
+			log(9),
+			log(9),
+		];
+		expect(cleanTechniqueDays(quality, full)).toBe(3);
+		expect(cleanTechniqueDays(quality, full.slice(0, -1))).toBe(4);
 	});
 });
 
