@@ -149,6 +149,7 @@
 	},
 	"technique": {
 		"state": {
+			"not_started": "Not started",
 			"active": "Active",
 			"maintenance": "Maintenance",
 			"retired": "Retired"

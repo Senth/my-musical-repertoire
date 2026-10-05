@@ -67,6 +67,7 @@ const PIECE_STATE_VISUALS: Record<PieceState, StateVisualPair> = {
 };
 
 const TECHNIQUE_STATE_VISUALS: Record<TechniqueState, StateVisualPair> = {
+	not_started: visual("dormant", "dormant"),
 	active: visual("learning", "learning"),
 	maintenance: visual("maintenance", "maintenance"),
 	retired: visual("retired", "none", true),

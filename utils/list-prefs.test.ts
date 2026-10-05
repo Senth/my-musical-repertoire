@@ -126,6 +126,23 @@ describe("sanitizeTechniqueListPrefs", () => {
 		expect(prefs?.filters.types).toEqual(["trill"]);
 	});
 
+	it("reads the old active and maintenance default as the new default", () => {
+		const prefs = sanitizeTechniqueListPrefs(
+			stored({ filters: { states: ["maintenance", "active"] } }),
+		);
+		expect(prefs?.filters.states).toEqual(
+			DEFAULT_TECHNIQUE_LIST_PREFS.filters.states,
+		);
+		expect(prefs?.filters.states).toContain("not_started");
+	});
+
+	it("keeps a narrower saved state filter", () => {
+		const prefs = sanitizeTechniqueListPrefs(
+			stored({ filters: { states: ["active"] } }),
+		);
+		expect(prefs?.filters.states).toEqual(["active"]);
+	});
+
 	it("rejects a piece-only sort key", () => {
 		expect(
 			sanitizeTechniqueListPrefs(stored({ sortKey: "composer" }))?.sortKey,

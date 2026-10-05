@@ -85,15 +85,19 @@ export default function EditTechniqueScreen() {
 		setError(null);
 
 		try {
-			await updateTechnique(id, {
-				title: title.trim(),
-				state,
-				type,
-				targetTempoBpm,
-				notes: notes.trim() || null,
-				handsMode,
-				activeDrills,
-			});
+			await updateTechnique(
+				id,
+				{
+					title: title.trim(),
+					state,
+					type,
+					targetTempoBpm,
+					notes: notes.trim() || null,
+					handsMode,
+					activeDrills,
+				},
+				item?.state,
+			);
 			goBack();
 		} catch {
 			setError(t("error.firebase"));

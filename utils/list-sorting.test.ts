@@ -129,6 +129,18 @@ describe("sortPieces", () => {
 });
 
 describe("sortTechniqueItems", () => {
+	it("sorts status in the lifecycle order, not started first", () => {
+		const items = [
+			makeTechnique({ id: "retired", state: "retired" }),
+			makeTechnique({ id: "active", state: "active" }),
+			makeTechnique({ id: "queued", state: "not_started" }),
+			makeTechnique({ id: "maint", state: "maintenance" }),
+		];
+		expect(
+			ids(sortTechniqueItems(items, { key: "state", dir: "asc" }, {})),
+		).toEqual(["queued", "active", "maint", "retired"]);
+	});
+
 	it("keeps techniques with no type last", () => {
 		const items = [
 			makeTechnique({ id: "none", type: null }),

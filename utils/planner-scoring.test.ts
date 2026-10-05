@@ -3,6 +3,7 @@ import type { Section } from "@/models/section";
 import {
 	buildSectionCandidates,
 	daysSince,
+	eligibleTechniquesInState,
 	needsWorkTerm,
 	STATE_SCORE,
 	scoreMaintenancePiece,
@@ -227,6 +228,20 @@ describe("scoreTechnique", () => {
 		expect(scoreTechnique(withPenalty, NOW)).toBeGreaterThan(
 			scoreTechnique(base, NOW),
 		);
+	});
+});
+
+describe("eligibleTechniquesInState", () => {
+	it("never offers a not started technique", () => {
+		const techniques = [
+			makeTechnique({ id: "queued", state: "not_started" }),
+			makeTechnique({ id: "a1", state: "active" }),
+			makeTechnique({ id: "m1", state: "maintenance" }),
+		];
+		const ids = (["active", "maintenance"] as const).flatMap((state) =>
+			eligibleTechniquesInState(techniques, state, NOW).map((t) => t.id),
+		);
+		expect(ids).toEqual(["a1", "m1"]);
 	});
 });
 

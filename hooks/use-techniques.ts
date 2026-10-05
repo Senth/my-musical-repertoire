@@ -72,7 +72,8 @@ function fromFirestore(
 const STATE_ORDER: Record<TechniqueState, number> = {
 	active: 0,
 	maintenance: 1,
-	retired: 2,
+	not_started: 2,
+	retired: 3,
 };
 
 function sortTechniques(items: TechniqueItem[]): TechniqueItem[] {
@@ -175,11 +176,21 @@ export function useUpdateTechnique() {
 				| "activeDrills"
 			>
 		>,
+		previousState?: TechniqueState,
 	) => {
 		if (!user) throw new Error("Not authenticated");
 
 		const ref = doc(db, "users", user.uid, "techniques", techniqueId);
-		await awaitWrite(updateDoc(ref, updates));
+		const introduced =
+			updates.state === "active" &&
+			previousState !== undefined &&
+			previousState !== "active";
+		await awaitWrite(
+			updateDoc(
+				ref,
+				introduced ? { ...updates, dateIntroduced: new Date() } : updates,
+			),
+		);
 	};
 
 	return { updateTechnique };
