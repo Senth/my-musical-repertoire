@@ -30,6 +30,11 @@
 # rewriting the fixture account, so only the throwaway accounts of earlier
 # runs linger, not a dirty fixture.
 #
+# The web server is the exception to reuse. Every worktree shares 8056, and a
+# server another checkout started serves *that* checkout's code, so a suite run
+# against it passes or fails on someone else's diff. `up` refuses it instead;
+# `E2E_WEB_PORT` moves this checkout's stack (and `yarn e2e`) to a free port.
+#
 # Deliberately separate from the dev server you run by hand on 8053/8054:
 # that one talks to the real dev Firebase project and must keep doing so.
 # See docs/OPERATIONS.md.
@@ -56,6 +61,7 @@ else
 	WEB_PORT=8056
 	DEV_PORT=8054
 fi
+WEB_PORT="${E2E_WEB_PORT:-$WEB_PORT}"
 
 RUN_DIR="$ROOT/.tmp/dev-stack"
 
@@ -121,6 +127,12 @@ start_emulators() {
 }
 
 start_web() {
+	if listening "$WEB_PORT" && ! started_by_us web; then
+		echo "dev-stack: $WEB_PORT is served by a web server this checkout did not start," >&2
+		echo "  so it would test another checkout's code. Stop it, or rerun with" >&2
+		echo "  E2E_WEB_PORT=<free port> for both 'scripts/dev-stack.sh up' and 'yarn e2e'." >&2
+		exit 1
+	fi
 	if listening "$WEB_PORT"; then
 		echo "web: reused (already listening on $WEB_PORT)"
 		wait_http "http://localhost:$WEB_PORT" "reused web server" "${DEV_STACK_WEB_TIMEOUT:-420}"

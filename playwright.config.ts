@@ -5,10 +5,12 @@ import { defineConfig, devices } from "@playwright/test";
  * The e2e stack runs against the Firebase emulator suite, never the dev
  * project — see `scripts/dev-stack.sh` and docs/OPERATIONS.md. Its web server
  * is per-checkout, mirroring the 8053/8054 rule for the servers started by
- * hand, so a run here never steals the one you are using.
+ * hand, so a run here never steals the one you are using. Worktrees share
+ * 8056; `E2E_WEB_PORT` moves one off it, matching `scripts/dev-stack.sh`.
  */
 const webPort =
-	basename(process.cwd()) === "my-musical-repertoire" ? 8055 : 8056;
+	Number(process.env.E2E_WEB_PORT) ||
+	(basename(process.cwd()) === "my-musical-repertoire" ? 8055 : 8056);
 
 export const AUTH_STATE = ".tmp/e2e/auth.json";
 
