@@ -1,4 +1,5 @@
 import type { ModeKey } from "@/models/practice";
+import type { BlockReason } from "@/utils/block-reasons";
 
 /**
  * Resolved minutes per block kind, handed to the planner. The planner no longer
@@ -64,7 +65,12 @@ export interface PlannedBlock {
 	title?: string | null;
 	subtitle?: string | null;
 	score?: number | null;
-	rationale?: string | null;
+	/**
+	 * Why the planner picked this block, fixed at plan time so logging mid-session
+	 * cannot change it. `null` for sight-reading and an empty warmup; absent on
+	 * plans stored before reasons existed.
+	 */
+	reason?: BlockReason | null;
 	/**
 	 * The mode that made this block worth planning — the coach preselects it so
 	 * the student lands on the hand/drill that drove the pick. `null` when the

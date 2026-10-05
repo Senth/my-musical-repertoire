@@ -2,20 +2,19 @@ import type { Piece } from "@/models/piece";
 import type { ModeKey } from "@/models/practice";
 import type { Section } from "@/models/section";
 import type { TechniqueItem } from "@/models/technique";
+import {
+	type BlockReason,
+	reasonForCandidate,
+	reasonForMaintenancePiece,
+	reasonForSpan,
+	reasonForTechnique,
+} from "./block-reasons";
 import { isPracticedToday } from "./day-boundary";
 import {
-	BPM_GAP_WEIGHT,
-	bpmGap,
 	buildSectionCandidates,
-	daysSince,
-	NEEDS_WORK_WEIGHT,
-	needsWorkTerm,
-	type SectionCandidate,
-	STATE_SCORE,
 	scoreMaintenancePiece,
-	scoreTechnique,
+	scoreTechniqueModes,
 } from "./planner-scoring";
-import { parseModeKey, targetForMode } from "./practice-modes";
 import { selectSpanWindow, spanWindowsFor } from "./span-detection";
 import { spanIsDue, spanIsReady } from "./span-trigger";
 
@@ -30,15 +29,13 @@ export interface SuggestedPiece {
 	/** The mode that won the score, so the card can open that hand. */
 	modeKey: ModeKey | null;
 	score: number;
-	reasonKey: string;
-	reasonParams: Record<string, unknown>;
+	reason: BlockReason;
 }
 
 export interface SuggestedTechnique {
 	tech: TechniqueItem;
 	score: number;
-	reasonKey: string;
-	reasonParams: Record<string, unknown>;
+	reason: BlockReason;
 }
 
 export interface PieceSuggestions {
@@ -54,100 +51,6 @@ export interface TechniqueSuggestions {
 /** Caps per category — not fixed counts; an empty category is omitted. */
 const PIECE_CAP = 2;
 
-/**
- * Mirrors `scoreSectionModes`: the reason reads the very stats the winning mode
- * was scored from, so a section drilled left hand this morning can come back for
- * the right hand this evening and still explain itself honestly.
- */
-function reasonForCandidate(
-	candidate: SectionCandidate,
-	now: Date,
-): {
-	modeKey: ModeKey | null;
-	reasonKey: string;
-	reasonParams: Record<string, unknown>;
-} {
-	const modeKey = candidate.modeKey;
-	const stats = modeKey ? candidate.section?.byMode?.[modeKey] : null;
-	const effectiveTarget =
-		candidate.section?.targetBpmOverride ?? candidate.piece.targetTempoBpm;
-
-	const lastPracticed = stats
-		? (stats.lastPracticed ?? null)
-		: candidate.lastPracticed;
-	const currentBpm = stats ? (stats.bpm ?? null) : candidate.currentBpm;
-	const quality = stats ? (stats.quality ?? null) : candidate.lastQuality;
-	const effort = stats ? (stats.effort ?? null) : candidate.lastEffort;
-	const target =
-		stats && modeKey
-			? targetForMode(parseModeKey(modeKey).hands, effectiveTarget ?? null)
-			: effectiveTarget;
-
-	if (!lastPracticed) {
-		return {
-			modeKey,
-			reasonKey: "screen.overview.pieceReason.neverPracticed",
-			reasonParams: {},
-		};
-	}
-	const days = daysSince(lastPracticed, now);
-
-	// Mirrors the three terms of `scoreSectionCandidate`: whichever contributed
-	// most is the honest answer to "why this passage".
-	const state = candidate.state;
-	const gap = bpmGap(target, currentBpm);
-	const daysTerm = STATE_SCORE[state] * days;
-	const bpmTerm = BPM_GAP_WEIGHT[state] * gap;
-	const workTerm = NEEDS_WORK_WEIGHT[state] * needsWorkTerm(quality, effort);
-
-	if (workTerm > daysTerm && workTerm >= bpmTerm) {
-		return {
-			modeKey,
-			reasonKey: "screen.overview.pieceReason.lastResultPoor",
-			reasonParams: {},
-		};
-	}
-	if (bpmTerm > daysTerm) {
-		return {
-			modeKey,
-			reasonKey: "screen.overview.pieceReason.bpmGap",
-			reasonParams: { gap },
-		};
-	}
-	return {
-		modeKey,
-		reasonKey: "screen.overview.pieceReason.daysSince",
-		reasonParams: { days },
-	};
-}
-
-function reasonForMaintenancePiece(
-	piece: Piece,
-	now: Date,
-): { reasonKey: string; reasonParams: Record<string, unknown> } {
-	if (!piece.lastPracticed) {
-		return {
-			reasonKey: "screen.overview.pieceReason.neverPracticed",
-			reasonParams: {},
-		};
-	}
-	const stateWeight = piece.state === "performance" ? 3 : 1;
-	const days = daysSince(piece.lastPracticed, now);
-	const techMistakes = piece.lastTechnicalMistakes ?? 0;
-	const memMistakes = piece.lastMemoryMistakes ?? 0;
-	const mistakesTerm = 2 * (techMistakes + memMistakes);
-	if (mistakesTerm > stateWeight * days) {
-		return {
-			reasonKey: "screen.overview.pieceReason.mistakes",
-			reasonParams: {},
-		};
-	}
-	return {
-		reasonKey: "screen.overview.pieceReason.daysSince",
-		reasonParams: { days },
-	};
-}
-
 /** Every candidate, not one per piece — the overview is a menu of passages. */
 function sectionBasedSuggestions(
 	pieces: Piece[],
@@ -160,8 +63,9 @@ function sectionBasedSuggestions(
 		.map((c) => ({
 			piece: c.piece,
 			sections: c.section ? [c.section] : [],
+			modeKey: c.modeKey,
 			score: c.score,
-			...reasonForCandidate(c, now),
+			reason: reasonForCandidate(c, now),
 		}));
 }
 
@@ -222,7 +126,7 @@ function maintenanceBasedSuggestions(
 		sections: [],
 		modeKey: null,
 		score: scoreMaintenancePiece(piece, now),
-		...reasonForMaintenancePiece(piece, now),
+		reason: reasonForMaintenancePiece(piece, now),
 	}));
 }
 
@@ -248,21 +152,12 @@ function spanSuggestion(
 	const score = Math.max(
 		...window.map((s) => memberScores.get(s.id ?? "") ?? 0),
 	);
-	const lastSpanPracticedAt = piece.lastSpanPracticedAt ?? null;
 	return {
 		piece,
 		sections: window,
 		modeKey: null,
 		score,
-		...(lastSpanPracticedAt == null
-			? {
-					reasonKey: "screen.overview.pieceReason.spanNeverPracticed",
-					reasonParams: {},
-				}
-			: {
-					reasonKey: "screen.overview.pieceReason.spanDue",
-					reasonParams: { days: daysSince(lastSpanPracticedAt, now) },
-				}),
+		reason: reasonForSpan(piece, now),
 	};
 }
 
@@ -355,33 +250,6 @@ export function suggestPieces(
 	};
 }
 
-function reasonForTechnique(
-	tech: TechniqueItem,
-	now: Date,
-): { reasonKey: string; reasonParams: Record<string, unknown> } {
-	if (!tech.lastPracticedAt) {
-		return {
-			reasonKey: "screen.overview.techniqueReason.new",
-			reasonParams: {},
-		};
-	}
-	const stateScore = tech.state === "active" ? 10 : 2;
-	const days = daysSince(tech.lastPracticedAt, now);
-	const effort = tech.lastEffort ?? 1;
-	const quality = tech.lastQuality ?? 5;
-	const bonus = 2 * (effort - 1 + (5 - quality));
-	if (bonus > stateScore * days) {
-		return {
-			reasonKey: "screen.overview.techniqueReason.effortQuality",
-			reasonParams: {},
-		};
-	}
-	return {
-		reasonKey: "screen.overview.techniqueReason.daysSince",
-		reasonParams: { days },
-	};
-}
-
 export function suggestTechniques(
 	techniques: TechniqueItem[],
 	now: Date,
@@ -405,11 +273,10 @@ export function suggestTechniques(
 		};
 	}
 
-	const toSuggested = (t: TechniqueItem): SuggestedTechnique => ({
-		tech: t,
-		score: scoreTechnique(t, now),
-		...reasonForTechnique(t, now),
-	});
+	const toSuggested = (t: TechniqueItem): SuggestedTechnique => {
+		const { score, modeKey } = scoreTechniqueModes(t, now);
+		return { tech: t, score, reason: reasonForTechnique(t, modeKey, now) };
+	};
 
 	const activeSuggestions = eligible
 		.filter((t) => t.state === "active")

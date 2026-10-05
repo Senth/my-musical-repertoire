@@ -1235,6 +1235,7 @@ describe("pickWarmup", () => {
 		const b = pickWarmup([], 5, NOW);
 		expect(b.techniqueId).toBeNull();
 		expect(b.kind).toBe("warmup");
+		expect(b.reason).toBeNull();
 	});
 });
 
@@ -2391,5 +2392,110 @@ describe("span upgrade in buildPlan", () => {
 		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
 		const spanBlocks = plan.blocks.filter((b) => blockSectionIds(b).length > 1);
 		expect(spanBlocks).toHaveLength(0);
+	});
+});
+
+describe("block reasons in buildPlan", () => {
+	const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000);
+	const notDue = { lastSpanPracticedAt: NOW, practiceDaysSinceSpan: 0 };
+
+	it("gives every picked block the reason its score used", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning" }),
+			makePiece({ id: "p2", state: "learning", ...notDue }),
+			makePiece({ id: "p3", state: "stabilizing", lastPracticed: daysAgo(2) }),
+			makePiece({
+				id: "p4",
+				state: "maintenance",
+				lastPracticed: daysAgo(1),
+				lastTechnicalMistakes: 3,
+			}),
+		];
+		const sections: Section[] = [
+			makeSection({ id: "p1-new", pieceId: "p1", state: "learning" }),
+			makeSection({
+				id: "p2-old",
+				pieceId: "p2",
+				state: "stabilizing",
+				lastPracticed: daysAgo(3),
+			}),
+		];
+		const ts: TechniqueItem[] = [
+			makeTechnique({ id: "a1", state: "active", lastPracticedAt: daysAgo(4) }),
+			makeTechnique({
+				id: "m1",
+				state: "maintenance" as TechniqueState,
+				lastPracticedAt: daysAgo(5),
+				lastEffort: 5,
+			}),
+		];
+		const plan = buildPlan(BALANCED_60, pieces, sections, ts, NOW);
+		expect(plan.blocks.map((b) => [b.kind, b.reason ?? null])).toEqual([
+			["warmup", { key: "daysSince", params: { count: 5 } }],
+			["sight-reading", null],
+			["technique", { key: "daysSince", params: { count: 4 } }],
+			["repertoire-review", { key: "daysSince", params: { count: 3 } }],
+			["repertoire-learning", { key: "neverPracticed", params: {} }],
+			["repertoire-stabilizing", { key: "daysSince", params: { count: 2 } }],
+			["repertoire-maintenance", { key: "mistakes", params: {} }],
+		]);
+	});
+
+	it("says a review block leads into the new bars of its own piece", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning", ...notDue }),
+		];
+		const sections: Section[] = [
+			makeSection({
+				id: "p1-old",
+				pieceId: "p1",
+				state: "stabilizing",
+				order: 0,
+				lastPracticed: daysAgo(3),
+			}),
+			makeSection({ id: "p1-new", pieceId: "p1", state: "learning", order: 1 }),
+		];
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const review = plan.blocks.find((b) => b.kind === "repertoire-review");
+		expect(review?.reason?.key).toBe("leadsIn");
+	});
+
+	it("keeps a span's reason even when its piece has new bars booked", () => {
+		const pieces: Piece[] = [
+			makePiece({ id: "p1", state: "learning", lastSpanPracticedAt: null }),
+		];
+		const sections: Section[] = [
+			makeSection({
+				id: "p1-a",
+				pieceId: "p1",
+				state: "stabilizing",
+				order: 0,
+				startBar: 1,
+				endBar: 20,
+			}),
+			makeSection({
+				id: "p1-b",
+				pieceId: "p1",
+				state: "stabilizing",
+				order: 1,
+				startBar: 21,
+				endBar: 30,
+			}),
+			makeSection({
+				id: "p1-new",
+				pieceId: "p1",
+				state: "learning",
+				order: 2,
+				startBar: 31,
+				endBar: 40,
+			}),
+		];
+		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
+		const review = plan.blocks.find((b) => b.kind === "repertoire-review");
+		expect(blockSectionIds(review as PlannedBlock)).toEqual(["p1-a", "p1-b"]);
+		expect(review?.reason?.key).toBe("spanNeverPracticed");
+		expect(plan.blocks.some((b) => b.kind === "repertoire-learning")).toBe(
+			true,
+		);
 	});
 });

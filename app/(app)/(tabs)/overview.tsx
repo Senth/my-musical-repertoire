@@ -50,9 +50,9 @@ import {
 	type SessionPreset,
 } from "@/models/session-preset";
 import { radius, space } from "@/theme/tokens";
+import { reasonText } from "@/utils/block-reasons";
 import { displayMinutes } from "@/utils/format-minutes";
 import { shouldOfferInstall } from "@/utils/install-gating";
-import { modeLabelLong } from "@/utils/mode-label";
 import { suggestPieces, suggestTechniques } from "@/utils/overview-suggestions";
 import {
 	formatBarRange,
@@ -230,16 +230,7 @@ export default function OverviewScreen() {
 									formatSectionPassage(section, t),
 								)
 							: s.piece.composer;
-					const reasonText = t(
-						s.reasonKey as Parameters<typeof t>[0],
-						s.reasonParams,
-					);
-					const reason = s.modeKey
-						? t("screen.overview.pieceReason.withMode", {
-								mode: modeLabelLong(s.modeKey, t),
-								reason: reasonText,
-							})
-						: reasonText;
+					const reason = reasonText(s.reason, s.modeKey, t);
 					const practiceQuery = [
 						isSpan
 							? `sectionIds=${s.sections.map((sec) => sec.id).join(",")}`
@@ -413,7 +404,7 @@ export default function OverviewScreen() {
 									variant="bodySmall"
 									style={{ color: theme.colors.onSurfaceVariant }}
 								>
-									{t(s.reasonKey as Parameters<typeof t>[0], s.reasonParams)}
+									{reasonText(s.reason, null, t)}
 								</Text>
 								<Button
 									mode="contained-tonal"

@@ -133,6 +133,20 @@
 			"practice": "Practice"
 		}
 	},
+	"reason": {
+		"neverPracticed": "Not practiced yet",
+		"daysSince_one": "Last practiced {{count}} day ago",
+		"daysSince_other": "Last practiced {{count}} days ago",
+		"bpmGap": "{{gap}} BPM below target",
+		"notClean": "Last time wasn't clean",
+		"feltHard": "Last time felt hard",
+		"mistakes": "Mistakes in the last run-through",
+		"spanDue_one": "Joins not played for {{count}} day",
+		"spanDue_other": "Joins not played for {{count}} days",
+		"spanNeverPracticed": "Joins never practiced together",
+		"leadsIn": "Leads into the new bars",
+		"withMode": "{{mode}} · {{reason}}"
+	},
 	"technique": {
 		"state": {
 			"active": "Active",
@@ -531,24 +545,6 @@
 			"seeAllTechniques": "See all techniques",
 			"practice": "Practice",
 			"splitIntoPassages": "Split into passages",
-			"techniqueReason": {
-				"activeLastPracticed": "Active · {{when}}",
-				"maintenanceDue": "Maintenance · due for review",
-				"neverPracticed": "New — not yet practiced",
-				"new": "New — practice for the first time",
-				"effortQuality": "Effort or quality needs work",
-				"daysSince": "{{days}} day(s) since last practice"
-			},
-			"pieceReason": {
-				"neverPracticed": "New piece — start your first session",
-				"bpmGap": "{{gap}} BPM below target",
-				"daysSince": "{{days}} day(s) since last practice",
-				"lastResultPoor": "Last session needs cleanup",
-				"mistakes": "Mistakes to clean up",
-				"withMode": "{{mode}} · {{reason}}",
-				"spanDue": "Joins not played for {{days}} day(s)",
-				"spanNeverPracticed": "Joins never practiced together"
-			},
 			"emptyState": {
 				"noActivePieces": "Start by adding a piece to your repertoire.",
 				"allPracticedToday": "Wow! You have practiced all your pieces today. Take a rest or add new pieces to practice!",
