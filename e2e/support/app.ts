@@ -143,3 +143,28 @@ export function collectConsoleErrors(page: Page): string[] {
 	page.on("pageerror", (err) => errors.push(`pageerror: ${err.message}`));
 	return errors;
 }
+
+export async function expectCleanPage(page: Page): Promise<void> {
+	const rawKeys = await page.evaluate(() => {
+		const re = /(^|\s)[a-z][a-zA-Z0-9]*(\.[a-z][a-zA-Z0-9]*){2,}(\s|$)/;
+		const found: string[] = [];
+		const walker = document.createTreeWalker(
+			document.body,
+			NodeFilter.SHOW_TEXT,
+		);
+		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+			const text = node.textContent?.trim() ?? "";
+			if (text && re.test(text)) found.push(text);
+		}
+		return found;
+	});
+	expect(rawKeys, `raw t() keys rendered on ${page.url()}`).toEqual([]);
+	const overflow = await page.evaluate(
+		() =>
+			document.documentElement.scrollWidth -
+			document.documentElement.clientWidth,
+	);
+	expect(overflow, `horizontal overflow on ${page.url()}`).toBeLessThanOrEqual(
+		1,
+	);
+}
