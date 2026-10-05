@@ -140,17 +140,17 @@ it("preselects a live section and includes its run-through credits", async () =>
 	expect(screen.queryByText("From a run-through")).toBeNull();
 });
 
-it.each(["old", "unknown"])(
-	"falls back to All for %s section parameter",
-	async (sectionId) => {
-		mockParams.sectionId = sectionId;
-		const screen = await renderScreen();
-		expect(screen.getByLabelText("All").props.accessibilityState.selected).toBe(
-			true,
-		);
-		expect(screen.getByText("Run-through")).toBeTruthy();
-	},
-);
+it.each([
+	"old",
+	"unknown",
+])("falls back to All for %s section parameter", async (sectionId) => {
+	mockParams.sectionId = sectionId;
+	const screen = await renderScreen();
+	expect(screen.getByLabelText("All").props.accessibilityState.selected).toBe(
+		true,
+	);
+	expect(screen.getByText("Run-through")).toBeTruthy();
+});
 
 it("waits for live sections before settling route preselection", async () => {
 	mockParams.sectionId = "coda";
