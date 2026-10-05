@@ -84,7 +84,6 @@ export interface HistoryEntry {
 	kind: "run-through" | "section" | "credited" | "technique";
 	scope: LastLogScope;
 	date: Date;
-	note: string | null;
 	flaggedSectionIds: string[];
 	modes: HistoryMode[];
 	drillGroups: { drill: PracticeDrill; modes: HistoryMode[] }[];
@@ -163,7 +162,6 @@ export function groupHistoryLogs(
 				kind,
 				scope,
 				date: first.date,
-				note: group.find((log) => log.note != null)?.note ?? null,
 				flaggedSectionIds: first.flaggedSectionIds,
 				modes: modes.filter((mode) => mode.drill === null),
 				drillGroups: [...drills].map(([drill, drillModes]) => ({

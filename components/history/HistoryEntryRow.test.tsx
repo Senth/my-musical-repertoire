@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react-native";
+import { render } from "@testing-library/react-native";
 import { PaperProvider } from "react-native-paper";
 import "@/i18n";
 import { HistoryEntryRow } from "@/components/history/HistoryEntryRow";
@@ -66,7 +66,7 @@ async function renderRow(value: HistoryEntry, catalog = sections) {
 	);
 }
 
-it("reads section scope and ratings without offering an action when no note exists", async () => {
+it("reads section scope and ratings without offering an action", async () => {
 	const screen = await renderRow(entry("section", { hands: "LH" }));
 	expect(screen.getByText("Coda")).toBeTruthy();
 	expect(screen.getByText("Bars 208–264")).toBeTruthy();
@@ -78,26 +78,10 @@ it("reads section scope and ratings without offering an action when no note exis
 	expect(screen.queryByRole("button")).toBeNull();
 });
 
-it("expands and collapses notes with readable ratings in the accessible row label", async () => {
-	const note =
-		"Left-hand leaps at 216. Slow them alone before pushing the tempo.";
-	const screen = await renderRow(entry("section", { note }));
-	const button = screen.getByRole("button", {
-		name: /Coda.*Quality: Minor slips/,
-	});
-	expect(button.props.accessibilityHint).toBe("Expand note");
-	expect(button.props.accessibilityState.expanded).toBe(false);
-	expect(screen.getByText(note).props.numberOfLines).toBe(1);
-	await fireEvent.press(button);
-	expect(screen.getByRole("button").props.accessibilityState.expanded).toBe(
-		true,
-	);
-	expect(screen.getByRole("button").props.accessibilityHint).toBe(
-		"Collapse note",
-	);
-	expect(screen.getByText(note).props.numberOfLines).toBeUndefined();
-	await fireEvent.press(screen.getByRole("button"));
-	expect(screen.getByText(note).props.numberOfLines).toBe(1);
+it("ignores legacy log notes without making history rows pressable", async () => {
+	const screen = await renderRow(entry("section", { note: "Legacy log note" }));
+	expect(screen.queryByText("Legacy log note")).toBeNull();
+	expect(screen.queryByRole("button")).toBeNull();
 });
 
 it("reads run-through mistakes, both hands, and named shaky sections", async () => {

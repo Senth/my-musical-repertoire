@@ -1,10 +1,9 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { Icon, Text, TouchableRipple } from "react-native-paper";
+import { Icon, Text } from "react-native-paper";
 import { BpmValue } from "@/components/history/BpmValue";
 import { HandsIcon } from "@/components/history/HandsIcon";
-import { historyScoreLabel, ScoreMeter } from "@/components/history/ScoreMeter";
+import { ScoreMeter } from "@/components/history/ScoreMeter";
 import { SectionBar } from "@/components/history/SectionBar";
 import type { HistorySection } from "@/hooks/use-practice-history";
 import { useAppTheme } from "@/theme";
@@ -64,7 +63,6 @@ export function HistoryEntryRow({
 }) {
 	const { t, i18n } = useTranslation();
 	const theme = useAppTheme();
-	const [expanded, setExpanded] = useState(false);
 	const runThrough = entry.kind === "run-through";
 	const sectionId =
 		entry.scope.type === "section" ? entry.scope.sectionId : null;
@@ -125,7 +123,7 @@ export function HistoryEntryRow({
 					sections: list(entry.flaggedSectionIds.map(sectionLabel)),
 				})
 			: null;
-	const content = (
+	return (
 		<View style={{ paddingVertical: space.md, gap: space.xs }}>
 			{entry.kind !== "technique" && (
 				<View
@@ -200,71 +198,6 @@ export function HistoryEntryRow({
 					</Text>
 				</View>
 			)}
-			{entry.note && (
-				<View
-					style={{
-						flexDirection: "row",
-						alignItems: "flex-start",
-						gap: space.xs,
-					}}
-				>
-					<Icon
-						source="note-text-outline"
-						size={icon.sm}
-						color={theme.colors.onSurfaceVariant}
-					/>
-					<Text
-						variant="bodySmall"
-						numberOfLines={expanded ? undefined : 1}
-						style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}
-					>
-						{entry.note}
-					</Text>
-				</View>
-			)}
 		</View>
-	);
-	if (!entry.note) return content;
-	const modeLabels = [
-		...entry.modes,
-		...entry.drillGroups.flatMap((group) => group.modes),
-	].map((mode) =>
-		list([
-			...(mode.drill ? [t(`screen.practice.modes.drill.${mode.drill}`)] : []),
-			t(`screen.practice.modes.handsLong.${runThrough ? "HT" : mode.hands}`),
-			historyScoreLabel(
-				runThrough ? "technical" : "quality",
-				runThrough ? mode.technicalMistakes : mode.quality,
-				t,
-			),
-			historyScoreLabel(
-				runThrough ? "memory" : "effort",
-				runThrough ? mode.memoryMistakes : mode.effort,
-				t,
-			),
-			...(mode.achievedBpm != null
-				? [t("screen.pieceSections.bpm", { bpm: mode.achievedBpm })]
-				: []),
-		]),
-	);
-	return (
-		<TouchableRipple
-			onPress={() => setExpanded(!expanded)}
-			accessibilityRole="button"
-			accessibilityLabel={list([
-				...(entry.kind !== "technique" ? [title] : []),
-				...(barRange ? [barRange] : []),
-				...(playedSectionsLabel ? [playedSectionsLabel] : []),
-				...modeLabels,
-				...(shaky ? [shaky] : []),
-				entry.note,
-			])}
-			accessibilityHint={t(
-				expanded ? "screen.history.collapseNote" : "screen.history.expandNote",
-			)}
-			accessibilityState={{ expanded }}
-		>
-			{content}
-		</TouchableRipple>
 	);
 }

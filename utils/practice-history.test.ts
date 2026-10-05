@@ -24,11 +24,11 @@ const log = (id: string, time: number, data: Record<string, unknown> = {}) =>
 const t = ((key: string) => key) as TFunction;
 
 describe("history entries", () => {
-	it("groups three modes per save, ordered LH, RH, HT, with first non-null note", () => {
+	it("groups three modes per save, ordered LH, RH, HT", () => {
 		const entries = groupHistoryLogs(sectionScope, [
 			log("ht", 20, { hands: "HT" }),
-			log("rh", 20, { hands: "RH", quality: 4, note: "slow thumb" }),
-			log("lh", 20, { hands: "LH", effort: 2, note: "later note" }),
+			log("rh", 20, { hands: "RH", quality: 4 }),
+			log("lh", 20, { hands: "LH", effort: 2 }),
 			log("old", 10),
 		]);
 		expect(entries).toHaveLength(2);
@@ -36,7 +36,6 @@ describe("history entries", () => {
 			kind: "section",
 			scope: sectionScope,
 			date: new Date(20),
-			note: "slow thumb",
 			modes: [
 				{ hands: "LH", effort: 2 },
 				{ hands: "RH", quality: 4 },
@@ -125,10 +124,10 @@ describe("history entries", () => {
 		]);
 	});
 
-	it("reads legacy missing hands as HT and keeps an empty-string note", () => {
+	it("reads legacy missing hands as HT", () => {
 		const entry = groupHistoryLogs(sectionScope, [
-			log("legacy", 20, { note: "" }),
-			log("lh", 20, { hands: "LH", note: "second" }),
+			log("legacy", 20),
+			log("lh", 20, { hands: "LH" }),
 		])[0];
 		expect(entry.modes[1]).toMatchObject({
 			key: "HT",
@@ -136,7 +135,6 @@ describe("history entries", () => {
 			drill: null,
 			quality: null,
 		});
-		expect(entry.note).toBe("");
 	});
 });
 

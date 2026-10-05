@@ -854,8 +854,6 @@
 			"archivedTitle": "{{label}} · archived",
 			"shaky": "Shaky: {{sections}}",
 			"playedSections": "Played sections: {{sections}}",
-			"expandNote": "Expand note",
-			"collapseNote": "Collapse note",
 			"bpmValue": "{{bpm}}",
 			"score": "{{metric}}: {{value}}",
 			"metrics": {
