@@ -8,6 +8,7 @@ import {
 	query,
 	Timestamp,
 	updateDoc,
+	writeBatch,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "@/config/firebase";
@@ -42,9 +43,10 @@ interface FirestoreTechnique {
 	handsMode?: TechniqueHandsMode | null;
 	activeDrills?: PracticeDrill[] | null;
 	timeSignature?: unknown;
+	nudgeSnoozedUntil?: Timestamp | null;
 }
 
-function fromFirestore(
+export function fromFirestore(
 	id: string,
 	data: FirestoreTechnique,
 	userId: string,
@@ -66,6 +68,7 @@ function fromFirestore(
 		handsMode: data.handsMode ?? "separate",
 		activeDrills: data.activeDrills ?? [],
 		timeSignature: timeSignatureFromFirestore(data.timeSignature),
+		nudgeSnoozedUntil: data.nudgeSnoozedUntil?.toDate() ?? null,
 	};
 }
 
@@ -194,6 +197,46 @@ export function useUpdateTechnique() {
 	};
 
 	return { updateTechnique };
+}
+
+export function useAdvanceTechnique() {
+	const { user } = useAuth();
+
+	const advance = async (fromId: string, toId: string | null) => {
+		if (!user) throw new Error("Not authenticated");
+
+		const batch = writeBatch(db);
+		batch.update(doc(db, "users", user.uid, "techniques", fromId), {
+			state: "maintenance",
+			nudgeSnoozedUntil: null,
+		});
+		if (toId) {
+			batch.update(doc(db, "users", user.uid, "techniques", toId), {
+				state: "active",
+				dateIntroduced: new Date(),
+			});
+		}
+		await awaitWrite(batch.commit());
+	};
+
+	return { advance };
+}
+
+export function useSnoozeTechniqueNudge() {
+	const { user } = useAuth();
+
+	const snooze = async (techniqueId: string, days: number) => {
+		if (!user) throw new Error("Not authenticated");
+
+		const ref = doc(db, "users", user.uid, "techniques", techniqueId);
+		await awaitWrite(
+			updateDoc(ref, {
+				nudgeSnoozedUntil: new Date(Date.now() + days * 86_400_000),
+			}),
+		);
+	};
+
+	return { snooze };
 }
 
 export function useDeleteTechnique() {
