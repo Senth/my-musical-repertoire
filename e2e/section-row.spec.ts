@@ -1,5 +1,5 @@
 import { expect, type Locator, test } from "@playwright/test";
-import { collectConsoleErrors, SEED_IDS, t } from "./support/app";
+import { collectConsoleErrors, SEED_IDS, t } from "@/e2e/support/app";
 
 const INVENTION_SECTIONS = [
 	{ name: "Exposition", bars: "Bars 1–6", bpm: 72 },
@@ -97,6 +97,7 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 	);
 	await expect(chip).toHaveAttribute("aria-expanded", "true");
 	await expect(page.getByText(t("section.state.maintenance"))).toBeVisible();
+	await expect(page.getByRole("menuitem").first()).toBeFocused();
 	expect(consoleErrors).toEqual([]);
 	await expect(
 		page.getByText(t("screen.pieceSections.editSection")),

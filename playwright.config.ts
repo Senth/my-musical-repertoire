@@ -39,7 +39,7 @@ export default defineConfig({
 	// A transient network blip in the dev server should cost a rerun, not a
 	// red gate. A real failure fails twice.
 	retries: 1,
-	workers: process.env.CI ? 2 : undefined,
+	workers: 2,
 	reporter: process.env.CI
 		? [["list"], ["html", { outputFolder: ".tmp/e2e/report", open: "never" }]]
 		: [["list"]],

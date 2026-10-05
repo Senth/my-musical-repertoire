@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, View } from "react-native";
 import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
@@ -40,6 +40,21 @@ export function HistoryScreen({
 	const { t, i18n } = useTranslation();
 	const theme = useTheme();
 	const pageInset = usePageInset();
+	useEffect(() => {
+		if (
+			!entries.length &&
+			history.hasMore &&
+			!history.loading &&
+			!history.error
+		)
+			void history.loadMore();
+	}, [
+		entries.length,
+		history.hasMore,
+		history.loading,
+		history.error,
+		history.loadMore,
+	]);
 	const retry = {
 		label: t("screen.history.retry"),
 		onPress: () => void history.loadMore(),
@@ -104,7 +119,7 @@ export function HistoryScreen({
 				)}
 				ItemSeparatorComponent={() => <Divider />}
 				ListEmptyComponent={
-					history.loading ? (
+					history.loading || (history.hasMore && !history.error) ? (
 						<LoadingScreen />
 					) : history.error ? (
 						<MessageScreen

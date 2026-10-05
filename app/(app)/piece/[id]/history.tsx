@@ -2,13 +2,13 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
-import { Chip } from "react-native-paper";
+import { Chip, TouchableRipple } from "react-native-paper";
 import { HistoryScreen } from "@/components/history/HistoryScreen";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { usePieces } from "@/hooks/use-pieces";
 import { usePracticeHistory } from "@/hooks/use-practice-history";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
-import { space, touchTarget } from "@/theme/tokens";
+import { radius, space, touchTarget } from "@/theme/tokens";
 import {
 	filterHistoryEntries,
 	type HistoryFilter,
@@ -80,19 +80,32 @@ export default function PieceHistoryScreen() {
 					contentContainerStyle={{ gap: space.sm }}
 				>
 					{filters.map((option) => (
-						<Chip
+						<TouchableRipple
 							key={option.value}
-							selected={filter === option.value}
+							borderless
+							accessibilityRole="button"
 							accessibilityLabel={option.label}
 							accessibilityState={{ selected: filter === option.value }}
+							aria-pressed={filter === option.value}
 							onPress={() => setSelection({ routeKey, filter: option.value })}
-							style={{
-								minHeight: touchTarget.minimum,
-								justifyContent: "center",
-							}}
+							style={{ borderRadius: radius.chip }}
 						>
-							{option.label}
-						</Chip>
+							<Chip
+								selected={filter === option.value}
+								accessibilityRole="text"
+								accessible={false}
+								accessibilityElementsHidden
+								importantForAccessibility="no-hide-descendants"
+								pointerEvents="none"
+								style={{
+									borderRadius: radius.chip,
+									minHeight: touchTarget.minimum,
+									justifyContent: "center",
+								}}
+							>
+								{option.label}
+							</Chip>
+						</TouchableRipple>
 					))}
 				</ScrollView>
 			}

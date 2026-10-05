@@ -12,10 +12,13 @@ import {
 import { RUN_THROUGH_LOG_SOURCE } from "@/utils/run-through-credit";
 
 const mockPush = jest.fn();
-jest.mock("react-native-paper", () => ({
-	...jest.requireActual("react-native-paper"),
-	ActivityIndicator: () => null,
-}));
+jest.mock(
+	"react-native-paper/lib/commonjs/components/ActivityIndicator",
+	() => ({
+		__esModule: true,
+		default: () => null,
+	}),
+);
 const mockBack = jest.fn();
 let mockParams: { id: string; sectionId?: string } = { id: "piece" };
 const sections: HistorySection[] = [
@@ -77,7 +80,7 @@ function entry(sectionId?: string, credited = false): HistoryEntry {
 			{
 				id: sectionId ?? "run",
 				data: {
-					date: new Date().toISOString(),
+					date: new Date(Date.now() - (credited ? 1000 : 0)).toISOString(),
 					quality: 4,
 					effort: 3,
 					achievedBpm: 72,
@@ -202,6 +205,67 @@ it("loads older pages without changing the filter or hiding existing rows", asyn
 		true,
 	);
 	expect(screen.getByText("From a run-through")).toBeTruthy();
+});
+
+it.each([
+	["Coda", "No practice on Coda yet.", "Bars 208–264", () => entry("coda")],
+	["Run-throughs", "No run-throughs yet.", "Run-through", () => entry()],
+])("loads pages until an older-only %s match appears", async (filter, empty, match, olderEntry) => {
+	mockHistory.entries = [entry("intro")];
+	mockHistory.hasMore = true;
+	const screen = await renderScreen();
+	await fireEvent.press(screen.getByLabelText(filter));
+	expect(screen.queryByText(empty)).toBeNull();
+	expect(mockHistory.loadMore).toHaveBeenCalledTimes(1);
+	for (const loading of [true, false]) {
+		mockHistory.loading = loading;
+		await screen.rerender(
+			<PaperProvider theme={lightTheme}>
+				<PieceHistoryScreen />
+			</PaperProvider>,
+		);
+	}
+	expect(mockHistory.loadMore).toHaveBeenCalledTimes(2);
+	expect(screen.queryByText(empty)).toBeNull();
+	mockHistory.entries = [...mockHistory.entries, olderEntry()];
+	await screen.rerender(
+		<PaperProvider theme={lightTheme}>
+			<PieceHistoryScreen />
+		</PaperProvider>,
+	);
+	expect(screen.getByText(match)).toBeTruthy();
+	expect(mockHistory.loadMore).toHaveBeenCalledTimes(2);
+	expect(screen.getByLabelText(filter).props.accessibilityState.selected).toBe(
+		true,
+	);
+});
+
+it("claims a filtered history is empty only after exhausting pages", async () => {
+	mockHistory.entries = [entry("intro")];
+	mockHistory.hasMore = true;
+	const screen = await renderScreen();
+	await fireEvent.press(screen.getByLabelText("Coda"));
+	expect(screen.queryByText("No practice on Coda yet.")).toBeNull();
+	mockHistory.hasMore = false;
+	await screen.rerender(
+		<PaperProvider theme={lightTheme}>
+			<PieceHistoryScreen />
+		</PaperProvider>,
+	);
+	expect(screen.getByText("No practice on Coda yet.")).toBeTruthy();
+	expect(mockHistory.loadMore).toHaveBeenCalledTimes(1);
+});
+
+it("stops searching on a read error and offers retry", async () => {
+	mockHistory.entries = [entry("intro")];
+	mockHistory.hasMore = true;
+	mockHistory.error = new Error("read failed");
+	const screen = await renderScreen();
+	await fireEvent.press(screen.getByLabelText("Coda"));
+	expect(screen.queryByText("No practice on Coda yet.")).toBeNull();
+	expect(mockHistory.loadMore).not.toHaveBeenCalled();
+	await fireEvent.press(screen.getByRole("button", { name: "Try again" }));
+	expect(mockHistory.loadMore).toHaveBeenCalledTimes(1);
 });
 
 it("offers retry rather than falsely reporting no practice after a read failure", async () => {

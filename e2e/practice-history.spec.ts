@@ -48,7 +48,15 @@ test("seeded history reads grouped hands, section filters and technique drills w
 		name: "Middle entries",
 		exact: true,
 	});
+	const all = page.getByRole("button", {
+		name: t("screen.history.all"),
+		exact: true,
+	});
+	await expect(all).toHaveAttribute("aria-pressed", "true");
+	await expect(middle).toHaveAttribute("aria-pressed", "false");
 	await middle.click();
+	await expect(middle).toHaveAttribute("aria-pressed", "true");
+	await expect(all).toHaveAttribute("aria-pressed", "false");
 	await expect(
 		page.getByText("Bars 7–14", { exact: true }).filter({ visible: true }),
 	).toBeVisible();
@@ -66,6 +74,9 @@ test("seeded history reads grouped hands, section filters and technique drills w
 			.filter({ visible: true }),
 	).toHaveCount(1);
 	await expectCleanPage(page);
+	await all.click();
+	await expect(all).toHaveAttribute("aria-pressed", "true");
+	await expect(middle).toHaveAttribute("aria-pressed", "false");
 	await page.goto(`/technique/${SEED_IDS.scale}`);
 	await page.getByText(t("screen.history.entryTitle"), { exact: true }).click();
 	await expect(page).toHaveURL(`/technique/${SEED_IDS.scale}/history`);
