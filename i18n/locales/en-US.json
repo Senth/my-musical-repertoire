@@ -834,6 +834,24 @@
 				"titleRequired": "Title is required."
 			}
 		},
+		"history": {
+			"runThrough": "Run-through",
+			"credited": "From a run-through",
+			"unavailableSection": "Section no longer available",
+			"archivedTitle": "{{label}} · archived",
+			"shaky": "Shaky: {{sections}}",
+			"playedSections": "Played sections: {{sections}}",
+			"expandNote": "Expand note",
+			"collapseNote": "Collapse note",
+			"bpmValue": "{{bpm}}",
+			"score": "{{metric}}: {{value}}",
+			"metrics": {
+				"quality": "Quality",
+				"effort": "Effort",
+				"technical": "Technical",
+				"memory": "Memory"
+			}
+		},
 		"practiceTechnique": {
 			"notFound": "Technique item not found",
 			"qualityLabel": "How clean?",
