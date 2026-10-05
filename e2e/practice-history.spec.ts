@@ -2,6 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 import {
 	collectConsoleErrors,
 	expectCleanPage,
+	expectSignedIn,
 	SEED_IDS,
 	t,
 } from "@/e2e/support/app";
@@ -136,8 +137,14 @@ test("saved history shows newest entries first and refreshes after another pract
 	const consoleErrors = collectConsoleErrors(page);
 	const title = "E2E History Piece";
 	const section = "E2E History Section";
-	await page.goto("/piece");
-	await page.goto("/piece/add");
+	await page.goto("/");
+	await expectSignedIn(page);
+	await page.getByRole("tab", { name: t("screen.pieces.title") }).click();
+	await expect(page).toHaveURL("/piece");
+	await page
+		.getByRole("button", { name: t("screen.pieces.addPiece"), exact: true })
+		.first()
+		.click();
 	await page
 		.getByRole("textbox", {
 			name: t("screen.addPiece.titleLabel"),
@@ -153,15 +160,19 @@ test("saved history shows newest entries first and refreshes after another pract
 	await page
 		.getByRole("button", { name: t("screen.addPiece.save"), exact: true })
 		.click();
-	await expect(
-		page.getByRole("button", { name: t("screen.addPiece.save"), exact: true }),
-	).toHaveCount(0);
-	await page.getByText(title, { exact: true }).first().click();
+	await expect(page).toHaveURL("/piece");
+	await page.getByText(title, { exact: true }).last().click();
 	await expect(
 		page.getByText(t("screen.pieceDetail.sections"), { exact: true }),
 	).toBeVisible();
 	const pieceUrl = page.url();
-	await page.goto(`${pieceUrl}/section/new`);
+	await page
+		.getByRole("button", {
+			name: t("screen.pieceDetail.sectionsEmpty.addButton"),
+			exact: true,
+		})
+		.first()
+		.click();
 	await page
 		.getByRole("textbox", {
 			name: t("screen.pieceSections.form.labelLabel"),
