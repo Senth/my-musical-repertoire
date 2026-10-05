@@ -7,6 +7,15 @@
 				{ "fieldPath": "archived", "order": "ASCENDING" },
 				{ "fieldPath": "order", "order": "ASCENDING" }
 			]
+		},
+		{
+			"collectionGroup": "techniques",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{ "fieldPath": "state", "order": "ASCENDING" },
+				{ "fieldPath": "dateIntroduced", "order": "ASCENDING" },
+				{ "fieldPath": "title", "order": "ASCENDING" }
+			]
 		}
 	],
 	"fieldOverrides": []

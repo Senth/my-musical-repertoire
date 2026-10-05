@@ -3,11 +3,17 @@ jest.mock("firebase/firestore", () => ({
 	collection: jest.fn(),
 	deleteDoc: jest.fn(),
 	doc: jest.fn((_db, ...path: string[]) => path.join("/")),
+	documentId: jest.fn(),
 	getDoc: jest.fn(),
+	getDocs: jest.fn(),
+	limit: jest.fn(),
 	onSnapshot: jest.fn(),
+	orderBy: jest.fn(),
 	query: jest.fn(),
+	startAfter: jest.fn(),
 	Timestamp: {},
 	updateDoc: jest.fn(() => Promise.resolve()),
+	where: jest.fn(),
 	writeBatch: jest.fn(() => mockBatch),
 }));
 
@@ -20,11 +26,14 @@ jest.mock("@/contexts/AuthContext", () => ({
 	useAuth: () => ({ user: { uid: "u1" } }),
 }));
 
-import { updateDoc } from "firebase/firestore";
+import { act, renderHook } from "@testing-library/react-native";
+import { getDocs, onSnapshot, updateDoc } from "firebase/firestore";
 import type { TechniqueState } from "@/models/technique";
 import {
 	fromFirestore,
+	QUEUE_PAGE,
 	useAdvanceTechnique,
+	useCurriculumTechniques,
 	useSnoozeTechniqueNudge,
 	useUpdateTechnique,
 } from "./use-techniques";
@@ -110,5 +119,63 @@ describe("useSnoozeTechniqueNudge", () => {
 		const until = written().nudgeSnoozedUntil as Date;
 		expect(until.getTime() - before).toBeGreaterThanOrEqual(14 * 86_400_000);
 		expect(until.getTime() - before).toBeLessThan(14 * 86_400_000 + 1000);
+	});
+});
+
+describe("useCurriculumTechniques", () => {
+	const snapshot = (...docs: [string, string][]) => ({
+		size: docs.length,
+		docs: docs.map(([id, state]) => ({
+			id,
+			data: () => ({
+				title: id,
+				state,
+				dateIntroduced: { toDate: () => new Date(0) },
+			}),
+		})),
+	});
+	let listeners: ((snap: unknown) => void)[];
+
+	beforeEach(() => {
+		listeners = [];
+		(onSnapshot as jest.Mock).mockImplementation((_q, onNext) => {
+			listeners.push(onNext);
+			return jest.fn();
+		});
+	});
+
+	it("withholds techniques until the queue's first page has arrived", async () => {
+		const { result } = await renderHook(() => useCurriculumTechniques(["c"]));
+		const [own, queue] = listeners;
+		await act(() => own(snapshot(["c", "active"])));
+		expect(result.current.techniques).toEqual([]);
+		await act(() => queue(snapshot(["g", "not_started"])));
+		expect(result.current.techniques.map((t) => t.id)).toEqual(["c", "g"]);
+		expect(result.current.showMore).toBeUndefined();
+	});
+
+	it("reads the queue past a full page only on Show more", async () => {
+		const { result } = await renderHook(() => useCurriculumTechniques(["c"]));
+		const [own, queue] = listeners;
+		const page = Array.from(
+			{ length: QUEUE_PAGE },
+			(_, i) => [`q${i}`, "not_started"] as [string, string],
+		);
+		await act(() => {
+			own(snapshot(["c", "active"]));
+			queue(snapshot(...page));
+		});
+		expect(result.current.techniques).toHaveLength(QUEUE_PAGE + 1);
+		(getDocs as jest.Mock).mockResolvedValue(snapshot(["late", "not_started"]));
+		await act(() => result.current.showMore?.());
+		expect(getDocs).toHaveBeenCalledTimes(1);
+		expect(result.current.techniques.at(-1)?.id).toBe("late");
+		expect(result.current.showMore).toBeUndefined();
+	});
+
+	it("opens no listener for a session without technique blocks", async () => {
+		const { result } = await renderHook(() => useCurriculumTechniques([]));
+		expect(listeners).toHaveLength(0);
+		expect(result.current.techniques).toEqual([]);
 	});
 });

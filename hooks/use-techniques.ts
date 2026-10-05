@@ -5,9 +5,14 @@ import {
 	doc,
 	documentId,
 	getDoc,
+	getDocs,
+	limit,
 	onSnapshot,
+	orderBy,
+	type QueryConstraint,
 	type QuerySnapshot,
 	query,
+	startAfter,
 	Timestamp,
 	updateDoc,
 	where,
@@ -124,44 +129,81 @@ export function useTechniques() {
 	return { techniques, loading };
 }
 
+/** Not started techniques per queue read: the first live page, and each "Show more". */
+export const QUEUE_PAGE = 20;
+
+const queuePage = (uid: string, ...after: QueryConstraint[]) =>
+	query(
+		collection(db, "users", uid, "techniques"),
+		where("state", "==", "not_started"),
+		orderBy("dateIntroduced"),
+		orderBy("title"),
+		...after,
+		limit(QUEUE_PAGE),
+	);
+
 /**
- * The listed techniques plus every Not started one: what the session summary's
- * curriculum card reads. Nothing is subscribed while `ids` is empty.
+ * The listed techniques plus the Not started queue, oldest first, one page at a
+ * time: what the session summary's curriculum card reads. Empty until both the
+ * listed techniques and the first queue page have arrived, and nothing is
+ * subscribed while `ids` is empty.
  */
-export function useCurriculumTechniques(ids: string[]): TechniqueItem[] {
+export function useCurriculumTechniques(ids: string[]): {
+	techniques: TechniqueItem[];
+	showMore?: () => Promise<void>;
+} {
 	const { user } = useAuth();
-	const [own, setOwn] = useState<TechniqueItem[]>([]);
-	const [queue, setQueue] = useState<TechniqueItem[]>([]);
+	const [own, setOwn] = useState<TechniqueItem[] | null>(null);
+	const [pages, setPages] = useState<QuerySnapshot[]>([]);
 	const key = ids.slice(0, 30).join(",");
+	const uid = user?.uid;
 
 	useEffect(() => {
-		setOwn([]);
-		setQueue([]);
-		if (!user || !key) return;
+		setOwn(null);
+		setPages([]);
+		if (!uid || !key) return;
 
-		const ref = collection(db, "users", user.uid, "techniques");
-		const items = (snapshot: QuerySnapshot) =>
-			snapshot.docs.map((d) =>
-				fromFirestore(d.id, d.data() as FirestoreTechnique, user.uid),
-			);
+		const ref = collection(db, "users", uid, "techniques");
 		const unsubscribeOwn = onSnapshot(
 			query(ref, where(documentId(), "in", key.split(","))),
-			(snapshot) => setOwn(items(snapshot)),
+			(snapshot) =>
+				setOwn(
+					snapshot.docs.map((d) =>
+						fromFirestore(d.id, d.data() as FirestoreTechnique, uid),
+					),
+				),
 		);
-		const unsubscribeQueue = onSnapshot(
-			query(ref, where("state", "==", "not_started")),
-			(snapshot) => setQueue(items(snapshot)),
+		const unsubscribeQueue = onSnapshot(queuePage(uid), (first) =>
+			setPages((rest) => [first, ...rest.slice(1)]),
 		);
 		return () => {
 			unsubscribeOwn();
 			unsubscribeQueue();
 		};
-	}, [user, key]);
+	}, [uid, key]);
 
-	return useMemo(
-		() => [...own, ...queue.filter((q) => !own.some((o) => o.id === q.id))],
-		[own, queue],
-	);
+	const techniques = useMemo(() => {
+		if (!own || !uid || pages.length === 0) return [];
+		const seen = new Set(own.map((o) => o.id));
+		const queued = pages
+			.flatMap((p) => p.docs)
+			.filter((d) => !seen.has(d.id) && seen.add(d.id))
+			.map((d) => fromFirestore(d.id, d.data() as FirestoreTechnique, uid));
+		return [...own, ...queued];
+	}, [own, pages, uid]);
+
+	const last = pages.at(-1);
+	const showMore =
+		uid && last?.size === QUEUE_PAGE
+			? async () => {
+					const next = await getDocs(
+						queuePage(uid, startAfter(last.docs.at(-1))),
+					);
+					setPages((current) => [...current, next]);
+				}
+			: undefined;
+
+	return { techniques, showMore };
 }
 
 export function useAddTechnique() {

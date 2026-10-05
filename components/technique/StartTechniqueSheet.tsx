@@ -15,6 +15,8 @@ interface StartTechniqueSheetProps {
 	candidates: TechniqueItem[];
 	onPick: (id: string) => void;
 	onCreate: () => void;
+	/** Present while more of the queue is still unread. */
+	onShowMore?: () => void;
 }
 
 export function StartTechniqueSheet({
@@ -24,6 +26,7 @@ export function StartTechniqueSheet({
 	candidates,
 	onPick,
 	onCreate,
+	onShowMore,
 }: StartTechniqueSheetProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -73,6 +76,15 @@ export function StartTechniqueSheet({
 						)}
 					/>
 				))}
+				{onShowMore && (
+					<View
+						style={{ alignItems: "flex-start", paddingHorizontal: space.sm }}
+					>
+						<Button mode="text" icon="chevron-down" onPress={onShowMore}>
+							{t("technique.curriculum.sheet.more")}
+						</Button>
+					</View>
+				)}
 			</ScrollView>
 			<View
 				style={{

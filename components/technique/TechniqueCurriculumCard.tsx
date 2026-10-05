@@ -35,6 +35,8 @@ interface TechniqueCurriculumCardProps {
 	nudge: TechniqueNudge;
 	/** The summary names the technique; the detail screen's app bar already does. */
 	showTitle?: boolean;
+	/** Loads the next page of the Not started queue into `techniques`. */
+	onShowMore?: () => Promise<void>;
 	onError: (message: string) => void;
 }
 
@@ -43,6 +45,7 @@ export function TechniqueCurriculumCard({
 	techniques,
 	nudge,
 	showTitle = false,
+	onShowMore,
 	onError,
 }: TechniqueCurriculumCardProps) {
 	const { t } = useTranslation();
@@ -189,6 +192,7 @@ export function TechniqueCurriculumCard({
 				candidates={notStartedQueue(techniques)}
 				onPick={start}
 				onCreate={addNew}
+				onShowMore={onShowMore && (() => run(onShowMore))}
 			/>
 		</Card>
 	);

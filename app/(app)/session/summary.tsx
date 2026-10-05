@@ -51,7 +51,7 @@ export default function SessionSummaryScreen() {
 				: [],
 		[session],
 	);
-	const techniques = useCurriculumTechniques(techniqueIds);
+	const { techniques, showMore } = useCurriculumTechniques(techniqueIds);
 	const techniqueLogs = useTechniqueLogs(techniqueIds, CURRICULUM_LOG_LIMIT);
 
 	const handleDone = async () => {
@@ -241,6 +241,7 @@ export default function SessionSummaryScreen() {
 						techniques={techniques}
 						nudge={techniqueCard.nudge}
 						showTitle
+						onShowMore={showMore}
 						onError={setError}
 					/>
 				)}
