@@ -13,6 +13,7 @@ import {
 	Divider,
 	FAB,
 	IconButton,
+	List,
 	Menu,
 	Text,
 	TextInput,
@@ -325,6 +326,13 @@ export default function PieceDetailScreen() {
 							</Text>
 						</View>
 
+						<List.Item
+							title={t("screen.history.entryTitle")}
+							left={(props) => <List.Icon {...props} icon="history" />}
+							right={(props) => <List.Icon {...props} icon="chevron-right" />}
+							onPress={() => router.push(`/piece/${id}/history`)}
+							style={{ paddingHorizontal: pageInset, marginTop: space.sm }}
+						/>
 						<Divider style={{ marginTop: space.xl }} />
 
 						{/* Notes section */}

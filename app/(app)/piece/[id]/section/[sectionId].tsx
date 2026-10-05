@@ -1,11 +1,13 @@
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import {
 	Button,
 	Dialog,
+	Divider,
 	HelperText,
+	List,
 	Portal,
 	Text,
 	TextInput,
@@ -30,6 +32,7 @@ import { defaultSectionState } from "@/utils/default-section-state";
 export default function SectionEditScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
+	const router = useRouter();
 	const { id: pieceId, sectionId } = useLocalSearchParams<{
 		id: string;
 		sectionId: string;
@@ -170,6 +173,22 @@ export default function SectionEditScreen() {
 
 	const formContent = (
 		<View style={{ gap: space.lg }}>
+			{!isNew && section && (
+				<View>
+					<List.Item
+						title={t("screen.history.entryTitle")}
+						left={(props) => <List.Icon {...props} icon="history" />}
+						right={(props) => <List.Icon {...props} icon="chevron-right" />}
+						onPress={() =>
+							router.push({
+								pathname: "/piece/[id]/history",
+								params: { id: pieceId, sectionId },
+							})
+						}
+					/>
+					<Divider />
+				</View>
+			)}
 			<FormTextField
 				ref={labelInputRef}
 				label={t("screen.pieceSections.form.labelLabel")}
