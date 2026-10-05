@@ -54,4 +54,6 @@ export interface TechniqueItem {
 	handsMode?: TechniqueHandsMode;
 	/** Defaults to `[]` when absent. */
 	activeDrills?: PracticeDrill[];
+	/** The curriculum nudge stays hidden until this moment. */
+	nudgeSnoozedUntil?: Date | null;
 }
