@@ -2,7 +2,14 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
-import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
+import {
+	Appbar,
+	Button,
+	Divider,
+	List,
+	Text,
+	useTheme,
+} from "react-native-paper";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
@@ -147,6 +154,13 @@ export default function TechniqueDetailScreen() {
 						</Button>
 					</View>
 
+					<List.Item
+						title={t("screen.history.entryTitle")}
+						left={(props) => <List.Icon {...props} icon="history" />}
+						right={(props) => <List.Icon {...props} icon="chevron-right" />}
+						onPress={() => router.push(`/technique/${id}/history`)}
+						style={{ paddingHorizontal: pageInset, marginTop: space.sm }}
+					/>
 					{item.notes && (
 						<>
 							<Divider style={{ marginTop: space.xl }} />

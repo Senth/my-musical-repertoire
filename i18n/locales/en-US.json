@@ -843,6 +843,7 @@
 			"showOlder": "Show older",
 			"emptyTitle": "Nothing practiced yet",
 			"emptyPieceBody": "Every run-through and section you log for this piece shows up here, newest first.",
+			"emptyTechniqueBody": "Every time you practice this technique it shows up here, newest first.",
 			"emptySection": "No practice on {{section}} yet.",
 			"emptyRunThroughs": "No run-throughs yet.",
 			"loadError": "Could not load practice history. Try again.",
