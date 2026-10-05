@@ -48,6 +48,7 @@ export const SEED_IDS = {
 	exposition: "seed-invention-exposition",
 	scale: "seed-scale",
 	hanon: "seed-hanon",
+	gMajor: "seed-g-major",
 } as const;
 
 /**

@@ -24,7 +24,7 @@ async function open(page: Page, path: string, ready: string) {
 
 test.describe("craft", () => {
 	for (const { path, ready } of ROUTES) {
-		test(`${path} renders clean`, async ({ page }) => {
+		test(`${path} renders clean`, async ({ page, isMobile }) => {
 			const consoleErrors = collectConsoleErrors(page);
 			await open(page, path, ready);
 
@@ -45,13 +45,35 @@ test.describe("craft", () => {
 			expect(rawKeys, `raw t() keys rendered on ${path}`).toEqual([]);
 
 			// The page must never scroll sideways. Phone width is where this
-			// breaks; on desktop it is a layout bug of a different kind.
-			const overflow = await page.evaluate(
-				() =>
-					document.documentElement.scrollWidth -
-					document.documentElement.clientWidth,
-			);
-			expect(overflow, `horizontal overflow on ${path}`).toBeLessThanOrEqual(1);
+			// breaks, so phones are measured again at a narrower 390px; on
+			// desktop it is a layout bug of a different kind.
+			const overflow = () =>
+				page.evaluate(
+					() =>
+						document.documentElement.scrollWidth -
+						document.documentElement.clientWidth,
+				);
+			expect(
+				await overflow(),
+				`horizontal overflow on ${path}`,
+			).toBeLessThanOrEqual(1);
+			if (isMobile) {
+				const viewport = page.viewportSize();
+				await page.setViewportSize({
+					width: 390,
+					height: viewport?.height ?? 844,
+				});
+				await page.evaluate(
+					() =>
+						new Promise((done) =>
+							requestAnimationFrame(() => requestAnimationFrame(done)),
+						),
+				);
+				expect(
+					await overflow(),
+					`horizontal overflow on ${path} at 390px`,
+				).toBeLessThanOrEqual(1);
+			}
 
 			expect(consoleErrors, `console output on ${path}`).toEqual([]);
 		});

@@ -88,7 +88,10 @@ export function groupLogsByMode(
 	return out;
 }
 
-export function useLastPracticeLog(scope: LastLogScope): {
+export function useLastPracticeLog(
+	scope: LastLogScope,
+	count = MODE_LOG_LIMIT,
+): {
 	lastLog: NormalizedLastLog | null;
 	logsByMode: Record<ModeKey, NormalizedLastLog>;
 	/** The whole fetched window, newest first — what the multi-session criteria read. */
@@ -159,8 +162,11 @@ export function useLastPracticeLog(scope: LastLogScope): {
 			return;
 		}
 
-		const count = scopeType === "piece" ? 1 : MODE_LOG_LIMIT;
-		const q = query(ref, orderBy("date", "desc"), limit(count));
+		const q = query(
+			ref,
+			orderBy("date", "desc"),
+			limit(scopeType === "piece" ? 1 : count),
+		);
 
 		getDocs(q)
 			.then((snap) => {
@@ -178,7 +184,7 @@ export function useLastPracticeLog(scope: LastLogScope): {
 				setLogsByMode({});
 				setLoading(false);
 			});
-	}, [user, scopeType, pieceId, sectionId, techniqueId]);
+	}, [user, scopeType, pieceId, sectionId, techniqueId, count]);
 
 	return { lastLog, logsByMode, logs, loading };
 }

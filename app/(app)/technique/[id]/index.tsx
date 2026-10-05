@@ -4,15 +4,21 @@ import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
 import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
+import { TechniqueCurriculumCard } from "@/components/technique/TechniqueCurriculumCard";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { MetaChip } from "@/components/ui/StateChip";
+import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { usePageInset } from "@/hooks/use-page-inset";
 import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { contentWidth, scrollTail, space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
+import {
+	CURRICULUM_LOG_LIMIT,
+	techniqueNudge,
+} from "@/utils/technique-curriculum";
 
 export default function TechniqueDetailScreen() {
 	const { t } = useTranslation();
@@ -26,6 +32,10 @@ export default function TechniqueDetailScreen() {
 
 	const item = techniques.find((tech) => tech.id === id);
 	const pageInset = usePageInset();
+	const { logs } = useLastPracticeLog(
+		{ type: "technique", techniqueId: id ?? "" },
+		CURRICULUM_LOG_LIMIT,
+	);
 
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
@@ -49,9 +59,11 @@ export default function TechniqueDetailScreen() {
 		return <LoadingScreen />;
 	}
 
-	if (!item) {
+	if (!item || !id) {
 		return <MessageScreen message={t("screen.techniqueDetail.notFound")} />;
 	}
+
+	const nudge = techniqueNudge(item, techniques, logs, new Date());
 
 	return (
 		<View
@@ -146,6 +158,22 @@ export default function TechniqueDetailScreen() {
 							{t("screen.techniqueDetail.practice")}
 						</Button>
 					</View>
+
+					{nudge && (
+						<View
+							style={{
+								paddingHorizontal: pageInset,
+								paddingTop: space.xl,
+							}}
+						>
+							<TechniqueCurriculumCard
+								tech={{ ...item, id }}
+								techniques={techniques}
+								nudge={nudge}
+								onError={setError}
+							/>
+						</View>
+					)}
 
 					{item.notes && (
 						<>

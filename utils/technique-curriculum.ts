@@ -9,6 +9,9 @@ import {
 /** Distinct clean days after which an Active technique counts as secure. */
 export const CLEAN_DAYS_SECURE = 3;
 
+/** Practice logs read per technique: enough for three clean days of every mode. */
+export const CURRICULUM_LOG_LIMIT = 60;
+
 export const SNOOZE_DAYS = [7, 14, 30] as const;
 export const DEFAULT_SNOOZE_DAYS = 14;
 
@@ -50,18 +53,21 @@ export function cleanTechniqueDays(
 	).length;
 }
 
+/** Not started techniques, oldest added first, title breaking ties. */
+export function notStartedQueue(techniques: TechniqueItem[]): TechniqueItem[] {
+	return techniques
+		.filter((t) => t.state === "not_started")
+		.sort(
+			(a, b) =>
+				a.dateIntroduced.getTime() - b.dateIntroduced.getTime() ||
+				a.title.localeCompare(b.title),
+		);
+}
+
 export function nextNotStarted(
 	techniques: TechniqueItem[],
 ): TechniqueItem | null {
-	return (
-		techniques
-			.filter((t) => t.state === "not_started")
-			.sort(
-				(a, b) =>
-					a.dateIntroduced.getTime() - b.dateIntroduced.getTime() ||
-					a.title.localeCompare(b.title),
-			)[0] ?? null
-	);
+	return notStartedQueue(techniques)[0] ?? null;
 }
 
 export function techniqueNudge(

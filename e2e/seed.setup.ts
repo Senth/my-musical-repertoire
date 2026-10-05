@@ -49,7 +49,9 @@ import { SEED_IDS, SEED_USER } from "./support/app";
  * Cold-start rule (see `.ai/config.toml`): no practice history, so every piece
  * reads as never practised. A warm fixture is a dated practiceLog written here
  * — the run-through shape lives in `hooks/use-practices.ts` `savePractice` —
- * not a new export to babysit.
+ * not a new export to babysit. The one exception is the C major scale: three
+ * clean days of technique logs make it secure, so the craft sweep measures the
+ * curriculum card on its detail route (#20).
  */
 
 /** Ports come from firebase.json, like everywhere else that points at the suite. */
@@ -72,7 +74,7 @@ const DELETE_BATCH_LIMIT = 450;
 
 /**
  * The repertoire the fixture carries, matching `.ai/config.toml`: four pieces,
- * two techniques, cold-start. The field lists mirror the add flows — see the
+ * three techniques, cold-start but for one secure scale. The field lists mirror the add flows — see the
  * header comment — not a private idea of what a piece looks like.
  */
 const PIECES: {
@@ -179,10 +181,30 @@ const TECHNIQUES: {
 	id: string;
 	title: string;
 	state: TechniqueState;
+	/** Clean practice days ending yesterday, one plain log per day. */
+	cleanDays?: number;
 }[] = [
-	{ id: SEED_IDS.scale, title: "C major scale, two octaves", state: "active" },
+	{
+		id: SEED_IDS.scale,
+		title: "C major scale, two octaves",
+		state: "active",
+		cleanDays: 3,
+	},
 	{ id: SEED_IDS.hanon, title: "Hanon No. 1", state: "maintenance" },
+	{
+		id: SEED_IDS.gMajor,
+		title: "G major scale, two octaves",
+		state: "not_started",
+	},
 ];
+
+/** Noon, `n` days before now: clear of the 3am day boundary either way. */
+function daysAgo(n: number): Date {
+	const date = new Date();
+	date.setDate(date.getDate() - n);
+	date.setHours(12, 0, 0, 0);
+	return date;
+}
 
 /**
  * Deletes every document under the fixture account, children before parents —
@@ -305,17 +327,31 @@ setup("seed the emulator fixture", async () => {
 		}
 
 		for (const technique of TECHNIQUES) {
-			await setDoc(doc(userRoot, "techniques", technique.id), {
+			const cleanDays = technique.cleanDays ?? 0;
+			const ref = doc(userRoot, "techniques", technique.id);
+			await setDoc(ref, {
 				title: technique.title,
 				state: technique.state,
 				type: null,
 				targetTempoBpm: null,
 				notes: null,
-				dateIntroduced: new Date(),
-				lastPracticedAt: null,
+				dateIntroduced: cleanDays ? daysAgo(cleanDays + 1) : new Date(),
+				lastPracticedAt: cleanDays ? daysAgo(1) : null,
 				handsMode: "separate",
 				activeDrills: [],
 			});
+			// The log shape is `hooks/use-techniques.ts` `saveTechniqueLog`.
+			for (let day = 1; day <= cleanDays; day++) {
+				await setDoc(doc(ref, "practiceLogs", `seed-day-${day}`), {
+					date: daysAgo(day),
+					quality: 4,
+					effort: 2,
+					achievedBpm: null,
+					hands: "LH",
+					drill: null,
+					sessionId: null,
+				});
+			}
 		}
 
 		console.log(
