@@ -13,18 +13,25 @@ import { AUTH_STATE } from "@/playwright.config";
 setup("authenticate", async ({ page, context }) => {
 	await signIn(page);
 	const state = await context.storageState({ indexedDB: true });
-	for (const origin of state.origins) {
-		origin.indexedDB = origin.indexedDB?.filter(
-			(db) => db.name === "firebaseLocalStorageDb",
-		);
-		origin.localStorage = origin.localStorage.filter(
-			(entry) => !entry.name.startsWith("firestore_"),
-		);
-	}
-	expect(
-		state.origins
-			.flatMap((origin) => origin.indexedDB ?? [])
-			.map((db) => db.name),
-	).toEqual(["firebaseLocalStorageDb"]);
-	await writeFile(AUTH_STATE, JSON.stringify(state));
+	const origins = state.origins.map((origin) => {
+		const databases: unknown[] =
+			"indexedDB" in origin && Array.isArray(origin.indexedDB)
+				? origin.indexedDB
+				: [];
+		return {
+			...origin,
+			indexedDB: databases.filter(
+				(db) =>
+					typeof db === "object" &&
+					db !== null &&
+					"name" in db &&
+					db.name === "firebaseLocalStorageDb",
+			),
+			localStorage: origin.localStorage.filter(
+				(entry) => !entry.name.startsWith("firestore_"),
+			),
+		};
+	});
+	expect(origins.flatMap((origin) => origin.indexedDB)).toHaveLength(1);
+	await writeFile(AUTH_STATE, JSON.stringify({ ...state, origins }));
 });
