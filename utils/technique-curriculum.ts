@@ -1,4 +1,5 @@
 import type { HandsMode } from "@/models/practice";
+import type { BlockExecutionState, PlannedBlock } from "@/models/session";
 import type { TechniqueItem } from "@/models/technique";
 import { dayKey } from "./day-boundary";
 import {
@@ -90,4 +91,43 @@ export function techniqueNudge(
 		bpm: tech.targetTempoBpm ?? null,
 		next: nextNotStarted(techniques),
 	};
+}
+
+/** Techniques from the session's completed technique blocks, in plan order. */
+export function completedTechniqueIds(
+	blocks: PlannedBlock[],
+	states: BlockExecutionState[],
+): string[] {
+	const ids = blocks
+		.filter(
+			(b, i) =>
+				b.kind === "technique" &&
+				!!b.techniqueId &&
+				states[i]?.status === "completed",
+		)
+		.map((b) => b.techniqueId as string);
+	return [...new Set(ids)];
+}
+
+/**
+ * The one technique card a session summary shows: none when a section card is
+ * already there, since pieces win; otherwise the first practised technique
+ * that is secure.
+ */
+export function summaryTechniqueNudge(
+	techniqueIds: string[],
+	techniques: TechniqueItem[],
+	logsById: Record<string, ProgressionLog[]>,
+	hasSectionNudge: boolean,
+	now: Date,
+): { tech: TechniqueItem & { id: string }; nudge: TechniqueNudge } | null {
+	if (hasSectionNudge) return null;
+	for (const id of techniqueIds) {
+		const tech = techniques.find((t) => t.id === id);
+		const logs = logsById[id];
+		if (!tech || !logs) continue;
+		const nudge = techniqueNudge(tech, techniques, logs, now);
+		if (nudge) return { tech: { ...tech, id }, nudge };
+	}
+	return null;
 }

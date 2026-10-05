@@ -1,8 +1,11 @@
+import type { BlockExecutionState, PlannedBlock } from "@/models/session";
 import type { ProgressionLog } from "./section-progression";
 import {
 	CLEAN_DAYS_SECURE,
 	cleanTechniqueDays,
+	completedTechniqueIds,
 	nextNotStarted,
+	summaryTechniqueNudge,
 	techniqueNudge,
 } from "./technique-curriculum";
 import { makeTechnique } from "./test-factories";
@@ -145,5 +148,63 @@ describe("nextNotStarted", () => {
 
 	it("returns null with nothing queued", () => {
 		expect(nextNotStarted([quality])).toBeNull();
+	});
+});
+
+describe("completedTechniqueIds", () => {
+	it("keeps completed technique blocks in plan order, once each", () => {
+		const block = (kind: PlannedBlock["kind"], techniqueId?: string) =>
+			({ kind, techniqueId, allocatedMinutes: 5 }) as PlannedBlock;
+		const state = (status: BlockExecutionState["status"]) =>
+			({ status }) as BlockExecutionState;
+		expect(
+			completedTechniqueIds(
+				[
+					block("technique", "b"),
+					block("repertoire-learning"),
+					block("technique", "skipped"),
+					block("technique", "a"),
+					block("technique", "b"),
+				],
+				[
+					state("completed"),
+					state("completed"),
+					state("skipped"),
+					state("completed"),
+					state("completed"),
+				],
+			),
+		).toEqual(["b", "a"]);
+	});
+});
+
+describe("summaryTechniqueNudge", () => {
+	const secure = makeTechnique({ id: "secure", handsMode: "together" });
+	const alsoSecure = makeTechnique({ id: "also", handsMode: "together" });
+	const unsure = makeTechnique({ id: "unsure", handsMode: "together" });
+	const techniques = [secure, alsoSecure, unsure];
+	const logsById = {
+		secure: cleanDays(3),
+		also: cleanDays(3),
+		unsure: cleanDays(1),
+	};
+	const pick = (ids: string[], hasSectionNudge = false) =>
+		summaryTechniqueNudge(ids, techniques, logsById, hasSectionNudge, NOW)?.tech
+			.id ?? null;
+
+	it("shows the card for a secure technique practised in the session", () => {
+		expect(pick(["unsure", "secure"])).toBe("secure");
+	});
+
+	it("yields to a section card", () => {
+		expect(pick(["secure"], true)).toBeNull();
+	});
+
+	it("shows one card, for the first secure technique", () => {
+		expect(pick(["also", "secure"])).toBe("also");
+	});
+
+	it("ignores a secure technique that was not in the session", () => {
+		expect(pick(["unsure"])).toBeNull();
 	});
 });

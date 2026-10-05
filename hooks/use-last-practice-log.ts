@@ -188,3 +188,57 @@ export function useLastPracticeLog(
 
 	return { lastLog, logsByMode, logs, loading };
 }
+
+/**
+ * The newest `count` logs of each listed technique, one capped query apiece.
+ * Callers pass a handful of ids — a session's technique blocks — never the
+ * whole library.
+ */
+export function useTechniqueLogs(
+	techniqueIds: string[],
+	count: number,
+): Record<string, NormalizedLastLog[]> {
+	const { user } = useAuth();
+	const [logsById, setLogsById] = useState<Record<string, NormalizedLastLog[]>>(
+		{},
+	);
+	const key = techniqueIds.join(",");
+
+	useEffect(() => {
+		if (!user || !key) {
+			setLogsById({});
+			return;
+		}
+		let cancelled = false;
+		Promise.all(
+			key.split(",").map(async (id) => {
+				const ref = collection(
+					db,
+					"users",
+					user.uid,
+					"techniques",
+					id,
+					"practiceLogs",
+				);
+				const snap = await getDocs(
+					query(ref, orderBy("date", "desc"), limit(count)),
+				);
+				const logs = snap.docs.map((d) =>
+					normalizeLastLog(d.data() as Record<string, unknown>, "technique"),
+				);
+				return [id, logs] as const;
+			}),
+		)
+			.then((entries) => {
+				if (!cancelled) setLogsById(Object.fromEntries(entries));
+			})
+			.catch(() => {
+				if (!cancelled) setLogsById({});
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [user, key, count]);
+
+	return logsById;
+}
