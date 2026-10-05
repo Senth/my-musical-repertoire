@@ -56,13 +56,13 @@ ready = "Suggested Practices"
 # There is no committed fixture export: `e2e/seed.setup.ts` runs as the first
 # Playwright project of every `yarn e2e` and writes the fixture through the
 # app's own Firebase shapes, with dates computed at run time. It holds one
-# account — pianist@example.com — four pieces, two techniques, and **no
-# practice history at all**. Every piece therefore reads as never practised,
-# and anything ranking by recency or by a BPM gap is legitimately empty. That
-# is the fixture's cold-start shape. Whether an empty state explains itself is
-# still fair game; reporting the emptiness as data loss is not. A change whose
-# behaviour needs a warm history is a finding that the seed needs extending
-# (a dated practiceLog), not a bug in the screen.
+# account — pianist@example.com — four pieces and two techniques. Invention
+# No. 1 has Exposition LH/RH/HT two days ago, Middle entries HT yesterday and
+# a run-through today flagging Middle entries. Its stabilizing state earns
+# no run-through section credits. C major scale enables staccato and has one
+# save yesterday with plain LH/RH and staccato LH/RH. Practice logs have no
+# notes. Nocturne, Für Elise, Gymnopédie and Hanon remain never practised;
+# empty history on those is intentional, not data loss.
 
 [design]
 # The contract and the values it is written against. `theme/tokens.ts` is ground
