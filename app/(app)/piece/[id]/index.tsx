@@ -18,6 +18,7 @@ import {
 	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { HistoryLink } from "@/components/history/HistoryLink";
 import { AddNextSectionNudge } from "@/components/piece/AddNextSectionNudge";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { SectionRow } from "@/components/section/SectionRow";
@@ -325,6 +326,14 @@ export default function PieceDetailScreen() {
 							</Text>
 						</View>
 
+						<HistoryLink
+							onPress={() => router.push(`/piece/${id}/history`)}
+							style={{
+								paddingLeft: pageInset,
+								paddingRight: pageInset,
+								marginTop: space.sm,
+							}}
+						/>
 						<Divider style={{ marginTop: space.xl }} />
 
 						{/* Notes section */}

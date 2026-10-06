@@ -67,25 +67,29 @@ the Firestore rules are enforced exactly as they are for the app.
 The fixture must stay honest about the shapes the app actually writes —
 hand-invented document shapes drift, and the first thing to notice is a test
 asserting a field the app stopped writing months ago. The seed mirrors the add
-flows field for field (`useAddPiece`, `useAddSection`, `useAddTechnique`), and
-when a warm fixture arrives its practice logs mirror `savePractice`.
+flows field for field (`useAddPiece`, `useAddSection`, `useAddTechnique`). Practice
+logs and their parent summary fields mirror `savePractice`, `saveSectionPractice`
+and `saveTechniqueLog`, including one shared timestamp per multi-mode save.
 
 It holds one account — **pianist@example.com** — and a small repertoire chosen to
 exercise the screens rather than to look realistic:
 
 | | |
 | --- | --- |
-| Nocturne in E-flat major (Chopin) | learning, two learning sections |
-| Invention No. 1 in C major (Bach) | stabilizing, one stabilizing + one learning section |
-| Für Elise (Beethoven) | maintenance, one maintenance section |
-| Gymnopédie No. 1 (Satie) | learning, **no sections** — the add-section nudge and the empty state need one |
-| C major scale, two octaves · Hanon No. 1 | active and maintenance techniques |
+| Nocturne in E-flat major (Chopin) | learning, two learning sections, no practice history |
+| Invention No. 1 in C major (Bach) | stabilizing, Exposition LH/RH/HT two days ago, Middle entries HT yesterday, run-through today flagging Middle entries |
+| Für Elise (Beethoven) | maintenance, one maintenance section, no practice history |
+| Gymnopédie No. 1 (Satie) | learning, **no sections**, no practice history. The add-section nudge and the empty state need one |
+| C major scale, two octaves | active, staccato enabled, plain LH/RH and staccato LH/RH in one save yesterday |
+| Hanon No. 1 | maintenance, no practice history |
 
-**It deliberately contains no practice logs.** Every piece is "never practised", so
-the scoring and planner screens render their cold-start paths and nothing else.
-When a review needs a warm history, that is a dated practice log written by
-`e2e/seed.setup.ts` — dates are computed at run time, which is the whole point
-of the programmatic seed — not a hand-edited document.
+**The fixture carries both warm history and cold-start paths.** Invention No. 1
+has three saves across three practice days; C major scale has one four-mode save.
+Dates are computed at run time by `e2e/seed.setup.ts`, not frozen in an export.
+Practice logs contain no notes. Invention stays stabilizing, so its run-through
+earns no section-credit logs or demotions: those apply only to maintenance sections
+of maintenance or performance pieces. Nocturne, Für Elise and Gymnopédie remain
+"never practised" for cold-start ranking and empty-history review.
 
 Because the ids are fixed constants (`SEED_IDS` in `e2e/support/app.ts`), a
 rewritten seed overwrites the same documents instead of minting new ones, and

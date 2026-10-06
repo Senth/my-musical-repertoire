@@ -7,7 +7,6 @@ import {
 	Appbar,
 	Button,
 	Divider,
-	Menu,
 	Snackbar,
 	useTheme,
 } from "react-native-paper";
@@ -17,6 +16,7 @@ import { EstimationField } from "@/components/practice/EstimationField";
 import { HandTabs } from "@/components/practice/HandTabs";
 import { PracticeComparison } from "@/components/practice/PracticeComparison";
 import { PracticeFooter } from "@/components/practice/PracticeFooter";
+import { PracticeHeaderMenu } from "@/components/practice/PracticeHeaderMenu";
 import { PracticeMeta } from "@/components/practice/PracticeMeta";
 import { SectionsPracticePanel } from "@/components/practice/SectionsPracticePanel";
 import { SpanSeamChecks } from "@/components/practice/SpanSeamChecks";
@@ -202,7 +202,6 @@ export function PiecePracticeContent({
 		[t],
 	);
 
-	const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -752,34 +751,14 @@ export function PiecePracticeContent({
 					<PracticeAppbarContent
 						heading={{ title: headingTitle, subtitle: headingSubtitle }}
 					/>
-					<Menu
-						visible={headerMenuVisible}
-						onDismiss={() => setHeaderMenuVisible(false)}
-						anchor={
-							<Appbar.Action
-								icon="dots-vertical"
-								accessibilityLabel={t("a11y.menu.options")}
-								onPress={() => setHeaderMenuVisible(true)}
-							/>
-						}
-					>
-						<Menu.Item
-							leadingIcon="pencil"
-							onPress={() => {
-								setHeaderMenuVisible(false);
-								router.push(`/piece/${pieceId}/edit`);
-							}}
-							title={t("screen.pieces.menu.edit")}
-						/>
-						<Menu.Item
-							leadingIcon="delete"
-							onPress={() => {
-								setHeaderMenuVisible(false);
-								setDeleteDialogVisible(true);
-							}}
-							title={t("screen.pieces.menu.delete")}
-						/>
-					</Menu>
+					<PracticeHeaderMenu
+						onEdit={() => router.push(`/piece/${pieceId}/edit`)}
+						onDelete={() => setDeleteDialogVisible(true)}
+						labels={{
+							edit: t("screen.pieces.menu.edit"),
+							delete: t("screen.pieces.menu.delete"),
+						}}
+					/>
 				</Appbar.Header>
 			)}
 

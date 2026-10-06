@@ -2,79 +2,26 @@ import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import type {
-	HandsMode,
-	ModeKey,
-	PracticeDrill,
-	PracticeMistakes,
-} from "@/models/practice";
-import { modeKey } from "@/utils/practice-modes";
+import type { ModeKey } from "@/models/practice";
+import {
+	type LastLogScope,
+	logModeKey,
+	type NormalizedLastLog,
+	normalizeLastLog,
+} from "@/utils/practice-history";
 
-export interface NormalizedLastLog {
-	date: Date;
-	technicalMistakes?: PracticeMistakes | null;
-	memoryMistakes?: PracticeMistakes | null;
-	quality?: 1 | 2 | 3 | 4 | 5 | null;
-	effort?: 1 | 2 | 3 | 4 | 5 | null;
-	achievedBpm?: number | null;
-	hands?: HandsMode | null;
-	drill?: PracticeDrill | null;
-	/** Free-text "note for next time" left with the log (#16). */
-	note?: string | null;
-	/** `"span"` for a joined-sections row; absent for an ordinary section log. */
-	source?: string | null;
-	/** The incoming join on a span row: did this section connect to the one before it. */
-	seamBefore?: "held" | "broken" | null;
-}
-
-type PieceScope = { type: "piece"; pieceId: string };
-type SectionScope = { type: "section"; pieceId: string; sectionId: string };
-type TechniqueScope = { type: "technique"; techniqueId: string };
-export type LastLogScope = PieceScope | SectionScope | TechniqueScope;
+export {
+	type LastLogScope,
+	logModeKey,
+	type NormalizedLastLog,
+	normalizeLastLog,
+} from "@/utils/practice-history";
 
 /**
  * How many logs to pull for mode-aware scopes. Filtering client-side keeps the
  * per-mode lookup on the existing `date` index — no composite index needed.
  */
 const MODE_LOG_LIMIT = 25;
-
-/** Logs written before the hands axis existed are hands-together by convention. */
-export function logModeKey(log: NormalizedLastLog): ModeKey {
-	return modeKey(log.hands ?? "HT", log.drill ?? null);
-}
-
-export function normalizeLastLog(
-	data: Record<string, unknown>,
-	scopeType: "piece" | "section" | "technique",
-): NormalizedLastLog {
-	const rawDate = data.date as { toDate?: () => Date } | string | null;
-	const date =
-		rawDate != null &&
-		typeof (rawDate as { toDate?: unknown }).toDate === "function"
-			? (rawDate as { toDate: () => Date }).toDate()
-			: new Date(rawDate as string);
-
-	if (scopeType === "piece") {
-		return {
-			date,
-			technicalMistakes: (data.technicalMistakes as PracticeMistakes) ?? null,
-			memoryMistakes: (data.memoryMistakes as PracticeMistakes) ?? null,
-			achievedBpm: (data.achievedBpm as number) ?? null,
-			note: (data.note as string) ?? null,
-		};
-	}
-	return {
-		date,
-		quality: (data.quality as 1 | 2 | 3 | 4 | 5) ?? null,
-		effort: (data.effort as 1 | 2 | 3 | 4 | 5) ?? null,
-		achievedBpm: (data.achievedBpm as number) ?? null,
-		hands: (data.hands as HandsMode) ?? null,
-		drill: (data.drill as PracticeDrill) ?? null,
-		note: (data.note as string) ?? null,
-		source: (data.source as string) ?? null,
-		seamBefore: (data.seamBefore as "held" | "broken") ?? null,
-	};
-}
 
 /** Bucket logs (newest first) by mode key, keeping the newest per mode. */
 export function groupLogsByMode(

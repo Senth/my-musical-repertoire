@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
 import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
+import { HistoryLink } from "@/components/history/HistoryLink";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
@@ -147,6 +148,14 @@ export default function TechniqueDetailScreen() {
 						</Button>
 					</View>
 
+					<HistoryLink
+						onPress={() => router.push(`/technique/${id}/history`)}
+						style={{
+							paddingLeft: pageInset,
+							paddingRight: pageInset,
+							marginTop: space.sm,
+						}}
+					/>
 					{item.notes && (
 						<>
 							<Divider style={{ marginTop: space.xl }} />
