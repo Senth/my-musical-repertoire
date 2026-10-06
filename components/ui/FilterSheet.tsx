@@ -66,8 +66,8 @@ export function SheetFrame({
 		const onKey = (event: KeyboardEvent) => {
 			if (event.key === "Escape") onDismiss();
 		};
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
+		document.addEventListener("keydown", onKey, true);
+		return () => document.removeEventListener("keydown", onKey, true);
 	}, [visible, onDismiss]);
 
 	return (
