@@ -217,6 +217,7 @@ it.each([
 	await fireEvent.press(screen.getByLabelText(filter));
 	expect(screen.queryByText(empty)).toBeNull();
 	expect(mockHistory.loadMore).toHaveBeenCalledTimes(1);
+	expect(screen.queryByRole("button", { name: "Show older" })).toBeNull();
 	for (const loading of [true, false]) {
 		mockHistory.loading = loading;
 		await screen.rerender(

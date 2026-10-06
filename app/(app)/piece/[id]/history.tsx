@@ -1,18 +1,25 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView } from "react-native";
+import { Platform, ScrollView } from "react-native";
 import { Chip, TouchableRipple } from "react-native-paper";
 import { HistoryScreen } from "@/components/history/HistoryScreen";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { usePieces } from "@/hooks/use-pieces";
 import { usePracticeHistory } from "@/hooks/use-practice-history";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
-import { radius, space, touchTarget } from "@/theme/tokens";
+import { radius, space } from "@/theme/tokens";
 import {
 	filterHistoryEntries,
 	type HistoryFilter,
 } from "@/utils/practice-history";
+
+const CHIP_HIT_SLOP = {
+	top: space.sm,
+	bottom: space.sm,
+	left: space.xs,
+	right: space.xs,
+};
 
 export default function PieceHistoryScreen() {
 	const { id, sectionId } = useLocalSearchParams<{
@@ -88,20 +95,18 @@ export default function PieceHistoryScreen() {
 							accessibilityState={{ selected: filter === option.value }}
 							aria-pressed={filter === option.value}
 							onPress={() => setSelection({ routeKey, filter: option.value })}
+							hitSlop={Platform.OS === "web" ? undefined : CHIP_HIT_SLOP}
 							style={{ borderRadius: radius.chip }}
 						>
 							<Chip
+								mode={filter === option.value ? "flat" : "outlined"}
 								selected={filter === option.value}
 								accessibilityRole="text"
 								accessible={false}
 								accessibilityElementsHidden
 								importantForAccessibility="no-hide-descendants"
 								pointerEvents="none"
-								style={{
-									borderRadius: radius.chip,
-									minHeight: touchTarget.minimum,
-									justifyContent: "center",
-								}}
+								style={{ borderRadius: radius.chip }}
 							>
 								{option.label}
 							</Chip>

@@ -163,7 +163,7 @@ export function HistoryScreen({
 								</Button>
 							</View>
 						)}
-						{history.hasMore && !history.error && (
+						{history.hasMore && !history.error && entries.length > 0 && (
 							<Button
 								mode="text"
 								onPress={() => void history.loadMore()}

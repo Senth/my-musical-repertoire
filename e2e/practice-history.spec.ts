@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import {
 	collectConsoleErrors,
 	expectCleanPage,
@@ -14,7 +14,9 @@ test("seeded history reads grouped hands, section filters and technique drills w
 	await page.setViewportSize({ width: 390, height: 900 });
 	const consoleErrors = collectConsoleErrors(page);
 	await page.goto(`/piece/${SEED_IDS.invention}`);
-	await page.getByText(t("screen.history.entryTitle"), { exact: true }).click();
+	await page
+		.getByRole("link", { name: t("screen.history.entryTitle"), exact: true })
+		.click();
 	await expect(page).toHaveURL(`/piece/${SEED_IDS.invention}/history`);
 	await expect(
 		page.getByRole("heading", { name: t("screen.history.title"), exact: true }),
@@ -55,6 +57,7 @@ test("seeded history reads grouped hands, section filters and technique drills w
 	});
 	await expect(all).toHaveAttribute("aria-pressed", "true");
 	await expect(middle).toHaveAttribute("aria-pressed", "false");
+	expect(await chipFill(all)).not.toBe(await chipFill(middle));
 	await middle.click();
 	await expect(middle).toHaveAttribute("aria-pressed", "true");
 	await expect(all).toHaveAttribute("aria-pressed", "false");
@@ -79,7 +82,9 @@ test("seeded history reads grouped hands, section filters and technique drills w
 	await expect(all).toHaveAttribute("aria-pressed", "true");
 	await expect(middle).toHaveAttribute("aria-pressed", "false");
 	await page.goto(`/technique/${SEED_IDS.scale}`);
-	await page.getByText(t("screen.history.entryTitle"), { exact: true }).click();
+	await page
+		.getByRole("link", { name: t("screen.history.entryTitle"), exact: true })
+		.click();
 	await expect(page).toHaveURL(`/technique/${SEED_IDS.scale}/history`);
 	const staccato = page
 		.getByText(t("screen.practice.modes.drill.staccato"), { exact: true })
@@ -101,6 +106,14 @@ test("seeded history reads grouped hands, section filters and technique drills w
 	await expectCleanPage(page);
 	expect(consoleErrors).toEqual([]);
 });
+
+function chipFill(chip: Locator) {
+	return chip.evaluate((element) =>
+		[element, ...element.querySelectorAll("*")]
+			.map((node) => getComputedStyle(node).backgroundColor)
+			.find((colour) => colour !== "rgba(0, 0, 0, 0)"),
+	);
+}
 
 async function saveSection(page: Page, bpm: string) {
 	await page
@@ -227,7 +240,7 @@ test("saved history shows newest entries first and refreshes after another pract
 	).toBeVisible();
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await page
-		.getByText(t("screen.history.entryTitle"), { exact: true })
+		.getByRole("link", { name: t("screen.history.entryTitle"), exact: true })
 		.filter({ visible: true })
 		.click();
 	const runThrough = page
@@ -260,7 +273,7 @@ test("saved history shows newest entries first and refreshes after another pract
 	await saveSection(page, "96");
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await page
-		.getByText(t("screen.history.entryTitle"), { exact: true })
+		.getByRole("link", { name: t("screen.history.entryTitle"), exact: true })
 		.filter({ visible: true })
 		.click();
 	await expect(sectionTitles).toHaveCount(3);

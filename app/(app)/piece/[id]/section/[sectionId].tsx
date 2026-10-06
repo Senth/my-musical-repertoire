@@ -7,12 +7,12 @@ import {
 	Dialog,
 	Divider,
 	HelperText,
-	List,
 	Portal,
 	Text,
 	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { HistoryLink } from "@/components/history/HistoryLink";
 import { DropdownField } from "@/components/ui/DropdownField";
 import { FormScaffold } from "@/components/ui/FormScaffold";
 import { FormTextField } from "@/components/ui/FormTextField";
@@ -175,10 +175,7 @@ export default function SectionEditScreen() {
 		<View style={{ gap: space.lg }}>
 			{!isNew && section && (
 				<View>
-					<List.Item
-						title={t("screen.history.entryTitle")}
-						left={(props) => <List.Icon {...props} icon="history" />}
-						right={(props) => <List.Icon {...props} icon="chevron-right" />}
+					<HistoryLink
 						onPress={() =>
 							router.push({
 								pathname: "/piece/[id]/history",

@@ -45,7 +45,7 @@ it("opens existing section history with its section parameter", async () => {
 			<SectionEditScreen />
 		</PaperProvider>,
 	);
-	await fireEvent.press(screen.getByText("Practice history"));
+	await fireEvent.press(screen.getByRole("link", { name: "Practice history" }));
 	expect(mockPush).toHaveBeenCalledWith({
 		pathname: "/piece/[id]/history",
 		params: { id: "piece", sectionId: "coda" },

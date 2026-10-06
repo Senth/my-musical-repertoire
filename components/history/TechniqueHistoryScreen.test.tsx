@@ -200,6 +200,6 @@ it("opens technique history from the detail entry", async () => {
 			<TechniqueDetailScreen />
 		</PaperProvider>,
 	);
-	await fireEvent.press(screen.getByText("Practice history"));
+	await fireEvent.press(screen.getByRole("link", { name: "Practice history" }));
 	expect(mockPush).toHaveBeenCalledWith("/technique/technique/history");
 });

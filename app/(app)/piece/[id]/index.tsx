@@ -13,12 +13,12 @@ import {
 	Divider,
 	FAB,
 	IconButton,
-	List,
 	Menu,
 	Text,
 	TextInput,
 	useTheme,
 } from "react-native-paper";
+import { HistoryLink } from "@/components/history/HistoryLink";
 import { AddNextSectionNudge } from "@/components/piece/AddNextSectionNudge";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { SectionRow } from "@/components/section/SectionRow";
@@ -326,10 +326,7 @@ export default function PieceDetailScreen() {
 							</Text>
 						</View>
 
-						<List.Item
-							title={t("screen.history.entryTitle")}
-							left={(props) => <List.Icon {...props} icon="history" />}
-							right={(props) => <List.Icon {...props} icon="chevron-right" />}
+						<HistoryLink
 							onPress={() => router.push(`/piece/${id}/history`)}
 							style={{ paddingHorizontal: pageInset, marginTop: space.sm }}
 						/>
