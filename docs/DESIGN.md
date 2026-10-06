@@ -54,7 +54,8 @@ which teal it is; the value lives in the file.
 - **surface-raised** — cards, menus, sheets. An elevation tint, not a different colour.
 - **outline / outlineVariant** — `outlineVariant` is the hairline divider, and is too faint
   to carry meaning: it may never be the only thing marking a control's edge. `outline` is
-  the border that can. Neither ever carries a glyph or a label.
+  the border that can. Only `outline` may carry a glyph, a secondary one clearing 3:1
+  contrast. Neither carries a label.
 - **onSurface** — the thing being read first. Titles, values, body copy.
 - **onSurfaceVariant** — the app's muted role, and its workhorse: composer lines, bar
   ranges, "Never practiced", helper text, every piece of metadata under a title. If text is
@@ -67,7 +68,8 @@ which teal it is; the value lives in the file.
   choice: Paper renders `mode="contained-tonal"` from it, so it is defined as a muted tint of
   the accent. Retint it with the accent or tonal buttons silently keep the old brand.
 - **success / warning** — non-MD3 roles this app adds. They exist for the offline bar and
-  for a mistake-count trend, and for nothing else. Always paired with an icon or a word.
+  for a mistake-count trend and a flagged mistake, and for nothing else. Always paired with
+  an icon or a word.
 - **error** — a failed write or an invalid field. **Decay is not an error.** "You have not
   practised this in six weeks" is the app's normal subject, not a fault condition.
 
@@ -256,9 +258,7 @@ All of it honours `prefers-reduced-motion`.
 ## Verification
 
 **Run it:** `scripts/dev-stack.sh up`, then the URL it prints last. Emulator-backed; the
-fixture account is in [`.ai/config.toml`](../.ai/config.toml). The fixture holds four pieces,
-two techniques and **no practice history**, so every piece reads as never practised and
-anything ranking by recency is legitimately empty.
+fixture account and what it holds are in `[dev]` in [`.ai/config.toml`](../.ai/config.toml).
 
 **Look at these,** both schemes, phone and desktop:
 
