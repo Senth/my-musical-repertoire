@@ -11,11 +11,9 @@ interface StartTechniqueSheetProps {
 	visible: boolean;
 	onDismiss: () => void;
 	fromTitle: string;
-	/** Not started techniques, in queue order. */
 	candidates: TechniqueItem[];
 	onPick: (id: string) => void;
 	onCreate: () => void;
-	/** Present while more of the queue is still unread. */
 	onShowMore?: () => void;
 }
 

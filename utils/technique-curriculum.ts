@@ -7,10 +7,8 @@ import {
 	type ProgressionLog,
 } from "./section-progression";
 
-/** Distinct clean days after which an Active technique counts as secure. */
 export const CLEAN_DAYS_SECURE = 3;
 
-/** Practice logs read per technique: enough for three clean days of every mode. */
 export const CURRICULUM_LOG_LIMIT = 60;
 
 export const SNOOZE_DAYS = [7, 14, 30] as const;
@@ -63,7 +61,6 @@ export function cleanTechniqueDays(
 	).length;
 }
 
-/** Not started techniques, oldest added first, title breaking ties. */
 export function notStartedQueue(techniques: TechniqueItem[]): TechniqueItem[] {
 	return techniques
 		.filter((t) => t.state === "not_started")
@@ -102,7 +99,6 @@ export function techniqueNudge(
 	};
 }
 
-/** Techniques from the session's completed technique blocks, in plan order. */
 export function completedTechniqueIds(
 	blocks: PlannedBlock[],
 	states: BlockExecutionState[],
@@ -118,11 +114,6 @@ export function completedTechniqueIds(
 	return [...new Set(ids)];
 }
 
-/**
- * The one technique card a session summary shows: none when a section card is
- * already there, since pieces win; otherwise the first practised technique
- * that is secure.
- */
 export function summaryTechniqueNudge(
 	techniqueIds: string[],
 	techniques: TechniqueItem[],

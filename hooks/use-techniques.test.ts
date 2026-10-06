@@ -135,13 +135,29 @@ describe("useCurriculumTechniques", () => {
 		})),
 	});
 	let listeners: ((snap: unknown) => void)[];
+	let failures: ((error: Error) => void)[];
 
 	beforeEach(() => {
 		listeners = [];
-		(onSnapshot as jest.Mock).mockImplementation((_q, onNext) => {
+		failures = [];
+		(onSnapshot as jest.Mock).mockImplementation((_q, onNext, onError) => {
 			listeners.push(onNext);
+			failures.push(onError);
 			return jest.fn();
 		});
+	});
+
+	it("reports a failed queue read and keeps the card withheld", async () => {
+		const { result } = await renderHook(() => useCurriculumTechniques(["c"]));
+		const [own] = listeners;
+		const [, queueFailed] = failures;
+		expect(result.current.failed).toBe(false);
+		await act(() => {
+			own(snapshot(["c", "active"]));
+			queueFailed(new Error("failed-precondition"));
+		});
+		expect(result.current.failed).toBe(true);
+		expect(result.current.techniques).toEqual([]);
 	});
 
 	it("withholds techniques until the queue's first page has arrived", async () => {

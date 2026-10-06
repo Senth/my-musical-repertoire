@@ -181,7 +181,6 @@ const TECHNIQUES: {
 	id: string;
 	title: string;
 	state: TechniqueState;
-	/** Clean practice days ending yesterday, one plain log per day. */
 	cleanDays?: number;
 }[] = [
 	{
@@ -340,7 +339,6 @@ setup("seed the emulator fixture", async () => {
 				handsMode: "separate",
 				activeDrills: [],
 			});
-			// The log shape is `hooks/use-techniques.ts` `saveTechniqueLog`.
 			for (let day = 1; day <= cleanDays; day++) {
 				await setDoc(doc(ref, "practiceLogs", `seed-day-${day}`), {
 					date: daysAgo(day),

@@ -49,7 +49,6 @@ interface FilterSheetProps {
 	doneLabel: string;
 }
 
-/** The sheet frame: bottom-anchored on compact, a centred card on wide. */
 export function SheetFrame({
 	visible,
 	onDismiss,

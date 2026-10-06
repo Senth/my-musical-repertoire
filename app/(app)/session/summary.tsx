@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
@@ -51,7 +51,11 @@ export default function SessionSummaryScreen() {
 				: [],
 		[session],
 	);
-	const { techniques, showMore } = useCurriculumTechniques(techniqueIds);
+	const { techniques, showMore, failed } =
+		useCurriculumTechniques(techniqueIds);
+	useEffect(() => {
+		if (failed) setError(t("error.firebase"));
+	}, [failed, t]);
 	const techniqueLogs = useTechniqueLogs(techniqueIds, CURRICULUM_LOG_LIMIT);
 
 	const handleDone = async () => {

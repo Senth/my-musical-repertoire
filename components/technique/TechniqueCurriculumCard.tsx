@@ -33,9 +33,7 @@ interface TechniqueCurriculumCardProps {
 	tech: TechniqueItem & { id: string };
 	techniques: TechniqueItem[];
 	nudge: TechniqueNudge;
-	/** The summary names the technique; the detail screen's app bar already does. */
 	showTitle?: boolean;
-	/** Loads the next page of the Not started queue into `techniques`. */
 	onShowMore?: () => Promise<void>;
 	onError: (message: string) => void;
 }

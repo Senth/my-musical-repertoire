@@ -129,7 +129,6 @@ export function useTechniques() {
 	return { techniques, loading };
 }
 
-/** Not started techniques per queue read: the first live page, and each "Show more". */
 export const QUEUE_PAGE = 20;
 
 const queuePage = (uid: string, ...after: QueryConstraint[]) =>
@@ -142,25 +141,22 @@ const queuePage = (uid: string, ...after: QueryConstraint[]) =>
 		limit(QUEUE_PAGE),
 	);
 
-/**
- * The listed techniques plus the Not started queue, oldest first, one page at a
- * time: what the session summary's curriculum card reads. Empty until both the
- * listed techniques and the first queue page have arrived, and nothing is
- * subscribed while `ids` is empty.
- */
 export function useCurriculumTechniques(ids: string[]): {
 	techniques: TechniqueItem[];
 	showMore?: () => Promise<void>;
+	failed: boolean;
 } {
 	const { user } = useAuth();
 	const [own, setOwn] = useState<TechniqueItem[] | null>(null);
 	const [pages, setPages] = useState<QuerySnapshot[]>([]);
+	const [failed, setFailed] = useState(false);
 	const key = ids.slice(0, 30).join(",");
 	const uid = user?.uid;
 
 	useEffect(() => {
 		setOwn(null);
 		setPages([]);
+		setFailed(false);
 		if (!uid || !key) return;
 
 		const ref = collection(db, "users", uid, "techniques");
@@ -173,8 +169,10 @@ export function useCurriculumTechniques(ids: string[]): {
 					),
 				),
 		);
-		const unsubscribeQueue = onSnapshot(queuePage(uid), (first) =>
-			setPages((rest) => [first, ...rest.slice(1)]),
+		const unsubscribeQueue = onSnapshot(
+			queuePage(uid),
+			(first) => setPages((rest) => [first, ...rest.slice(1)]),
+			() => setFailed(true),
 		);
 		return () => {
 			unsubscribeOwn();
@@ -203,7 +201,7 @@ export function useCurriculumTechniques(ids: string[]): {
 				}
 			: undefined;
 
-	return { techniques, showMore };
+	return { techniques, showMore, failed };
 }
 
 export function useAddTechnique() {

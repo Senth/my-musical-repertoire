@@ -45,8 +45,7 @@ test.describe("craft", () => {
 			expect(rawKeys, `raw t() keys rendered on ${path}`).toEqual([]);
 
 			// The page must never scroll sideways. Phone width is where this
-			// breaks, so phones are measured again at a narrower 390px; on
-			// desktop it is a layout bug of a different kind.
+			// breaks; on desktop it is a layout bug of a different kind.
 			const overflow = () =>
 				page.evaluate(
 					() =>

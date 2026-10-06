@@ -189,11 +189,6 @@ export function useLastPracticeLog(
 	return { lastLog, logsByMode, logs, loading };
 }
 
-/**
- * The newest `count` logs of each listed technique, one capped query apiece.
- * Callers pass a handful of ids — a session's technique blocks — never the
- * whole library.
- */
 export function useTechniqueLogs(
 	techniqueIds: string[],
 	count: number,
