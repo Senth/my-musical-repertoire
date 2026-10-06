@@ -4,6 +4,7 @@ import {
 	TECHNIQUE_TYPES,
 	type TechniqueItem,
 } from "@/models/technique";
+import { compareQueueOrder } from "@/utils/technique-curriculum";
 
 /**
  * Pure comparators for the pieces and technique lists.
@@ -89,13 +90,11 @@ function sortBy<T>(
 	items: T[],
 	keyFn: (item: T) => SortValue,
 	dir: SortDir,
-	title: (item: T) => string,
+	tiebreak: (a: T, b: T) => number,
 ): T[] {
-	return items.slice().sort((a, b) => {
-		const result = compareValues(keyFn(a), keyFn(b), dir);
-		if (result !== 0) return result;
-		return title(a).localeCompare(title(b));
-	});
+	return items
+		.slice()
+		.sort((a, b) => compareValues(keyFn(a), keyFn(b), dir) || tiebreak(a, b));
 }
 
 /** Never practiced ranks as the oldest possible date, not as unknown. */
@@ -143,7 +142,7 @@ export function sortPieces(
 		pieces,
 		(piece) => pieceSortValue(piece, sort.key, scores),
 		sort.dir,
-		(piece) => piece.title,
+		(a, b) => a.title.localeCompare(b.title),
 	);
 }
 
@@ -175,7 +174,7 @@ export function sortTechniqueItems(
 		items,
 		(item) => techniqueSortValue(item, sort.key, scores),
 		sort.dir,
-		(item) => item.title,
+		compareQueueOrder,
 	);
 }
 

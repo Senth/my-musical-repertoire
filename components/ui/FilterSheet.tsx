@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { ScrollView, View } from "react-native";
+import { type ReactNode, useEffect } from "react";
+import { Platform, ScrollView, View } from "react-native";
 import {
 	Button,
 	Chip,
@@ -60,6 +60,15 @@ export function SheetFrame({
 }) {
 	const theme = useTheme();
 	const isCompact = useIsCompact();
+
+	useEffect(() => {
+		if (!visible || Platform.OS !== "web") return;
+		const onKey = (event: KeyboardEvent) => {
+			if (event.key === "Escape") onDismiss();
+		};
+		document.addEventListener("keydown", onKey);
+		return () => document.removeEventListener("keydown", onKey);
+	}, [visible, onDismiss]);
 
 	return (
 		<Portal>

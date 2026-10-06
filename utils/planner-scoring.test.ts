@@ -229,6 +229,28 @@ describe("scoreTechnique", () => {
 			scoreTechnique(base, NOW),
 		);
 	});
+
+	it("ranks a never-practised not started technique below active and maintenance", () => {
+		const queued = makeTechnique({ id: "q", state: "not_started" });
+		const fresh = makeTechnique({
+			id: "a",
+			state: "active",
+			lastPracticedAt: NOW,
+			lastQuality: 5,
+			lastEffort: 1,
+		});
+		const maint = makeTechnique({
+			id: "m",
+			state: "maintenance",
+			lastPracticedAt: NOW,
+		});
+		expect(scoreTechnique(queued, NOW)).toBeLessThan(
+			scoreTechnique(fresh, NOW),
+		);
+		expect(scoreTechnique(queued, NOW)).toBeLessThan(
+			scoreTechnique(maint, NOW),
+		);
+	});
 });
 
 describe("eligibleTechniquesInState", () => {

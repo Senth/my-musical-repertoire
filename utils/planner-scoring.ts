@@ -291,6 +291,7 @@ export function scoreTechniqueModes(
 }
 
 export function scoreTechnique(tech: TechniqueItem, now: Date): number {
+	if (tech.state === "not_started") return -1;
 	return scoreTechniqueModes(tech, now).score;
 }
 

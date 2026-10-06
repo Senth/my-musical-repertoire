@@ -94,95 +94,97 @@ export function TechniqueCurriculumCard({
 	].join(" ");
 
 	return (
-		<Card
-			mode="elevated"
-			style={accentBorderStyle(techniqueStateVisual("active", theme.dark))}
-		>
-			{showTitle && (
-				<Card.Title title={tech.title} titleStyle={CARD_TITLE_STYLE} />
-			)}
-			<Card.Content style={{ gap: space.md }}>
-				<View
-					accessible
-					accessibilityLabel={t("a11y.technique.curriculumMove", {
-						title: tech.title,
-					})}
-					style={{
-						flexDirection: "row",
-						alignItems: "center",
-						gap: space.sm,
-					}}
-				>
-					<TechniqueStateChip state="active" />
-					<Icon
-						source="arrow-right"
-						size={icon.md}
-						color={theme.colors.onSurfaceVariant}
-					/>
-					<TechniqueStateChip state="maintenance" />
-				</View>
-				<Text
-					variant="bodyMedium"
-					style={{ color: theme.colors.onSurfaceVariant }}
-				>
-					{reason}
-				</Text>
-				<View
-					style={{
-						flexDirection: "row",
-						flexWrap: "wrap",
-						alignItems: "center",
-						gap: space.sm,
-					}}
-				>
-					{nudge.next ? (
-						<>
-							<Button
-								mode="contained-tonal"
-								icon="play"
-								style={{ maxWidth: "100%" }}
-								onPress={() => nudge.next?.id && start(nudge.next.id)}
-							>
-								{t("technique.curriculum.start", { title: nudge.next.title })}
-							</Button>
-							<Button mode="text" onPress={() => setSheetVisible(true)}>
-								{t("technique.curriculum.chooseAnother")}
-							</Button>
-						</>
-					) : (
-						<Button mode="contained-tonal" onPress={addNew}>
-							{t("technique.curriculum.add")}
-						</Button>
-					)}
-					<Menu
-						visible={menuVisible}
-						onDismiss={() => setMenuVisible(false)}
-						anchor={
-							<Button
-								mode="text"
-								icon="menu-down"
-								contentStyle={{ flexDirection: "row-reverse" }}
-								onPress={() => setMenuVisible(true)}
-							>
-								{t("technique.curriculum.notYet")}
-							</Button>
-						}
+		<>
+			<Card
+				mode="elevated"
+				style={accentBorderStyle(techniqueStateVisual("active", theme.dark))}
+			>
+				{showTitle ? (
+					<Card.Title title={tech.title} titleStyle={CARD_TITLE_STYLE} />
+				) : null}
+				<Card.Content style={{ gap: space.md, paddingVertical: space.lg }}>
+					<View
+						accessible
+						accessibilityLabel={t("a11y.technique.curriculumMove", {
+							title: tech.title,
+						})}
+						style={{
+							flexDirection: "row",
+							alignItems: "center",
+							gap: space.sm,
+						}}
 					>
-						{SNOOZE_DAYS.map((days) => (
-							<Menu.Item
-								key={days}
-								title={t(SNOOZE_LABELS[days])}
-								style={
-									days === DEFAULT_SNOOZE_DAYS
-										? { backgroundColor: theme.colors.secondaryContainer }
-										: undefined
-								}
-								onPress={() => snoozeFor(days)}
-							/>
-						))}
-					</Menu>
-				</View>
-			</Card.Content>
+						<TechniqueStateChip state="active" />
+						<Icon
+							source="arrow-right"
+							size={icon.md}
+							color={theme.colors.onSurfaceVariant}
+						/>
+						<TechniqueStateChip state="maintenance" />
+					</View>
+					<Text
+						variant="bodyMedium"
+						style={{ color: theme.colors.onSurfaceVariant }}
+					>
+						{reason}
+					</Text>
+					<View
+						style={{
+							flexDirection: "row",
+							flexWrap: "wrap",
+							alignItems: "center",
+							gap: space.sm,
+						}}
+					>
+						{nudge.next ? (
+							<>
+								<Button
+									mode="contained-tonal"
+									icon="play"
+									style={{ maxWidth: "100%" }}
+									onPress={() => nudge.next?.id && start(nudge.next.id)}
+								>
+									{t("technique.curriculum.start", { title: nudge.next.title })}
+								</Button>
+								<Button mode="text" onPress={() => setSheetVisible(true)}>
+									{t("technique.curriculum.chooseAnother")}
+								</Button>
+							</>
+						) : (
+							<Button mode="contained-tonal" onPress={addNew}>
+								{t("technique.curriculum.add")}
+							</Button>
+						)}
+						<Menu
+							visible={menuVisible}
+							onDismiss={() => setMenuVisible(false)}
+							anchor={
+								<Button
+									mode="text"
+									icon="menu-down"
+									contentStyle={{ flexDirection: "row-reverse" }}
+									onPress={() => setMenuVisible(true)}
+								>
+									{t("technique.curriculum.notYet")}
+								</Button>
+							}
+						>
+							{SNOOZE_DAYS.map((days) => (
+								<Menu.Item
+									key={days}
+									title={t(SNOOZE_LABELS[days])}
+									style={
+										days === DEFAULT_SNOOZE_DAYS
+											? { backgroundColor: theme.colors.secondaryContainer }
+											: undefined
+									}
+									onPress={() => snoozeFor(days)}
+								/>
+							))}
+						</Menu>
+					</View>
+				</Card.Content>
+			</Card>
 			<StartTechniqueSheet
 				visible={sheetVisible}
 				onDismiss={() => setSheetVisible(false)}
@@ -192,6 +194,6 @@ export function TechniqueCurriculumCard({
 				onCreate={addNew}
 				onShowMore={onShowMore && (() => run(onShowMore))}
 			/>
-		</Card>
+		</>
 	);
 }

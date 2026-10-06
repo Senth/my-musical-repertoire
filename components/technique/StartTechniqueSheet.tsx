@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
 import { Button, List, Searchbar, Text, useTheme } from "react-native-paper";
@@ -14,7 +14,7 @@ interface StartTechniqueSheetProps {
 	candidates: TechniqueItem[];
 	onPick: (id: string) => void;
 	onCreate: () => void;
-	onShowMore?: () => void;
+	onShowMore?: () => Promise<boolean>;
 }
 
 export function StartTechniqueSheet({
@@ -29,11 +29,20 @@ export function StartTechniqueSheet({
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const [query, setQuery] = useState("");
+	const [loading, setLoading] = useState(false);
 
 	const needle = query.trim().toLowerCase();
 	const shown = candidates.filter((c) =>
 		c.title.toLowerCase().includes(needle),
 	);
+	const findMore =
+		needle && shown.length === 0 && !loading ? onShowMore : undefined;
+
+	useEffect(() => {
+		if (!findMore) return;
+		setLoading(true);
+		findMore().then((loaded) => setLoading(!loaded));
+	}, [findMore]);
 
 	return (
 		<SheetFrame visible={visible} onDismiss={onDismiss}>
@@ -54,8 +63,9 @@ export function StartTechniqueSheet({
 					{t("technique.curriculum.sheet.moves", { title: fromTitle })}
 				</Text>
 			</View>
-			<View style={{ paddingHorizontal: space.lg, paddingTop: space.lg }}>
+			<View style={{ paddingHorizontal: space.xl, paddingTop: space.lg }}>
 				<Searchbar
+					style={{ backgroundColor: theme.colors.surfaceVariant }}
 					placeholder={t("technique.curriculum.sheet.search")}
 					value={query}
 					onChangeText={setQuery}
@@ -66,6 +76,7 @@ export function StartTechniqueSheet({
 					<List.Item
 						key={c.id}
 						title={c.title}
+						style={{ paddingLeft: space.sm }}
 						onPress={() => c.id && onPick(c.id)}
 						right={() => (
 							<View style={{ justifyContent: "center" }}>
@@ -76,7 +87,7 @@ export function StartTechniqueSheet({
 				))}
 				{onShowMore && (
 					<View
-						style={{ alignItems: "flex-start", paddingHorizontal: space.sm }}
+						style={{ alignItems: "flex-start", paddingHorizontal: space.md }}
 					>
 						<Button mode="text" icon="chevron-down" onPress={onShowMore}>
 							{t("technique.curriculum.sheet.more")}
@@ -87,7 +98,7 @@ export function StartTechniqueSheet({
 			<View
 				style={{
 					alignItems: "flex-start",
-					paddingHorizontal: space.sm,
+					paddingHorizontal: space.md,
 					paddingBottom: space.lg,
 				}}
 			>

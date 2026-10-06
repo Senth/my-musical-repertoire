@@ -61,14 +61,17 @@ export function cleanTechniqueDays(
 	).length;
 }
 
+export function compareQueueOrder(a: TechniqueItem, b: TechniqueItem): number {
+	return (
+		a.dateIntroduced.getTime() - b.dateIntroduced.getTime() ||
+		a.title.localeCompare(b.title)
+	);
+}
+
 export function notStartedQueue(techniques: TechniqueItem[]): TechniqueItem[] {
 	return techniques
 		.filter((t) => t.state === "not_started")
-		.sort(
-			(a, b) =>
-				a.dateIntroduced.getTime() - b.dateIntroduced.getTime() ||
-				a.title.localeCompare(b.title),
-		);
+		.sort(compareQueueOrder);
 }
 
 export function nextNotStarted(
