@@ -150,7 +150,11 @@ export default function TechniqueDetailScreen() {
 
 					<HistoryLink
 						onPress={() => router.push(`/technique/${id}/history`)}
-						style={{ paddingHorizontal: pageInset, marginTop: space.sm }}
+						style={{
+							paddingLeft: pageInset,
+							paddingRight: pageInset,
+							marginTop: space.sm,
+						}}
 					/>
 					{item.notes && (
 						<>

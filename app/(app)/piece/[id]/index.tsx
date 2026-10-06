@@ -328,7 +328,11 @@ export default function PieceDetailScreen() {
 
 						<HistoryLink
 							onPress={() => router.push(`/piece/${id}/history`)}
-							style={{ paddingHorizontal: pageInset, marginTop: space.sm }}
+							style={{
+								paddingLeft: pageInset,
+								paddingRight: pageInset,
+								marginTop: space.sm,
+							}}
 						/>
 						<Divider style={{ marginTop: space.xl }} />
 
