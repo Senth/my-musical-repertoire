@@ -1,7 +1,11 @@
 import type { TimeSignature } from "@/utils/time-signature";
 import type { ByMode, PracticeDrill, TechniqueHandsMode } from "./practice";
 
-export type TechniqueState = "active" | "maintenance" | "retired";
+export type TechniqueState =
+	| "not_started"
+	| "active"
+	| "maintenance"
+	| "retired";
 
 export type TechniqueType =
 	| "scale"
@@ -13,6 +17,7 @@ export type TechniqueType =
 	| "other";
 
 export const TECHNIQUE_STATES: TechniqueState[] = [
+	"not_started",
 	"active",
 	"maintenance",
 	"retired",
@@ -49,4 +54,5 @@ export interface TechniqueItem {
 	handsMode?: TechniqueHandsMode;
 	/** Defaults to `[]` when absent. */
 	activeDrills?: PracticeDrill[];
+	nudgeSnoozedUntil?: Date | null;
 }

@@ -8,7 +8,8 @@ import { defineConfig, devices } from "@playwright/test";
  * hand, so a run here never steals the one you are using.
  */
 const webPort =
-	basename(process.cwd()) === "my-musical-repertoire" ? 8055 : 8056;
+	Number(process.env.E2E_WEB_PORT) ||
+	(basename(process.cwd()) === "my-musical-repertoire" ? 8055 : 8056);
 
 export const AUTH_STATE = ".tmp/e2e/auth.json";
 

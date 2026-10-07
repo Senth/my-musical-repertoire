@@ -126,13 +126,15 @@ describe("filterPieces", () => {
 });
 
 describe("filterTechniques", () => {
-	it("hides retired techniques by default", () => {
+	it("hides retired techniques by default and shows not started ones", () => {
 		const items = [
 			makeTechnique({ id: "active", state: "active" }),
+			makeTechnique({ id: "queued", state: "not_started" }),
 			makeTechnique({ id: "retired", state: "retired" }),
 		];
 		expect(ids(filterTechniques(items, DEFAULT_TECHNIQUE_FILTERS))).toEqual([
 			"active",
+			"queued",
 		]);
 	});
 

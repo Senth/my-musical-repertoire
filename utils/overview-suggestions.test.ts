@@ -552,6 +552,15 @@ describe("suggestTechniques", () => {
 		expect(result.emptyStateKey).toBeNull();
 	});
 
+	it("never suggests a not started technique", () => {
+		const techs = [
+			makeTechnique({ id: "q1", state: "not_started" }),
+			makeTechnique({ id: "a1", state: "active" }),
+		];
+		const result = suggestTechniques(techs, NOW);
+		expect(result.suggestions.map((s) => s.tech.id)).toEqual(["a1"]);
+	});
+
 	it("returns allTechniquesPracticedToday when all eligible practiced today", () => {
 		const techs = [
 			makeTechnique({ id: "t1", state: "active", lastPracticedAt: TODAY }),

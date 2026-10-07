@@ -131,6 +131,9 @@
 			"delete": "Delete",
 			"archive": "Archive",
 			"practice": "Practice"
+		},
+		"technique": {
+			"curriculumMove": "{{title}}: move from Active to Maintenance"
 		}
 	},
 	"reason": {
@@ -149,6 +152,7 @@
 	},
 	"technique": {
 		"state": {
+			"not_started": "Not started",
 			"active": "Active",
 			"maintenance": "Maintenance",
 			"retired": "Retired"
@@ -194,6 +198,28 @@
 			"together": "Together",
 			"separate": "Separate",
 			"both": "Both"
+		},
+		"curriculum": {
+			"reasonTempo": "Clean at {{bpm}} BPM on {{days}} separate days.",
+			"reasonQuality": "Clean on {{days}} separate days.",
+			"next": "{{title}} is next in your list.",
+			"room": "There is room for a new technique.",
+			"start": "Start {{title}}",
+			"chooseAnother": "Choose another",
+			"add": "Add technique",
+			"notYet": "Not yet",
+			"snooze": {
+				"week": "For a week",
+				"twoWeeks": "For 2 weeks",
+				"month": "For a month"
+			},
+			"sheet": {
+				"title": "Start which technique?",
+				"moves": "{{title}} moves to maintenance.",
+				"search": "Search techniques",
+				"create": "Create a new technique",
+				"more": "Show more"
+			}
 		}
 	},
 	"error": {

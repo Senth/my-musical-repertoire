@@ -133,13 +133,17 @@ export function sanitizeTechniqueListPrefs(
 		: DEFAULT_TECHNIQUE_LIST_PREFS.sortKey;
 	const filters = asRecord(record.filters) ?? {};
 	const states = memberList<TechniqueState>(filters.states, TECHNIQUE_STATES);
+	const isPreNotStartedDefault = states?.join() === "active,maintenance";
 
 	return {
 		v: LIST_PREFS_SCHEMA_VERSION,
 		sortKey,
 		sortDir: sortDir(record.sortDir) ?? defaultDirFor(TECHNIQUE_SORTS, sortKey),
 		filters: {
-			states: states?.length ? states : DEFAULT_TECHNIQUE_FILTERS.states,
+			states:
+				states?.length && !isPreNotStartedDefault
+					? states
+					: DEFAULT_TECHNIQUE_FILTERS.states,
 			types: memberList<TechniqueType>(filters.types, TECHNIQUE_TYPES) ?? [],
 		},
 	};

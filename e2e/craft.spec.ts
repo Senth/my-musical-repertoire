@@ -25,11 +25,25 @@ async function open(page: Page, path: string, ready: string) {
 
 test.describe("craft", () => {
 	for (const { path, ready } of ROUTES) {
-		test(`${path} renders clean`, async ({ page }) => {
+		test(`${path} renders clean`, async ({ page, isMobile }) => {
 			const consoleErrors = collectConsoleErrors(page);
 			await open(page, path, ready);
 
 			await expectCleanPage(page);
+			if (isMobile) {
+				const viewport = page.viewportSize();
+				await page.setViewportSize({
+					width: 390,
+					height: viewport?.height ?? 844,
+				});
+				await page.evaluate(
+					() =>
+						new Promise((done) =>
+							requestAnimationFrame(() => requestAnimationFrame(done)),
+						),
+				);
+				await expectCleanPage(page);
+			}
 			expect(consoleErrors, `console output on ${path}`).toEqual([]);
 		});
 

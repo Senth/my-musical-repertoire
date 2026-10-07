@@ -3,13 +3,22 @@ import {
 	collection,
 	deleteDoc,
 	doc,
+	documentId,
 	getDoc,
+	getDocs,
+	limit,
 	onSnapshot,
+	orderBy,
+	type QueryConstraint,
+	type QuerySnapshot,
 	query,
+	startAfter,
 	Timestamp,
 	updateDoc,
+	where,
+	writeBatch,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { PracticeDrill, TechniqueHandsMode } from "@/models/practice";
@@ -42,9 +51,10 @@ interface FirestoreTechnique {
 	handsMode?: TechniqueHandsMode | null;
 	activeDrills?: PracticeDrill[] | null;
 	timeSignature?: unknown;
+	nudgeSnoozedUntil?: Timestamp | null;
 }
 
-function fromFirestore(
+export function fromFirestore(
 	id: string,
 	data: FirestoreTechnique,
 	userId: string,
@@ -66,13 +76,15 @@ function fromFirestore(
 		handsMode: data.handsMode ?? "separate",
 		activeDrills: data.activeDrills ?? [],
 		timeSignature: timeSignatureFromFirestore(data.timeSignature),
+		nudgeSnoozedUntil: data.nudgeSnoozedUntil?.toDate() ?? null,
 	};
 }
 
 const STATE_ORDER: Record<TechniqueState, number> = {
 	active: 0,
 	maintenance: 1,
-	retired: 2,
+	not_started: 2,
+	retired: 3,
 };
 
 function sortTechniques(items: TechniqueItem[]): TechniqueItem[] {
@@ -115,6 +127,81 @@ export function useTechniques() {
 	}, [user]);
 
 	return { techniques, loading };
+}
+
+export const QUEUE_PAGE = 20;
+
+const queuePage = (uid: string, ...after: QueryConstraint[]) =>
+	query(
+		collection(db, "users", uid, "techniques"),
+		where("state", "==", "not_started"),
+		orderBy("dateIntroduced"),
+		orderBy("title"),
+		...after,
+		limit(QUEUE_PAGE),
+	);
+
+export function useCurriculumTechniques(ids: string[]): {
+	techniques: TechniqueItem[];
+	showMore?: () => Promise<void>;
+	failed: boolean;
+} {
+	const { user } = useAuth();
+	const [own, setOwn] = useState<TechniqueItem[] | null>(null);
+	const [pages, setPages] = useState<QuerySnapshot[]>([]);
+	const [failed, setFailed] = useState(false);
+	const key = ids.slice(0, 30).join(",");
+	const uid = user?.uid;
+
+	useEffect(() => {
+		setOwn(null);
+		setPages([]);
+		setFailed(false);
+		if (!uid || !key) return;
+
+		const ref = collection(db, "users", uid, "techniques");
+		const unsubscribeOwn = onSnapshot(
+			query(ref, where(documentId(), "in", key.split(","))),
+			(snapshot) =>
+				setOwn(
+					snapshot.docs.map((d) =>
+						fromFirestore(d.id, d.data() as FirestoreTechnique, uid),
+					),
+				),
+		);
+		const unsubscribeQueue = onSnapshot(
+			queuePage(uid),
+			(first) => setPages((rest) => [first, ...rest.slice(1)]),
+			() => setFailed(true),
+		);
+		return () => {
+			unsubscribeOwn();
+			unsubscribeQueue();
+		};
+	}, [uid, key]);
+
+	const techniques = useMemo(() => {
+		if (!own || !uid || pages.length === 0) return [];
+		const seen = new Set(own.map((o) => o.id));
+		const queued = pages
+			.flatMap((p) => p.docs)
+			.filter((d) => !seen.has(d.id) && seen.add(d.id))
+			.map((d) => fromFirestore(d.id, d.data() as FirestoreTechnique, uid));
+		return [...own, ...queued];
+	}, [own, pages, uid]);
+
+	const last = pages.at(-1);
+	const showMore =
+		uid && last?.size === QUEUE_PAGE
+			? async () => {
+					const next = await getDocs(
+						queuePage(uid, startAfter(last.docs.at(-1))),
+					);
+					setPages((current) => [...current, next]);
+				}
+			: undefined;
+
+	return { techniques, showMore, failed };
 }
 
 export function useAddTechnique() {
@@ -175,14 +262,64 @@ export function useUpdateTechnique() {
 				| "activeDrills"
 			>
 		>,
+		previousState?: TechniqueState,
 	) => {
 		if (!user) throw new Error("Not authenticated");
 
 		const ref = doc(db, "users", user.uid, "techniques", techniqueId);
-		await awaitWrite(updateDoc(ref, updates));
+		const introduced =
+			updates.state === "active" &&
+			previousState !== undefined &&
+			previousState !== "active";
+		await awaitWrite(
+			updateDoc(
+				ref,
+				introduced ? { ...updates, dateIntroduced: new Date() } : updates,
+			),
+		);
 	};
 
 	return { updateTechnique };
+}
+
+export function useAdvanceTechnique() {
+	const { user } = useAuth();
+
+	const advance = async (fromId: string, toId: string | null) => {
+		if (!user) throw new Error("Not authenticated");
+
+		const batch = writeBatch(db);
+		batch.update(doc(db, "users", user.uid, "techniques", fromId), {
+			state: "maintenance",
+			nudgeSnoozedUntil: null,
+		});
+		if (toId) {
+			batch.update(doc(db, "users", user.uid, "techniques", toId), {
+				state: "active",
+				dateIntroduced: new Date(),
+			});
+		}
+		await awaitWrite(batch.commit());
+	};
+
+	return { advance };
+}
+
+export function useSnoozeTechniqueNudge() {
+	const { user } = useAuth();
+
+	const snooze = async (techniqueId: string, days: number) => {
+		if (!user) throw new Error("Not authenticated");
+
+		const ref = doc(db, "users", user.uid, "techniques", techniqueId);
+		await awaitWrite(
+			updateDoc(ref, {
+				nudgeSnoozedUntil: new Date(Date.now() + days * 86_400_000),
+			}),
+		);
+	};
+
+	return { snooze };
 }
 
 export function useDeleteTechnique() {

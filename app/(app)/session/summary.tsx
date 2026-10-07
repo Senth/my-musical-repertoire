@@ -1,17 +1,21 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
 import { AddNextSectionNudge } from "@/components/piece/AddNextSectionNudge";
+import { TechniqueCurriculumCard } from "@/components/technique/TechniqueCurriculumCard";
 import { LoadingScreen } from "@/components/ui/CenteredScreen";
+import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveSession } from "@/hooks/use-active-session";
+import { useTechniqueLogs } from "@/hooks/use-last-practice-log";
 import { usePieces, useUpdatePiece } from "@/hooks/use-pieces";
 import { useChangeSectionState } from "@/hooks/use-section-state";
 import { useAllSections } from "@/hooks/use-sections";
+import { useCurriculumTechniques } from "@/hooks/use-techniques";
 import type { Piece } from "@/models/piece";
 import type { BlockExecutionState, PlannedBlock } from "@/models/session";
 import { space } from "@/theme/tokens";
@@ -19,6 +23,11 @@ import { sectionNudge } from "@/utils/add-section-nudge";
 import { displayMinutes, minutesLabelKey } from "@/utils/format-minutes";
 import { blockSectionIds, planTotalMinutes } from "@/utils/session-planner";
 import { clearActiveSession } from "@/utils/session-storage";
+import {
+	CURRICULUM_LOG_LIMIT,
+	completedTechniqueIds,
+	summaryTechniqueNudge,
+} from "@/utils/technique-curriculum";
 
 /** Fixed column under the status icon, so the block lines up past it. */
 const SUMMARY_GLYPH_WIDTH = 20;
@@ -34,6 +43,20 @@ export default function SessionSummaryScreen() {
 	const { updatePiece } = useUpdatePiece();
 	const { changeSectionState } = useChangeSectionState();
 	const [busyPieceId, setBusyPieceId] = useState<string | null>(null);
+	const [error, setError] = useState<string | null>(null);
+	const techniqueIds = useMemo(
+		() =>
+			session
+				? completedTechniqueIds(session.plan.blocks, session.blockStates)
+				: [],
+		[session],
+	);
+	const { techniques, showMore, failed } =
+		useCurriculumTechniques(techniqueIds);
+	useEffect(() => {
+		if (failed) setError(t("error.firebase"));
+	}, [failed, t]);
+	const techniqueLogs = useTechniqueLogs(techniqueIds, CURRICULUM_LOG_LIMIT);
 
 	const handleDone = async () => {
 		if (user) {
@@ -137,6 +160,13 @@ export default function SessionSummaryScreen() {
 		(b) => b.status === "skipped",
 	).length;
 	const totalBlocks = session.plan.blocks.length;
+	const techniqueCard = summaryTechniqueNudge(
+		techniqueIds,
+		techniques,
+		techniqueLogs,
+		nudges.length > 0,
+		new Date(),
+	);
 
 	return (
 		<View
@@ -209,10 +239,22 @@ export default function SessionSummaryScreen() {
 					/>
 				))}
 
+				{techniqueCard && (
+					<TechniqueCurriculumCard
+						tech={techniqueCard.tech}
+						techniques={techniques}
+						nudge={techniqueCard.nudge}
+						showTitle
+						onShowMore={showMore}
+						onError={setError}
+					/>
+				)}
+
 				<Button mode="contained" onPress={handleDone}>
 					{t("screen.session.summary.done")}
 				</Button>
 			</ScreenContent>
+			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
 		</View>
 	);
 }

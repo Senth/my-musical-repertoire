@@ -83,6 +83,15 @@ describe("technique state and section state visuals", () => {
 		);
 	});
 
+	it("queues not started techniques on the section's dormant hue", () => {
+		expect(techniqueStateVisual("not_started", false)).toEqual(
+			sectionStateVisual("not_started", false),
+		);
+		expect(techniqueStateVisual("not_started", true)).toEqual(
+			sectionStateVisual("not_started", true),
+		);
+	});
+
 	it("retires techniques the way pieces are shelved", () => {
 		expect(techniqueStateVisual("retired", false).outlined).toBe(true);
 		expect(techniqueStateVisual("retired", false).tint).toBe(0);

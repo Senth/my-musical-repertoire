@@ -57,6 +57,9 @@ jest.mock("@/hooks/use-techniques", () => ({
 	}),
 	useDeleteTechnique: () => ({ deleteTechnique: jest.fn() }),
 }));
+jest.mock("@/hooks/use-last-practice-log", () => ({
+	useLastPracticeLog: () => ({ logs: [] }),
+}));
 jest.mock("@/hooks/use-practice-history", () => ({
 	usePracticeHistory: (scope: unknown) => mockReadHistory(scope),
 }));

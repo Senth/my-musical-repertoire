@@ -1142,6 +1142,14 @@ describe("pickTechnique", () => {
 		expect(pickTechnique(10, [], NOW)).toEqual([]);
 	});
 
+	it("never picks a not started technique", () => {
+		const ts: TechniqueItem[] = [
+			makeTechnique({ id: "q1", state: "not_started" }),
+			makeTechnique({ id: "q2", state: "not_started" }),
+		];
+		expect(pickTechnique(15, ts, NOW)).toEqual([]);
+	});
+
 	it("all from maintenance when active empty", () => {
 		const ts: TechniqueItem[] = [
 			makeTechnique({ id: "m1", state: "maintenance" as TechniqueState }),

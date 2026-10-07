@@ -10,6 +10,26 @@ import { makePiece, makeTechnique } from "./test-factories";
 const ids = (items: { id?: string }[]) => items.map((i) => i.id);
 
 describe("sortPieces", () => {
+	it("breaks ties in queue order, so the list agrees with the nudge", () => {
+		const items = [
+			makeTechnique({
+				id: "d",
+				title: "D major scale",
+				state: "not_started",
+				dateIntroduced: new Date("2026-05-02"),
+			}),
+			makeTechnique({
+				id: "g",
+				title: "G major scale",
+				state: "not_started",
+				dateIntroduced: new Date("2026-05-01"),
+			}),
+		];
+		expect(
+			ids(sortTechniqueItems(items, { key: "state", dir: "asc" }, {})),
+		).toEqual(["g", "d"]);
+	});
+
 	it("orders by score, highest first", () => {
 		const pieces = [
 			makePiece({ id: "a" }),
@@ -129,6 +149,18 @@ describe("sortPieces", () => {
 });
 
 describe("sortTechniqueItems", () => {
+	it("sorts status in the lifecycle order, not started first", () => {
+		const items = [
+			makeTechnique({ id: "retired", state: "retired" }),
+			makeTechnique({ id: "active", state: "active" }),
+			makeTechnique({ id: "queued", state: "not_started" }),
+			makeTechnique({ id: "maint", state: "maintenance" }),
+		];
+		expect(
+			ids(sortTechniqueItems(items, { key: "state", dir: "asc" }, {})),
+		).toEqual(["queued", "active", "maint", "retired"]);
+	});
+
 	it("keeps techniques with no type last", () => {
 		const items = [
 			makeTechnique({ id: "none", type: null }),
@@ -151,6 +183,26 @@ describe("sortTechniqueItems", () => {
 		expect(
 			ids(sortTechniqueItems(items, { key: "lastPracticed", dir: "asc" }, {})),
 		).toEqual(["never", "done"]);
+	});
+
+	it("breaks ties in queue order, so the list agrees with the nudge", () => {
+		const items = [
+			makeTechnique({
+				id: "d",
+				title: "D major scale",
+				state: "not_started",
+				dateIntroduced: new Date("2026-05-02"),
+			}),
+			makeTechnique({
+				id: "g",
+				title: "G major scale",
+				state: "not_started",
+				dateIntroduced: new Date("2026-05-01"),
+			}),
+		];
+		expect(
+			ids(sortTechniqueItems(items, { key: "state", dir: "asc" }, {})),
+		).toEqual(["g", "d"]);
 	});
 
 	it("orders by score, highest first", () => {

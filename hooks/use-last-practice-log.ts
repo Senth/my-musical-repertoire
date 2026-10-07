@@ -35,7 +35,10 @@ export function groupLogsByMode(
 	return out;
 }
 
-export function useLastPracticeLog(scope: LastLogScope): {
+export function useLastPracticeLog(
+	scope: LastLogScope,
+	count = MODE_LOG_LIMIT,
+): {
 	lastLog: NormalizedLastLog | null;
 	logsByMode: Record<ModeKey, NormalizedLastLog>;
 	/** The whole fetched window, newest first — what the multi-session criteria read. */
@@ -106,8 +109,11 @@ export function useLastPracticeLog(scope: LastLogScope): {
 			return;
 		}
 
-		const count = scopeType === "piece" ? 1 : MODE_LOG_LIMIT;
-		const q = query(ref, orderBy("date", "desc"), limit(count));
+		const q = query(
+			ref,
+			orderBy("date", "desc"),
+			limit(scopeType === "piece" ? 1 : count),
+		);
 
 		getDocs(q)
 			.then((snap) => {
@@ -125,7 +131,56 @@ export function useLastPracticeLog(scope: LastLogScope): {
 				setLogsByMode({});
 				setLoading(false);
 			});
-	}, [user, scopeType, pieceId, sectionId, techniqueId]);
+	}, [user, scopeType, pieceId, sectionId, techniqueId, count]);
 
 	return { lastLog, logsByMode, logs, loading };
+}
+
+export function useTechniqueLogs(
+	techniqueIds: string[],
+	count: number,
+): Record<string, NormalizedLastLog[]> {
+	const { user } = useAuth();
+	const [logsById, setLogsById] = useState<Record<string, NormalizedLastLog[]>>(
+		{},
+	);
+	const key = techniqueIds.join(",");
+
+	useEffect(() => {
+		if (!user || !key) {
+			setLogsById({});
+			return;
+		}
+		let cancelled = false;
+		Promise.all(
+			key.split(",").map(async (id) => {
+				const ref = collection(
+					db,
+					"users",
+					user.uid,
+					"techniques",
+					id,
+					"practiceLogs",
+				);
+				const snap = await getDocs(
+					query(ref, orderBy("date", "desc"), limit(count)),
+				);
+				const logs = snap.docs.map((d) =>
+					normalizeLastLog(d.data() as Record<string, unknown>, "technique"),
+				);
+				return [id, logs] as const;
+			}),
+		)
+			.then((entries) => {
+				if (!cancelled) setLogsById(Object.fromEntries(entries));
+			})
+			.catch(() => {
+				if (!cancelled) setLogsById({});
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [user, key, count]);
+
+	return logsById;
 }

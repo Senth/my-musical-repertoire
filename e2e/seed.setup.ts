@@ -26,7 +26,7 @@ import { deleteApp, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { SEED_IDS, SEED_USER } from "@/e2e/support/app";
 import type { PieceState } from "@/models/piece";
-import { PracticeMistakes } from "@/models/practice";
+import { type ByMode, PracticeMistakes } from "@/models/practice";
 import type { SectionState } from "@/models/section";
 import type { TechniqueState } from "@/models/technique";
 import {
@@ -55,7 +55,6 @@ import { nextPracticeDaysSinceSpan } from "@/utils/span-cadence";
  * Ids come from `e2e/support/app.ts`, which is what makes them a contract: the
  * same constants build the routes the specs wait on. Overwriting a fixed id
  * twice is what makes the seed idempotent.
- *
  */
 
 /** Ports come from firebase.json, like everywhere else that points at the suite. */
@@ -78,7 +77,7 @@ const DELETE_BATCH_LIMIT = 450;
 
 /**
  * The repertoire the fixture carries, matching `.ai/config.toml`: four pieces,
- * two techniques. The field lists mirror the add flows — see the
+ * three techniques. The field lists mirror the add flows — see the
  * header comment — not a private idea of what a piece looks like.
  */
 const PIECES: {
@@ -188,6 +187,11 @@ const TECHNIQUES: {
 }[] = [
 	{ id: SEED_IDS.scale, title: "C major scale, two octaves", state: "active" },
 	{ id: SEED_IDS.hanon, title: "Hanon No. 1", state: "maintenance" },
+	{
+		id: SEED_IDS.gMajor,
+		title: "G major scale, two octaves",
+		state: "not_started",
+	},
 ];
 
 /**
@@ -329,6 +333,10 @@ setup("seed the emulator fixture", async () => {
 		yesterday.setDate(yesterday.getDate() - 1);
 		const twoDaysAgo = new Date(now);
 		twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+		const threeDaysAgo = new Date(now);
+		threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+		const fourDaysAgo = new Date(now);
+		fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
 		const pieceRef = doc(userRoot, "pieces", SEED_IDS.invention);
 		let lastPracticed: Date | null = null;
 		let practiceDaysSinceSpan = 0;
@@ -407,45 +415,76 @@ setup("seed the emulator fixture", async () => {
 		});
 		await runThrough.commit();
 
+		// Three clean days make the C major scale secure, so its detail route
+		// carries the curriculum card offering G major (#20).
 		const techniqueRef = doc(userRoot, "techniques", SEED_IDS.scale);
-		await updateDoc(techniqueRef, { activeDrills: ["staccato"] });
-		const techniqueEntries: ModeEntry[] = [
-			{ hands: "LH", drill: null, bpm: 88, quality: 4, effort: 2 },
-			{ hands: "RH", drill: null, bpm: 92, quality: 4, effort: 2 },
-			{ hands: "LH", drill: "staccato", bpm: 64, quality: 3, effort: 3 },
-			{ hands: "RH", drill: "staccato", bpm: 68, quality: 3, effort: 3 },
-		];
-		for (const entry of techniqueEntries) {
-			await setDoc(doc(collection(techniqueRef, "practiceLogs")), {
-				date: Timestamp.fromDate(yesterday),
-				quality: entry.quality,
-				effort: entry.effort,
-				achievedBpm: entry.bpm ?? null,
-				hands: entry.hands,
-				drill: entry.drill ?? null,
-				sessionId: "seed-scale-practice",
-			});
-		}
-		const byMode = mergeByMode({}, techniqueEntries, yesterday);
-		const derived = deriveFromByMode(byMode);
 		await updateDoc(techniqueRef, {
-			byMode,
+			activeDrills: ["staccato"],
+			dateIntroduced: fourDaysAgo,
+		});
+		let scaleByMode: ByMode = {};
+		for (const save of [
+			{
+				date: threeDaysAgo,
+				entries: [
+					{ hands: "HT", drill: null, bpm: null, quality: 4, effort: 2 },
+				] satisfies ModeEntry[],
+			},
+			{
+				date: twoDaysAgo,
+				entries: [
+					{ hands: "HT", drill: null, bpm: null, quality: 4, effort: 2 },
+				] satisfies ModeEntry[],
+			},
+			{
+				date: yesterday,
+				entries: [
+					{ hands: "LH", drill: null, bpm: 88, quality: 4, effort: 2 },
+					{ hands: "RH", drill: null, bpm: 92, quality: 4, effort: 2 },
+					{ hands: "LH", drill: "staccato", bpm: 64, quality: 3, effort: 3 },
+					{ hands: "RH", drill: "staccato", bpm: 68, quality: 3, effort: 3 },
+				] satisfies ModeEntry[],
+			},
+		]) {
+			for (const entry of save.entries) {
+				await setDoc(doc(collection(techniqueRef, "practiceLogs")), {
+					date: Timestamp.fromDate(save.date),
+					quality: entry.quality,
+					effort: entry.effort,
+					achievedBpm: entry.bpm ?? null,
+					hands: entry.hands,
+					drill: entry.drill ?? null,
+					sessionId: `seed-scale-practice-${save.date.getTime()}`,
+				});
+			}
+			scaleByMode = mergeByMode(scaleByMode, save.entries, save.date);
+		}
+		const derived = deriveFromByMode(scaleByMode);
+		await updateDoc(techniqueRef, {
+			byMode: scaleByMode,
 			lastPracticedAt: derived.lastPracticed ?? yesterday,
 			lastQuality: derived.quality,
 			lastEffort: derived.effort,
 			lastAchievedTempoBpm: derived.bpm,
 		});
 
-		for (const [ref, count, date] of [
-			[doc(pieceRef, "sections", SEED_IDS.exposition), 3, twoDaysAgo],
-			[doc(pieceRef, "sections", "seed-invention-middle"), 1, yesterday],
-			[pieceRef, 1, now],
-			[techniqueRef, 4, yesterday],
+		for (const [ref, dates] of [
+			[
+				doc(pieceRef, "sections", SEED_IDS.exposition),
+				[twoDaysAgo, twoDaysAgo, twoDaysAgo],
+			],
+			[doc(pieceRef, "sections", "seed-invention-middle"), [yesterday]],
+			[pieceRef, [now]],
+			[
+				techniqueRef,
+				[threeDaysAgo, twoDaysAgo, yesterday, yesterday, yesterday, yesterday],
+			],
 		] as const) {
 			const logs = await getDocs(collection(ref, "practiceLogs"));
-			expect(logs.size).toBe(count);
+			expect(logs.docs.map((log) => log.data().date.toMillis()).sort()).toEqual(
+				dates.map((date) => date.getTime()).sort(),
+			);
 			for (const log of logs.docs) {
-				expect(log.data().date.toMillis()).toBe(date.getTime());
 				expect(log.data()).not.toHaveProperty("note");
 				expect(log.data()).not.toHaveProperty("source");
 			}

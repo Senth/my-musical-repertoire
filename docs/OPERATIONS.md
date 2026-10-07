@@ -16,6 +16,11 @@ so `yarn e2e` never writes into the dev project. The port pairs follow the same
 rule: **main checkout takes the lower number, a worktree the higher**, decided from
 the directory name.
 
+Every worktree shares 8056, and a web server serves the code of the checkout that
+started it. `scripts/dev-stack.sh up` therefore refuses a server on its web port that
+it did not start itself; when a sibling worktree holds 8056, run both commands with
+`E2E_WEB_PORT=<free port>` (`E2E_WEB_PORT=8057 scripts/dev-stack.sh up && E2E_WEB_PORT=8057 yarn e2e`).
+
 This project owns **8050-8056** outright. The sibling `home-backlog` owns 8060-8064
 and 8081, so neither repo's stack can ever take a port the other is using — which
 matters because both are Expo web apps and Expo's own default is 8081.

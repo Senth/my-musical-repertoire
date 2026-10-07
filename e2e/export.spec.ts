@@ -36,9 +36,9 @@ test.describe("data export", () => {
 
 		expect(data.app).toBe("my-musical-repertoire");
 		expect(Number.isNaN(Date.parse(data.exportedAt))).toBe(false);
-		// The fixture holds four pieces and two techniques; see .ai/config.toml.
+		// The fixture holds four pieces and three techniques; see .ai/config.toml.
 		expect(data.pieces).toHaveLength(4);
-		expect(data.techniques).toHaveLength(2);
+		expect(data.techniques).toHaveLength(3);
 		expect(Array.isArray(data.sessionPresets)).toBe(true);
 	});
 });

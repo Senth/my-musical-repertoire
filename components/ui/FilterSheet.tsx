@@ -1,4 +1,5 @@
-import { ScrollView, View } from "react-native";
+import { type ReactNode, useEffect } from "react";
+import { Platform, ScrollView, View } from "react-native";
 import {
 	Button,
 	Chip,
@@ -48,22 +49,26 @@ interface FilterSheetProps {
 	doneLabel: string;
 }
 
-/**
- * Config-driven filter sheet: bottom-anchored on compact, a centred card on
- * wide. Every tap applies immediately — the list behind updates as you go, so
- * there is no draft state and no Apply/Cancel to get wrong.
- */
-export function FilterSheet({
+export function SheetFrame({
 	visible,
 	onDismiss,
-	title,
-	sections,
-	onClearAll,
-	clearAllLabel,
-	doneLabel,
-}: FilterSheetProps) {
+	children,
+}: {
+	visible: boolean;
+	onDismiss: () => void;
+	children: ReactNode;
+}) {
 	const theme = useTheme();
 	const isCompact = useIsCompact();
+
+	useEffect(() => {
+		if (!visible || Platform.OS !== "web") return;
+		const onKey = (event: KeyboardEvent) => {
+			if (event.key === "Escape") onDismiss();
+		};
+		document.addEventListener("keydown", onKey, true);
+		return () => document.removeEventListener("keydown", onKey, true);
+	}, [visible, onDismiss]);
 
 	return (
 		<Portal>
@@ -85,89 +90,112 @@ export function FilterSheet({
 					overflow: "hidden",
 				}}
 			>
-				<View style={{ paddingHorizontal: space.xl, paddingTop: space.xl }}>
-					<Text variant="titleLarge">{title}</Text>
-				</View>
-
-				<ScrollView
-					contentContainerStyle={{
-						paddingHorizontal: space.xl,
-						paddingVertical: space.lg,
-						gap: space.xl,
-					}}
-				>
-					{sections.map((section) => (
-						<View key={section.id} style={{ gap: space.sm }}>
-							<Text
-								variant="labelLarge"
-								style={{ color: theme.colors.onSurfaceVariant }}
-							>
-								{section.title}
-							</Text>
-							{section.type === "multi" ? (
-								<View
-									style={{
-										flexDirection: "row",
-										flexWrap: "wrap",
-										gap: space.sm,
-									}}
-								>
-									{section.options.map((option) => (
-										<Chip
-											key={option.value}
-											compact
-											showSelectedCheck
-											selected={section.selected.includes(option.value)}
-											onPress={() => section.onToggle(option.value)}
-										>
-											{option.label}
-										</Chip>
-									))}
-								</View>
-							) : (
-								<View style={{ flexDirection: "row", gap: space.md }}>
-									<TextInput
-										mode="outlined"
-										dense
-										style={{ flex: 1 }}
-										label={section.minLabel}
-										value={section.min}
-										keyboardType="number-pad"
-										onChangeText={section.onChangeMin}
-									/>
-									<TextInput
-										mode="outlined"
-										dense
-										style={{ flex: 1 }}
-										label={section.maxLabel}
-										value={section.max}
-										keyboardType="number-pad"
-										onChangeText={section.onChangeMax}
-									/>
-								</View>
-							)}
-						</View>
-					))}
-				</ScrollView>
-
-				<Divider />
-				<View
-					style={{
-						flexDirection: "row",
-						justifyContent: "space-between",
-						alignItems: "center",
-						paddingHorizontal: space.lg,
-						paddingVertical: space.md,
-					}}
-				>
-					<Button mode="text" onPress={onClearAll}>
-						{clearAllLabel}
-					</Button>
-					<Button mode="contained" onPress={onDismiss}>
-						{doneLabel}
-					</Button>
-				</View>
+				{children}
 			</Modal>
 		</Portal>
+	);
+}
+
+/**
+ * Config-driven filter sheet: bottom-anchored on compact, a centred card on
+ * wide. Every tap applies immediately — the list behind updates as you go, so
+ * there is no draft state and no Apply/Cancel to get wrong.
+ */
+export function FilterSheet({
+	visible,
+	onDismiss,
+	title,
+	sections,
+	onClearAll,
+	clearAllLabel,
+	doneLabel,
+}: FilterSheetProps) {
+	const theme = useTheme();
+
+	return (
+		<SheetFrame visible={visible} onDismiss={onDismiss}>
+			<View style={{ paddingHorizontal: space.xl, paddingTop: space.xl }}>
+				<Text variant="titleLarge">{title}</Text>
+			</View>
+
+			<ScrollView
+				contentContainerStyle={{
+					paddingHorizontal: space.xl,
+					paddingVertical: space.lg,
+					gap: space.xl,
+				}}
+			>
+				{sections.map((section) => (
+					<View key={section.id} style={{ gap: space.sm }}>
+						<Text
+							variant="labelLarge"
+							style={{ color: theme.colors.onSurfaceVariant }}
+						>
+							{section.title}
+						</Text>
+						{section.type === "multi" ? (
+							<View
+								style={{
+									flexDirection: "row",
+									flexWrap: "wrap",
+									gap: space.sm,
+								}}
+							>
+								{section.options.map((option) => (
+									<Chip
+										key={option.value}
+										compact
+										showSelectedCheck
+										selected={section.selected.includes(option.value)}
+										onPress={() => section.onToggle(option.value)}
+									>
+										{option.label}
+									</Chip>
+								))}
+							</View>
+						) : (
+							<View style={{ flexDirection: "row", gap: space.md }}>
+								<TextInput
+									mode="outlined"
+									dense
+									style={{ flex: 1 }}
+									label={section.minLabel}
+									value={section.min}
+									keyboardType="number-pad"
+									onChangeText={section.onChangeMin}
+								/>
+								<TextInput
+									mode="outlined"
+									dense
+									style={{ flex: 1 }}
+									label={section.maxLabel}
+									value={section.max}
+									keyboardType="number-pad"
+									onChangeText={section.onChangeMax}
+								/>
+							</View>
+						)}
+					</View>
+				))}
+			</ScrollView>
+
+			<Divider />
+			<View
+				style={{
+					flexDirection: "row",
+					justifyContent: "space-between",
+					alignItems: "center",
+					paddingHorizontal: space.lg,
+					paddingVertical: space.md,
+				}}
+			>
+				<Button mode="text" onPress={onClearAll}>
+					{clearAllLabel}
+				</Button>
+				<Button mode="contained" onPress={onDismiss}>
+					{doneLabel}
+				</Button>
+			</View>
+		</SheetFrame>
 	);
 }
