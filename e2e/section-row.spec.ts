@@ -1,9 +1,9 @@
 import { expect, type Locator, test } from "@playwright/test";
-import { collectConsoleErrors, SEED_IDS, t } from "./support/app";
+import { collectConsoleErrors, SEED_IDS, t } from "@/e2e/support/app";
 
 const INVENTION_SECTIONS = [
-	{ name: "Exposition", bars: "Bars 1–6" },
-	{ name: "Middle entries", bars: "Bars 7–14" },
+	{ name: "Exposition", bars: "Bars 1–6", bpm: 72 },
+	{ name: "Middle entries", bars: "Bars 7–14", bpm: 60 },
 ];
 
 async function chipAppearance(pill: Locator, label: string) {
@@ -97,6 +97,7 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 	);
 	await expect(chip).toHaveAttribute("aria-expanded", "true");
 	await expect(page.getByText(t("section.state.maintenance"))).toBeVisible();
+	await expect(page.getByRole("menuitem").first()).toBeFocused();
 	expect(consoleErrors).toEqual([]);
 	await expect(
 		page.getByText(t("screen.pieceSections.editSection")),
@@ -315,12 +316,12 @@ for (const width of [412, 1280]) {
 		expect(row.height).toBe(72);
 		expect(pillBox.height).toBe(20);
 		expect(pillBox.y - name.y - name.height).toBe(4);
-		expect(row.y - previous.y).toBe(72);
+		expect(row.y - previous.y).toBe(78);
 		expect(pillBox.x).toBe(name.x);
 		if (width === 412) {
 			expect(name.x).toBe(16);
-			expect(name.y).toBe(492);
-			expect(pillBox.y).toBe(520);
+			expect(name.y).toBe(558);
+			expect(pillBox.y).toBe(586);
 		}
 	});
 }
@@ -499,7 +500,7 @@ test("whole-piece practice flags only when asked and keeps run-through checkboxe
 		const row = playButton.locator("xpath=../..");
 		await expect(row.getByText(section.name, { exact: true })).toBeVisible();
 		await expect(row.getByText(section.bars, { exact: true })).toBeVisible();
-		await expect(row).not.toContainText(/\/ 96 BPM/);
+		await expect(row).toContainText(`${section.bpm} / 96 BPM`);
 	}
 	await expect(
 		page.getByRole("checkbox", { name: /Flag section/ }),

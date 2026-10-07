@@ -6,7 +6,6 @@ import { View } from "react-native";
 import {
 	Appbar,
 	Divider,
-	Menu,
 	SegmentedButtons,
 	useTheme,
 } from "react-native-paper";
@@ -14,6 +13,7 @@ import { PracticeAppbarContent } from "@/components/practice/CoachShell";
 import { EstimationField } from "@/components/practice/EstimationField";
 import { HandTabs } from "@/components/practice/HandTabs";
 import { PracticeFooter } from "@/components/practice/PracticeFooter";
+import { PracticeHeaderMenu } from "@/components/practice/PracticeHeaderMenu";
 import { PracticeMeta } from "@/components/practice/PracticeMeta";
 import { StandingNote } from "@/components/practice/StandingNote";
 import { TempoControl } from "@/components/practice/TempoControl";
@@ -155,7 +155,6 @@ export function TechniquePracticeContent({
 	const handleBpmBlur = (text: string) => {
 		setBpmError(validateBpm(text));
 	};
-	const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -253,34 +252,14 @@ export function TechniquePracticeContent({
 							subtitle: t("screen.practice.heading.technique"),
 						}}
 					/>
-					<Menu
-						visible={headerMenuVisible}
-						onDismiss={() => setHeaderMenuVisible(false)}
-						anchor={
-							<Appbar.Action
-								icon="dots-vertical"
-								accessibilityLabel={t("a11y.menu.options")}
-								onPress={() => setHeaderMenuVisible(true)}
-							/>
-						}
-					>
-						<Menu.Item
-							leadingIcon="pencil"
-							onPress={() => {
-								setHeaderMenuVisible(false);
-								router.push(`/technique/${techniqueId}/edit`);
-							}}
-							title={t("screen.techniques.menu.edit")}
-						/>
-						<Menu.Item
-							leadingIcon="delete"
-							onPress={() => {
-								setHeaderMenuVisible(false);
-								setDeleteDialogVisible(true);
-							}}
-							title={t("screen.techniques.menu.delete")}
-						/>
-					</Menu>
+					<PracticeHeaderMenu
+						onEdit={() => router.push(`/technique/${techniqueId}/edit`)}
+						onDelete={() => setDeleteDialogVisible(true)}
+						labels={{
+							edit: t("screen.techniques.menu.edit"),
+							delete: t("screen.techniques.menu.delete"),
+						}}
+					/>
 				</Appbar.Header>
 			)}
 

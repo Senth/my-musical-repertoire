@@ -1,6 +1,10 @@
 import { expect, type Page, test } from "@playwright/test";
+import {
+	collectConsoleErrors,
+	expectCleanPage,
+	ROUTES,
+} from "@/e2e/support/app";
 import { touchTarget } from "@/theme/tokens";
-import { collectConsoleErrors, ROUTES } from "./support/app";
 
 /**
  * The cross-cutting checks a person would otherwise re-do by eye on every
@@ -11,9 +15,6 @@ import { collectConsoleErrors, ROUTES } from "./support/app";
  * judge what a machine cannot. If a finding can be measured, it belongs in this
  * file instead.
  */
-
-/** `screen.overview.title` and friends, rendered instead of translated. */
-const RAW_KEY = /(^|\s)[a-z][a-zA-Z0-9]*(\.[a-z][a-zA-Z0-9]*){2,}(\s|$)/;
 
 async function open(page: Page, path: string, ready: string) {
 	await page.goto(path);
@@ -28,34 +29,7 @@ test.describe("craft", () => {
 			const consoleErrors = collectConsoleErrors(page);
 			await open(page, path, ready);
 
-			// No untranslated key on screen.
-			const rawKeys = await page.evaluate((source) => {
-				const re = new RegExp(source);
-				const found: string[] = [];
-				const walker = document.createTreeWalker(
-					document.body,
-					NodeFilter.SHOW_TEXT,
-				);
-				for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-					const text = n.textContent?.trim() ?? "";
-					if (text && re.test(text)) found.push(text);
-				}
-				return found;
-			}, RAW_KEY.source);
-			expect(rawKeys, `raw t() keys rendered on ${path}`).toEqual([]);
-
-			// The page must never scroll sideways. Phone width is where this
-			// breaks; on desktop it is a layout bug of a different kind.
-			const overflow = () =>
-				page.evaluate(
-					() =>
-						document.documentElement.scrollWidth -
-						document.documentElement.clientWidth,
-				);
-			expect(
-				await overflow(),
-				`horizontal overflow on ${path}`,
-			).toBeLessThanOrEqual(1);
+			await expectCleanPage(page);
 			if (isMobile) {
 				const viewport = page.viewportSize();
 				await page.setViewportSize({
@@ -68,12 +42,8 @@ test.describe("craft", () => {
 							requestAnimationFrame(() => requestAnimationFrame(done)),
 						),
 				);
-				expect(
-					await overflow(),
-					`horizontal overflow on ${path} at 390px`,
-				).toBeLessThanOrEqual(1);
+				await expectCleanPage(page);
 			}
-
 			expect(consoleErrors, `console output on ${path}`).toEqual([]);
 		});
 

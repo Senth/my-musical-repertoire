@@ -1,4 +1,4 @@
-import { test as setup } from "@playwright/test";
+import { expect, test as setup } from "@playwright/test";
 import {
 	deleteApp as deleteClientApp,
 	initializeApp as initializeClientApp,
@@ -13,18 +13,28 @@ import {
 	connectFirestoreEmulator,
 	doc,
 	type Firestore,
+	getDoc,
 	getDocs,
 	getFirestore,
 	serverTimestamp,
 	setDoc,
+	Timestamp,
+	updateDoc,
 	writeBatch,
 } from "firebase/firestore";
 import { deleteApp, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { SEED_IDS, SEED_USER } from "@/e2e/support/app";
 import type { PieceState } from "@/models/piece";
+import { type ByMode, PracticeMistakes } from "@/models/practice";
 import type { SectionState } from "@/models/section";
 import type { TechniqueState } from "@/models/technique";
-import { SEED_IDS, SEED_USER } from "./support/app";
+import {
+	deriveFromByMode,
+	type ModeEntry,
+	mergeByMode,
+} from "@/utils/practice-modes";
+import { nextPracticeDaysSinceSpan } from "@/utils/span-cadence";
 
 /**
  * Seeds the emulator programmatically, at the start of every `yarn e2e` — it is
@@ -45,13 +55,6 @@ import { SEED_IDS, SEED_USER } from "./support/app";
  * Ids come from `e2e/support/app.ts`, which is what makes them a contract: the
  * same constants build the routes the specs wait on. Overwriting a fixed id
  * twice is what makes the seed idempotent.
- *
- * Cold-start rule (see `.ai/config.toml`): no practice history, so every piece
- * reads as never practised. A warm fixture is a dated practiceLog written here
- * — the run-through shape lives in `hooks/use-practices.ts` `savePractice` —
- * not a new export to babysit. The one exception is the C major scale: three
- * clean days of technique logs make it secure, so the craft sweep measures the
- * curriculum card on its detail route (#20).
  */
 
 /** Ports come from firebase.json, like everywhere else that points at the suite. */
@@ -74,7 +77,7 @@ const DELETE_BATCH_LIMIT = 450;
 
 /**
  * The repertoire the fixture carries, matching `.ai/config.toml`: four pieces,
- * three techniques, cold-start but for one secure scale. The field lists mirror the add flows — see the
+ * three techniques. The field lists mirror the add flows — see the
  * header comment — not a private idea of what a piece looks like.
  */
 const PIECES: {
@@ -181,14 +184,8 @@ const TECHNIQUES: {
 	id: string;
 	title: string;
 	state: TechniqueState;
-	cleanDays?: number;
 }[] = [
-	{
-		id: SEED_IDS.scale,
-		title: "C major scale, two octaves",
-		state: "active",
-		cleanDays: 3,
-	},
+	{ id: SEED_IDS.scale, title: "C major scale, two octaves", state: "active" },
 	{ id: SEED_IDS.hanon, title: "Hanon No. 1", state: "maintenance" },
 	{
 		id: SEED_IDS.gMajor,
@@ -196,14 +193,6 @@ const TECHNIQUES: {
 		state: "not_started",
 	},
 ];
-
-/** Noon, `n` days before now: clear of the 3am day boundary either way. */
-function daysAgo(n: number): Date {
-	const date = new Date();
-	date.setDate(date.getDate() - n);
-	date.setHours(12, 0, 0, 0);
-	return date;
-}
 
 /**
  * Deletes every document under the fixture account, children before parents —
@@ -326,29 +315,195 @@ setup("seed the emulator fixture", async () => {
 		}
 
 		for (const technique of TECHNIQUES) {
-			const cleanDays = technique.cleanDays ?? 0;
-			const ref = doc(userRoot, "techniques", technique.id);
-			await setDoc(ref, {
+			await setDoc(doc(userRoot, "techniques", technique.id), {
 				title: technique.title,
 				state: technique.state,
 				type: null,
 				targetTempoBpm: null,
 				notes: null,
-				dateIntroduced: cleanDays ? daysAgo(cleanDays + 1) : new Date(),
-				lastPracticedAt: cleanDays ? daysAgo(1) : null,
+				dateIntroduced: new Date(),
+				lastPracticedAt: null,
 				handsMode: "separate",
 				activeDrills: [],
 			});
-			for (let day = 1; day <= cleanDays; day++) {
-				await setDoc(doc(ref, "practiceLogs", `seed-day-${day}`), {
-					date: daysAgo(day),
-					quality: 4,
-					effort: 2,
-					achievedBpm: null,
-					hands: "LH",
-					drill: null,
-					sessionId: null,
+		}
+
+		const now = new Date();
+		const yesterday = new Date(now);
+		yesterday.setDate(yesterday.getDate() - 1);
+		const twoDaysAgo = new Date(now);
+		twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+		const threeDaysAgo = new Date(now);
+		threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+		const fourDaysAgo = new Date(now);
+		fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+		const pieceRef = doc(userRoot, "pieces", SEED_IDS.invention);
+		let lastPracticed: Date | null = null;
+		let practiceDaysSinceSpan = 0;
+		for (const save of [
+			{
+				sectionId: SEED_IDS.exposition,
+				date: twoDaysAgo,
+				entries: [
+					{ hands: "LH", drill: null, bpm: 80, quality: 4, effort: 3 },
+					{ hands: "RH", drill: null, bpm: 84, quality: 4, effort: 3 },
+					{ hands: "HT", drill: null, bpm: 72, quality: 4, effort: 3 },
+				] satisfies ModeEntry[],
+			},
+			{
+				sectionId: "seed-invention-middle",
+				date: yesterday,
+				entries: [
+					{ hands: "HT", drill: null, bpm: 60, quality: 3, effort: 4 },
+				] satisfies ModeEntry[],
+			},
+		]) {
+			const sectionRef = doc(pieceRef, "sections", save.sectionId);
+			for (const entry of save.entries) {
+				await setDoc(doc(collection(sectionRef, "practiceLogs")), {
+					date: Timestamp.fromDate(save.date),
+					quality: entry.quality,
+					effort: entry.effort,
+					achievedBpm: entry.bpm ?? null,
+					hands: entry.hands,
+					drill: entry.drill ?? null,
+					triggeredFrom: "section-panel",
+					sessionId: `seed-${save.sectionId}-practice`,
 				});
+			}
+			const byMode = mergeByMode({}, save.entries, save.date);
+			const derived = deriveFromByMode(byMode);
+			await updateDoc(sectionRef, {
+				byMode,
+				lastPracticed: derived.lastPracticed ?? save.date,
+				lastQuality: derived.quality,
+				lastEffort: derived.effort,
+			});
+			practiceDaysSinceSpan = nextPracticeDaysSinceSpan(
+				practiceDaysSinceSpan,
+				lastPracticed,
+				save.date,
+			);
+			lastPracticed = save.date;
+			await updateDoc(pieceRef, {
+				lastPracticed: save.date,
+				...(derived.bpm != null ? { lastAchievedTempoBpm: derived.bpm } : {}),
+				practiceDaysSinceSpan,
+			});
+		}
+
+		const runThrough = writeBatch(db);
+		runThrough.set(doc(collection(pieceRef, "practiceLogs")), {
+			date: Timestamp.fromDate(now),
+			technicalMistakes: PracticeMistakes.some,
+			memoryMistakes: PracticeMistakes.few,
+			achievedBpm: 72,
+			flaggedSectionIds: ["seed-invention-middle"],
+			triggeredFrom: "full-piece",
+			sessionId: "seed-invention-run-through",
+		});
+		runThrough.update(pieceRef, {
+			lastPracticed: now,
+			lastTechnicalMistakes: PracticeMistakes.some,
+			lastMemoryMistakes: PracticeMistakes.few,
+			lastAchievedTempoBpm: 72,
+			practiceDaysSinceSpan: nextPracticeDaysSinceSpan(
+				practiceDaysSinceSpan,
+				lastPracticed,
+				now,
+			),
+		});
+		await runThrough.commit();
+
+		// Three clean days make the C major scale secure, so its detail route
+		// carries the curriculum card offering G major (#20).
+		const techniqueRef = doc(userRoot, "techniques", SEED_IDS.scale);
+		await updateDoc(techniqueRef, {
+			activeDrills: ["staccato"],
+			dateIntroduced: fourDaysAgo,
+		});
+		let scaleByMode: ByMode = {};
+		for (const save of [
+			{
+				date: threeDaysAgo,
+				entries: [
+					{ hands: "HT", drill: null, bpm: null, quality: 4, effort: 2 },
+				] satisfies ModeEntry[],
+			},
+			{
+				date: twoDaysAgo,
+				entries: [
+					{ hands: "HT", drill: null, bpm: null, quality: 4, effort: 2 },
+				] satisfies ModeEntry[],
+			},
+			{
+				date: yesterday,
+				entries: [
+					{ hands: "LH", drill: null, bpm: 88, quality: 4, effort: 2 },
+					{ hands: "RH", drill: null, bpm: 92, quality: 4, effort: 2 },
+					{ hands: "LH", drill: "staccato", bpm: 64, quality: 3, effort: 3 },
+					{ hands: "RH", drill: "staccato", bpm: 68, quality: 3, effort: 3 },
+				] satisfies ModeEntry[],
+			},
+		]) {
+			for (const entry of save.entries) {
+				await setDoc(doc(collection(techniqueRef, "practiceLogs")), {
+					date: Timestamp.fromDate(save.date),
+					quality: entry.quality,
+					effort: entry.effort,
+					achievedBpm: entry.bpm ?? null,
+					hands: entry.hands,
+					drill: entry.drill ?? null,
+					sessionId: `seed-scale-practice-${save.date.getTime()}`,
+				});
+			}
+			scaleByMode = mergeByMode(scaleByMode, save.entries, save.date);
+		}
+		const derived = deriveFromByMode(scaleByMode);
+		await updateDoc(techniqueRef, {
+			byMode: scaleByMode,
+			lastPracticedAt: derived.lastPracticed ?? yesterday,
+			lastQuality: derived.quality,
+			lastEffort: derived.effort,
+			lastAchievedTempoBpm: derived.bpm,
+		});
+
+		for (const [ref, dates] of [
+			[
+				doc(pieceRef, "sections", SEED_IDS.exposition),
+				[twoDaysAgo, twoDaysAgo, twoDaysAgo],
+			],
+			[doc(pieceRef, "sections", "seed-invention-middle"), [yesterday]],
+			[pieceRef, [now]],
+			[
+				techniqueRef,
+				[threeDaysAgo, twoDaysAgo, yesterday, yesterday, yesterday, yesterday],
+			],
+		] as const) {
+			const logs = await getDocs(collection(ref, "practiceLogs"));
+			expect(logs.docs.map((log) => log.data().date.toMillis()).sort()).toEqual(
+				dates.map((date) => date.getTime()).sort(),
+			);
+			for (const log of logs.docs) {
+				expect(log.data()).not.toHaveProperty("note");
+				expect(log.data()).not.toHaveProperty("source");
+			}
+		}
+		for (const id of [
+			SEED_IDS.nocturne,
+			SEED_IDS.furElise,
+			SEED_IDS.gymnopedie,
+		]) {
+			const coldPiece = doc(userRoot, "pieces", id);
+			expect((await getDoc(coldPiece)).data()?.lastPracticed).toBeNull();
+			expect((await getDocs(collection(coldPiece, "practiceLogs"))).empty).toBe(
+				true,
+			);
+			for (const section of (await getDocs(collection(coldPiece, "sections")))
+				.docs) {
+				expect(
+					(await getDocs(collection(section.ref, "practiceLogs"))).empty,
+				).toBe(true);
 			}
 		}
 

@@ -1,6 +1,7 @@
-import { test as setup } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
+import { expect, test as setup } from "@playwright/test";
+import { signIn } from "@/e2e/support/app";
 import { AUTH_STATE } from "@/playwright.config";
-import { signIn } from "./support/app";
 
 /**
  * Signs in once and saves the session for every other project.
@@ -11,5 +12,26 @@ import { signIn } from "./support/app";
  */
 setup("authenticate", async ({ page, context }) => {
 	await signIn(page);
-	await context.storageState({ path: AUTH_STATE, indexedDB: true });
+	const state = await context.storageState({ indexedDB: true });
+	const origins = state.origins.map((origin) => {
+		const databases: unknown[] =
+			"indexedDB" in origin && Array.isArray(origin.indexedDB)
+				? origin.indexedDB
+				: [];
+		return {
+			...origin,
+			indexedDB: databases.filter(
+				(db) =>
+					typeof db === "object" &&
+					db !== null &&
+					"name" in db &&
+					db.name === "firebaseLocalStorageDb",
+			),
+			localStorage: origin.localStorage.filter(
+				(entry) => !entry.name.startsWith("firestore_"),
+			),
+		};
+	});
+	expect(origins.flatMap((origin) => origin.indexedDB)).toHaveLength(1);
+	await writeFile(AUTH_STATE, JSON.stringify({ ...state, origins }));
 });

@@ -856,6 +856,35 @@
 				"titleRequired": "Title is required."
 			}
 		},
+		"history": {
+			"back": "Back",
+			"title": "History",
+			"entryTitle": "Practice history",
+			"all": "All",
+			"runThroughs": "Run-throughs",
+			"showOlder": "Show older",
+			"emptyTitle": "Nothing practiced yet",
+			"emptyPieceBody": "Every run-through and section you log for this piece shows up here, newest first.",
+			"emptyTechniqueBody": "Every time you practice this technique it shows up here, newest first.",
+			"emptySection": "No practice on {{section}} yet.",
+			"emptyRunThroughs": "No run-throughs yet.",
+			"loadError": "Could not load practice history. Try again.",
+			"retry": "Try again",
+			"runThrough": "Run-through",
+			"credited": "From a run-through",
+			"unavailableSection": "Section no longer available",
+			"archivedTitle": "{{label}} · archived",
+			"shaky": "Shaky: {{sections}}",
+			"playedSections": "Played sections: {{sections}}",
+			"bpmValue": "{{bpm}}",
+			"score": "{{metric}}: {{value}}",
+			"metrics": {
+				"quality": "Quality",
+				"effort": "Effort",
+				"technical": "Technical",
+				"memory": "Memory"
+			}
+		},
 		"practiceTechnique": {
 			"notFound": "Technique item not found",
 			"qualityLabel": "How clean?",
