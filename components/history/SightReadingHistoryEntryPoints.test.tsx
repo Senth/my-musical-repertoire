@@ -106,77 +106,74 @@ beforeEach(() => {
 it.each([
 	[true, lightTheme],
 	[false, darkTheme],
-] as const)(
-	"keeps technique history available with populated, searched, filtered and empty lists",
-	async (compact, theme) => {
-		mockCompact = compact;
-		const screen = await render(
-			<PaperProvider theme={theme}>
-				<TechniquesScreen />
-			</PaperProvider>,
-		);
-		await waitFor(() => expect(screen.getByText("Not read yet")).toBeTruthy());
-		await fireEvent.press(
-			screen.getByRole("link", { name: "Sight-reading history" }),
-		);
-		expect(mockPush).toHaveBeenCalledWith("/sight-reading/history");
-		await fireEvent.changeText(
-			screen.getByPlaceholderText("Search techniques..."),
-			"no matching technique",
-		);
-		expect(screen.queryByText("C major scale")).toBeNull();
-		expect(
-			screen.getByRole("link", { name: "Sight-reading history" }),
-		).toBeTruthy();
-		await fireEvent.changeText(
-			screen.getByPlaceholderText("Search techniques..."),
-			"",
-		);
-		mockFiltered = true;
-		await screen.rerender(
-			<PaperProvider theme={theme}>
-				<TechniquesScreen />
-			</PaperProvider>,
-		);
-		expect(screen.queryByText("C major scale")).toBeNull();
-		expect(
-			screen.getByRole("link", { name: "Sight-reading history" }),
-		).toBeTruthy();
-		mockTechniques = [];
-		await screen.rerender(
-			<PaperProvider theme={theme}>
-				<TechniquesScreen />
-			</PaperProvider>,
-		);
-		expect(screen.getByRole("button", { name: "Add technique" })).toBeTruthy();
-		await fireEvent.press(
-			screen.getByRole("link", { name: "Sight-reading history" }),
-		);
-		expect(mockPush).toHaveBeenCalledTimes(2);
-	},
-);
+] as const)("keeps technique history available with populated, searched, filtered and empty lists", async (compact, theme) => {
+	mockCompact = compact;
+	const screen = await render(
+		<PaperProvider theme={theme}>
+			<TechniquesScreen />
+		</PaperProvider>,
+	);
+	await waitFor(() => expect(screen.getByText("Not read yet")).toBeTruthy());
+	await fireEvent.press(
+		screen.getByRole("link", { name: "Sight-reading history" }),
+	);
+	expect(mockPush).toHaveBeenCalledWith("/sight-reading/history");
+	await fireEvent.changeText(
+		screen.getByPlaceholderText("Search techniques..."),
+		"no matching technique",
+	);
+	expect(screen.queryByText("C major scale")).toBeNull();
+	expect(
+		screen.getByRole("link", { name: "Sight-reading history" }),
+	).toBeTruthy();
+	await fireEvent.changeText(
+		screen.getByPlaceholderText("Search techniques..."),
+		"",
+	);
+	mockFiltered = true;
+	await screen.rerender(
+		<PaperProvider theme={theme}>
+			<TechniquesScreen />
+		</PaperProvider>,
+	);
+	expect(screen.queryByText("C major scale")).toBeNull();
+	expect(
+		screen.getByRole("link", { name: "Sight-reading history" }),
+	).toBeTruthy();
+	mockTechniques = [];
+	await screen.rerender(
+		<PaperProvider theme={theme}>
+			<TechniquesScreen />
+		</PaperProvider>,
+	);
+	expect(screen.getByRole("button", { name: "Add technique" })).toBeTruthy();
+	await fireEvent.press(
+		screen.getByRole("link", { name: "Sight-reading history" }),
+	);
+	expect(mockPush).toHaveBeenCalledTimes(2);
+});
 
-it.each([lightTheme, darkTheme])(
-	"opens history from Overview and returns through stack back",
-	async (theme) => {
-		const screen = await render(
-			<PaperProvider theme={theme}>
-				<OverviewScreen />
-			</PaperProvider>,
-		);
-		await waitFor(() => expect(screen.getByText("Not read yet")).toBeTruthy());
-		expect(screen.getByText("See all techniques")).toBeTruthy();
-		await fireEvent.press(
-			screen.getByRole("link", { name: "Sight-reading history" }),
-		);
-		expect(mockPush).toHaveBeenCalledWith("/sight-reading/history");
-		await screen.unmount();
-		const history = await render(
-			<PaperProvider theme={theme}>
-				<SightReadingHistoryScreen />
-			</PaperProvider>,
-		);
-		await fireEvent.press(history.getByRole("button", { name: "Back" }));
-		expect(mockBack).toHaveBeenCalledTimes(1);
-	},
-);
+it.each([
+	lightTheme,
+	darkTheme,
+])("opens history from Overview and returns through stack back", async (theme) => {
+	const screen = await render(
+		<PaperProvider theme={theme}>
+			<OverviewScreen />
+		</PaperProvider>,
+	);
+	await waitFor(() => expect(screen.getByText("Not read yet")).toBeTruthy());
+	expect(screen.getByText("See all techniques")).toBeTruthy();
+	await fireEvent.press(
+		screen.getByRole("link", { name: "Sight-reading history" }),
+	);
+	expect(mockPush).toHaveBeenCalledWith("/sight-reading/history");
+	await screen.unmount();
+	const history = await render(
+		<PaperProvider theme={theme}>
+			<SightReadingHistoryScreen />
+		</PaperProvider>,
+	);
+	await fireEvent.press(history.getByRole("button", { name: "Back" }));
+	expect(mockBack).toHaveBeenCalledTimes(1);
+});
