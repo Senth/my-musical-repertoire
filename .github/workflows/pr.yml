@@ -33,8 +33,6 @@ jobs:
         with:
           path: node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
 
       # The emulator jars are ~100MB and are downloaded on first use.
       - name: Cache Firebase emulators
