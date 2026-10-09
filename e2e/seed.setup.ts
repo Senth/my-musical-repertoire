@@ -341,6 +341,33 @@ setup("seed the emulator fixture", async () => {
 		threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 		const fourDaysAgo = new Date(now);
 		fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+		for (const log of [
+			{
+				date: now,
+				elapsedSeconds: 600,
+				achievedBpm: 72,
+				keptGoing: 5,
+			},
+			{
+				date: yesterday,
+				elapsedSeconds: 1200,
+				achievedBpm: 64,
+				keptGoing: 3,
+			},
+			{
+				date: twoDaysAgo,
+				elapsedSeconds: 1800,
+				achievedBpm: null,
+				keptGoing: null,
+			},
+		] as const) {
+			await setDoc(doc(collection(userRoot, "sightReadingLogs")), {
+				date: Timestamp.fromDate(log.date),
+				elapsedSeconds: log.elapsedSeconds,
+				achievedBpm: log.achievedBpm,
+				keptGoing: log.keptGoing,
+			});
+		}
 		const pieceRef = doc(userRoot, "pieces", SEED_IDS.invention);
 		let lastPracticed: Date | null = null;
 		let practiceDaysSinceSpan = 0;

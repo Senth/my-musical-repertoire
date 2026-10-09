@@ -56,7 +56,9 @@ ready = "Suggested Practices"
 # There is no committed fixture export: `e2e/seed.setup.ts` runs as the first
 # Playwright project of every `yarn e2e` and writes the fixture through the
 # app's own Firebase shapes, with dates computed at run time. It holds one
-# account — pianist@example.com — four pieces and three techniques. Invention
+# account — pianist@example.com — four pieces and three techniques. Sight-reading
+# history has three logs, today rated Kept going, yesterday rated A few stops,
+# and two days ago unrated. Invention
 # No. 1 has Exposition LH/RH/HT two days ago, Middle entries HT yesterday and
 # a run-through today flagging Middle entries. Its stabilizing state earns
 # no run-through section credits. The Active C major scale enables staccato,
@@ -64,8 +66,8 @@ ready = "Suggested Practices"
 # LH/RH and staccato LH/RH: three clean days, so its detail screen shows the
 # curriculum card offering the Not started G major scale (#20). Hanon No. 1 is
 # Maintenance. Practice logs have no notes. Nocturne, Für Elise, Gymnopédie,
-# Hanon and G major remain never practised; empty history on those is
-# intentional, not data loss.
+# Hanon and G major remain never practised; their piece and technique histories
+# are empty by design, not data loss.
 
 [design]
 # The contract and the values it is written against. `theme/tokens.ts` is ground
