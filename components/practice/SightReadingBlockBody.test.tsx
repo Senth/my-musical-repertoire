@@ -13,24 +13,47 @@ jest.mock("firebase/firestore", () => ({
 	collection: jest.fn((_db, ...path: string[]) => ({ path: path.join("/") })),
 	Timestamp: { fromDate: (date: Date) => ({ toDate: () => date }) },
 }));
-jest.mock("@/contexts/AuthContext", () => ({
-	useAuth: () => ({ user: { uid: "u1" } }),
-}));
+jest.mock("@/contexts/AuthContext", () => {
+	const user = { uid: "u1" };
+	return { useAuth: () => ({ user }) };
+});
 jest.mock("@/utils/session-storage", () => ({
 	readSightReadingBpm: jest.fn().mockResolvedValue(null),
 	readSightReadingSignature: jest.fn().mockResolvedValue(null),
 	writeSightReadingBpm: jest.fn().mockResolvedValue(undefined),
 	writeSightReadingSignature: jest.fn().mockResolvedValue(undefined),
+	readMetronomeAccent: jest.fn().mockResolvedValue(false),
+	writeMetronomeAccent: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("@/components/practice/TempoControl", () => {
-	const { TextInput } = require("react-native");
+jest.mock("react-native-paper", () => {
+	const actual = jest.requireActual("react-native-paper");
+	const { Text } = require("react-native");
 	return {
-		TempoControl: (props: {
-			value: string;
-			onChangeText: (text: string) => void;
-		}) => <TextInput accessibilityLabel="BPM" {...props} />,
+		...actual,
+		HelperText: ({
+			children,
+			visible,
+		}: {
+			children: React.ReactNode;
+			visible: boolean;
+		}) => (visible ? <Text>{children}</Text> : null),
 	};
 });
+jest.mock("@/components/practice/AccentChip", () => ({
+	AccentChip: () => null,
+}));
+jest.mock("@/components/practice/MetronomeButton", () => {
+	const { Text } = require("react-native");
+	return {
+		MetronomeButton: ({ bpm }: { bpm: string }) => (
+			<Text testID="metronome-bpm">{`Metronome ${bpm}`}</Text>
+		),
+	};
+});
+jest.mock("@react-native-community/slider", () => ({
+	__esModule: true,
+	default: () => null,
+}));
 jest.mock("@/components/ui/ErrorSnackbar", () => {
 	const { Text } = require("react-native");
 	return {
@@ -86,7 +109,7 @@ afterEach(() => {
 });
 
 describe("SightReadingBlockBody save", () => {
-	it("starts unrated and saves one log before advancing without a rating", async () => {
+	it("saves the untouched displayed and played tempo without a rating", async () => {
 		const screen = await render(<Harness />);
 		expect(screen.getByText("not rated yet")).toBeTruthy();
 		for (const label of ["Stalled", "Halting", "Bumpy", "Steady", "Flowed"]) {
@@ -95,6 +118,10 @@ describe("SightReadingBlockBody save", () => {
 					.checked,
 			).toBe(false);
 		}
+		expect(screen.getByText("20")).toBeTruthy();
+		expect(screen.getByTestId("metronome-bpm").props.children).toBe(
+			"Metronome 20",
+		);
 		await fireEvent.press(screen.getByText("Save & next"));
 		await waitFor(() => expect(advance).toHaveBeenCalledTimes(1));
 		expect(addDoc).toHaveBeenCalledTimes(1);
@@ -103,7 +130,7 @@ describe("SightReadingBlockBody save", () => {
 			{
 				date: expect.anything(),
 				elapsedSeconds: 180,
-				achievedBpm: null,
+				achievedBpm: 20,
 				keptGoing: null,
 			},
 		);
@@ -111,7 +138,8 @@ describe("SightReadingBlockBody save", () => {
 
 	it("saves the selected rating, current tempo, and latest elapsed time", async () => {
 		const screen = await render(<Harness />);
-		await fireEvent.changeText(screen.getByLabelText("BPM"), "72");
+		await fireEvent.press(screen.getByLabelText("Edit tempo"));
+		await fireEvent.changeText(screen.getByLabelText("Edit tempo"), "72");
 		await fireEvent.press(screen.getByText("Bumpy"));
 		expect(screen.getByText("A few stops")).toBeTruthy();
 		await screen.rerender(<Harness elapsedSeconds={192} />);
@@ -130,10 +158,10 @@ describe("SightReadingBlockBody save", () => {
 	it.each([
 		"",
 		"abc",
-		"500",
-	])("saves invalid or empty tempo %p as null without blocking", async (bpm) => {
+	])("saves null when editing %p shows no numeric tempo", async (bpm) => {
 		const screen = await render(<Harness />);
-		await fireEvent.changeText(screen.getByLabelText("BPM"), bpm);
+		await fireEvent.press(screen.getByLabelText("Edit tempo"));
+		await fireEvent.changeText(screen.getByLabelText("Edit tempo"), bpm);
 		await fireEvent.press(screen.getByText("Save & next"));
 		await waitFor(() => expect(advance).toHaveBeenCalledTimes(1));
 		expect(addDoc).toHaveBeenCalledWith(
@@ -142,12 +170,44 @@ describe("SightReadingBlockBody save", () => {
 		);
 	});
 
+	it("saves the displayed fallback after clearing and leaving the tempo field", async () => {
+		const screen = await render(<Harness />);
+		await fireEvent.press(screen.getByLabelText("Edit tempo"));
+		await fireEvent.changeText(screen.getByLabelText("Edit tempo"), "");
+		await fireEvent(screen.getByLabelText("Edit tempo"), "blur");
+		expect(screen.getByText("20")).toBeTruthy();
+		await fireEvent.press(screen.getByText("Save & next"));
+		await waitFor(() => expect(advance).toHaveBeenCalledTimes(1));
+		expect(addDoc).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ achievedBpm: 20 }),
+		);
+	});
+
+	it.each<[string, number]>([
+		["2", 20],
+		["500", 240],
+	])("saves the clamped tempo after leaving %p", async (draft, expected) => {
+		const screen = await render(<Harness />);
+		await fireEvent.press(screen.getByLabelText("Edit tempo"));
+		await fireEvent.changeText(screen.getByLabelText("Edit tempo"), draft);
+		await fireEvent(screen.getByLabelText("Edit tempo"), "blur");
+		expect(screen.getByText(String(expected))).toBeTruthy();
+		expect(screen.getByTestId("metronome-bpm").props.children).toBe(
+			`Metronome ${expected}`,
+		);
+		await fireEvent.press(screen.getByText("Save & next"));
+		await waitFor(() => expect(advance).toHaveBeenCalledTimes(1));
+		expect(addDoc).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ achievedBpm: expected }),
+		);
+	});
+
 	it("saves the remembered tempo without requiring another edit", async () => {
 		jest.mocked(readSightReadingBpm).mockResolvedValueOnce("80");
 		const screen = await render(<Harness />);
-		await waitFor(() =>
-			expect(screen.getByLabelText("BPM").props.value).toBe("80"),
-		);
+		await waitFor(() => expect(screen.getByText("80")).toBeTruthy());
 		await fireEvent.press(screen.getByText("Save & next"));
 		await waitFor(() => expect(advance).toHaveBeenCalledTimes(1));
 		expect(addDoc).toHaveBeenCalledWith(

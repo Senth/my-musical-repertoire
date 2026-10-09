@@ -40,6 +40,7 @@ export function SightReadingBlockBody({
 	const theme = useTheme();
 	const { user } = useAuth();
 	const [bpm, setBpm] = useState("");
+	const [effectiveBpm, setEffectiveBpm] = useState<number | null>(null);
 	const [keptGoing, setKeptGoing] = useState<Rating | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	/** The value as it was on mount — the `last` marker must not follow the thumb. */
@@ -93,10 +94,7 @@ export function SightReadingBlockBody({
 				await addSightReadingLog(user.uid, {
 					date: new Date(),
 					elapsedSeconds,
-					achievedBpm:
-						bpm.trim() && !validateBpm(bpm, t)
-							? Number.parseInt(bpm.trim(), 10)
-							: null,
+					achievedBpm: effectiveBpm,
 					keptGoing,
 				});
 				return { saved: true };
@@ -104,7 +102,7 @@ export function SightReadingBlockBody({
 				setError(t("error.firebase"));
 				return { saved: false };
 			}
-		}, [user, elapsedSeconds, bpm, keptGoing, t]),
+		}, [user, elapsedSeconds, effectiveBpm, keptGoing, t]),
 	);
 
 	return (
@@ -119,6 +117,7 @@ export function SightReadingBlockBody({
 				<TempoControl
 					value={bpm}
 					onChangeText={handleChange}
+					onEffectiveBpmChange={setEffectiveBpm}
 					error={bpmError}
 					onBlur={(text) => setBpmError(validateBpm(text, t))}
 					stopRef={stopRef}

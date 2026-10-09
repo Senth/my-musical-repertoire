@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import { expect, test as setup } from "@playwright/test";
 import {
 	deleteApp as deleteClientApp,
@@ -333,6 +334,7 @@ setup("seed the emulator fixture", async () => {
 		}
 
 		const now = new Date();
+		await writeFile(".tmp/e2e/seed-date.txt", now.toISOString());
 		const yesterday = new Date(now);
 		yesterday.setDate(yesterday.getDate() - 1);
 		const twoDaysAgo = new Date(now);

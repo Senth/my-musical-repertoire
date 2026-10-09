@@ -1,4 +1,6 @@
+import { readFile } from "node:fs/promises";
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { createInstance } from "i18next";
 import {
 	collectConsoleErrors,
 	expectCleanPage,
@@ -6,11 +8,22 @@ import {
 	SEED_IDS,
 	t,
 } from "@/e2e/support/app";
+import en from "@/i18n/locales/en-US.json";
+import { formatDaysAgo } from "@/utils/date";
 
 test("seeded history shows sight-reading last read and newest entries first", async ({
 	page,
 }) => {
 	const consoleErrors = collectConsoleErrors(page);
+	const seededDate = new Date(await readFile(".tmp/e2e/seed-date.txt", "utf8"));
+	const nextDay = new Date(seededDate);
+	nextDay.setDate(nextDay.getDate() + 1);
+	await page.clock.setFixedTime(nextDay);
+	const copy = createInstance();
+	await copy.init({
+		lng: "en-US",
+		resources: { "en-US": { translation: en } },
+	});
 	await page.goto("/technique");
 	const historyLink = page.getByRole("link", {
 		name: t("screen.sightReadingHistory.entryTitle"),
@@ -21,7 +34,11 @@ test("seeded history shows sight-reading last read and newest entries first", as
 		page.getByText(
 			t("screen.sightReadingHistory.lastRead").replace(
 				"{{when}}",
-				t("common.today"),
+				formatDaysAgo(
+					seededDate,
+					copy.t,
+					new Date(await page.evaluate(() => Date.now())),
+				),
 			),
 			{ exact: true },
 		),
