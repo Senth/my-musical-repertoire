@@ -228,6 +228,10 @@ async function wipeUserData(db: Firestore) {
 
 	const presets = await getDocs(collection(userRoot, "sessionPresets"));
 	targets.push(...presets.docs.map((d) => d.ref));
+	const sightReadingLogs = await getDocs(
+		collection(userRoot, "sightReadingLogs"),
+	);
+	targets.push(...sightReadingLogs.docs.map((d) => d.ref));
 
 	for (let i = 0; i < targets.length; i += DELETE_BATCH_LIMIT) {
 		const batch = writeBatch(db);

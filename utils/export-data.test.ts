@@ -72,6 +72,17 @@ describe("collectExportData", () => {
 		mockTree["users/u1/sessionPresets"] = [
 			{ id: "pr1", data: () => ({ name: "Balanced" }) },
 		];
+		mockTree["users/u1/sightReadingLogs"] = [
+			{
+				id: "sr1",
+				data: () => ({
+					date: new Timestamp(Date.UTC(2026, 8, 11, 7, 30) / 1000, 0),
+					elapsedSeconds: 180,
+					achievedBpm: 60,
+					keptGoing: null,
+				}),
+			},
+		];
 
 		const data = await collectExportData("u1");
 
@@ -105,6 +116,15 @@ describe("collectExportData", () => {
 			},
 		]);
 		expect(data.sessionPresets).toEqual([{ id: "pr1", name: "Balanced" }]);
+		expect(data.sightReadingLogs).toEqual([
+			{
+				id: "sr1",
+				date: "2026-09-11T07:30:00.000Z",
+				elapsedSeconds: 180,
+				achievedBpm: 60,
+				keptGoing: null,
+			},
+		]);
 	});
 
 	it("renders Firestore timestamps as ISO 8601", async () => {
@@ -128,6 +148,7 @@ describe("collectExportData", () => {
 		expect(data.pieces).toEqual([]);
 		expect(data.techniques).toEqual([]);
 		expect(data.sessionPresets).toEqual([]);
+		expect(data.sightReadingLogs).toEqual([]);
 		expect(typeof data.exportedAt).toBe("string");
 		expect(data.app).toBe("my-musical-repertoire");
 	});

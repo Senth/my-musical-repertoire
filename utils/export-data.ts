@@ -21,6 +21,7 @@ export interface ExportData {
 	pieces: ExportDoc[];
 	techniques: ExportDoc[];
 	sessionPresets: ExportDoc[];
+	sightReadingLogs: ExportDoc[];
 }
 
 /**
@@ -100,5 +101,6 @@ export async function collectExportData(uid: string): Promise<ExportData> {
 		sessionPresets: presets.docs.map((preset) =>
 			docJson(preset.id, preset.data()),
 		),
+		sightReadingLogs: await collectionDocs(userRef, "sightReadingLogs"),
 	};
 }

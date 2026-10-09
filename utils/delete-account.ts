@@ -47,6 +47,10 @@ async function collectUserDocs(uid: string): Promise<DocumentReference[]> {
 
 	const presets = await getDocs(collection(userRef, "sessionPresets"));
 	targets.push(...presets.docs.map((d) => d.ref));
+	const sightReadingLogs = await getDocs(
+		collection(userRef, "sightReadingLogs"),
+	);
+	targets.push(...sightReadingLogs.docs.map((d) => d.ref));
 
 	return targets;
 }

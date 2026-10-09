@@ -45,6 +45,7 @@ describe("deleteAllUserData", () => {
 		tree["users/u1/techniques"] = ["t1"];
 		tree["users/u1/techniques/t1/practiceLogs"] = ["tl1"];
 		tree["users/u1/sessionPresets"] = ["pr1"];
+		tree["users/u1/sightReadingLogs"] = ["sr1"];
 
 		await deleteAllUserData("u1");
 
@@ -56,6 +57,7 @@ describe("deleteAllUserData", () => {
 				"users/u1/pieces/p1/sections/s1/practiceLogs/sl1",
 				"users/u1/pieces/p1/sections/s1/phaseTransitions/st1",
 				"users/u1/sessionPresets/pr1",
+				"users/u1/sightReadingLogs/sr1",
 				"users/u1/techniques/t1",
 				"users/u1/techniques/t1/practiceLogs/tl1",
 			].sort(),

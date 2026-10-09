@@ -37,6 +37,14 @@ export function qualityOptions(t: TFunction): EstimationOption<Rating>[] {
 	}));
 }
 
+export function keptGoingOptions(t: TFunction): EstimationOption<Rating>[] {
+	return QUALITY_ORDER.map((value) => ({
+		value,
+		short: t(`technique.keptGoingShort.${value}` as Parameters<TFunction>[0]),
+		full: t(`technique.keptGoing.${value}` as Parameters<TFunction>[0]),
+	}));
+}
+
 export function effortOptions(t: TFunction): EstimationOption<Rating>[] {
 	return EFFORT_ORDER.map((value) => ({
 		value,

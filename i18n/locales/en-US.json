@@ -180,6 +180,20 @@
 			"4": "Good",
 			"5": "Clean"
 		},
+		"keptGoing": {
+			"1": "Kept stopping",
+			"2": "Stopped often",
+			"3": "A few stops",
+			"4": "One or two stops",
+			"5": "Kept going"
+		},
+		"keptGoingShort": {
+			"1": "Stalled",
+			"2": "Halting",
+			"3": "Bumpy",
+			"4": "Steady",
+			"5": "Flowed"
+		},
 		"effort": {
 			"1": "Effortless",
 			"2": "Comfortable",
