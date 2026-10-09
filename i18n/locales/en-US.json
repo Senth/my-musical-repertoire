@@ -873,6 +873,8 @@
 		"history": {
 			"back": "Back",
 			"title": "History",
+			"sightReadingTitle": "Sight-reading",
+			"notRated": "Not rated",
 			"entryTitle": "Practice history",
 			"all": "All",
 			"runThroughs": "Run-throughs",
@@ -880,6 +882,7 @@
 			"emptyTitle": "Nothing practiced yet",
 			"emptyPieceBody": "Every run-through and section you log for this piece shows up here, newest first.",
 			"emptyTechniqueBody": "Every time you practice this technique it shows up here, newest first.",
+			"emptySightReadingBody": "Every sight-reading block you finish in a session shows up here, newest first.",
 			"emptySection": "No practice on {{section}} yet.",
 			"emptyRunThroughs": "No run-throughs yet.",
 			"loadError": "Could not load practice history. Try again.",

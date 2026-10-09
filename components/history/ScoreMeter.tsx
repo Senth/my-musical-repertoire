@@ -60,22 +60,29 @@ export function ScoreMeter({
 				size={icon.sm}
 				color={theme.colors.onSurfaceVariant}
 			/>
-			<View style={{ flexDirection: "row", gap: space.xxs, flexShrink: 1 }}>
-				{[1, 2, 3, 4, 5].map((step) => (
-					<View
-						key={step}
-						style={{
-							width: space.md,
-							height: size.track,
-							flexShrink: 1,
-							backgroundColor:
-								steps !== null && step <= steps
-									? theme.colors.onSurfaceVariant
-									: theme.colors.outlineVariant,
-						}}
-					/>
-				))}
-			</View>
+			<ScoreBar steps={steps} />
+		</View>
+	);
+}
+
+export function ScoreBar({ steps }: { steps: number | null }) {
+	const theme = useTheme();
+	return (
+		<View style={{ flexDirection: "row", gap: space.xxs, flexShrink: 1 }}>
+			{[1, 2, 3, 4, 5].map((step) => (
+				<View
+					key={step}
+					style={{
+						width: space.md,
+						height: size.track,
+						flexShrink: 1,
+						backgroundColor:
+							steps !== null && step <= steps
+								? theme.colors.onSurfaceVariant
+								: theme.colors.outlineVariant,
+					}}
+				/>
+			))}
 		</View>
 	);
 }
