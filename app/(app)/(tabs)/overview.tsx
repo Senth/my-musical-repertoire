@@ -16,6 +16,7 @@ import {
 	Text,
 	useTheme,
 } from "react-native-paper";
+import { SightReadingHistoryLink } from "@/components/history/SightReadingHistoryLink";
 import { LegalLinks } from "@/components/legal/LegalLinks";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { SpanSectionsBlock } from "@/components/practice/SpanSectionsBlock";
@@ -429,6 +430,11 @@ export default function OverviewScreen() {
 				>
 					{t("screen.overview.seeAllTechniques")}
 				</Button>
+
+				<View>
+					<Divider />
+					<SightReadingHistoryLink />
+				</View>
 
 				<LegalLinks />
 			</ScreenContent>

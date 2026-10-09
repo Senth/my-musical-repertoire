@@ -902,6 +902,11 @@
 				"memory": "Memory"
 			}
 		},
+		"sightReadingHistory": {
+			"entryTitle": "Sight-reading history",
+			"lastRead": "Last read {{when}}",
+			"notReadYet": "Not read yet"
+		},
 		"practiceTechnique": {
 			"notFound": "Technique item not found",
 			"qualityLabel": "How clean?",

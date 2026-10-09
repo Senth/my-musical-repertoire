@@ -1,21 +1,39 @@
 import { useTranslation } from "react-i18next";
 import type { StyleProp, ViewStyle } from "react-native";
-import { List } from "react-native-paper";
+import { List, Text, useTheme } from "react-native-paper";
 
 export function HistoryLink({
 	onPress,
 	style,
+	title,
+	description,
 }: {
 	onPress: () => void;
 	style?: StyleProp<ViewStyle>;
+	title?: string;
+	description?: string;
 }) {
 	const { t } = useTranslation();
-	const title = t("screen.history.entryTitle");
+	const theme = useTheme();
+	const label = title ?? t("screen.history.entryTitle");
 	return (
 		<List.Item
-			title={title}
+			title={label}
+			description={
+				description
+					? () => (
+							<Text
+								variant="bodySmall"
+								style={{ color: theme.colors.onSurfaceVariant }}
+							>
+								{description}
+							</Text>
+						)
+					: undefined
+			}
 			accessibilityRole="link"
-			accessibilityLabel={title}
+			accessibilityLabel={label}
+			accessibilityHint={description}
 			left={(props) => (
 				<List.Icon
 					{...props}

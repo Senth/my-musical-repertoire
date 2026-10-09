@@ -16,6 +16,7 @@ import {
 	Text,
 	useTheme,
 } from "react-native-paper";
+import { SightReadingHistoryLink } from "@/components/history/SightReadingHistoryLink";
 import { DeleteTechniqueDialog } from "@/components/technique/DeleteTechniqueDialog";
 import { TechniqueStateChip } from "@/components/technique/TechniqueStateChip";
 import {
@@ -421,14 +422,22 @@ export default function TechniquesScreen() {
 				>
 					<ActivityIndicator size="large" />
 				</View>
-			) : visibleTechniques.length === 0 ? (
-				emptyState
 			) : isCompact ? (
 				<FlatList
 					data={visibleTechniques}
 					keyExtractor={(item) => item.id ?? ""}
 					renderItem={renderCompactItem}
 					ItemSeparatorComponent={() => <Divider />}
+					ListHeaderComponent={
+						<View>
+							<ScreenContent scroll={false} paddingTop={0}>
+								<SightReadingHistoryLink />
+							</ScreenContent>
+							<Divider />
+						</View>
+					}
+					ListEmptyComponent={emptyState}
+					contentContainerStyle={{ flexGrow: 1 }}
 					style={{ flex: 1 }}
 				/>
 			) : (
@@ -438,46 +447,52 @@ export default function TechniquesScreen() {
 					paddingBottom={scrollTail.fab}
 					style={{ flex: 1 }}
 				>
-					{visibleTechniques.map((item) => (
-						<Card
-							key={item.id}
-							mode="elevated"
-							onPress={() => router.push(`/technique/${item.id}`)}
-							style={accentBorderStyle(
-								techniqueStateVisual(item.state, theme.dark),
-							)}
-						>
-							<Card.Title
-								title={item.title}
-								titleStyle={CARD_TITLE_STYLE}
-								style={TITLE_ONLY_CARD_STYLE}
-								right={() => renderCardMenu(item)}
-							/>
-							<Card.Content>
-								<View style={{ gap: space.sm }}>
-									<View
-										style={{
-											flexDirection: "row",
-											alignItems: "center",
-											flexWrap: "wrap",
-											gap: space.sm,
-										}}
-									>
-										<TechniqueStateChip state={item.state} />
-										{item.type && (
-											<MetaChip label={t(`technique.type.${item.type}`)} />
-										)}
-									</View>
-									<Text
-										variant="bodySmall"
-										style={{ color: theme.colors.onSurfaceVariant }}
-									>
-										{formatDaysAgo(item.lastPracticedAt, t)}
-									</Text>
-								</View>
-							</Card.Content>
-						</Card>
-					))}
+					<View>
+						<SightReadingHistoryLink />
+						<Divider />
+					</View>
+					{visibleTechniques.length === 0
+						? emptyState
+						: visibleTechniques.map((item) => (
+								<Card
+									key={item.id}
+									mode="elevated"
+									onPress={() => router.push(`/technique/${item.id}`)}
+									style={accentBorderStyle(
+										techniqueStateVisual(item.state, theme.dark),
+									)}
+								>
+									<Card.Title
+										title={item.title}
+										titleStyle={CARD_TITLE_STYLE}
+										style={TITLE_ONLY_CARD_STYLE}
+										right={() => renderCardMenu(item)}
+									/>
+									<Card.Content>
+										<View style={{ gap: space.sm }}>
+											<View
+												style={{
+													flexDirection: "row",
+													alignItems: "center",
+													flexWrap: "wrap",
+													gap: space.sm,
+												}}
+											>
+												<TechniqueStateChip state={item.state} />
+												{item.type && (
+													<MetaChip label={t(`technique.type.${item.type}`)} />
+												)}
+											</View>
+											<Text
+												variant="bodySmall"
+												style={{ color: theme.colors.onSurfaceVariant }}
+											>
+												{formatDaysAgo(item.lastPracticedAt, t)}
+											</Text>
+										</View>
+									</Card.Content>
+								</Card>
+							))}
 				</ScreenContent>
 			)}
 
