@@ -989,6 +989,7 @@
 				"extend": "+2 min",
 				"sightReadingBody": "Sight-reading — pick your material",
 				"sightReadingTitle": "Sight-reading",
+				"keptGoingLabel": "Did you keep going?",
 				"warmupBody": "Warmup — gentle scales of your choice",
 				"done": "Done",
 				"durationPrompt": {
