@@ -24,7 +24,7 @@ jest.mock("firebase/firestore", () => ({
 }));
 jest.mock("@/config/firebase", () => ({ db: {} }));
 
-import { deleteAllUserData } from "./delete-account";
+import { deleteAllUserData } from "@/utils/delete-account";
 
 const deletedPaths = () =>
 	mockBatchDelete.mock.calls.map(([ref]) => (ref as { path: string }).path);
@@ -40,6 +40,7 @@ describe("deleteAllUserData", () => {
 		tree["users/u1/pieces"] = ["p1"];
 		tree["users/u1/pieces/p1/sections"] = ["s1"];
 		tree["users/u1/pieces/p1/sections/s1/practiceLogs"] = ["sl1"];
+		tree["users/u1/pieces/p1/sections/s1/phaseTransitions"] = ["st1"];
 		tree["users/u1/pieces/p1/practiceLogs"] = ["pl1"];
 		tree["users/u1/techniques"] = ["t1"];
 		tree["users/u1/techniques/t1/practiceLogs"] = ["tl1"];
@@ -53,6 +54,7 @@ describe("deleteAllUserData", () => {
 				"users/u1/pieces/p1/practiceLogs/pl1",
 				"users/u1/pieces/p1/sections/s1",
 				"users/u1/pieces/p1/sections/s1/practiceLogs/sl1",
+				"users/u1/pieces/p1/sections/s1/phaseTransitions/st1",
 				"users/u1/sessionPresets/pr1",
 				"users/u1/techniques/t1",
 				"users/u1/techniques/t1/practiceLogs/tl1",
@@ -64,10 +66,17 @@ describe("deleteAllUserData", () => {
 		tree["users/u1/pieces"] = ["p1"];
 		tree["users/u1/pieces/p1/sections"] = ["s1"];
 		tree["users/u1/pieces/p1/sections/s1/practiceLogs"] = ["sl1"];
+		tree["users/u1/pieces/p1/sections/s1/phaseTransitions"] = ["st1"];
 
 		await deleteAllUserData("u1");
 
 		const paths = deletedPaths();
+		expect(paths).toContain(
+			"users/u1/pieces/p1/sections/s1/phaseTransitions/st1",
+		);
+		expect(
+			paths.indexOf("users/u1/pieces/p1/sections/s1/phaseTransitions/st1"),
+		).toBeLessThan(paths.indexOf("users/u1/pieces/p1/sections/s1"));
 		expect(
 			paths.indexOf("users/u1/pieces/p1/sections/s1/practiceLogs/sl1"),
 		).toBeLessThan(paths.indexOf("users/u1/pieces/p1/sections/s1"));

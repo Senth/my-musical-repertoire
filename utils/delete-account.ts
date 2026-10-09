@@ -27,6 +27,10 @@ async function collectUserDocs(uid: string): Promise<DocumentReference[]> {
 		for (const section of sections.docs) {
 			const logs = await getDocs(collection(section.ref, "practiceLogs"));
 			targets.push(...logs.docs.map((d) => d.ref));
+			const transitions = await getDocs(
+				collection(section.ref, "phaseTransitions"),
+			);
+			targets.push(...transitions.docs.map((d) => d.ref));
 			targets.push(section.ref);
 		}
 		const pieceLogs = await getDocs(collection(piece.ref, "practiceLogs"));

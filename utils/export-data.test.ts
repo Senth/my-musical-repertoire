@@ -33,7 +33,7 @@ jest.mock("firebase/firestore", () => {
 jest.mock("@/config/firebase", () => ({ db: {} }));
 
 import { Timestamp } from "firebase/firestore";
-import { collectExportData } from "./export-data";
+import { collectExportData } from "@/utils/export-data";
 
 beforeEach(() => {
 	for (const key of Object.keys(mockTree)) delete mockTree[key];
@@ -49,6 +49,16 @@ describe("collectExportData", () => {
 		];
 		mockTree["users/u1/pieces/p1/sections/s1/practiceLogs"] = [
 			{ id: "sl1", data: () => ({ accuracy: 0.9 }) },
+		];
+		mockTree["users/u1/pieces/p1/sections/s1/phaseTransitions"] = [
+			{
+				id: "st1",
+				data: () => ({
+					from: "learning",
+					to: "stabilizing",
+					date: new Timestamp(Date.UTC(2026, 8, 11, 7, 30) / 1000, 0),
+				}),
+			},
 		];
 		mockTree["users/u1/pieces/p1/practiceLogs"] = [
 			{ id: "pl1", data: () => ({ accuracy: 1 }) },
@@ -74,6 +84,14 @@ describe("collectExportData", () => {
 						id: "s1",
 						label: "A",
 						practiceLogs: [{ id: "sl1", accuracy: 0.9 }],
+						phaseTransitions: [
+							{
+								id: "st1",
+								from: "learning",
+								to: "stabilizing",
+								date: "2026-09-11T07:30:00.000Z",
+							},
+						],
 					},
 				],
 				practiceLogs: [{ id: "pl1", accuracy: 1 }],
