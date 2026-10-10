@@ -4,11 +4,14 @@ import { FlatList, View } from "react-native";
 import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
 import { HistoryEntryRow } from "@/components/history/HistoryEntryRow";
 import { HistoryLegend } from "@/components/history/HistoryLegend";
+import { SightReadingHistoryRow } from "@/components/history/SightReadingHistoryRow";
 import { PracticeAppbarContent } from "@/components/practice/CoachShell";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { usePageInset } from "@/hooks/use-page-inset";
 import type { usePracticeHistory } from "@/hooks/use-practice-history";
+import type { useSightReadingHistory } from "@/hooks/use-sight-reading-history";
+import type { SightReadingLog } from "@/models/sight-reading";
 import { contentWidth, scrollTail, space } from "@/theme/tokens";
 import {
 	formatHistoryDay,
@@ -27,15 +30,17 @@ export function HistoryScreen({
 	onBack,
 	onPractice,
 }: {
-	kind: "piece" | "technique";
+	kind: "piece" | "technique" | "sight-reading";
 	subtitle: string;
-	history: ReturnType<typeof usePracticeHistory>;
-	entries: HistoryEntry[];
+	history:
+		| ReturnType<typeof usePracticeHistory>
+		| ReturnType<typeof useSightReadingHistory>;
+	entries: (HistoryEntry | (SightReadingLog & { id: string }))[];
 	filters?: ReactNode;
 	emptyBody: string;
 	emptyMessage?: string;
 	onBack: () => void;
-	onPractice: () => void;
+	onPractice?: () => void;
 }) {
 	const { t, i18n } = useTranslation();
 	const theme = useTheme();
@@ -76,7 +81,7 @@ export function HistoryScreen({
 					heading={{ title: t("screen.history.title"), subtitle }}
 				/>
 			</Appbar.Header>
-			<FlatList
+			<FlatList<HistoryEntry | (SightReadingLog & { id: string })>
 				data={entries}
 				keyExtractor={(entry) => entry.id}
 				style={{
@@ -94,7 +99,9 @@ export function HistoryScreen({
 						paddingBottom={space.sm}
 					>
 						{filters}
-						{history.entries.length > 0 && <HistoryLegend kind={kind} />}
+						{kind !== "sight-reading" && history.entries.length > 0 && (
+							<HistoryLegend kind={kind} />
+						)}
 					</ScreenContent>
 				}
 				renderItem={({ item, index }) => (
@@ -114,7 +121,14 @@ export function HistoryScreen({
 								{formatHistoryDay(item.date, t, i18n.language)}
 							</Text>
 						)}
-						<HistoryEntryRow entry={item} sections={history.sections} />
+						{"elapsedSeconds" in item ? (
+							<SightReadingHistoryRow entry={item} />
+						) : (
+							<HistoryEntryRow
+								entry={item}
+								sections={"sections" in history ? history.sections : undefined}
+							/>
+						)}
 					</View>
 				)}
 				ItemSeparatorComponent={() => <Divider />}
@@ -140,14 +154,18 @@ export function HistoryScreen({
 							icon="history"
 							message={t("screen.history.emptyTitle")}
 							body={emptyBody}
-							action={{
-								label: t(
-									kind === "piece"
-										? "screen.pieceDetail.practice"
-										: "screen.techniqueDetail.practice",
-								),
-								onPress: onPractice,
-							}}
+							action={
+								kind !== "sight-reading" && onPractice
+									? {
+											label: t(
+												kind === "piece"
+													? "screen.pieceDetail.practice"
+													: "screen.techniqueDetail.practice",
+											),
+											onPress: onPractice,
+										}
+									: undefined
+							}
 						/>
 					) : null
 				}

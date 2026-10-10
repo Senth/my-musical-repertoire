@@ -42,6 +42,7 @@ export interface AccentControl {
 interface TempoControlProps {
 	value: string;
 	onChangeText: (text: string) => void;
+	onEffectiveBpmChange?: (bpm: number | null) => void;
 	error: string | null;
 	/**
 	 * Called with the text actually committed on blur — the clamped value when
@@ -210,6 +211,7 @@ function TempoMarkerLabel({
 export function TempoControl({
 	value,
 	onChangeText,
+	onEffectiveBpmChange,
 	error,
 	onBlur,
 	stopRef,
@@ -255,6 +257,9 @@ export function TempoControl({
 	// fixes a 20 can be made — but mid-edit the typed text governs, so a
 	// half-typed "2" is not a 20.
 	const effective = isValid ? clamp(parsed) : editing ? NaN : range.min;
+	useEffect(() => {
+		onEffectiveBpmChange?.(Number.isFinite(effective) ? effective : null);
+	}, [effective, onEffectiveBpmChange]);
 
 	function adjust(delta: number) {
 		if (!Number.isFinite(effective)) return;
@@ -440,11 +445,6 @@ export function TempoControl({
 								gap: space.xs,
 							}}
 						>
-							{/* An untouched tempo displays the slider's minimum, where
-							    the thumb already sits. Display only: the draft stays
-							    empty and an untouched tempo still saves as no tempo at
-							    all — but a stepper press is deliberate and starts from
-							    the displayed value. */}
 							<Text
 								variant="displaySmall"
 								style={{

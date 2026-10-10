@@ -180,6 +180,20 @@
 			"4": "Good",
 			"5": "Clean"
 		},
+		"keptGoing": {
+			"1": "Kept stopping",
+			"2": "Stopped often",
+			"3": "A few stops",
+			"4": "One or two stops",
+			"5": "Kept going"
+		},
+		"keptGoingShort": {
+			"1": "Stalled",
+			"2": "Halting",
+			"3": "Bumpy",
+			"4": "Steady",
+			"5": "Flowed"
+		},
 		"effort": {
 			"1": "Effortless",
 			"2": "Comfortable",
@@ -859,6 +873,8 @@
 		"history": {
 			"back": "Back",
 			"title": "History",
+			"sightReadingTitle": "Sight-reading",
+			"notRated": "Not rated",
 			"entryTitle": "Practice history",
 			"all": "All",
 			"runThroughs": "Run-throughs",
@@ -866,6 +882,7 @@
 			"emptyTitle": "Nothing practiced yet",
 			"emptyPieceBody": "Every run-through and section you log for this piece shows up here, newest first.",
 			"emptyTechniqueBody": "Every time you practice this technique it shows up here, newest first.",
+			"emptySightReadingBody": "Every sight-reading block you finish in a session shows up here, newest first.",
 			"emptySection": "No practice on {{section}} yet.",
 			"emptyRunThroughs": "No run-throughs yet.",
 			"loadError": "Could not load practice history. Try again.",
@@ -884,6 +901,11 @@
 				"technical": "Technical",
 				"memory": "Memory"
 			}
+		},
+		"sightReadingHistory": {
+			"entryTitle": "Sight-reading history",
+			"lastRead": "Last read {{when}}",
+			"notReadYet": "Not read yet"
 		},
 		"practiceTechnique": {
 			"notFound": "Technique item not found",
@@ -975,6 +997,7 @@
 				"extend": "+2 min",
 				"sightReadingBody": "Sight-reading — pick your material",
 				"sightReadingTitle": "Sight-reading",
+				"keptGoingLabel": "Did you keep going?",
 				"warmupBody": "Warmup — gentle scales of your choice",
 				"done": "Done",
 				"durationPrompt": {

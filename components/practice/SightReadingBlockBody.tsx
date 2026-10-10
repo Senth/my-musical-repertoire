@@ -1,10 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
+import { Divider, Text, useTheme } from "react-native-paper";
+import { EstimationField } from "@/components/practice/EstimationField";
+import { PracticeFooter } from "@/components/practice/PracticeFooter";
+import { TempoControl } from "@/components/practice/TempoControl";
+import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCoach, usePracticeHeading } from "@/contexts/CoachContext";
+import {
+	useCoach,
+	usePracticeHeading,
+	useRegisterCoachSave,
+} from "@/contexts/CoachContext";
+import { addSightReadingLog } from "@/hooks/use-sight-reading-logs";
+import { space } from "@/theme/tokens";
+import { keptGoingOptions, type Rating } from "@/utils/estimation-options";
 import {
 	readSightReadingBpm,
 	readSightReadingSignature,
@@ -13,20 +24,25 @@ import {
 } from "@/utils/session-storage";
 import type { TimeSignature } from "@/utils/time-signature";
 import { validateBpm } from "@/utils/validation";
-import { PracticeFooter } from "./PracticeFooter";
-import { TempoControl } from "./TempoControl";
 
 interface SightReadingBlockBodyProps {
 	stopRef: React.MutableRefObject<(() => void) | null>;
+	elapsedSeconds: number;
 }
 
 const DEBOUNCE_MS = 500;
 
-export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
+export function SightReadingBlockBody({
+	stopRef,
+	elapsedSeconds,
+}: SightReadingBlockBodyProps) {
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const { user } = useAuth();
 	const [bpm, setBpm] = useState("");
+	const [effectiveBpm, setEffectiveBpm] = useState<number | null>(null);
+	const [keptGoing, setKeptGoing] = useState<Rating | null>(null);
+	const [error, setError] = useState<string | null>(null);
 	/** The value as it was on mount — the `last` marker must not follow the thumb. */
 	const [savedBpm, setSavedBpm] = useState<number | null>(null);
 	const [bpmError, setBpmError] = useState<string | null>(null);
@@ -70,10 +86,28 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 
 	const coach = useCoach();
 	usePracticeHeading(t("screen.session.coach.sightReadingTitle"), null);
+	useRegisterCoachSave(
+		useCallback(async () => {
+			if (!user) return { saved: false };
+			setError(null);
+			try {
+				await addSightReadingLog(user.uid, {
+					date: new Date(),
+					elapsedSeconds,
+					achievedBpm: effectiveBpm,
+					keptGoing,
+				});
+				return { saved: true };
+			} catch {
+				setError(t("error.firebase"));
+				return { saved: false };
+			}
+		}, [user, elapsedSeconds, effectiveBpm, keptGoing, t]),
+	);
 
 	return (
 		<View style={{ flex: 1 }}>
-			<ScreenContent gap={4} paddingBottom={12} style={{ flex: 1 }}>
+			<ScreenContent gap={4} paddingBottom={space.md} style={{ flex: 1 }}>
 				<Text
 					variant="bodyLarge"
 					style={{ color: theme.colors.onSurfaceVariant }}
@@ -83,6 +117,7 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 				<TempoControl
 					value={bpm}
 					onChangeText={handleChange}
+					onEffectiveBpmChange={setEffectiveBpm}
 					error={bpmError}
 					onBlur={(text) => setBpmError(validateBpm(text, t))}
 					stopRef={stopRef}
@@ -102,6 +137,13 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 						},
 					}}
 				/>
+				<Divider />
+				<EstimationField
+					label={t("screen.session.coach.keptGoingLabel")}
+					value={keptGoing}
+					onChange={setKeptGoing}
+					options={keptGoingOptions(t)}
+				/>
 			</ScreenContent>
 			<PracticeFooter
 				primaryLabel={t("screen.session.coach.saveAndNext")}
@@ -110,6 +152,7 @@ export function SightReadingBlockBody({ stopRef }: SightReadingBlockBodyProps) {
 				onSkip={coach.skipBlock}
 				onExtend={coach.extendBlock}
 			/>
+			<ErrorSnackbar error={error} onDismiss={() => setError(null)} />
 		</View>
 	);
 }

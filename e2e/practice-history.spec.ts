@@ -1,4 +1,6 @@
+import { readFile } from "node:fs/promises";
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { createInstance } from "i18next";
 import {
 	collectConsoleErrors,
 	expectCleanPage,
@@ -6,6 +8,65 @@ import {
 	SEED_IDS,
 	t,
 } from "@/e2e/support/app";
+import en from "@/i18n/locales/en-US.json";
+import { formatDaysAgo } from "@/utils/date";
+
+test("seeded history shows sight-reading last read and newest entries first", async ({
+	page,
+}) => {
+	const consoleErrors = collectConsoleErrors(page);
+	const seededDate = new Date(await readFile(".tmp/e2e/seed-date.txt", "utf8"));
+	const nextDay = new Date(seededDate);
+	nextDay.setDate(nextDay.getDate() + 1);
+	await page.clock.setFixedTime(nextDay);
+	const copy = createInstance();
+	await copy.init({
+		lng: "en-US",
+		resources: { "en-US": { translation: en } },
+	});
+	await page.goto("/technique");
+	const historyLink = page.getByRole("link", {
+		name: t("screen.sightReadingHistory.entryTitle"),
+		exact: true,
+	});
+	await expect(historyLink).toBeVisible();
+	await expect(
+		page.getByText(
+			t("screen.sightReadingHistory.lastRead").replace(
+				"{{when}}",
+				formatDaysAgo(
+					seededDate,
+					copy.t,
+					new Date(await page.evaluate(() => Date.now())),
+				),
+			),
+			{ exact: true },
+		),
+	).toBeVisible();
+	await historyLink.click();
+	await expect(page).toHaveURL("/sight-reading/history");
+	await expect(
+		page.getByRole("heading", {
+			name: t("screen.history.title"),
+			exact: true,
+		}),
+	).toBeVisible();
+	const newest = page.getByText(t("technique.keptGoing.5"), { exact: true });
+	const middle = page.getByText(t("technique.keptGoing.3"), { exact: true });
+	const oldest = page.getByText(t("screen.history.notRated"), { exact: true });
+	await expect(newest).toBeVisible();
+	await expect(middle).toBeVisible();
+	await expect(oldest).toBeVisible();
+	const newestBox = await newest.boundingBox();
+	const middleBox = await middle.boundingBox();
+	const oldestBox = await oldest.boundingBox();
+	if (!newestBox || !middleBox || !oldestBox)
+		throw new Error("Sight-reading history rows not measurable");
+	expect(newestBox.y).toBeLessThan(middleBox.y);
+	expect(middleBox.y).toBeLessThan(oldestBox.y);
+	await expectCleanPage(page);
+	expect(consoleErrors).toEqual([]);
+});
 
 test("seeded history reads grouped hands, section filters and technique drills without notes", async ({
 	page,

@@ -2,11 +2,24 @@ import type { TFunction } from "i18next";
 import { PracticeMistakes } from "@/models/practice";
 import {
 	effortOptions,
+	keptGoingOptions,
 	mistakeOptions,
 	qualityOptions,
-} from "./estimation-options";
+} from "@/utils/estimation-options";
 
 const t = ((key: string) => key) as unknown as TFunction;
+
+describe("keptGoingOptions", () => {
+	it("runs worst to best with matching translation keys", () => {
+		expect(keptGoingOptions(t)).toEqual(
+			[1, 2, 3, 4, 5].map((value) => ({
+				value,
+				short: `technique.keptGoingShort.${value}`,
+				full: `technique.keptGoing.${value}`,
+			})),
+		);
+	});
+});
 
 describe("qualityOptions", () => {
 	it("runs worst to best", () => {

@@ -85,6 +85,10 @@ export const ROUTES: { path: string; ready: string }[] = [
 	{ path: "/overview", ready: t("screen.overview.practiceToday") },
 	{ path: "/piece", ready: t("screen.pieces.title") },
 	{ path: "/technique", ready: t("screen.techniques.title") },
+	{
+		path: "/sight-reading/history",
+		ready: t("screen.history.sightReadingTitle"),
+	},
 	{ path: "/piece/add", ready: t("screen.addPiece.title") },
 	{ path: "/technique/add", ready: t("screen.addTechnique.title") },
 	// Detail routes, on the same fixture ids as the practice routes below.

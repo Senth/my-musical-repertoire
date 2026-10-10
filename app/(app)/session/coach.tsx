@@ -416,6 +416,7 @@ export default function CoachScreen() {
 				<SightReadingBlockBody
 					key={session.currentBlockIndex}
 					stopRef={sightReadingStopRef}
+					elapsedSeconds={blockElapsedSeconds}
 				/>
 			);
 			break;

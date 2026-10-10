@@ -21,6 +21,7 @@ export interface ExportData {
 	pieces: ExportDoc[];
 	techniques: ExportDoc[];
 	sessionPresets: ExportDoc[];
+	sightReadingLogs: ExportDoc[];
 }
 
 /**
@@ -45,8 +46,11 @@ function docJson(id: string, data: Record<string, unknown>): ExportDoc {
 	};
 }
 
-async function practiceLogs(parent: DocumentReference): Promise<ExportDoc[]> {
-	const logs = await getDocs(collection(parent, "practiceLogs"));
+async function collectionDocs(
+	parent: DocumentReference,
+	name: string,
+): Promise<ExportDoc[]> {
+	const logs = await getDocs(collection(parent, name));
 	return logs.docs.map((log) => docJson(log.id, log.data()));
 }
 
@@ -67,10 +71,14 @@ export async function collectExportData(uid: string): Promise<ExportData> {
 			sections: await Promise.all(
 				sections.docs.map(async (section) => ({
 					...docJson(section.id, section.data()),
-					practiceLogs: await practiceLogs(section.ref),
+					practiceLogs: await collectionDocs(section.ref, "practiceLogs"),
+					phaseTransitions: await collectionDocs(
+						section.ref,
+						"phaseTransitions",
+					),
 				})),
 			),
-			practiceLogs: await practiceLogs(piece.ref),
+			practiceLogs: await collectionDocs(piece.ref, "practiceLogs"),
 		});
 	}
 
@@ -79,7 +87,7 @@ export async function collectExportData(uid: string): Promise<ExportData> {
 	for (const technique of techniqueDocs.docs) {
 		techniques.push({
 			...docJson(technique.id, technique.data()),
-			practiceLogs: await practiceLogs(technique.ref),
+			practiceLogs: await collectionDocs(technique.ref, "practiceLogs"),
 		});
 	}
 
@@ -93,5 +101,6 @@ export async function collectExportData(uid: string): Promise<ExportData> {
 		sessionPresets: presets.docs.map((preset) =>
 			docJson(preset.id, preset.data()),
 		),
+		sightReadingLogs: await collectionDocs(userRef, "sightReadingLogs"),
 	};
 }

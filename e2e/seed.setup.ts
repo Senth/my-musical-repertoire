@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import { expect, test as setup } from "@playwright/test";
 import {
 	deleteApp as deleteClientApp,
@@ -228,6 +229,10 @@ async function wipeUserData(db: Firestore) {
 
 	const presets = await getDocs(collection(userRoot, "sessionPresets"));
 	targets.push(...presets.docs.map((d) => d.ref));
+	const sightReadingLogs = await getDocs(
+		collection(userRoot, "sightReadingLogs"),
+	);
+	targets.push(...sightReadingLogs.docs.map((d) => d.ref));
 
 	for (let i = 0; i < targets.length; i += DELETE_BATCH_LIMIT) {
 		const batch = writeBatch(db);
@@ -329,6 +334,7 @@ setup("seed the emulator fixture", async () => {
 		}
 
 		const now = new Date();
+		await writeFile(".tmp/e2e/seed-date.txt", now.toISOString());
 		const yesterday = new Date(now);
 		yesterday.setDate(yesterday.getDate() - 1);
 		const twoDaysAgo = new Date(now);
@@ -337,6 +343,33 @@ setup("seed the emulator fixture", async () => {
 		threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 		const fourDaysAgo = new Date(now);
 		fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+		for (const log of [
+			{
+				date: now,
+				elapsedSeconds: 600,
+				achievedBpm: 72,
+				keptGoing: 5,
+			},
+			{
+				date: yesterday,
+				elapsedSeconds: 1200,
+				achievedBpm: 64,
+				keptGoing: 3,
+			},
+			{
+				date: twoDaysAgo,
+				elapsedSeconds: 1800,
+				achievedBpm: null,
+				keptGoing: null,
+			},
+		] as const) {
+			await setDoc(doc(collection(userRoot, "sightReadingLogs")), {
+				date: Timestamp.fromDate(log.date),
+				elapsedSeconds: log.elapsedSeconds,
+				achievedBpm: log.achievedBpm,
+				keptGoing: log.keptGoing,
+			});
+		}
 		const pieceRef = doc(userRoot, "pieces", SEED_IDS.invention);
 		let lastPracticed: Date | null = null;
 		let practiceDaysSinceSpan = 0;
