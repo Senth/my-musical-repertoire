@@ -7,14 +7,22 @@ import {
 	Text,
 	TouchableRipple,
 } from "react-native-paper";
+import type { HandsMode } from "@/models/practice";
 import { useAppTheme } from "@/theme";
 import { size, space } from "@/theme/tokens";
 import {
+	movedBy,
 	progressFill,
 	type ProgressRow as Row,
 } from "@/utils/repertoire-progress";
 
-export function ProgressRow({ row }: { row: Row }) {
+export function ProgressRow({
+	row,
+	baseline,
+}: {
+	row: Row;
+	baseline?: Partial<Record<HandsMode, number>>;
+}) {
 	const { t } = useTranslation();
 	const theme = useAppTheme();
 	const router = useRouter();
@@ -32,10 +40,16 @@ export function ProgressRow({ row }: { row: Row }) {
 					subtitle,
 					target,
 					...row.hands.map(({ hands, bpm }) =>
-						t("screen.progress.handTempo", {
-							hand: t(`screen.progressChart.hands.${hands}`),
-							bpm,
-						}),
+						t(
+							movedBy(bpm, baseline?.[hands]) == null
+								? "screen.progress.handTempo"
+								: "screen.progress.handTempoMoved",
+							{
+								hand: t(`screen.progressChart.hands.${hands}`),
+								bpm,
+								delta: movedBy(bpm, baseline?.[hands]),
+							},
+						),
 					),
 				].join(". ")}
 				onPress={() =>
@@ -72,6 +86,7 @@ export function ProgressRow({ row }: { row: Row }) {
 						{subtitle}
 					</Text>
 					{row.hands.map(({ hands, bpm }) => {
+						const delta = movedBy(bpm, baseline?.[hands]);
 						const color =
 							hands === "LH"
 								? theme.colors.handLeft
@@ -112,6 +127,21 @@ export function ProgressRow({ row }: { row: Row }) {
 								>
 									{t("screen.progressChart.axisBpm", { bpm })}
 								</Text>
+								<View style={{ width: space.xxl }}>
+									{delta != null && (
+										<Text
+											testID={`progress-moved-${hands}`}
+											variant="labelSmall"
+											numberOfLines={1}
+											style={{
+												textAlign: "right",
+												color: theme.colors.onSurfaceVariant,
+											}}
+										>
+											{t("screen.progress.movedValue", { delta })}
+										</Text>
+									)}
+								</View>
 							</View>
 						);
 					})}

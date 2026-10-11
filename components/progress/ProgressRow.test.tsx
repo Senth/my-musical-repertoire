@@ -7,6 +7,8 @@ import type { Piece } from "@/models/piece";
 import type { Section } from "@/models/section";
 import type { TechniqueItem } from "@/models/technique";
 import { lightTheme } from "@/theme";
+import type { ChartRange } from "@/utils/progress-chart";
+import { type ProgressRow, progressRowId } from "@/utils/repertoire-progress";
 import { makePiece, makeSection, makeTechnique } from "@/utils/test-factories";
 
 const mockPush = jest.fn();
@@ -14,6 +16,21 @@ let mockPieces: Piece[];
 let mockSections: Section[];
 let mockTechniques: TechniqueItem[];
 let mockLoading = false;
+let mockBaselines: Record<
+	string,
+	Partial<Record<"LH" | "RH" | "HT", number>>
+> = {};
+let mockMovedError: Error | null = null;
+const mockMoved = jest.fn(
+	(_rows: readonly ProgressRow[], _range: ChartRange) => ({
+		baselines: mockBaselines,
+		error: mockMovedError,
+	}),
+);
+jest.mock("@/hooks/use-progress-moved", () => ({
+	useProgressMoved: (rows: readonly ProgressRow[], range: ChartRange) =>
+		mockMoved(rows, range),
+}));
 
 jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush }) }));
 jest.mock("@/hooks/use-pieces", () => ({
@@ -35,6 +52,8 @@ beforeEach(() => {
 		.spyOn(Animated, "timing")
 		.mockReturnValue({ start: jest.fn(), stop: jest.fn(), reset: jest.fn() });
 	mockLoading = false;
+	mockBaselines = {};
+	mockMovedError = null;
 	mockPieces = [
 		makePiece({ id: "piece", title: "Invention", targetTempoBpm: 100 }),
 	];
@@ -147,4 +166,46 @@ it("offers Pieces for an empty repertoire, but not while data is loading", async
 	).toBeTruthy();
 	await fireEvent.press(screen.getByRole("button", { name: "Pieces" }));
 	expect(mockPush).toHaveBeenLastCalledWith("/piece");
+});
+
+it("shows positive, zero and negative movement without changing bars and passes only rendered rows", async () => {
+	mockBaselines = {
+		"pieces/piece/sections/section": { LH: 80, RH: 80, HT: 12 },
+	};
+	const screen = await renderProgress();
+	expect(screen.getByTestId("progress-moved-LH").props.children).toBe("−20");
+	expect(screen.getByTestId("progress-moved-RH").props.children).toBe("±0");
+	expect(screen.getByTestId("progress-moved-HT").props.children).toBe("+8");
+	expect(mockMoved.mock.lastCall?.[0].map(progressRowId)).toEqual([
+		"pieces/piece/sections/section",
+	]);
+	expect(mockMoved.mock.lastCall?.[1]).toBe("3m");
+	await fireEvent.press(screen.getByRole("button", { name: "1 month" }));
+	expect(mockMoved.mock.lastCall?.[1]).toBe("1m");
+	expect(screen.getByText("+n moved in 1 month")).toBeTruthy();
+	expect(
+		["LH", "RH", "HT"].map(
+			(hands) =>
+				screen.getByTestId(`progress-fill-${hands}`).props.accessibilityValue
+					.now,
+		),
+	).toEqual([50, 75, 0]);
+	await fireEvent.press(
+		screen.getByRole("button", { name: "At target in every hand: 1 passage" }),
+	);
+	expect(mockMoved.mock.lastCall?.[0].map(progressRowId)).toEqual([
+		"pieces/piece/sections/section",
+		"techniques/scale",
+	]);
+});
+
+it("does not turn unavailable movement into zero or conceal a read error", async () => {
+	mockMovedError = new Error("Read failed");
+	const screen = await renderProgress();
+	expect(screen.queryByTestId("progress-moved-LH")).toBeNull();
+	expect(
+		screen.getByText(
+			"Could not load tempo changes. Switch range to try again.",
+		),
+	).toBeTruthy();
 });

@@ -147,6 +147,13 @@ const PIECES: {
 				startBar: 7,
 				endBar: 14,
 			},
+			{
+				id: "seed-invention-closing",
+				label: "Closing bars",
+				state: "stabilizing",
+				startBar: 15,
+				endBar: 22,
+			},
 		],
 	},
 	{
@@ -347,6 +354,10 @@ setup("seed the emulator fixture", async () => {
 		tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
 		const fortyFiveDaysAgo = new Date(now);
 		fortyFiveDaysAgo.setDate(fortyFiveDaysAgo.getDate() - 45);
+		const seventyDaysAgo = new Date(now);
+		seventyDaysAgo.setDate(seventyDaysAgo.getDate() - 70);
+		const fortyDaysAgo = new Date(now);
+		fortyDaysAgo.setDate(fortyDaysAgo.getDate() - 40);
 		for (const log of [
 			{
 				date: now,
@@ -379,11 +390,25 @@ setup("seed the emulator fixture", async () => {
 		let practiceDaysSinceSpan = 0;
 		for (const save of [
 			{
+				sectionId: "seed-invention-closing",
+				date: seventyDaysAgo,
+				entries: [
+					{ hands: "HT", drill: null, bpm: 80, quality: 4, effort: 3 },
+				] satisfies ModeEntry[],
+			},
+			{
 				sectionId: SEED_IDS.exposition,
 				date: fortyFiveDaysAgo,
 				entries: [
 					{ hands: "LH", drill: null, bpm: 60, quality: 2, effort: 4 },
 					{ hands: "RH", drill: null, bpm: 64, quality: 3, effort: 3 },
+				] satisfies ModeEntry[],
+			},
+			{
+				sectionId: "seed-invention-closing",
+				date: fortyDaysAgo,
+				entries: [
+					{ hands: "HT", drill: null, bpm: 88, quality: 4, effort: 3 },
 				] satisfies ModeEntry[],
 			},
 			{

@@ -1,4 +1,9 @@
-import { buildProgressRows, progressFill } from "@/utils/repertoire-progress";
+import {
+	buildProgressRows,
+	movedBy,
+	progressFill,
+	progressRowId,
+} from "@/utils/repertoire-progress";
 import { makePiece, makeSection, makeTechnique } from "@/utils/test-factories";
 
 it("clamps progress from 20 BPM to target", () => {
@@ -9,6 +14,37 @@ it("clamps progress from 20 BPM to target", () => {
 	expect(progressFill(120, 100)).toBe(1);
 	expect(progressFill(20, 20)).toBe(1);
 	expect(progressFill(10, 20)).toBe(0);
+});
+
+it("formats signed movement honestly and leaves missing or invalid baselines blank", () => {
+	expect(movedBy(80, 60)).toBe("+20");
+	expect(movedBy(60, 80)).toBe("−20");
+	expect(movedBy(80, 80)).toBe("±0");
+	expect(movedBy(0, 0)).toBe("±0");
+	expect(movedBy(60, null)).toBeNull();
+	expect(movedBy(60)).toBeNull();
+	expect(movedBy(60, Number.NaN)).toBeNull();
+	expect(movedBy(Number.POSITIVE_INFINITY, 60)).toBeNull();
+});
+
+it("keys rows by their whole scope so duplicate section ids stay separate", () => {
+	const section = makeSection({
+		id: "same",
+		pieceId: "p",
+		byMode: { HT: { bpm: 60 } },
+	});
+	const { rows } = buildProgressRows({
+		pieces: [
+			makePiece({ id: "p", targetTempoBpm: 100 }),
+			makePiece({ id: "other", targetTempoBpm: 100 }),
+		],
+		sectionsByPiece: { p: [section], other: [section] },
+		techniques: [],
+	});
+	expect(rows.map(progressRowId)).toEqual([
+		"pieces/p/sections/same",
+		"pieces/other/sections/same",
+	]);
 });
 
 it("sorts by smallest fill, not absolute BPM gap, and splits rows at target in every present hand", () => {

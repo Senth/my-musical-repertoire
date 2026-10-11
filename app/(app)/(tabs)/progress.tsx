@@ -4,16 +4,19 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Divider, List, Text } from "react-native-paper";
 import { ProgressRow } from "@/components/progress/ProgressRow";
+import { RangeChips } from "@/components/progress/RangeChips";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { ScreenContent } from "@/components/ui/ScreenContent";
 import { usePieces } from "@/hooks/use-pieces";
+import { useProgressMoved } from "@/hooks/use-progress-moved";
 import { useAllSections } from "@/hooks/use-sections";
 import { useTechniques } from "@/hooks/use-techniques";
 import { HANDS_MODES } from "@/models/practice";
 import type { Section } from "@/models/section";
 import { useAppTheme } from "@/theme";
 import { scrollTail, space } from "@/theme/tokens";
-import { buildProgressRows } from "@/utils/repertoire-progress";
+import type { ChartRange } from "@/utils/progress-chart";
+import { buildProgressRows, progressRowId } from "@/utils/repertoire-progress";
 
 export default function ProgressScreen() {
 	const { t } = useTranslation();
@@ -23,6 +26,7 @@ export default function ProgressScreen() {
 	const { sections, loading: sectionsLoading } = useAllSections();
 	const { techniques, loading: techniquesLoading } = useTechniques();
 	const [expanded, setExpanded] = useState(false);
+	const [range, setRange] = useState<ChartRange>("3m");
 	const { rows, atTarget } = useMemo(() => {
 		const sectionsByPiece: Record<string, Section[]> = {};
 		for (const section of sections) {
@@ -31,9 +35,14 @@ export default function ProgressScreen() {
 		}
 		return buildProgressRows({ pieces, sectionsByPiece, techniques });
 	}, [pieces, sections, techniques]);
+	const loading = piecesLoading || sectionsLoading || techniquesLoading;
+	const renderedRows = useMemo(
+		() => (loading ? [] : expanded ? [...rows, ...atTarget] : rows),
+		[loading, expanded, rows, atTarget],
+	);
+	const { baselines, error } = useProgressMoved(renderedRows, range);
 
-	if (piecesLoading || sectionsLoading || techniquesLoading)
-		return <LoadingScreen />;
+	if (loading) return <LoadingScreen />;
 	if (rows.length === 0 && atTarget.length === 0)
 		return (
 			<MessageScreen
@@ -65,16 +74,19 @@ export default function ProgressScreen() {
 						{t("screen.progress.subtitle")}
 					</Text>
 				</View>
+				<View style={{ marginBottom: space.sm }}>
+					<RangeChips range={range} onChange={setRange} />
+				</View>
 				<View
 					style={{
 						flexDirection: "row",
 						alignItems: "center",
 						flexWrap: "wrap",
-						gap: space.md,
+						gap: space.sm,
 						marginBottom: space.xs,
 					}}
 				>
-					<View style={{ flexDirection: "row", gap: space.md }}>
+					<View style={{ flexDirection: "row", gap: space.sm }}>
 						{HANDS_MODES.map((hands) => (
 							<Text
 								key={hands}
@@ -95,7 +107,15 @@ export default function ProgressScreen() {
 						))}
 					</View>
 					<Text
-						variant="bodySmall"
+						variant="labelSmall"
+						style={{ color: theme.colors.onSurfaceVariant }}
+					>
+						{t("screen.progress.movedKey", {
+							range: t(`screen.progress.movedRanges.${range}`),
+						})}
+					</Text>
+					<Text
+						variant="labelSmall"
 						style={{
 							flex: 1,
 							textAlign: "right",
@@ -105,14 +125,19 @@ export default function ProgressScreen() {
 						{t("screen.progress.order")}
 					</Text>
 				</View>
+				{error && (
+					<Text
+						variant="bodySmall"
+						style={{ color: theme.colors.onSurfaceVariant }}
+					>
+						{t("screen.progress.movedError")}
+					</Text>
+				)}
 				{rows.map((row) => (
 					<ProgressRow
-						key={
-							row.kind === "section"
-								? `section-${row.section.id}`
-								: `technique-${row.technique.id}`
-						}
+						key={progressRowId(row)}
 						row={row}
+						baseline={baselines[progressRowId(row)]}
 					/>
 				))}
 				{atTarget.length > 0 && (
@@ -141,12 +166,9 @@ export default function ProgressScreen() {
 						{expanded &&
 							atTarget.map((row) => (
 								<ProgressRow
-									key={
-										row.kind === "section"
-											? `section-${row.section.id}`
-											: `technique-${row.technique.id}`
-									}
+									key={progressRowId(row)}
 									row={row}
+									baseline={baselines[progressRowId(row)]}
 								/>
 							))}
 					</View>

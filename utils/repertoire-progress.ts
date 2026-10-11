@@ -8,6 +8,20 @@ export function progressFill(bpm: number, target: number): number {
 	return Math.max(0, Math.min(1, (bpm - 20) / (target - 20)));
 }
 
+export function movedBy(
+	current: number,
+	baseline?: number | null,
+): string | null {
+	if (
+		baseline == null ||
+		!Number.isFinite(baseline) ||
+		!Number.isFinite(current)
+	)
+		return null;
+	const delta = current - baseline;
+	return delta === 0 ? "±0" : delta > 0 ? `+${delta}` : `−${Math.abs(delta)}`;
+}
+
 export type ProgressRow = (
 	| { kind: "section"; piece: Piece; section: Section }
 	| { kind: "technique"; technique: TechniqueItem }
@@ -16,6 +30,12 @@ export type ProgressRow = (
 	hands: { hands: HandsMode; bpm: number; fill: number }[];
 	fill: number;
 };
+
+export function progressRowId(row: ProgressRow): string {
+	return row.kind === "section"
+		? `pieces/${row.piece.id}/sections/${row.section.id}`
+		: `techniques/${row.technique.id}`;
+}
 
 export function buildProgressRows({
 	pieces,

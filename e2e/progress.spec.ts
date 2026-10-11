@@ -18,10 +18,48 @@ test("progress sorts seeded passages, shows hand tempos, expands at target and o
 	const rows = page
 		.getByRole("link")
 		.filter({ has: page.getByTestId("progress-bar-HT") });
-	await expect(rows).toHaveCount(2);
+	await expect(rows).toHaveCount(3);
 	await expect(rows.nth(0)).toHaveAccessibleName(/^Middle entries\./);
 	await expect(rows.nth(1)).toHaveAccessibleName(/^Exposition\./);
 	const exposition = rows.nth(1);
+	await expect(
+		page.getByRole("button", {
+			name: t("screen.progressChart.ranges.3m"),
+			exact: true,
+		}),
+	).toHaveAttribute("aria-pressed", "true");
+	for (const hands of ["LH", "RH"])
+		await expect(exposition.getByTestId(`progress-moved-${hands}`)).toHaveText(
+			"+20",
+		);
+	await expect(exposition.getByTestId("progress-moved-HT")).toHaveText("±0");
+	const closing = page.getByRole("link", { name: /^Closing bars\./ });
+	await expect(closing.getByTestId("progress-moved-HT")).toHaveText("+8");
+	const track = exposition.getByTestId("progress-fill-LH");
+	const before = await track.boundingBox();
+	await page
+		.getByRole("button", {
+			name: t("screen.progressChart.ranges.1m"),
+			exact: true,
+		})
+		.click();
+	await expect(exposition.getByTestId("progress-moved-LH")).toHaveText("+8");
+	await expect(closing.getByTestId("progress-moved-HT")).toHaveCount(0);
+	const after = await track.boundingBox();
+	if (!before || !after) throw new Error("Progress track not measurable");
+	expect(after.x).toBe(before.x);
+	expect(after.width).toBe(before.width);
+	await expect(rows.nth(0)).toHaveAccessibleName(/^Middle entries\./);
+	await expect(rows.nth(1)).toHaveAccessibleName(/^Exposition\./);
+	await expect(rows.nth(2)).toHaveAccessibleName(/^Closing bars\./);
+	await page
+		.getByRole("button", {
+			name: t("screen.progressChart.ranges.3m"),
+			exact: true,
+		})
+		.click();
+	await expect(exposition.getByTestId("progress-moved-LH")).toHaveText("+20");
+	await expect(closing.getByTestId("progress-moved-HT")).toHaveText("+8");
 	for (const [hands, bpm] of [
 		["LH", 80],
 		["RH", 84],
