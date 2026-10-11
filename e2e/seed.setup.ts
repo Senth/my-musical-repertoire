@@ -495,6 +495,7 @@ setup("seed the emulator fixture", async () => {
 		const techniqueRef = doc(userRoot, "techniques", SEED_IDS.scale);
 		await updateDoc(techniqueRef, {
 			activeDrills: ["staccato"],
+			targetTempoBpm: 88,
 			dateIntroduced: fourDaysAgo,
 		});
 		let scaleByMode: ByMode = {};

@@ -23,6 +23,7 @@ const MAPPING = {
 	"music.note.list": "queue-music",
 	"books.vertical": "library-books",
 	pianokeys: "piano",
+	"chart.line.uptrend.xyaxis": "trending-up",
 } as IconMapping;
 
 /**

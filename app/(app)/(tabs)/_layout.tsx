@@ -44,6 +44,20 @@ export default function AppTabsLayout() {
 					),
 				}}
 			/>
+			<Tabs.Screen
+				name="progress"
+				options={{
+					title: t("screen.progress.title"),
+					headerShown: false,
+					tabBarIcon: ({ color }) => (
+						<IconSymbol
+							size={28}
+							name="chart.line.uptrend.xyaxis"
+							color={color}
+						/>
+					),
+				}}
+			/>
 		</Tabs>
 	);
 }

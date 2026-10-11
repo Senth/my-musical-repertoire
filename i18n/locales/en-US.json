@@ -870,6 +870,16 @@
 				"titleRequired": "Title is required."
 			}
 		},
+		"progress": {
+			"title": "Progress",
+			"subtitle": "Where each passage stands against its target",
+			"order": "Furthest from target first",
+			"target": "target {{bpm}}",
+			"handTempo": "{{hand}}: {{bpm}} BPM",
+			"atTarget_one": "At target in every hand: {{count}} passage",
+			"atTarget_other": "At target in every hand: {{count}} passages",
+			"empty": "Set a target tempo on a piece or technique and log a practice at tempo to see it here."
+		},
 		"progressChart": {
 			"ranges": {
 				"1m": "1 month",
