@@ -5,6 +5,7 @@ import { ProgressHeader } from "@/components/progress/ProgressHeader";
 import type { ProgressScope } from "@/hooks/use-progress-series";
 import { PracticeMistakes } from "@/models/practice";
 import { lightTheme } from "@/theme";
+import { contentWidth } from "@/theme/tokens";
 import { buildSeries, type ChartSeries } from "@/utils/progress-chart";
 
 const scope = { type: "technique" as const, techniqueId: "together" };
@@ -88,6 +89,66 @@ it("shows only hands together and accurate counts, target gap, and first tempo",
 		</PaperProvider>,
 	);
 	expect(screen.getByText("120 BPM · 12 to go")).toBeTruthy();
+});
+
+it("keeps an achieved target below every tempo inside the chart", async () => {
+	mockState.series = buildSeries(
+		[
+			{ date: new Date(2026, 9, 1), achievedBpm: 61, hands: "LH" },
+			{ date: new Date(2026, 9, 2), achievedBpm: 80, hands: "LH" },
+		],
+		"section",
+	);
+	const screen = await renderHeader(40);
+	await fireEvent(
+		screen.container.queryAll(
+			(node) => typeof node.props.onLayout === "function",
+		)[0],
+		"layout",
+		{
+			nativeEvent: { layout: { width: contentWidth.page } },
+		},
+	);
+	const chart = screen.container.queryAll(
+		(node) => node.props.accessibilityRole === "image",
+	)[0];
+	const stroke = chart.queryAll(
+		(node) => node.props.strokeDasharray != null,
+	)[0];
+	const label = chart.queryAll((node) => node.props.content === "40")[0];
+	expect(stroke).toBeDefined();
+	expect(label).toBeDefined();
+	expect(stroke?.props.y1).toBeGreaterThan(0);
+	expect(stroke?.props.y1).toBeLessThan(chart.props.bbHeight);
+	expect(Number(label?.parent?.props.y[0])).toBe(Number(stroke?.props.y1));
+	expect(screen.getByText("80 BPM · at target")).toBeTruthy();
+});
+
+it("shows empty state for different hands with one day each until one hand spans two days", async () => {
+	const logs = [
+		{ date: new Date(2026, 9, 1), achievedBpm: 60, hands: "LH" as const },
+		{ date: new Date(2026, 9, 2), achievedBpm: 64, hands: "RH" as const },
+	];
+	mockState.series = buildSeries(logs, "technique");
+	const screen = await renderHeader(80);
+	expect(
+		screen.getByText("Log a tempo on two different days to see a chart."),
+	).toBeTruthy();
+	expect(screen.queryByTestId("progress-summary-LH")).toBeNull();
+	expect(screen.queryByTestId("progress-summary-RH")).toBeNull();
+	mockState.series = buildSeries(
+		[...logs, { date: new Date(2026, 9, 2), achievedBpm: 64, hands: "LH" }],
+		"technique",
+	);
+	await screen.rerender(
+		<PaperProvider theme={lightTheme}>
+			<ProgressHeader scope={scope} target={80} />
+		</PaperProvider>,
+	);
+	expect(
+		screen.queryByText("Log a tempo on two different days to see a chart."),
+	).toBeNull();
+	expect(screen.getByTestId("progress-summary-LH")).toBeTruthy();
 });
 
 it("does not claim an empty chart when a read fails", async () => {

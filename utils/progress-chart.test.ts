@@ -122,13 +122,13 @@ describe("rangeStart", () => {
 	});
 });
 
-it("pads domain strictly below and above to tens, including target only in upper bound", () => {
+it("pads domain strictly below and above series and target to tens", () => {
 	const series = buildSeries(
 		[log({ achievedBpm: 61 }), log({ achievedBpm: 80 })],
 		"section",
 	);
 	expect(yDomain(series, 100)).toEqual([60, 110]);
-	expect(yDomain(series, 40)).toEqual([60, 90]);
+	expect(yDomain(series, 40)).toEqual([30, 90]);
 	expect(yDomain(buildSeries([log()], "section"))).toEqual([50, 70]);
 	expect(yDomain([])).toEqual([0, 10]);
 	expect(yDomain([], 100)).toEqual([90, 110]);

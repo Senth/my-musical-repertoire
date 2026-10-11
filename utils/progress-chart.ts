@@ -105,9 +105,10 @@ export function yDomain(
 	target?: number | null,
 ): [number, number] {
 	const values = series.flatMap(({ points }) => points.map(({ bpm }) => bpm));
-	if (!values.length && target == null) return [0, 10];
-	const low = values.length ? Math.min(...values) : (target as number);
-	const high = Math.max(...values, target ?? low);
+	if (target != null) values.push(target);
+	if (!values.length) return [0, 10];
+	const low = Math.min(...values);
+	const high = Math.max(...values);
 	return [(Math.ceil(low / 10) - 1) * 10, (Math.floor(high / 10) + 1) * 10];
 }
 

@@ -27,9 +27,10 @@ export function ProgressHeader({
 	const [width, setWidth] = useState(0);
 	const { series, loading, error } = useProgressSeries(scope, range);
 	const kind = scope.type === "run-throughs" ? "run-through" : scope.type;
-	const points = series.flatMap(({ points }) => points);
-	const enough =
-		new Set(points.map(({ date }) => historyDayKey(date))).size >= 2;
+	const enough = series.some(
+		({ points }) =>
+			new Set(points.map(({ date }) => historyDayKey(date))).size >= 2,
+	);
 	const lead = series.reduce<(typeof series)[number] | null>(
 		(latest, candidate) =>
 			(candidate.points.at(-1)?.date.getTime() ?? Number.NEGATIVE_INFINITY) >

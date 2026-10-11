@@ -151,6 +151,7 @@ export function usePracticeHistory(scope: HistoryScope) {
 								archived: true,
 								startBar: data.startBar ?? null,
 								endBar: data.endBar ?? null,
+								targetBpmOverride: data.targetBpmOverride ?? null,
 							});
 						}
 						if (snapshot.docs.length < PAGE_SIZE) break;
