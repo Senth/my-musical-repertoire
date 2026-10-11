@@ -249,6 +249,7 @@ export default function SectionEditScreen() {
 					/>
 				</View>
 				<HelperText
+					style={{ minHeight: space.xxl + space.lg }}
 					type={endBarError ? "error" : "info"}
 					visible={!!endBarError || !startBarText.trim() || !endBarText.trim()}
 				>

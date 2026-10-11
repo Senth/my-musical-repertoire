@@ -3,6 +3,8 @@ import {
 	collectConsoleErrors,
 	expectCleanPage,
 	ROUTES,
+	SEED_IDS,
+	t,
 } from "@/e2e/support/app";
 import { touchTarget } from "@/theme/tokens";
 
@@ -24,6 +26,83 @@ async function open(page: Page, path: string, ready: string) {
 }
 
 test.describe("craft", () => {
+	test("section bar helper keeps Notes, Save and Archive in place", async ({
+		page,
+		isMobile,
+	}) => {
+		if (isMobile) await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(
+			`/piece/${SEED_IDS.invention}/section/seed-invention-middle`,
+		);
+		await expect(
+			page.getByRole("textbox", {
+				name: t("screen.pieceSections.form.labelLabel"),
+				exact: true,
+			}),
+		).toHaveValue("Middle entries");
+		const start = page.getByRole("textbox", {
+			name: t("screen.pieceSections.form.startBarLabel"),
+			exact: true,
+		});
+		const end = page.getByRole("textbox", {
+			name: t("screen.pieceSections.form.endBarLabel"),
+			exact: true,
+		});
+		const hint = page.getByText(t("screen.pieceSections.form.barsHint"), {
+			exact: true,
+		});
+		const controls = [
+			page.getByRole("textbox", {
+				name: t("screen.pieceSections.form.notesLabel"),
+				exact: true,
+			}),
+			page.getByRole("button", {
+				name: t("screen.pieceSections.form.save"),
+				exact: true,
+			}),
+			page.getByRole("button", {
+				name: t("screen.pieceSections.archiveDialog.confirm"),
+				exact: true,
+			}),
+		];
+		const positions = async () => {
+			const top = await start.evaluate((el) => el.getBoundingClientRect().top);
+			return Promise.all(
+				controls.map(async (control) =>
+					Math.round(
+						(await control.evaluate((el) => el.getBoundingClientRect().top)) -
+							top,
+					),
+				),
+			);
+		};
+		await start.fill("");
+		await end.fill("");
+		await end.blur();
+		await expect(hint).toHaveCSS("opacity", "1");
+		const initial = await positions();
+
+		await end.fill("14");
+		await end.blur();
+		await expect(
+			page.getByText(
+				t("screen.pieceSections.form.error.endBarRequiresStartBar"),
+				{ exact: true },
+			),
+		).toBeVisible();
+		expect(await positions()).toEqual(initial);
+
+		await start.fill("7");
+		await start.blur();
+		await expect(hint).toHaveCSS("opacity", "0");
+		expect(await positions()).toEqual(initial);
+
+		await end.fill("");
+		await end.blur();
+		await expect(hint).toHaveCSS("opacity", "1");
+		expect(await positions()).toEqual(initial);
+	});
+
 	for (const { path, ready } of ROUTES) {
 		test(`${path} renders clean`, async ({ page, isMobile }) => {
 			const consoleErrors = collectConsoleErrors(page);
