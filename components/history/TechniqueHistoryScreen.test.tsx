@@ -12,6 +12,9 @@ import {
 } from "@/utils/practice-history";
 
 const mockPush = jest.fn();
+jest.mock("@/hooks/use-progress-series", () => ({
+	useProgressSeries: () => ({ series: [], loading: false, error: null }),
+}));
 const mockBack = jest.fn();
 const mockLoadMore = jest.fn();
 const mockHistory = {

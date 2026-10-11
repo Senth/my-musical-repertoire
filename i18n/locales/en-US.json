@@ -870,6 +870,43 @@
 				"titleRequired": "Title is required."
 			}
 		},
+		"progressChart": {
+			"ranges": {
+				"1m": "1 month",
+				"3m": "3 months",
+				"1y": "1 year",
+				"all": "All time"
+			},
+			"summaryRange": {
+				"1m": "Last month",
+				"3m": "Last 3 months",
+				"1y": "Last year",
+				"all": "All time"
+			},
+			"hands": {
+				"LH": "Left hand",
+				"RH": "Right hand",
+				"HT": "Hands together"
+			},
+			"handsShort": { "LH": "LH", "RH": "RH", "HT": "HT" },
+			"accuracy": { "clean": "Clean", "slips": "Some slips", "shaky": "Shaky" },
+			"target": "Target",
+			"axisBpm": "{{bpm}}",
+			"current": "{{bpm}} BPM",
+			"toGo": "{{bpm}} BPM · {{gap}} to go",
+			"atTarget": "{{bpm}} BPM · at target",
+			"counts": "{{shaky}} shaky · {{slips}} some slips · {{clean}} clean",
+			"practices_one": "{{count}} practice",
+			"practices_other": "{{count}} practices",
+			"leadContext": " {{hand}} · target {{target}} · {{first}} BPM in {{month}}",
+			"leadWithoutTarget": " {{hand}} · {{first}} BPM in {{month}}",
+			"lead": "{{bpm}} BPM{{context}}",
+			"summaryA11y": "{{hand}}: {{counts}} · {{practices}}",
+			"chartA11y": "{{lead}}. {{summary}}",
+			"empty": "Log a tempo on two different days to see a chart.",
+			"loading": "Loading tempo chart",
+			"loadError": "Could not load the tempo chart. Try another range."
+		},
 		"history": {
 			"back": "Back",
 			"title": "History",

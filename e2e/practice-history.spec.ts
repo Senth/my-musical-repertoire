@@ -74,6 +74,8 @@ test("seeded history reads grouped hands, section filters and technique drills w
 	test.setTimeout(60_000);
 	await page.setViewportSize({ width: 390, height: 900 });
 	const consoleErrors = collectConsoleErrors(page);
+	const seededDate = new Date(await readFile(".tmp/e2e/seed-date.txt", "utf8"));
+	await page.clock.setFixedTime(seededDate);
 	await page.goto(`/piece/${SEED_IDS.invention}`);
 	await page
 		.getByRole("link", { name: t("screen.history.entryTitle"), exact: true })
@@ -94,7 +96,7 @@ test("seeded history reads grouped hands, section filters and technique drills w
 	const exposition = page
 		.getByText("Exposition", { exact: true })
 		.filter({ visible: true })
-		.last()
+		.nth(1)
 		.locator("xpath=../..");
 	for (const hands of ["LH", "RH", "HT"]) {
 		await expect(
@@ -108,6 +110,37 @@ test("seeded history reads grouped hands, section filters and technique drills w
 		page.getByText(/\bnotes?\b/i).filter({ visible: true }),
 	).toHaveCount(0);
 	await expectCleanPage(page);
+	await page.getByRole("button", { name: "Exposition", exact: true }).click();
+	const firstDate = new Date(seededDate);
+	firstDate.setDate(firstDate.getDate() - 45);
+	const month = new Intl.DateTimeFormat("en-US", { month: "long" }).format(
+		firstDate,
+	);
+	const lead = `80 BPM Left hand · target 96 · 60 BPM in ${month}`;
+	const chart = page.getByRole("img", { name: /^\d+ BPM/ });
+	await expect(chart).toHaveAccessibleName(
+		`${lead}. Left hand: 1 shaky · 1 some slips · 1 clean · 3 practices. Right hand: 0 shaky · 1 some slips · 2 clean · 3 practices. Hands together: 0 shaky · 0 some slips · 1 clean · 1 practice`,
+	);
+	const leftSummary = page.getByTestId("progress-summary-LH");
+	await expect(
+		leftSummary.getByText("1 shaky · 1 some slips · 1 clean", { exact: true }),
+	).toBeVisible();
+	await expect(
+		leftSummary.getByText("3 practices", { exact: true }),
+	).toBeVisible();
+	await page
+		.getByRole("button", {
+			name: t("screen.progressChart.ranges.1m"),
+			exact: true,
+		})
+		.click();
+	await expect(
+		leftSummary.getByText("2 practices", { exact: true }),
+	).toBeVisible();
+	await expect(
+		leftSummary.getByText("0 shaky · 1 some slips · 1 clean", { exact: true }),
+	).toBeVisible();
+	await expectCleanPage(page);
 	const middle = page.getByRole("button", {
 		name: "Middle entries",
 		exact: true,
@@ -116,10 +149,19 @@ test("seeded history reads grouped hands, section filters and technique drills w
 		name: t("screen.history.all"),
 		exact: true,
 	});
-	await expect(all).toHaveAttribute("aria-pressed", "true");
+	await expect(all).toHaveAttribute("aria-pressed", "false");
 	await expect(middle).toHaveAttribute("aria-pressed", "false");
-	expect(await chipFill(all)).not.toBe(await chipFill(middle));
+	expect(
+		await chipFill(
+			page.getByRole("button", { name: "Exposition", exact: true }),
+		),
+	).not.toBe(await chipFill(middle));
 	await middle.click();
+	await expect(
+		page.getByText(t("screen.progressChart.empty"), { exact: true }),
+	).toBeVisible();
+	await expect(chart).toHaveCount(0);
+	await expect(leftSummary).toHaveCount(0);
 	await expect(middle).toHaveAttribute("aria-pressed", "true");
 	await expect(all).toHaveAttribute("aria-pressed", "false");
 	await expect(

@@ -25,7 +25,7 @@ import {
 
 export type HistorySection = Pick<
 	Section,
-	"label" | "order" | "archived" | "startBar" | "endBar"
+	"label" | "order" | "archived" | "startBar" | "endBar" | "targetBpmOverride"
 > & { id: string };
 type HistoryScope = Exclude<LastLogScope, { type: "section" }>;
 

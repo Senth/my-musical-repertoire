@@ -343,6 +343,10 @@ setup("seed the emulator fixture", async () => {
 		threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 		const fourDaysAgo = new Date(now);
 		fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+		const tenDaysAgo = new Date(now);
+		tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+		const fortyFiveDaysAgo = new Date(now);
+		fortyFiveDaysAgo.setDate(fortyFiveDaysAgo.getDate() - 45);
 		for (const log of [
 			{
 				date: now,
@@ -374,6 +378,22 @@ setup("seed the emulator fixture", async () => {
 		let lastPracticed: Date | null = null;
 		let practiceDaysSinceSpan = 0;
 		for (const save of [
+			{
+				sectionId: SEED_IDS.exposition,
+				date: fortyFiveDaysAgo,
+				entries: [
+					{ hands: "LH", drill: null, bpm: 60, quality: 2, effort: 4 },
+					{ hands: "RH", drill: null, bpm: 64, quality: 3, effort: 3 },
+				] satisfies ModeEntry[],
+			},
+			{
+				sectionId: SEED_IDS.exposition,
+				date: tenDaysAgo,
+				entries: [
+					{ hands: "LH", drill: null, bpm: 72, quality: 3, effort: 3 },
+					{ hands: "RH", drill: null, bpm: 76, quality: 4, effort: 3 },
+				] satisfies ModeEntry[],
+			},
 			{
 				sectionId: SEED_IDS.exposition,
 				date: twoDaysAgo,
@@ -504,7 +524,15 @@ setup("seed the emulator fixture", async () => {
 		for (const [ref, dates] of [
 			[
 				doc(pieceRef, "sections", SEED_IDS.exposition),
-				[twoDaysAgo, twoDaysAgo, twoDaysAgo],
+				[
+					fortyFiveDaysAgo,
+					fortyFiveDaysAgo,
+					tenDaysAgo,
+					tenDaysAgo,
+					twoDaysAgo,
+					twoDaysAgo,
+					twoDaysAgo,
+				],
 			],
 			[doc(pieceRef, "sections", "seed-invention-middle"), [yesterday]],
 			[pieceRef, [now]],

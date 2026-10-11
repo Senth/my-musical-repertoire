@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Platform, ScrollView } from "react-native";
 import { Chip, TouchableRipple } from "react-native-paper";
 import { HistoryScreen } from "@/components/history/HistoryScreen";
+import { ProgressHeader } from "@/components/progress/ProgressHeader";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { usePieces } from "@/hooks/use-pieces";
 import { usePracticeHistory } from "@/hooks/use-practice-history";
@@ -68,6 +69,18 @@ export default function PieceHistoryScreen() {
 			subtitle={piece.title}
 			history={history}
 			entries={filterHistoryEntries(history.entries, filter)}
+			chart={
+				selectedSection && (
+					<ProgressHeader
+						scope={{
+							type: "section",
+							pieceId: id,
+							sectionId: selectedSection.id,
+						}}
+						target={selectedSection.targetBpmOverride ?? piece.targetTempoBpm}
+					/>
+				)
+			}
 			onBack={goBack}
 			onPractice={() => router.push(`/piece/${id}/practice?from=piece-detail`)}
 			emptyBody={t("screen.history.emptyPieceBody")}
