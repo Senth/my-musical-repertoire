@@ -5,6 +5,8 @@ import {
 } from "@/models/practice";
 import type { NormalizedLastLog } from "@/utils/practice-history";
 
+export const CHART_LOG_CAP = 500;
+
 export type AccuracyLevel = "clean" | "slips" | "shaky";
 export type ChartKind =
 	| "section"
