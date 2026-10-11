@@ -21,6 +21,9 @@ const PIECE = "E2E Span Piece";
 const SECTION_A = "E2E Span A";
 const SECTION_B = "E2E Span B";
 const SECTION_C = "E2E Span C";
+const MISSING_BARS_PIECE = "E2E Missing Bars Piece";
+const SECTION_WITH_BARS = "E2E Missing Bars A";
+const SECTION_WITHOUT_BARS = "E2E Missing Bars B";
 
 async function fill(page: Page, label: string, value: string) {
 	if (!value) return;
@@ -206,4 +209,64 @@ test("joined-sections span: chips, seams, credit, and no offer", async ({
 			{ timeout: 10_000 },
 		)
 		.toBeGreaterThanOrEqual(4);
+});
+
+test("missing section bars: notice opens form and clears after save", async ({
+	page,
+}) => {
+	test.setTimeout(60_000);
+	const pieceUrl = await addPiece(page, MISSING_BARS_PIECE);
+
+	await page.goto(`${pieceUrl}/section/new`);
+	await fill(
+		page,
+		t("screen.pieceSections.form.labelLabel"),
+		SECTION_WITH_BARS,
+	);
+	await choose(
+		page,
+		t("screen.pieceSections.form.stateLabel"),
+		t("section.state.stabilizing"),
+	);
+	await fill(page, t("screen.pieceSections.form.startBarLabel"), "1");
+	await fill(page, t("screen.pieceSections.form.endBarLabel"), "20");
+	await saveUntilGone(page, t("screen.pieceSections.form.save"));
+
+	await page.goto(`${pieceUrl}/section/new`);
+	await fill(
+		page,
+		t("screen.pieceSections.form.labelLabel"),
+		SECTION_WITHOUT_BARS,
+	);
+	await choose(
+		page,
+		t("screen.pieceSections.form.stateLabel"),
+		t("section.state.stabilizing"),
+	);
+	await saveUntilGone(page, t("screen.pieceSections.form.save"));
+
+	const missingBarsLine = t("screen.pieceSections.missingBars.line").replace(
+		"{{sections}}",
+		SECTION_WITHOUT_BARS,
+	);
+	await expect(page.getByText(missingBarsLine, { exact: true })).toBeVisible({
+		timeout: 10_000,
+	});
+
+	const addBarsLabel = t("screen.pieceSections.missingBars.actionA11y").replace(
+		"{{section}}",
+		SECTION_WITHOUT_BARS,
+	);
+	await page.getByRole("button", { name: addBarsLabel, exact: true }).click();
+	const sectionLabel = page.getByRole("textbox", {
+		name: t("screen.pieceSections.form.labelLabel"),
+		exact: true,
+	});
+	await expect(sectionLabel).toHaveValue(SECTION_WITHOUT_BARS);
+	await fill(page, t("screen.pieceSections.form.startBarLabel"), "21");
+	await fill(page, t("screen.pieceSections.form.endBarLabel"), "30");
+	await saveUntilGone(page, t("screen.pieceSections.form.save"));
+
+	await page.goto(pieceUrl);
+	await expect(page.getByText(missingBarsLine, { exact: true })).toHaveCount(0);
 });

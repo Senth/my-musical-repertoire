@@ -248,8 +248,12 @@ export default function SectionEditScreen() {
 						onBlur={() => validateEndBar()}
 					/>
 				</View>
-				<HelperText type="error" visible={!!endBarError}>
-					{endBarError ?? ""}
+				<HelperText
+					style={{ minHeight: space.xxl + space.lg }}
+					type={endBarError ? "error" : "info"}
+					visible={!!endBarError || !startBarText.trim() || !endBarText.trim()}
+				>
+					{endBarError ?? t("screen.pieceSections.form.barsHint")}
 				</HelperText>
 			</View>
 

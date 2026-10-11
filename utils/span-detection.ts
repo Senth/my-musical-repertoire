@@ -24,11 +24,8 @@ export interface SpanSection extends Section {
 
 const SPANNABLE_STATES: SectionState[] = ["stabilizing", "maintenance"];
 
-/** Bar-less and archived sections are transparent: they neither join a run nor
- * break one, because they say nothing about which bars are covered. */
-function isVisible(section: Section): section is SpanSection {
+export function hasSpanBars(section: Section): section is SpanSection {
 	return (
-		!section.archived &&
 		section.startBar != null &&
 		section.endBar != null &&
 		Number.isFinite(section.startBar) &&
@@ -36,7 +33,13 @@ function isVisible(section: Section): section is SpanSection {
 	);
 }
 
-function qualifies(section: SpanSection): boolean {
+/** Bar-less and archived sections are transparent: they neither join a run nor
+ * break one, because they say nothing about which bars are covered. */
+function isVisible(section: Section): section is SpanSection {
+	return !section.archived && hasSpanBars(section);
+}
+
+export function isSpanQualifying(section: Section): boolean {
 	return SPANNABLE_STATES.includes(section.state);
 }
 
@@ -64,7 +67,7 @@ export function buildSpanRuns(sections: Section[]): SpanSection[][] {
 	for (const section of candidates) {
 		const prev = current[current.length - 1];
 
-		if (!qualifies(section)) {
+		if (!isSpanQualifying(section)) {
 			close();
 			continue;
 		}

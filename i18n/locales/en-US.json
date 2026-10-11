@@ -1100,6 +1100,7 @@
 				"labelLabel": "Label (e.g. Opening, Bridge, Coda)",
 				"stateLabel": "State",
 				"barsLabel": "Bars (optional)",
+				"barsHint": "Add both bars to practise this section combined with its neighbours.",
 				"startBarLabel": "Start",
 				"endBarLabel": "End",
 				"notesLabel": "Notes / Problem (optional)",
@@ -1108,6 +1109,11 @@
 					"labelRequired": "Label is required.",
 					"endBarRequiresStartBar": "End bar requires a start bar."
 				}
+			},
+			"missingBars": {
+				"line": "Combined practice needs bar numbers on {{sections}}.",
+				"action": "Add bars",
+				"actionA11y": "Add bars to {{section}}"
 			},
 			"addNextNudge": {
 				"title": "Ready for the next passage?",
