@@ -20,6 +20,7 @@ import {
 } from "react-native-paper";
 import { HistoryLink } from "@/components/history/HistoryLink";
 import { AddNextSectionNudge } from "@/components/piece/AddNextSectionNudge";
+import { MissingBarsNotice } from "@/components/piece/MissingBarsNotice";
 import { PieceStateChip } from "@/components/piece/PieceStateChip";
 import { SectionRow } from "@/components/section/SectionRow";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
@@ -483,6 +484,8 @@ export default function PieceDetailScreen() {
 								/>
 							</View>
 						)}
+
+						<MissingBarsNotice pieceId={id} sections={sections} />
 
 						{/* Sections list / empty state */}
 						{!sectionsLoading && sections.length === 0 ? (
