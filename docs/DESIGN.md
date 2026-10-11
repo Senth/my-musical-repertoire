@@ -22,8 +22,6 @@ Rasmus is mid-session and the app is not the point.
 - **A streak app.** No streak counters, flames, badges, XP, levels, confetti, or any praise
   the practice did not earn. Lena is doing the honest thing by showing up, and an app that
   celebrates or scolds her for it is one she deletes on a bad week.
-- **A fitness dashboard.** No progress rings, radial gauges, metric tiles, sparklines,
-  scores out of a hundred, or week-over-week deltas. Progress here is one bar and a word.
 - **An enterprise tool.** No dense toolbars, no nested tabs, no settings drawer per screen —
   and not its vocabulary: never "task", "item", "entry", "allocation".
 - **A landing page.** No hero sections, gradient meshes, decorative illustration, display
@@ -189,8 +187,12 @@ The canonical implementation owns the styling. Extend it. **Restyling a copy is 
   less; the direct `MaterialIcons` imports in the tree are drift, not precedent.
 - **Empty states** — say what the screen is for and offer the action that fills it. "No
   pieces yet" on its own is not an empty state. Text and one icon; never an illustration.
-- **Charts** — none, and the anti-references say why. When #24 lands, it inherits the
-  lifecycle hues and the status roles, not a new palette.
+- **Charts** — hand-drawn with `react-native-svg`; no chart library. Lines, not dots. Hue
+  identifies a series, never a judgement: left hand `handLeft`, right hand `handRight`,
+  hands together `onSurface`, and every line is end-labelled so colour is never the only
+  cue. How a practice went is drawn as line width — clean 1, some slips 2, shaky 4 — so
+  the eye lands on where it went wrong. Targets are a dashed `outline` line. Lifecycle
+  hues stay reserved for lifecycle state and never colour a series.
 
 ## Motion
 
