@@ -890,6 +890,21 @@
 			},
 			"handsShort": { "LH": "LH", "RH": "RH", "HT": "HT" },
 			"accuracy": { "clean": "Clean", "slips": "Some slips", "shaky": "Shaky" },
+			"runThroughAccuracy": {
+				"clean": "None or few",
+				"slips": "Some",
+				"shaky": "Many or everywhere"
+			},
+			"sightReadingAccuracy": {
+				"slips": "Some stops",
+				"shaky": "Lots of stops"
+			},
+			"mistakesCaption": "Line width: worst of technical and memory mistakes",
+			"series": {
+				"run-through": "Run-throughs",
+				"sight-reading": "Sight-reading"
+			},
+			"wholePiece": "whole piece",
 			"target": "Target",
 			"axisBpm": "{{bpm}}",
 			"current": "{{bpm}} BPM",
@@ -900,6 +915,7 @@
 			"practices_other": "{{count}} practices",
 			"leadContext": " {{hand}} · target {{target}} · {{first}} BPM in {{month}}",
 			"leadWithoutTarget": " {{hand}} · {{first}} BPM in {{month}}",
+			"leadWithoutHand": " · {{first}} BPM in {{month}}",
 			"lead": "{{bpm}} BPM{{context}}",
 			"summaryA11y": "{{hand}}: {{counts}} · {{practices}}",
 			"chartA11y": "{{lead}}. {{summary}}",

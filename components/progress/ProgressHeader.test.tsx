@@ -2,6 +2,8 @@ import { fireEvent, render } from "@testing-library/react-native";
 import { PaperProvider } from "react-native-paper";
 import "@/i18n";
 import { ProgressHeader } from "@/components/progress/ProgressHeader";
+import type { ProgressScope } from "@/hooks/use-progress-series";
+import { PracticeMistakes } from "@/models/practice";
 import { lightTheme } from "@/theme";
 import { buildSeries, type ChartSeries } from "@/utils/progress-chart";
 
@@ -22,10 +24,13 @@ beforeEach(() => {
 	mockState = { series: [], loading: false, error: null };
 });
 
-async function renderHeader(target?: number) {
+async function renderHeader(
+	target?: number,
+	chartScope: ProgressScope = scope,
+) {
 	return render(
 		<PaperProvider theme={lightTheme}>
-			<ProgressHeader scope={scope} target={target} />
+			<ProgressHeader scope={chartScope} target={target} />
 		</PaperProvider>,
 	);
 }
@@ -96,4 +101,95 @@ it("does not claim an empty chart when a read fails", async () => {
 	).toBeNull();
 	await fireEvent.press(screen.getByLabelText("1 year"));
 	expect(mockProgress).toHaveBeenLastCalledWith(scope, "1y");
+});
+
+it.each([
+	96,
+	undefined,
+])("shows run-through counts from the worse mistake with target %s", async (target) => {
+	mockState.series = buildSeries(
+		[
+			{
+				date: new Date(2026, 8, 1),
+				achievedBpm: 60,
+				technicalMistakes: PracticeMistakes.none,
+				memoryMistakes: PracticeMistakes.few,
+			},
+			{
+				date: new Date(2026, 9, 1),
+				achievedBpm: 64,
+				technicalMistakes: PracticeMistakes.few,
+				memoryMistakes: PracticeMistakes.many,
+			},
+			{
+				date: new Date(2026, 9, 2),
+				achievedBpm: 72,
+				technicalMistakes: PracticeMistakes.some,
+				memoryMistakes: PracticeMistakes.none,
+			},
+		],
+		"run-through",
+	);
+	const screen = await renderHeader(target, {
+		type: "run-throughs",
+		pieceId: "piece",
+	});
+	expect(screen.getByText("Run-throughs")).toBeTruthy();
+	expect(screen.getByText("1 shaky · 1 some slips · 1 clean")).toBeTruthy();
+	expect(screen.getByText("3 practices")).toBeTruthy();
+	expect(
+		screen.getByText("Line width: worst of technical and memory mistakes"),
+	).toBeTruthy();
+	for (const label of ["None or few", "Some", "Many or everywhere"])
+		expect(screen.getByText(label)).toBeTruthy();
+	expect(screen.getByText(/whole piece/)).toBeTruthy();
+	expect(screen.queryByText("Left hand")).toBeNull();
+	expect(screen.queryByText("Hands together")).toBeNull();
+	if (target == null) {
+		expect(screen.queryByText("Target")).toBeNull();
+		expect(screen.queryByText(/to go/)).toBeNull();
+	} else {
+		expect(screen.getByText("72 BPM · 24 to go")).toBeTruthy();
+	}
+});
+
+it("shows sight-reading tempo and stops without target or hand legend", async () => {
+	mockState.series = buildSeries(
+		[
+			{ date: new Date(2026, 8, 1), achievedBpm: 60, keptGoing: 2 },
+			{ date: new Date(2026, 9, 1), achievedBpm: 64, keptGoing: 3 },
+			{ date: new Date(2026, 9, 2), achievedBpm: 72, keptGoing: 5 },
+		],
+		"sight-reading",
+	);
+	const screen = await renderHeader(undefined, { type: "sight-reading" });
+	expect(screen.getByText("Sight-reading")).toBeTruthy();
+	expect(screen.getByText("1 shaky · 1 some slips · 1 clean")).toBeTruthy();
+	for (const label of ["Kept going", "Some stops", "Lots of stops"])
+		expect(screen.getByText(label)).toBeTruthy();
+	expect(screen.queryByText("Target")).toBeNull();
+	expect(screen.queryByText(/to go/)).toBeNull();
+	expect(screen.queryByText("Left hand")).toBeNull();
+	expect(
+		screen.queryByText("Line width: worst of technical and memory mistakes"),
+	).toBeNull();
+	expect(screen.queryByText(/72 BPM {2}·/)).toBeNull();
+});
+
+it("drops target copy for a section without a resolved target", async () => {
+	mockState.series = buildSeries(
+		[
+			{ date: new Date(2026, 8, 1), achievedBpm: 60, hands: "LH" },
+			{ date: new Date(2026, 9, 1), achievedBpm: 64, hands: "LH" },
+		],
+		"section",
+	);
+	const screen = await renderHeader(undefined, {
+		type: "section",
+		pieceId: "piece",
+		sectionId: "section",
+	});
+	expect(screen.getByTestId("progress-summary-LH")).toBeTruthy();
+	expect(screen.queryByText("Target")).toBeNull();
+	expect(screen.queryByText(/to go/)).toBeNull();
 });

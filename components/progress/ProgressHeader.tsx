@@ -26,6 +26,7 @@ export function ProgressHeader({
 	const [range, setRange] = useState<ChartRange>("3m");
 	const [width, setWidth] = useState(0);
 	const { series, loading, error } = useProgressSeries(scope, range);
+	const kind = scope.type === "run-throughs" ? "run-through" : scope.type;
 	const points = series.flatMap(({ points }) => points);
 	const enough =
 		new Set(points.map(({ date }) => historyDayKey(date))).size >= 2;
@@ -38,13 +39,19 @@ export function ProgressHeader({
 		null,
 	);
 	const current = lead?.points.at(-1);
-	const hand = lead?.hands ? t(`screen.progressChart.hands.${lead.hands}`) : "";
+	const hand = lead?.hands
+		? t(`screen.progressChart.hands.${lead.hands}`)
+		: kind === "run-through"
+			? t("screen.progressChart.wholePiece")
+			: "";
 	const bpm = current?.bpm;
 	const context = lead
 		? t(
-				target == null
-					? "screen.progressChart.leadWithoutTarget"
-					: "screen.progressChart.leadContext",
+				target != null
+					? "screen.progressChart.leadContext"
+					: hand
+						? "screen.progressChart.leadWithoutTarget"
+						: "screen.progressChart.leadWithoutHand",
 				{
 					hand,
 					target,
@@ -59,7 +66,9 @@ export function ProgressHeader({
 	const description = summarise(series, target)
 		.map(({ hands, counts }) =>
 			t("screen.progressChart.summaryA11y", {
-				hand: hands ? t(`screen.progressChart.hands.${hands}`) : "",
+				hand: hands
+					? t(`screen.progressChart.hands.${hands}`)
+					: t(`screen.progressChart.series.${kind}`),
 				counts: t("screen.progressChart.counts", counts),
 				practices: t("screen.progressChart.practices", { count: counts.total }),
 			}),
@@ -113,7 +122,7 @@ export function ProgressHeader({
 							})}
 						/>
 					)}
-					<ChartLegend series={series} target={target} />
+					<ChartLegend series={series} target={target} kind={kind} />
 					<View style={{ paddingTop: space.lg }}>
 						<Text
 							variant="labelSmall"
@@ -124,7 +133,7 @@ export function ProgressHeader({
 						>
 							{t(`screen.progressChart.summaryRange.${range}`)}
 						</Text>
-						<HandSummary series={series} target={target} />
+						<HandSummary series={series} target={target} kind={kind} />
 					</View>
 				</>
 			)}

@@ -70,7 +70,7 @@ export default function PieceHistoryScreen() {
 			history={history}
 			entries={filterHistoryEntries(history.entries, filter)}
 			chart={
-				selectedSection && (
+				selectedSection ? (
 					<ProgressHeader
 						scope={{
 							type: "section",
@@ -78,6 +78,11 @@ export default function PieceHistoryScreen() {
 							sectionId: selectedSection.id,
 						}}
 						target={selectedSection.targetBpmOverride ?? piece.targetTempoBpm}
+					/>
+				) : (
+					<ProgressHeader
+						scope={{ type: "run-throughs", pieceId: id }}
+						target={piece.targetTempoBpm}
 					/>
 				)
 			}

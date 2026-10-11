@@ -3,14 +3,20 @@ import { View } from "react-native";
 import { Divider, Text } from "react-native-paper";
 import { useAppTheme } from "@/theme";
 import { opacity, size, space } from "@/theme/tokens";
-import { type ChartSeries, summarise } from "@/utils/progress-chart";
+import {
+	type ChartKind,
+	type ChartSeries,
+	summarise,
+} from "@/utils/progress-chart";
 
 export function HandSummary({
 	series,
 	target,
+	kind,
 }: {
 	series: ChartSeries[];
 	target?: number | null;
+	kind: ChartKind;
 }) {
 	const { t } = useTranslation();
 	const theme = useAppTheme();
@@ -24,7 +30,10 @@ export function HandSummary({
 							? theme.colors.handRight
 							: theme.colors.onSurface;
 				return (
-					<View key={hands} testID={`progress-summary-${hands}`}>
+					<View
+						key={hands ?? kind}
+						testID={`progress-summary-${hands ?? kind}`}
+					>
 						<View style={{ gap: space.xs, paddingVertical: space.md }}>
 							<View
 								style={{
@@ -42,7 +51,9 @@ export function HandSummary({
 									}}
 								/>
 								<Text variant="bodyMedium" style={{ flex: 1 }}>
-									{hands && t(`screen.progressChart.hands.${hands}`)}
+									{hands
+										? t(`screen.progressChart.hands.${hands}`)
+										: t(`screen.progressChart.series.${kind}`)}
 								</Text>
 								<Text
 									variant="bodySmall"

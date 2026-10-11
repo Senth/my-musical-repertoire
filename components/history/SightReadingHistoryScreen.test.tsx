@@ -6,6 +6,9 @@ import type { SightReadingLog } from "@/models/sight-reading";
 import { darkTheme, lightTheme } from "@/theme";
 
 const mockBack = jest.fn();
+jest.mock("@/hooks/use-progress-series", () => ({
+	useProgressSeries: () => ({ series: [], loading: false, error: null }),
+}));
 const mockLoadMore = jest.fn();
 const mockUpNavigation = jest.fn((_fallback: string) => mockBack);
 const mockHistory = {

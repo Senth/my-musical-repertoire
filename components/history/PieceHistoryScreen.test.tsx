@@ -134,6 +134,10 @@ it("groups a day's rows once, hides credited rows on All, and filters run-throug
 	expect(screen.queryByText("From a run-through")).toBeNull();
 	expect(screen.queryByLabelText("Old passage")).toBeNull();
 	await fireEvent.press(screen.getByLabelText("Run-throughs"));
+	expect(mockProgress).toHaveBeenLastCalledWith(
+		{ type: "run-throughs", pieceId: "piece" },
+		"3m",
+	);
 	expect(screen.getByText("Run-through")).toBeTruthy();
 	expect(screen.queryByText("Bars 208–264")).toBeNull();
 	await fireEvent.press(screen.getByLabelText("Back"));
@@ -158,6 +162,10 @@ it("preselects a live section and includes its run-through credits", async () =>
 		"3m",
 	);
 	await fireEvent.press(screen.getByLabelText("All"));
+	expect(mockProgress).toHaveBeenLastCalledWith(
+		{ type: "run-throughs", pieceId: "piece" },
+		"3m",
+	);
 	expect(screen.queryByText("From a run-through")).toBeNull();
 });
 

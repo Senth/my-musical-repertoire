@@ -446,6 +446,28 @@ setup("seed the emulator fixture", async () => {
 		}
 
 		const runThrough = writeBatch(db);
+		for (const log of [
+			{
+				date: fortyFiveDaysAgo,
+				achievedBpm: 60,
+				technicalMistakes: PracticeMistakes.none,
+				memoryMistakes: PracticeMistakes.few,
+			},
+			{
+				date: tenDaysAgo,
+				achievedBpm: 64,
+				technicalMistakes: PracticeMistakes.few,
+				memoryMistakes: PracticeMistakes.many,
+			},
+		]) {
+			runThrough.set(doc(collection(pieceRef, "practiceLogs")), {
+				...log,
+				date: Timestamp.fromDate(log.date),
+				flaggedSectionIds: [],
+				triggeredFrom: "full-piece",
+				sessionId: `seed-invention-run-through-${log.date.getTime()}`,
+			});
+		}
 		runThrough.set(doc(collection(pieceRef, "practiceLogs")), {
 			date: Timestamp.fromDate(now),
 			technicalMistakes: PracticeMistakes.some,
@@ -535,7 +557,7 @@ setup("seed the emulator fixture", async () => {
 				],
 			],
 			[doc(pieceRef, "sections", "seed-invention-middle"), [yesterday]],
-			[pieceRef, [now]],
+			[pieceRef, [fortyFiveDaysAgo, tenDaysAgo, now]],
 			[
 				techniqueRef,
 				[threeDaysAgo, twoDaysAgo, yesterday, yesterday, yesterday, yesterday],
