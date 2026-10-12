@@ -25,6 +25,7 @@ export function HistoryScreen({
 	history,
 	entries,
 	filters,
+	chart,
 	emptyBody,
 	emptyMessage,
 	onBack,
@@ -37,6 +38,7 @@ export function HistoryScreen({
 		| ReturnType<typeof useSightReadingHistory>;
 	entries: (HistoryEntry | (SightReadingLog & { id: string }))[];
 	filters?: ReactNode;
+	chart?: ReactNode;
 	emptyBody: string;
 	emptyMessage?: string;
 	onBack: () => void;
@@ -72,7 +74,13 @@ export function HistoryScreen({
 				backgroundColor: theme.colors.background,
 			}}
 		>
-			<Appbar.Header>
+			<Appbar.Header
+				style={{
+					width: "100%",
+					maxWidth: contentWidth.page,
+					alignSelf: "center",
+				}}
+			>
 				<Appbar.BackAction
 					onPress={onBack}
 					accessibilityLabel={t("screen.history.back")}
@@ -99,6 +107,7 @@ export function HistoryScreen({
 						paddingBottom={space.sm}
 					>
 						{filters}
+						{chart}
 						{kind !== "sight-reading" && history.entries.length > 0 && (
 							<HistoryLegend kind={kind} />
 						)}

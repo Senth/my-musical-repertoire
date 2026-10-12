@@ -19,6 +19,8 @@ export type AppTheme = MD3Theme & {
 		onSuccess: string;
 		successContainer: string;
 		onSuccessContainer: string;
+		handLeft: string;
+		handRight: string;
 	};
 };
 
@@ -55,6 +57,8 @@ export const lightTheme: AppTheme = {
 		onSuccess: "#FFFFFF",
 		successContainer: "#D1FAE5",
 		onSuccessContainer: "#064E3B",
+		handLeft: "#0072B2",
+		handRight: "#B34F00",
 	},
 };
 
@@ -91,6 +95,8 @@ export const darkTheme: AppTheme = {
 		onSuccess: "#064E3B",
 		successContainer: "#065F46",
 		onSuccessContainer: "#D1FAE5",
+		handLeft: "#56B4E9",
+		handRight: "#E69F00",
 	},
 };
 

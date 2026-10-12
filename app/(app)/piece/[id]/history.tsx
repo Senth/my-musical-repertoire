@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform, ScrollView } from "react-native";
+import { Platform, View } from "react-native";
 import { Chip, TouchableRipple } from "react-native-paper";
 import { HistoryScreen } from "@/components/history/HistoryScreen";
+import { ProgressHeader } from "@/components/progress/ProgressHeader";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { usePieces } from "@/hooks/use-pieces";
 import { usePracticeHistory } from "@/hooks/use-practice-history";
@@ -68,6 +69,23 @@ export default function PieceHistoryScreen() {
 			subtitle={piece.title}
 			history={history}
 			entries={filterHistoryEntries(history.entries, filter)}
+			chart={
+				selectedSection ? (
+					<ProgressHeader
+						scope={{
+							type: "section",
+							pieceId: id,
+							sectionId: selectedSection.id,
+						}}
+						target={selectedSection.targetBpmOverride ?? piece.targetTempoBpm}
+					/>
+				) : (
+					<ProgressHeader
+						scope={{ type: "run-throughs", pieceId: id }}
+						target={piece.targetTempoBpm}
+					/>
+				)
+			}
 			onBack={goBack}
 			onPractice={() => router.push(`/piece/${id}/practice?from=piece-detail`)}
 			emptyBody={t("screen.history.emptyPieceBody")}
@@ -81,10 +99,13 @@ export default function PieceHistoryScreen() {
 							})
 			}
 			filters={
-				<ScrollView
-					horizontal
-					showsHorizontalScrollIndicator={false}
-					contentContainerStyle={{ gap: space.sm }}
+				<View
+					style={{
+						flexDirection: "row",
+						flexWrap: "wrap",
+						columnGap: space.sm,
+						rowGap: space.lg,
+					}}
 				>
 					{filters.map((option) => (
 						<TouchableRipple
@@ -112,7 +133,7 @@ export default function PieceHistoryScreen() {
 							</Chip>
 						</TouchableRipple>
 					))}
-				</ScrollView>
+				</View>
 			}
 		/>
 	);

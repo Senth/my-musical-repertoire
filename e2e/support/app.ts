@@ -85,6 +85,7 @@ export const ROUTES: { path: string; ready: string }[] = [
 	{ path: "/overview", ready: t("screen.overview.practiceToday") },
 	{ path: "/piece", ready: t("screen.pieces.title") },
 	{ path: "/technique", ready: t("screen.techniques.title") },
+	{ path: "/progress", ready: t("screen.progress.subtitle") },
 	{
 		path: "/sight-reading/history",
 		ready: t("screen.history.sightReadingTitle"),

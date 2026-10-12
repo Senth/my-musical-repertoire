@@ -3,6 +3,7 @@ import { getDocs, onSnapshot, startAfter } from "firebase/firestore";
 import { usePracticeHistory } from "@/hooks/use-practice-history";
 import { useSections } from "@/hooks/use-sections";
 import type { Section } from "@/models/section";
+import { buildSeries, summarise } from "@/utils/progress-chart";
 
 let mockUser: { uid: string } | null = { uid: "u" };
 let mockSections: Section[] = [];
@@ -235,6 +236,34 @@ describe("usePracticeHistory", () => {
 				)
 				.sort((a, b) => b - a),
 		);
+	});
+
+	it("preserves archived target overrides instead of falling back to piece tempo", async () => {
+		const pieceTarget = 120;
+		pages.set(archivePath, [
+			[
+				{
+					id: "archived",
+					data: () => ({
+						label: "Old passage",
+						order: 0,
+						archived: true,
+						targetBpmOverride: 80,
+					}),
+				},
+			],
+		]);
+		const { result } = await renderHook(() =>
+			usePracticeHistory({ type: "piece", pieceId: "p" }),
+		);
+		await waitFor(() => expect(result.current.loading).toBe(false));
+		const target = result.current.sections[0].targetBpmOverride ?? pieceTarget;
+		expect(target).toBe(80);
+		const series = buildSeries(
+			[{ date: new Date(2026, 9, 1), achievedBpm: 70, hands: "LH" }],
+			"section",
+		);
+		expect(summarise(series, target)[0].gap).toBe(10);
 	});
 
 	it("refills a held save without splitting hands across displayed pages", async () => {

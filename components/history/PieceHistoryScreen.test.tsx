@@ -12,6 +12,15 @@ import {
 import { RUN_THROUGH_LOG_SOURCE } from "@/utils/run-through-credit";
 
 const mockPush = jest.fn();
+const mockProgress = jest.fn((_scope: unknown, _range: unknown) => ({
+	series: [],
+	loading: false,
+	error: null,
+}));
+jest.mock("@/hooks/use-progress-series", () => ({
+	useProgressSeries: (scope: unknown, range: unknown) =>
+		mockProgress(scope, range),
+}));
 jest.mock(
 	"react-native-paper/lib/commonjs/components/ActivityIndicator",
 	() => ({
@@ -125,6 +134,10 @@ it("groups a day's rows once, hides credited rows on All, and filters run-throug
 	expect(screen.queryByText("From a run-through")).toBeNull();
 	expect(screen.queryByLabelText("Old passage")).toBeNull();
 	await fireEvent.press(screen.getByLabelText("Run-throughs"));
+	expect(mockProgress).toHaveBeenLastCalledWith(
+		{ type: "run-throughs", pieceId: "piece" },
+		"3m",
+	);
 	expect(screen.getByText("Run-through")).toBeTruthy();
 	expect(screen.queryByText("Bars 208–264")).toBeNull();
 	await fireEvent.press(screen.getByLabelText("Back"));
@@ -139,7 +152,20 @@ it("preselects a live section and includes its run-through credits", async () =>
 	);
 	expect(screen.getByText("From a run-through")).toBeTruthy();
 	expect(screen.queryByText("Run-through")).toBeNull();
+	expect(mockProgress).toHaveBeenLastCalledWith(
+		{ type: "section", pieceId: "piece", sectionId: "coda" },
+		"3m",
+	);
+	await fireEvent.press(screen.getByLabelText("Intro"));
+	expect(mockProgress).toHaveBeenLastCalledWith(
+		{ type: "section", pieceId: "piece", sectionId: "intro" },
+		"3m",
+	);
 	await fireEvent.press(screen.getByLabelText("All"));
+	expect(mockProgress).toHaveBeenLastCalledWith(
+		{ type: "run-throughs", pieceId: "piece" },
+		"3m",
+	);
 	expect(screen.queryByText("From a run-through")).toBeNull();
 });
 

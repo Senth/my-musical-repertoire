@@ -25,7 +25,7 @@ import {
 
 export type HistorySection = Pick<
 	Section,
-	"label" | "order" | "archived" | "startBar" | "endBar"
+	"label" | "order" | "archived" | "startBar" | "endBar" | "targetBpmOverride"
 > & { id: string };
 type HistoryScope = Exclude<LastLogScope, { type: "section" }>;
 
@@ -151,6 +151,7 @@ export function usePracticeHistory(scope: HistoryScope) {
 								archived: true,
 								startBar: data.startBar ?? null,
 								endBar: data.endBar ?? null,
+								targetBpmOverride: data.targetBpmOverride ?? null,
 							});
 						}
 						if (snapshot.docs.length < PAGE_SIZE) break;

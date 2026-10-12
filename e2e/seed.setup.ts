@@ -147,6 +147,13 @@ const PIECES: {
 				startBar: 7,
 				endBar: 14,
 			},
+			{
+				id: "seed-invention-closing",
+				label: "Closing bars",
+				state: "stabilizing",
+				startBar: 15,
+				endBar: 22,
+			},
 		],
 	},
 	{
@@ -343,6 +350,14 @@ setup("seed the emulator fixture", async () => {
 		threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 		const fourDaysAgo = new Date(now);
 		fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+		const tenDaysAgo = new Date(now);
+		tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+		const fortyFiveDaysAgo = new Date(now);
+		fortyFiveDaysAgo.setDate(fortyFiveDaysAgo.getDate() - 45);
+		const seventyDaysAgo = new Date(now);
+		seventyDaysAgo.setDate(seventyDaysAgo.getDate() - 70);
+		const fortyDaysAgo = new Date(now);
+		fortyDaysAgo.setDate(fortyDaysAgo.getDate() - 40);
 		for (const log of [
 			{
 				date: now,
@@ -374,6 +389,36 @@ setup("seed the emulator fixture", async () => {
 		let lastPracticed: Date | null = null;
 		let practiceDaysSinceSpan = 0;
 		for (const save of [
+			{
+				sectionId: "seed-invention-closing",
+				date: seventyDaysAgo,
+				entries: [
+					{ hands: "HT", drill: null, bpm: 80, quality: 4, effort: 3 },
+				] satisfies ModeEntry[],
+			},
+			{
+				sectionId: SEED_IDS.exposition,
+				date: fortyFiveDaysAgo,
+				entries: [
+					{ hands: "LH", drill: null, bpm: 60, quality: 2, effort: 4 },
+					{ hands: "RH", drill: null, bpm: 64, quality: 3, effort: 3 },
+				] satisfies ModeEntry[],
+			},
+			{
+				sectionId: "seed-invention-closing",
+				date: fortyDaysAgo,
+				entries: [
+					{ hands: "HT", drill: null, bpm: 88, quality: 4, effort: 3 },
+				] satisfies ModeEntry[],
+			},
+			{
+				sectionId: SEED_IDS.exposition,
+				date: tenDaysAgo,
+				entries: [
+					{ hands: "LH", drill: null, bpm: 72, quality: 3, effort: 3 },
+					{ hands: "RH", drill: null, bpm: 76, quality: 4, effort: 3 },
+				] satisfies ModeEntry[],
+			},
 			{
 				sectionId: SEED_IDS.exposition,
 				date: twoDaysAgo,
@@ -426,6 +471,28 @@ setup("seed the emulator fixture", async () => {
 		}
 
 		const runThrough = writeBatch(db);
+		for (const log of [
+			{
+				date: fortyFiveDaysAgo,
+				achievedBpm: 60,
+				technicalMistakes: PracticeMistakes.none,
+				memoryMistakes: PracticeMistakes.few,
+			},
+			{
+				date: tenDaysAgo,
+				achievedBpm: 64,
+				technicalMistakes: PracticeMistakes.few,
+				memoryMistakes: PracticeMistakes.many,
+			},
+		]) {
+			runThrough.set(doc(collection(pieceRef, "practiceLogs")), {
+				...log,
+				date: Timestamp.fromDate(log.date),
+				flaggedSectionIds: [],
+				triggeredFrom: "full-piece",
+				sessionId: `seed-invention-run-through-${log.date.getTime()}`,
+			});
+		}
 		runThrough.set(doc(collection(pieceRef, "practiceLogs")), {
 			date: Timestamp.fromDate(now),
 			technicalMistakes: PracticeMistakes.some,
@@ -453,6 +520,7 @@ setup("seed the emulator fixture", async () => {
 		const techniqueRef = doc(userRoot, "techniques", SEED_IDS.scale);
 		await updateDoc(techniqueRef, {
 			activeDrills: ["staccato"],
+			targetTempoBpm: 88,
 			dateIntroduced: fourDaysAgo,
 		});
 		let scaleByMode: ByMode = {};
@@ -504,10 +572,18 @@ setup("seed the emulator fixture", async () => {
 		for (const [ref, dates] of [
 			[
 				doc(pieceRef, "sections", SEED_IDS.exposition),
-				[twoDaysAgo, twoDaysAgo, twoDaysAgo],
+				[
+					fortyFiveDaysAgo,
+					fortyFiveDaysAgo,
+					tenDaysAgo,
+					tenDaysAgo,
+					twoDaysAgo,
+					twoDaysAgo,
+					twoDaysAgo,
+				],
 			],
 			[doc(pieceRef, "sections", "seed-invention-middle"), [yesterday]],
-			[pieceRef, [now]],
+			[pieceRef, [fortyFiveDaysAgo, tenDaysAgo, now]],
 			[
 				techniqueRef,
 				[threeDaysAgo, twoDaysAgo, yesterday, yesterday, yesterday, yesterday],

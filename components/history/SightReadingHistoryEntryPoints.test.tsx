@@ -8,6 +8,15 @@ import type { TechniqueItem } from "@/models/technique";
 import { darkTheme, lightTheme } from "@/theme";
 
 const mockPush = jest.fn();
+const mockProgress = jest.fn((_scope: unknown, _range: unknown) => ({
+	series: [],
+	loading: false,
+	error: null,
+}));
+jest.mock("@/hooks/use-progress-series", () => ({
+	useProgressSeries: (scope: unknown, range: unknown) =>
+		mockProgress(scope, range),
+}));
 const mockBack = jest.fn();
 const mockSetOptions = jest.fn();
 let mockCompact = true;
@@ -173,6 +182,10 @@ it.each([
 		<PaperProvider theme={theme}>
 			<SightReadingHistoryScreen />
 		</PaperProvider>,
+	);
+	expect(mockProgress).toHaveBeenLastCalledWith(
+		{ type: "sight-reading" },
+		"3m",
 	);
 	await fireEvent.press(history.getByRole("button", { name: "Back" }));
 	expect(mockBack).toHaveBeenCalledTimes(1);

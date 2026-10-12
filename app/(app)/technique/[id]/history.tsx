@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { HistoryScreen } from "@/components/history/HistoryScreen";
+import { ProgressHeader } from "@/components/progress/ProgressHeader";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { usePracticeHistory } from "@/hooks/use-practice-history";
 import { useTechniques } from "@/hooks/use-techniques";
@@ -26,6 +27,12 @@ export default function TechniqueHistoryScreen() {
 			subtitle={technique.title}
 			history={history}
 			entries={history.entries}
+			chart={
+				<ProgressHeader
+					scope={{ type: "technique", techniqueId: id }}
+					target={technique.targetTempoBpm}
+				/>
+			}
 			emptyBody={t("screen.history.emptyTechniqueBody")}
 			onBack={goBack}
 			onPractice={() =>

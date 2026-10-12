@@ -2,6 +2,7 @@ import { Tabs } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "react-native-paper";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { icon } from "@/theme/tokens";
 
 export default function AppTabsLayout() {
 	const theme = useTheme();
@@ -22,7 +23,7 @@ export default function AppTabsLayout() {
 				options={{
 					title: t("screen.overview.title"),
 					tabBarIcon: ({ color }) => (
-						<IconSymbol size={28} name="music.note.list" color={color} />
+						<IconSymbol size={icon.tab} name="music.note.list" color={color} />
 					),
 				}}
 			/>
@@ -31,7 +32,7 @@ export default function AppTabsLayout() {
 				options={{
 					title: t("screen.pieces.title"),
 					tabBarIcon: ({ color }) => (
-						<IconSymbol size={28} name="books.vertical" color={color} />
+						<IconSymbol size={icon.tab} name="books.vertical" color={color} />
 					),
 				}}
 			/>
@@ -40,7 +41,21 @@ export default function AppTabsLayout() {
 				options={{
 					title: t("screen.techniques.title"),
 					tabBarIcon: ({ color }) => (
-						<IconSymbol size={28} name="pianokeys" color={color} />
+						<IconSymbol size={icon.tab} name="pianokeys" color={color} />
+					),
+				}}
+			/>
+			<Tabs.Screen
+				name="progress"
+				options={{
+					title: t("screen.progress.title"),
+					headerShown: false,
+					tabBarIcon: ({ color }) => (
+						<IconSymbol
+							size={icon.tab}
+							name="chart.line.uptrend.xyaxis"
+							color={color}
+						/>
 					),
 				}}
 			/>

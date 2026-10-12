@@ -62,6 +62,7 @@ export const size = {
 export const icon = {
 	sm: 16,
 	md: 24,
+	tab: 28,
 } as const;
 
 /** Border weights: the one hairline weight, and the card's left accent
