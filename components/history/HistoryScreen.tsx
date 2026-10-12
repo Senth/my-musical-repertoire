@@ -74,7 +74,13 @@ export function HistoryScreen({
 				backgroundColor: theme.colors.background,
 			}}
 		>
-			<Appbar.Header>
+			<Appbar.Header
+				style={{
+					width: "100%",
+					maxWidth: contentWidth.page,
+					alignSelf: "center",
+				}}
+			>
 				<Appbar.BackAction
 					onPress={onBack}
 					accessibilityLabel={t("screen.history.back")}

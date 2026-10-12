@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform, ScrollView } from "react-native";
+import { Platform, View } from "react-native";
 import { Chip, TouchableRipple } from "react-native-paper";
 import { HistoryScreen } from "@/components/history/HistoryScreen";
 import { ProgressHeader } from "@/components/progress/ProgressHeader";
@@ -99,10 +99,13 @@ export default function PieceHistoryScreen() {
 							})
 			}
 			filters={
-				<ScrollView
-					horizontal
-					showsHorizontalScrollIndicator={false}
-					contentContainerStyle={{ gap: space.sm }}
+				<View
+					style={{
+						flexDirection: "row",
+						flexWrap: "wrap",
+						columnGap: space.sm,
+						rowGap: space.lg,
+					}}
 				>
 					{filters.map((option) => (
 						<TouchableRipple
@@ -130,7 +133,7 @@ export default function PieceHistoryScreen() {
 							</Chip>
 						</TouchableRipple>
 					))}
-				</ScrollView>
+				</View>
 			}
 		/>
 	);
