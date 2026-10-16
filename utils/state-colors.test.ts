@@ -27,15 +27,15 @@ describe("piece state visuals", () => {
 		}
 	});
 
-	it.each([
-		true,
-		false,
-	])("tints get weaker down the importance ladder (dark=%s)", (dark) => {
-		const tints = IMPORTANCE.map((s) => pieceStateVisual(s, dark).tint);
-		for (let i = 1; i < tints.length; i++) {
-			expect(tints[i]).toBeLessThan(tints[i - 1]);
-		}
-	});
+	it.each([true, false])(
+		"tints get weaker down the importance ladder (dark=%s)",
+		(dark) => {
+			const tints = IMPORTANCE.map((s) => pieceStateVisual(s, dark).tint);
+			for (let i = 1; i < tints.length; i++) {
+				expect(tints[i]).toBeLessThan(tints[i - 1]);
+			}
+		},
+	);
 
 	it("gives shelved no fill, so it recedes furthest", () => {
 		expect(pieceStateVisual("shelved", false).tint).toBe(0);
