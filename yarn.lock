@@ -1486,10 +1486,10 @@
   resolved "https://registry.yarnpkg.com/@fastify/busboy/-/busboy-3.2.0.tgz#13ed8212f3b9ba697611529d15347f8528058cea"
   integrity sha512-m9FVDXU3GT2ITSe0UaMA5rU3QkfC/UXtCU8y0gSN/GugTqtVldOBWIB5V6V3sbmenVZUIpU6f+mPEO2+m5iTaA==
 
-"@firebase/ai@3.0.0":
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/@firebase/ai/-/ai-3.0.0.tgz#3631de63caf3dd029d56835402ce54085f160213"
-  integrity sha512-66jJAi6JUmyXna89xaDONmfvupO1wNc3f2BegPwUImagbbpKdVeycE3kMqbU4jiDLL14N5PHzadovvxpaqD2hw==
+"@firebase/ai@2.16.0", "@firebase/ai@3.0.0":
+  version "2.16.0"
+  resolved "https://registry.yarnpkg.com/@firebase/ai/-/ai-2.16.0.tgz#2e06e8861b6b23329a3a995aec892a70a3bc73e3"
+  integrity sha512-WRVxl58B61Orwf7st7949ZIW2L4huV80Gpaum1z8v2eH+m2xaxWtC8mOjQyVAOirr6O/yf89cBjlPvoyBpBfTg==
   dependencies:
     "@firebase/app-check-interop-types" "0.3.5"
     "@firebase/component" "0.7.5"
