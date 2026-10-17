@@ -83,7 +83,6 @@
 	},
 	"private": true,
 	"resolutions": {
-		"@firebase/ai": "2.16.0",
 		"postcss": ">=8.5.10"
 	}
 }
