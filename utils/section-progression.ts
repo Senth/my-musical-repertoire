@@ -73,13 +73,16 @@ export interface ProgressionLog {
 	quality?: 1 | 2 | 3 | 4 | 5 | null;
 	effort?: 1 | 2 | 3 | 4 | 5 | null;
 	achievedBpm?: number | null;
-	/** `"span"` rows are excluded from both progression gates — the filter is
-	 * specifically `source !== "span"`, not "source is absent", so a
-	 * run-through row (no `source`) keeps its current behaviour (#205). */
+	/** Only rows without a source count toward either progression gate; new
+	 * sources stay excluded until explicitly allowed (#205). */
 	source?: string | null;
 	/** The incoming join on a span row (#204): did this section connect
 	 * cleanly to the section before it. Absent on every other row. */
 	seamBefore?: "held" | "broken" | null;
+}
+
+function isIsolatedLog(log: ProgressionLog): boolean {
+	return log.source == null;
 }
 
 /** One calendar day's worth of plain HT logs. */
@@ -253,7 +256,7 @@ export function evaluateAdvance(
 	logs: ProgressionLog[],
 	savedEntries: ModeEntry[],
 ): AdvanceEvaluation {
-	logs = logs.filter((l) => l.source !== "span");
+	logs = logs.filter(isIsolatedLog);
 	const toState = nextState(section.state);
 	const htBpm = byMode?.HT?.bpm ?? null;
 	if (!toState) {
@@ -396,7 +399,7 @@ export function evaluateDemote(
 	savedEntries: ModeEntry[],
 	priorLogs: ProgressionLog[],
 ): DemoteEvaluation {
-	priorLogs = priorLogs.filter((l) => l.source !== "span");
+	priorLogs = priorLogs.filter(isIsolatedLog);
 	const toState = previousState(section.state);
 	if (!toState) return { eligible: false, toState: null, reason: null };
 
