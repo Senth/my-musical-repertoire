@@ -553,11 +553,29 @@ describe("evaluateAdvance — source filter", () => {
 		expect(withSpan.cleanDays).toBe(withoutSpan.cleanDays);
 	});
 
-	it("a run-through log (no source) still counts", () => {
+	it("run-through logs alone do not count as clean days", () => {
 		const result = advance({
 			logs: cleanDays(CLEAN_DAYS_STABILIZING, { source: "run-through" }),
 		});
-		expect(result.eligible).toBe(true);
+		expect(result.eligible).toBe(false);
+		expect(result.cleanDays).toBe(0);
+	});
+
+	it("a run-through log neither counts as a clean day nor breaks the streak", () => {
+		const clean = cleanDays(CLEAN_DAYS_STABILIZING);
+		const runThroughNoise = log(7, { quality: 1, source: "run-through" });
+		const withRunThrough = advance({ logs: [runThroughNoise, ...clean] });
+		const withoutRunThrough = advance({ logs: clean });
+		expect(withRunThrough.eligible).toBe(withoutRunThrough.eligible);
+		expect(withRunThrough.cleanDays).toBe(withoutRunThrough.cleanDays);
+	});
+
+	it("a source not on the allow list does not count as a clean day", () => {
+		const result = advance({
+			logs: cleanDays(CLEAN_DAYS_STABILIZING, { source: "future" }),
+		});
+		expect(result.eligible).toBe(false);
+		expect(result.cleanDays).toBe(0);
 	});
 });
 
@@ -663,7 +681,7 @@ describe("evaluateDemote", () => {
 		expect(result.eligible).toBe(false);
 	});
 
-	it("a run-through log (no source) still trips the BPM-drop demote", () => {
+	it("a run-through log does not trip the BPM-drop demote", () => {
 		const previous = 120;
 		const bpm = Math.floor(previous * DEMOTE_BPM_DROP_RATIO) - 1;
 		const result = demote(
@@ -671,7 +689,31 @@ describe("evaluateDemote", () => {
 			[entry({ bpm })],
 			[log(7, { achievedBpm: previous, source: "run-through" })],
 		);
-		expect(result.eligible).toBe(true);
+		expect(result.eligible).toBe(false);
+	});
+
+	it("uses an isolated tempo instead of a newer run-through tempo", () => {
+		const result = demote(
+			"maintenance",
+			[entry({ bpm: 100 })],
+			[
+				log(7, { achievedBpm: 200, source: "run-through" }),
+				log(6, { achievedBpm: 120 }),
+			],
+		);
+		expect(result.reason).toMatchObject({
+			kind: "bpm-drop",
+			previousBpm: 120,
+		});
+	});
+
+	it("a source not on the allow list cannot trigger a BPM-drop demote", () => {
+		const result = demote(
+			"maintenance",
+			[entry({ bpm: 100 })],
+			[log(7, { achievedBpm: 120, source: "future" })],
+		);
+		expect(result.eligible).toBe(false);
 	});
 
 	it("ignores a drill entry in the save itself", () => {
