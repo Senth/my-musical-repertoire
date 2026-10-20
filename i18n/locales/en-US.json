@@ -541,7 +541,7 @@
 			}
 		},
 		"exportData": {
-			"body": "Download everything stored for your account as one JSON file: pieces, sections, techniques, practice logs, and session presets.",
+			"body": "Download your practice data as one JSON file: pieces, sections and their state history, techniques, practice logs, sight-reading logs, and session presets. Account details and sign-in security records are not included.",
 			"button": "Download my data",
 			"error": "Could not export your data. Please try again."
 		},
