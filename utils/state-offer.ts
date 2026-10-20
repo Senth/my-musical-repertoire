@@ -71,7 +71,7 @@ export interface StateOfferInput {
 	/** The entries the save just wrote. */
 	savedEntries: ModeEntry[];
 	savedAt: Date;
-	/** The section's `phaseTransitions` rows, for the suppression count. */
+	/** The section's `stateTransitions` rows, for the suppression count. */
 	transitions: StateTransition[];
 	now: Date;
 }

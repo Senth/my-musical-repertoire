@@ -41,6 +41,7 @@ describe("deleteAllUserData", () => {
 		tree["users/u1/pieces/p1/sections"] = ["s1"];
 		tree["users/u1/pieces/p1/sections/s1/practiceLogs"] = ["sl1"];
 		tree["users/u1/pieces/p1/sections/s1/phaseTransitions"] = ["st1"];
+		tree["users/u1/pieces/p1/sections/s1/stateTransitions"] = ["st2"];
 		tree["users/u1/pieces/p1/practiceLogs"] = ["pl1"];
 		tree["users/u1/techniques"] = ["t1"];
 		tree["users/u1/techniques/t1/practiceLogs"] = ["tl1"];
@@ -56,6 +57,7 @@ describe("deleteAllUserData", () => {
 				"users/u1/pieces/p1/sections/s1",
 				"users/u1/pieces/p1/sections/s1/practiceLogs/sl1",
 				"users/u1/pieces/p1/sections/s1/phaseTransitions/st1",
+				"users/u1/pieces/p1/sections/s1/stateTransitions/st2",
 				"users/u1/sessionPresets/pr1",
 				"users/u1/sightReadingLogs/sr1",
 				"users/u1/techniques/t1",
@@ -69,10 +71,17 @@ describe("deleteAllUserData", () => {
 		tree["users/u1/pieces/p1/sections"] = ["s1"];
 		tree["users/u1/pieces/p1/sections/s1/practiceLogs"] = ["sl1"];
 		tree["users/u1/pieces/p1/sections/s1/phaseTransitions"] = ["st1"];
+		tree["users/u1/pieces/p1/sections/s1/stateTransitions"] = ["st2"];
 
 		await deleteAllUserData("u1");
 
 		const paths = deletedPaths();
+		expect(paths).toContain(
+			"users/u1/pieces/p1/sections/s1/stateTransitions/st2",
+		);
+		expect(
+			paths.indexOf("users/u1/pieces/p1/sections/s1/stateTransitions/st2"),
+		).toBeLessThan(paths.indexOf("users/u1/pieces/p1/sections/s1"));
 		expect(paths).toContain(
 			"users/u1/pieces/p1/sections/s1/phaseTransitions/st1",
 		);

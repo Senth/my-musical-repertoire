@@ -72,9 +72,9 @@ export async function collectExportData(uid: string): Promise<ExportData> {
 				sections.docs.map(async (section) => ({
 					...docJson(section.id, section.data()),
 					practiceLogs: await collectionDocs(section.ref, "practiceLogs"),
-					phaseTransitions: await collectionDocs(
+					stateTransitions: await collectionDocs(
 						section.ref,
-						"phaseTransitions",
+						"stateTransitions",
 					),
 				})),
 			),

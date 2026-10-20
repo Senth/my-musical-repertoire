@@ -204,9 +204,8 @@ const TECHNIQUES: {
 
 /**
  * Deletes every document under the fixture account, children before parents —
- * the walk `utils/delete-account.ts` does, plus the `phaseTransitions` audit
- * rows. This is what makes a reused emulator irrelevant: whatever a previous
- * run left on `SEED_USER` is gone before anything is written.
+ * the walk `utils/delete-account.ts` does. This makes a reused emulator irrelevant:
+ * whatever a previous run left on `SEED_USER` is gone before anything is written.
  */
 async function wipeUserData(db: Firestore) {
 	const userRoot = doc(db, "users", SEED_UID);
@@ -216,7 +215,11 @@ async function wipeUserData(db: Firestore) {
 	for (const piece of pieces.docs) {
 		const sections = await getDocs(collection(piece.ref, "sections"));
 		for (const section of sections.docs) {
-			for (const sub of ["practiceLogs", "phaseTransitions"]) {
+			for (const sub of [
+				"practiceLogs",
+				"stateTransitions",
+				"phaseTransitions",
+			]) {
 				const logs = await getDocs(collection(section.ref, sub));
 				targets.push(...logs.docs.map((d) => d.ref));
 			}

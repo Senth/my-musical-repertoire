@@ -22,12 +22,6 @@ import { awaitWrite } from "@/utils/firestore-write";
 import { daysBetween } from "@/utils/section-progression";
 
 /**
- * Every state change in the app goes through here, so the
- * `sections/{id}/phaseTransitions` audit trail is complete rather than a
- * partial view of the new nudges.
- */
-
-/**
  * Enough rows to answer "three dismissals since the last accepted change?"
  * with room to spare.
  */
@@ -58,9 +52,7 @@ export function stateTransitionsRef(
 	pieceId: string,
 	sectionId: string,
 ) {
-	// The stored path keeps the old word: renaming it needs a document copy,
-	// which is its own follow-up issue rather than part of #84.
-	return collection(sectionRef(userId, pieceId, sectionId), "phaseTransitions");
+	return collection(sectionRef(userId, pieceId, sectionId), "stateTransitions");
 }
 
 function transitionDoc(

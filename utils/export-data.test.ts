@@ -50,7 +50,7 @@ describe("collectExportData", () => {
 		mockTree["users/u1/pieces/p1/sections/s1/practiceLogs"] = [
 			{ id: "sl1", data: () => ({ accuracy: 0.9 }) },
 		];
-		mockTree["users/u1/pieces/p1/sections/s1/phaseTransitions"] = [
+		mockTree["users/u1/pieces/p1/sections/s1/stateTransitions"] = [
 			{
 				id: "st1",
 				data: () => ({
@@ -95,7 +95,7 @@ describe("collectExportData", () => {
 						id: "s1",
 						label: "A",
 						practiceLogs: [{ id: "sl1", accuracy: 0.9 }],
-						phaseTransitions: [
+						stateTransitions: [
 							{
 								id: "st1",
 								from: "learning",
