@@ -8,8 +8,8 @@ jest.mock("firebase/firestore", () => ({
 	collection: jest.fn((ref: { path: string }, name: string) => ({
 		path: `${ref.path}/${name}`,
 	})),
-	doc: jest.fn((_db: unknown, ...path: string[]) => ({
-		path: path.join("/"),
+	doc: jest.fn((parent: { path?: string }, ...path: string[]) => ({
+		path: [parent.path, ...path].filter(Boolean).join("/"),
 	})),
 	getDocs: jest.fn(async (ref: { path: string }) => ({
 		docs: (tree[ref.path] ?? []).map((id) => ({
@@ -33,6 +33,7 @@ beforeEach(() => {
 	for (const key of Object.keys(tree)) delete tree[key];
 	mockBatchDelete.mockClear();
 	mockBatchCommit.mockClear();
+	mockBatchCommit.mockResolvedValue(undefined);
 });
 
 describe("deleteAllUserData", () => {
@@ -57,6 +58,7 @@ describe("deleteAllUserData", () => {
 				"users/u1/pieces/p1/sections/s1",
 				"users/u1/pieces/p1/sections/s1/practiceLogs/sl1",
 				"users/u1/pieces/p1/sections/s1/phaseTransitions/st1",
+				"users/u1/pieces/p1/sections/s1/stateTransitions/st1",
 				"users/u1/pieces/p1/sections/s1/stateTransitions/st2",
 				"users/u1/sessionPresets/pr1",
 				"users/u1/sightReadingLogs/sr1",
@@ -102,6 +104,35 @@ describe("deleteAllUserData", () => {
 		await deleteAllUserData("u1");
 
 		expect(mockBatchDelete).toHaveBeenCalledTimes(500);
+		expect(mockBatchCommit).toHaveBeenCalledTimes(2);
+	});
+
+	it("removes a target copied after enumeration even across a batch boundary", async () => {
+		const section = "users/u1/pieces/p1/sections/s1";
+		const source = `${section}/phaseTransitions/st1`;
+		const target = `${section}/stateTransitions/st1`;
+		tree["users/u1/pieces"] = ["p1"];
+		tree["users/u1/pieces/p1/sections"] = ["s1"];
+		tree[`${section}/practiceLogs`] = Array.from(
+			{ length: 449 },
+			(_, i) => `l${i}`,
+		);
+		tree[`${section}/phaseTransitions`] = ["st1"];
+		const stored = new Set([source]);
+		let committed = 0;
+		mockBatchCommit.mockImplementation(async () => {
+			if (stored.has(source)) stored.add(target);
+			for (const path of deletedPaths().slice(committed)) stored.delete(path);
+			committed = deletedPaths().length;
+		});
+
+		await deleteAllUserData("u1");
+
+		expect(stored.has(source)).toBe(false);
+		expect(stored.has(target)).toBe(false);
+		expect(deletedPaths().indexOf(source)).toBeLessThan(
+			deletedPaths().indexOf(target),
+		);
 		expect(mockBatchCommit).toHaveBeenCalledTimes(2);
 	});
 

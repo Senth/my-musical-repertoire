@@ -142,6 +142,89 @@ describe("collectExportData", () => {
 		expect(data.pieces[0].lastPracticed).toBe("2026-09-11T07:30:00.000Z");
 	});
 
+	it("merges legacy history with destination precedence and normalizes old fields", async () => {
+		mockTree["users/u1/pieces"] = [{ id: "p1", data: () => ({}) }];
+		mockTree["users/u1/pieces/p1/sections"] = [{ id: "s1", data: () => ({}) }];
+		mockTree["users/u1/pieces/p1/sections/s1/phaseTransitions"] = [
+			{
+				id: "legacy",
+				data: () => ({
+					fromPhase: "learning",
+					toPhase: "stabilizing",
+					daysInPriorPhase: 7,
+					trigger: "phase-chip",
+					date: new Timestamp(Date.UTC(2026, 8, 11) / 1000, 0),
+				}),
+			},
+			{ id: "overlap", data: () => ({ toState: "learning" }) },
+			{
+				id: "mixed",
+				data: () => ({
+					fromPhase: "learning",
+					fromState: null,
+					toPhase: "stabilizing",
+					toState: "maintenance",
+					daysInPriorPhase: 7,
+					daysInPriorState: 0,
+					trigger: "automatic",
+				}),
+			},
+		];
+		mockTree["users/u1/pieces/p1/sections/s1/stateTransitions"] = [
+			{ id: "overlap", data: () => ({ toState: "maintenance" }) },
+		];
+
+		const data = await collectExportData("u1");
+
+		expect(data.pieces[0].sections).toEqual([
+			{
+				id: "s1",
+				practiceLogs: [],
+				stateTransitions: [
+					{
+						id: "legacy",
+						fromState: "learning",
+						toState: "stabilizing",
+						daysInPriorState: 7,
+						trigger: "state-chip",
+						date: "2026-09-11T00:00:00.000Z",
+					},
+					{ id: "overlap", toState: "maintenance" },
+					{
+						id: "mixed",
+						fromState: null,
+						toState: "maintenance",
+						daysInPriorState: 0,
+						trigger: "automatic",
+					},
+				],
+			},
+		]);
+	});
+
+	it("exports legacy-only new-shape rows under stateTransitions", async () => {
+		mockTree["users/u1/pieces"] = [{ id: "p1", data: () => ({}) }];
+		mockTree["users/u1/pieces/p1/sections"] = [{ id: "s1", data: () => ({}) }];
+		mockTree["users/u1/pieces/p1/sections/s1/phaseTransitions"] = [
+			{
+				id: "legacy",
+				data: () => ({ toState: "learning", trigger: "state-chip" }),
+			},
+		];
+
+		const data = await collectExportData("u1");
+
+		expect(data.pieces[0].sections).toEqual([
+			{
+				id: "s1",
+				practiceLogs: [],
+				stateTransitions: [
+					{ id: "legacy", toState: "learning", trigger: "state-chip" },
+				],
+			},
+		]);
+	});
+
 	it("reports an empty account as empty arrays, not an error", async () => {
 		const data = await collectExportData("u1");
 

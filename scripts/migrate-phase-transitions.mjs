@@ -32,6 +32,21 @@ function parseArgs(argv) {
 	return args;
 }
 
+function normalizeTransition(data) {
+	for (const [oldName, newName] of [
+		["fromPhase", "fromState"],
+		["toPhase", "toState"],
+		["daysInPriorPhase", "daysInPriorState"],
+	]) {
+		if (Object.hasOwn(data, oldName)) {
+			if (!Object.hasOwn(data, newName)) data[newName] = data[oldName];
+			delete data[oldName];
+		}
+	}
+	if (data.trigger === "phase-chip") data.trigger = "state-chip";
+	return data;
+}
+
 async function main() {
 	const args = parseArgs(process.argv.slice(2));
 	if (args.help || !args.project) {
@@ -51,55 +66,52 @@ async function main() {
 		projectId: args.project,
 	});
 	const db = getFirestore();
-	const sections = await db.collectionGroup("sections").get();
+	const source = await db.collectionGroup("phaseTransitions").get();
+	const sections = new Set();
 	const rows = [];
 	const toWrite = [];
-	let scanned = 0;
 	let mapped = 0;
-	for (const section of sections.docs) {
+	for (const doc of source.docs) {
 		if (
-			!/^users\/[^/]+\/pieces\/[^/]+\/sections\/[^/]+$/.test(section.ref.path)
+			!/^users\/[^/]+\/pieces\/[^/]+\/sections\/[^/]+\/phaseTransitions\/[^/]+$/.test(
+				doc.ref.path,
+			)
 		)
 			continue;
-		scanned++;
-		const source = await section.ref.collection("phaseTransitions").get();
-		for (const doc of source.docs) {
-			const data = doc.data();
-			let changed = false;
-			for (const [oldName, newName] of [
-				["fromPhase", "fromState"],
-				["toPhase", "toState"],
-				["daysInPriorPhase", "daysInPriorState"],
-			]) {
-				if (Object.hasOwn(data, oldName)) {
-					if (!Object.hasOwn(data, newName)) data[newName] = data[oldName];
-					delete data[oldName];
-					changed = true;
-				}
-			}
-			if (data.trigger === "phase-chip") {
-				data.trigger = "state-chip";
-				changed = true;
-			}
-			if (changed) mapped++;
-			const ref = section.ref.collection("stateTransitions").doc(doc.id);
-			const target = await ref.get();
-			rows.push({ source: doc.ref, target: ref });
-			if (!target.exists || !isDeepStrictEqual(target.data(), data))
-				toWrite.push({ ref, data });
-		}
+		const section = doc.ref.parent.parent;
+		sections.add(section.path);
+		const data = normalizeTransition(doc.data());
+		if (!isDeepStrictEqual(doc.data(), data)) mapped++;
+		const ref = section.collection("stateTransitions").doc(doc.id);
+		const target = await ref.get();
+		const row = { source: doc.ref, target: ref };
+		rows.push(row);
+		if (!target.exists || !isDeepStrictEqual(target.data(), data))
+			toWrite.push(row);
 	}
 
 	let written = 0;
 	for (let i = 0; i < toWrite.length; i += MAX_BATCH) {
 		const chunk = toWrite.slice(i, i + MAX_BATCH);
 		if (args.dryRun) {
-			for (const { ref } of chunk) console.log(`  would set ${ref.path}`);
+			for (const { target } of chunk) console.log(`  would set ${target.path}`);
 		} else {
-			const batch = db.batch();
-			for (const { ref, data } of chunk) batch.set(ref, data);
-			await batch.commit();
-			written += chunk.length;
+			written += await db.runTransaction(async (transaction) => {
+				const snapshots = await transaction.getAll(
+					...chunk.flatMap((row) => [row.source, row.target]),
+				);
+				let pending = 0;
+				for (let j = 0; j < chunk.length; j++) {
+					const source = snapshots[j * 2];
+					const target = snapshots[j * 2 + 1];
+					if (!source.exists) continue;
+					const data = normalizeTransition(source.data());
+					if (target.exists && isDeepStrictEqual(target.data(), data)) continue;
+					transaction.set(chunk[j].target, data);
+					pending++;
+				}
+				return pending;
+			});
 		}
 	}
 
@@ -126,7 +138,7 @@ async function main() {
 	}
 
 	console.log(
-		`${scanned} sections scanned · ${rows.length} rows found · ${mapped} rows mapped · ${rows.length - mapped} rows already new-shape · ${written} rows written · ${dropped} rows dropped · ${toWrite.length} changed`,
+		`${sections.size} sections scanned · ${rows.length} rows found · ${mapped} rows mapped · ${rows.length - mapped} rows already new-shape · ${written} rows written · ${dropped} rows dropped · ${toWrite.length} changed`,
 	);
 	if (args.dryRun) console.log("Dry run — no documents were modified.");
 	const remaining = await db.collectionGroup("phaseTransitions").count().get();
