@@ -84,8 +84,8 @@ Things the documents currently promise, which constrain what we may ship:
   on the changed document, and the notice email has to go out *before* the feature reaches
   users. Plan that lead time in.
 - **Rights requests answered within one month**, extendable by two months for complex ones.
-- **No export button yet** — stated in four places. See #104; when it ships, that wording
-  comes out.
+- **Data export** ships from `/privacy` and must cover the same collections as
+  `utils/delete-account.ts`.
 - **Delete account** is real and irreversible (`utils/delete-account.ts`). Any new
   user-owned Firestore collection or device storage key MUST be added to it and to
   `clearLocalUserData` in `utils/session-storage.ts`, or deletion silently leaves data

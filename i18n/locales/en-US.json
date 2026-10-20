@@ -282,7 +282,7 @@
 		},
 		"privacy": {
 			"title": "Privacy Policy",
-			"lastUpdated": "8 August 2026",
+			"lastUpdated": "20 October 2026",
 			"sections": [
 				{
 					"heading": "In short",
@@ -362,7 +362,7 @@
 						"See what is stored about you. Your account and practice data are already visible in the app; for the sign-in security records Google holds, email me and I will get them for you.",
 						"Correct anything that is wrong, by editing it in the app.",
 						"Delete your data, either piece by piece or the whole account at once.",
-						"Get a copy of your data in a machine-readable format. There is no export button yet, so email me and I will send you a file.",
+						"Get a copy of your data in a machine-readable format. \"Download my data\" on this page saves your pieces, techniques, practice logs and presets as a JSON file. For anything it leaves out, such as your account details, email me.",
 						"Object to or restrict how your data is used.",
 						"Complain to the data protection authority in the country you live in."
 					],
@@ -374,7 +374,7 @@
 					"heading": "Deleting your account",
 					"paragraphs": [
 						"You can delete your account, and every piece, section, technique, practice log, and preset that belongs to it, from the button at the bottom of this page.",
-						"This is permanent and cannot be undone. There is no export button yet, so email me for a copy of your data before you delete, if you want to keep it."
+						"This is permanent and cannot be undone. If you want to keep your data, use \"Download my data\" on this page before you delete."
 					]
 				},
 				{
@@ -408,7 +408,7 @@
 		},
 		"terms": {
 			"title": "Terms of Service",
-			"lastUpdated": "8 August 2026",
+			"lastUpdated": "20 October 2026",
 			"sections": [
 				{
 					"heading": "In short",
@@ -471,7 +471,7 @@
 					"heading": "Keep your own copy",
 					"paragraphs": [
 						"Do not rely on this app as the only record of your work. Bugs, mistakes, and outages can lose data, and while I take reasonable care I cannot guarantee it will always be there.",
-						"There is no export button yet, so keep your own notes of anything you cannot afford to lose, or email me and I will send you a copy of your data."
+						"Keep your own notes of anything you cannot afford to lose. You can download a copy of your data from the Privacy Policy page, or email me and I will send you one."
 					]
 				},
 				{
