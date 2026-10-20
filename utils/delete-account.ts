@@ -27,10 +27,19 @@ async function collectUserDocs(uid: string): Promise<DocumentReference[]> {
 		for (const section of sections.docs) {
 			const logs = await getDocs(collection(section.ref, "practiceLogs"));
 			targets.push(...logs.docs.map((d) => d.ref));
+			const legacy = await getDocs(collection(section.ref, "phaseTransitions"));
+			targets.push(...legacy.docs.map((d) => d.ref));
 			const transitions = await getDocs(
-				collection(section.ref, "phaseTransitions"),
+				collection(section.ref, "stateTransitions"),
 			);
-			targets.push(...transitions.docs.map((d) => d.ref));
+			const transitionIds = new Set(
+				[...legacy.docs, ...transitions.docs].map((d) => d.id),
+			);
+			targets.push(
+				...Array.from(transitionIds, (id) =>
+					doc(section.ref, "stateTransitions", id),
+				),
+			);
 			targets.push(section.ref);
 		}
 		const pieceLogs = await getDocs(collection(piece.ref, "practiceLogs"));

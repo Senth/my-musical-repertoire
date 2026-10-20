@@ -54,6 +54,29 @@ async function collectionDocs(
 	return logs.docs.map((log) => docJson(log.id, log.data()));
 }
 
+async function stateTransitions(
+	parent: DocumentReference,
+): Promise<ExportDoc[]> {
+	const legacy = await collectionDocs(parent, "phaseTransitions");
+	for (const data of legacy) {
+		for (const [oldName, newName] of [
+			["fromPhase", "fromState"],
+			["toPhase", "toState"],
+			["daysInPriorPhase", "daysInPriorState"],
+		]) {
+			if (Object.hasOwn(data, oldName)) {
+				if (!Object.hasOwn(data, newName)) data[newName] = data[oldName];
+				delete data[oldName];
+			}
+		}
+		if (data.trigger === "phase-chip") data.trigger = "state-chip";
+	}
+	const current = await collectionDocs(parent, "stateTransitions");
+	return [
+		...new Map([...legacy, ...current].map((row) => [row.id, row])).values(),
+	];
+}
+
 /**
  * Reads every document the account owns. A one-shot `getDocs` walk rather than
  * listeners: the export is a deliberate action, and a live snapshot of the
@@ -72,10 +95,7 @@ export async function collectExportData(uid: string): Promise<ExportData> {
 				sections.docs.map(async (section) => ({
 					...docJson(section.id, section.data()),
 					practiceLogs: await collectionDocs(section.ref, "practiceLogs"),
-					phaseTransitions: await collectionDocs(
-						section.ref,
-						"phaseTransitions",
-					),
+					stateTransitions: await stateTransitions(section.ref),
 				})),
 			),
 			practiceLogs: await collectionDocs(piece.ref, "practiceLogs"),
