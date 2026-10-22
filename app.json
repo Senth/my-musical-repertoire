@@ -7,7 +7,6 @@
 		"icon": "./assets/images/icon.png",
 		"scheme": "my-musical-repertoire",
 		"userInterfaceStyle": "automatic",
-		"newArchEnabled": true,
 		"ios": {
 			"supportsTablet": true
 		},
@@ -17,7 +16,6 @@
 				"foregroundImage": "./assets/images/android-icon-foreground.png",
 				"monochromeImage": "./assets/images/android-icon-monochrome.png"
 			},
-			"edgeToEdgeEnabled": true,
 			"predictiveBackGestureEnabled": false
 		},
 		"web": {
@@ -39,7 +37,10 @@
 					}
 				}
 			],
-			"expo-sharing"
+			"expo-sharing",
+			"expo-font",
+			"expo-localization",
+			"expo-status-bar"
 		],
 		"experiments": {
 			"typedRoutes": true,
