@@ -1,4 +1,7 @@
-import { ScrollViewStyleReset } from "expo-router/html";
+import {
+	ScrollViewStyleReset,
+	useServerDocumentContext,
+} from "expo-router/html";
 import type { PropsWithChildren } from "react";
 import { shell } from "@/theme/tokens";
 import { buildId } from "@/utils/build-info";
@@ -33,8 +36,10 @@ html, body, #root {
  * else here is the PWA layer: manifest, icons, and theme colours.
  */
 export default function Root({ children }: PropsWithChildren) {
+	const { htmlAttributes, bodyAttributes, headNodes, bodyNodes } =
+		useServerDocumentContext();
 	return (
-		<html lang="en">
+		<html lang="en" {...htmlAttributes}>
 			<head>
 				<style>{PAGE_CSS}</style>
 				<meta charSet="utf-8" />
@@ -69,8 +74,12 @@ export default function Root({ children }: PropsWithChildren) {
 				<meta name="apple-mobile-web-app-title" content="Repertoire" />
 
 				<ScrollViewStyleReset />
+				{headNodes}
 			</head>
-			<body>{children}</body>
+			<body {...bodyAttributes}>
+				{children}
+				{bodyNodes}
+			</body>
 		</html>
 	);
 }
