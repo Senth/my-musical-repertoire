@@ -176,7 +176,7 @@ export function HistoryScreen({
 									: undefined
 							}
 						/>
-					) : null
+					) : undefined
 				}
 				ListFooterComponent={
 					<View style={{ paddingHorizontal: pageInset, paddingTop: space.sm }}>

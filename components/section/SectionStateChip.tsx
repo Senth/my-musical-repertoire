@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { type Insets, Platform, type View } from "react-native";
+import {
+	type Insets,
+	Platform,
+	type View,
+	type ViewInstance,
+} from "react-native";
 import { Menu, useTheme } from "react-native-paper";
 import { StateChip } from "@/components/ui/StateChip";
 import { SECTION_STATES, type SectionState } from "@/models/section";
@@ -20,7 +25,7 @@ export function SectionStateChip({
 	const { t } = useTranslation();
 	const theme = useTheme();
 	const [menuOpen, setMenuOpen] = useState<boolean | null>(null);
-	const chipRef = useRef<View>(null);
+	const chipRef = useRef<View & ViewInstance>(null);
 	const closeMenu = useCallback(() => setMenuOpen(false), []);
 
 	useEffect(() => {

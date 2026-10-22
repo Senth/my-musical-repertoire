@@ -7,6 +7,8 @@ import { icon } from "@/theme/tokens";
 export default function AppTabsLayout() {
 	const theme = useTheme();
 	const { t } = useTranslation();
+	const tint = (focused: boolean) =>
+		focused ? theme.colors.primary : theme.colors.onSurfaceVariant;
 
 	return (
 		<Tabs
@@ -22,8 +24,12 @@ export default function AppTabsLayout() {
 				name="overview"
 				options={{
 					title: t("screen.overview.title"),
-					tabBarIcon: ({ color }) => (
-						<IconSymbol size={icon.tab} name="music.note.list" color={color} />
+					tabBarIcon: ({ focused }) => (
+						<IconSymbol
+							size={icon.tab}
+							name="music.note.list"
+							color={tint(focused)}
+						/>
 					),
 				}}
 			/>
@@ -31,8 +37,12 @@ export default function AppTabsLayout() {
 				name="piece"
 				options={{
 					title: t("screen.pieces.title"),
-					tabBarIcon: ({ color }) => (
-						<IconSymbol size={icon.tab} name="books.vertical" color={color} />
+					tabBarIcon: ({ focused }) => (
+						<IconSymbol
+							size={icon.tab}
+							name="books.vertical"
+							color={tint(focused)}
+						/>
 					),
 				}}
 			/>
@@ -40,8 +50,12 @@ export default function AppTabsLayout() {
 				name="technique"
 				options={{
 					title: t("screen.techniques.title"),
-					tabBarIcon: ({ color }) => (
-						<IconSymbol size={icon.tab} name="pianokeys" color={color} />
+					tabBarIcon: ({ focused }) => (
+						<IconSymbol
+							size={icon.tab}
+							name="pianokeys"
+							color={tint(focused)}
+						/>
 					),
 				}}
 			/>
@@ -50,11 +64,11 @@ export default function AppTabsLayout() {
 				options={{
 					title: t("screen.progress.title"),
 					headerShown: false,
-					tabBarIcon: ({ color }) => (
+					tabBarIcon: ({ focused }) => (
 						<IconSymbol
 							size={icon.tab}
 							name="chart.line.uptrend.xyaxis"
-							color={color}
+							color={tint(focused)}
 						/>
 					),
 				}}

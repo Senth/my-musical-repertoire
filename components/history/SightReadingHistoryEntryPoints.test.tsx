@@ -32,7 +32,7 @@ jest.mock("expo-router", () => ({
 			.useEffect(effect, [effect]);
 	},
 }));
-jest.mock("@react-navigation/bottom-tabs", () => ({
+jest.mock("expo-router/js-tabs", () => ({
 	useBottomTabBarHeight: () => 0,
 }));
 jest.mock("@/contexts/AuthContext", () => ({

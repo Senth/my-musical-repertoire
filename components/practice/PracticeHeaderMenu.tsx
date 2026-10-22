@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform, type View } from "react-native";
+import { Platform, type View, type ViewInstance } from "react-native";
 import { Appbar, Menu } from "react-native-paper";
 
 interface PracticeHeaderMenuProps {
@@ -23,7 +23,7 @@ export function PracticeHeaderMenu({
 }: PracticeHeaderMenuProps) {
 	const { t } = useTranslation();
 	const [visible, setVisible] = useState<boolean | null>(null);
-	const anchorRef = useRef<View>(null);
+	const anchorRef = useRef<View & ViewInstance>(null);
 
 	useEffect(() => {
 		if (visible === false && Platform.OS === "web") anchorRef.current?.focus();
