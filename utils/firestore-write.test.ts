@@ -1,9 +1,7 @@
+import { Platform } from "react-native";
 import { awaitWrite } from "./firestore-write";
 
-jest.mock("react-native/Libraries/Utilities/Platform", () => ({
-	__esModule: true,
-	default: { OS: "web", select: (s: Record<string, unknown>) => s.web },
-}));
+jest.replaceProperty(Platform, "OS", "web");
 
 function setOnLine(value: boolean) {
 	Object.defineProperty(navigator, "onLine", {

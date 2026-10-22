@@ -1,15 +1,9 @@
 import { act, render } from "@testing-library/react-native";
-import { Text } from "react-native";
+import { Platform, Text } from "react-native";
 import { useOnlineStatus } from "./use-online-status";
 
 // The hook is web-only behaviour; the default Jest platform is native.
-jest.mock("react-native/Libraries/Utilities/Platform", () => ({
-	__esModule: true,
-	default: {
-		OS: "web",
-		select: (spec: Record<string, unknown>) => spec.web ?? spec.default,
-	},
-}));
+jest.replaceProperty(Platform, "OS", "web");
 
 type Listener = () => void;
 
