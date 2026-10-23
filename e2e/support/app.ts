@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import en from "@/i18n/locales/en-US.json";
 
 /**
@@ -67,6 +67,23 @@ export async function signIn(page: Page): Promise<void> {
 		.getByRole("button", { name: t("screen.login.email"), exact: true })
 		.click();
 	await expectSignedIn(page);
+}
+
+/**
+ * Resolves once React's client render owns the element. The dev server sends
+ * static HTML and then renders over it instead of hydrating, so a node found
+ * earlier detaches and anything typed into it is lost.
+ */
+export async function expectClientRendered(locator: Locator): Promise<void> {
+	await expect
+		.poll(() =>
+			locator
+				.evaluate((element) =>
+					Object.keys(element).some((key) => key.startsWith("__reactFiber$")),
+				)
+				.catch(() => false),
+		)
+		.toBe(true);
 }
 
 /** Resolves once the app has rendered a signed-in screen, not just navigated. */

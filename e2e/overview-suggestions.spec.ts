@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { t } from "./support/app";
+import { expectClientRendered, t } from "./support/app";
 
 /**
  * The seven acceptance claims of #111 — the two `[eye]` claims are for the
@@ -190,14 +190,12 @@ async function addSection(
 	},
 ): Promise<string> {
 	await page.goto(`${pieceUrl}/section/new`);
-	// The statically rendered form is fillable before hydration, which then
-	// resets it; the label's autofocus runs only once React owns the page.
-	await expect(
+	await expectClientRendered(
 		page.getByRole("textbox", {
 			name: t("screen.pieceSections.form.labelLabel"),
 			exact: true,
 		}),
-	).toBeFocused();
+	);
 	await fill(page, t("screen.pieceSections.form.labelLabel"), opts.label);
 	await choose(
 		page,

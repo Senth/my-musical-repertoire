@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { SEED_IDS, t } from "@/e2e/support/app";
+import { expectClientRendered, SEED_IDS, t } from "@/e2e/support/app";
 import { contentWidth, inset } from "@/theme/tokens";
 
 for (const path of [
@@ -16,6 +16,7 @@ for (const path of [
 			exact: true,
 		});
 		await expect(heading).toBeVisible();
+		await expectClientRendered(heading);
 		const left = (1280 - contentWidth.page) / 2;
 		for (const scheme of ["light", "dark"] as const) {
 			await page.emulateMedia({ colorScheme: scheme });
