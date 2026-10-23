@@ -9,6 +9,7 @@ const literal = (p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 config.resolver.blockList = [
 	...[config.resolver.blockList ?? []].flat(),
 	new RegExp(`^${literal(path.join(__dirname, ".tmp"))}([\\\\/].*)?$`),
+	new RegExp(`^${literal(path.join(__dirname, "dist"))}([\\\\/].*)?$`),
 	new RegExp(`^${literal(path.join(__dirname, ".expo", "devices.json"))}$`),
 ];
 
