@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { expectClientRendered, SEED_IDS, t } from "@/e2e/support/app";
+import { SEED_IDS, t } from "@/e2e/support/app";
+import { expect, test } from "@/e2e/support/test";
 
 test("touch miss increases tempo but mouse miss does not", async ({
 	page,
@@ -55,7 +55,6 @@ test("touch miss in privacy prose adds no inline link activation", async ({
 		.replace(/\.$/, "");
 	expect(email).toBeTruthy();
 	const link = page.getByRole("link", { name: email, exact: true }).first();
-	await expectClientRendered(link);
 	await link.scrollIntoViewIfNeeded();
 	const point = await link.evaluate((element) => {
 		const rect = element.getBoundingClientRect();

@@ -1,5 +1,5 @@
-import { expect, test as setup } from "@playwright/test";
 import { t } from "@/e2e/support/app";
+import { expect, test as setup } from "@/e2e/support/test";
 import { HISTORY_AUTH_STATE } from "@/playwright.config";
 
 const email = `practice-history-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;

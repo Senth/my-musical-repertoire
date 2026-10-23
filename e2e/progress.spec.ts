@@ -1,10 +1,10 @@
-import { expect, test } from "@playwright/test";
 import {
 	collectConsoleErrors,
 	expectCleanPage,
 	SEED_IDS,
 	t,
 } from "@/e2e/support/app";
+import { expect, test } from "@/e2e/support/test";
 
 test("progress sorts seeded passages, shows hand tempos, expands at target and opens history", async ({
 	page,

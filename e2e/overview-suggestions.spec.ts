@@ -1,5 +1,6 @@
-import { expect, type Page, test } from "@playwright/test";
-import { expectClientRendered, t } from "./support/app";
+import type { Page } from "@playwright/test";
+import { expect, test } from "@/e2e/support/test";
+import { t } from "./support/app";
 
 /**
  * The seven acceptance claims of #111 — the two `[eye]` claims are for the
@@ -190,12 +191,6 @@ async function addSection(
 	},
 ): Promise<string> {
 	await page.goto(`${pieceUrl}/section/new`);
-	await expectClientRendered(
-		page.getByRole("textbox", {
-			name: t("screen.pieceSections.form.labelLabel"),
-			exact: true,
-		}),
-	);
 	await fill(page, t("screen.pieceSections.form.labelLabel"), opts.label);
 	await choose(
 		page,

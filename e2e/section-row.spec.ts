@@ -1,5 +1,6 @@
-import { expect, type Locator, test } from "@playwright/test";
+import type { Locator } from "@playwright/test";
 import { collectConsoleErrors, SEED_IDS, t } from "@/e2e/support/app";
+import { expect, test } from "@/e2e/support/test";
 
 const INVENTION_SECTIONS = [
 	{ name: "Exposition", bars: "Bars 1–6", bpm: 72 },
