@@ -3,11 +3,11 @@
 	"main": "expo-router/entry",
 	"version": "1.0.0",
 	"scripts": {
-		"start": "expo start",
+		"start": "node --stack-size=4000 node_modules/expo/bin/cli start",
 		"reset-project": "node ./scripts/reset-project.js",
-		"android": "expo start --android",
-		"ios": "expo start --ios",
-		"web": "expo start --web --port $(scripts/dev-stack.sh dev-port)",
+		"android": "yarn start --android",
+		"ios": "yarn start --ios",
+		"web": "yarn start --web --port $(scripts/dev-stack.sh dev-port)",
 		"build:web": "expo export --platform web",
 		"deploy:dev": "firebase deploy --only firestore:rules,firestore:indexes --project default",
 		"lint": "biome check",
@@ -20,6 +20,9 @@
 	},
 	"jest": {
 		"preset": "jest-expo",
+		"setupFiles": [
+			"<rootDir>/jest.setup.ts"
+		],
 		"transformIgnorePatterns": [
 			"node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|@react-native-firebase|firebase|react-native-paper))"
 		],
@@ -32,56 +35,62 @@
 	"dependencies": {
 		"@expo/vector-icons": "15.1.1",
 		"@react-native-async-storage/async-storage": "^3.1.0",
-		"@react-native-community/slider": "^5.2.0",
-		"@react-navigation/bottom-tabs": "7.15.13",
+		"@react-native-community/slider": "5.2.1",
 		"@react-navigation/native": "7.2.4",
-		"expo": "55.0.23",
-		"expo-auth-session": "55.0.15",
-		"expo-constants": "55.0.16",
-		"expo-crypto": "55.0.14",
-		"expo-file-system": "~55.0.26",
-		"expo-font": "55.0.7",
-		"expo-linking": "55.0.15",
-		"expo-localization": "55.0.13",
-		"expo-router": "55.0.14",
-		"expo-sharing": "~55.0.24",
-		"expo-splash-screen": "55.0.20",
-		"expo-status-bar": "55.0.6",
-		"expo-symbols": "55.0.8",
-		"expo-web-browser": "55.0.15",
+		"expo": "~58.0.17",
+		"expo-auth-session": "~58.0.14",
+		"expo-constants": "~58.0.13",
+		"expo-crypto": "58.0.7",
+		"expo-file-system": "~58.0.0",
+		"expo-font": "~58.0.9",
+		"expo-linking": "~58.0.14",
+		"expo-localization": "~58.0.5",
+		"expo-router": "~58.0.25",
+		"expo-sharing": "~58.0.0",
+		"expo-splash-screen": "~58.0.11",
+		"expo-status-bar": "~58.0.4",
+		"expo-symbols": "58.0.4",
+		"expo-web-browser": "58.0.6",
 		"firebase": "13.0.0",
 		"i18next": "26.0.10",
-		"react": "19.2.6",
-		"react-dom": "19.2.6",
+		"react": "19.3.0",
+		"react-dom": "19.3.0",
 		"react-i18next": "17.0.7",
-		"react-native": "0.85.3",
+		"react-native": "0.88.0",
 		"react-native-draggable-flatlist": "^4.0.3",
-		"react-native-gesture-handler": "3.2.1",
+		"react-native-gesture-handler": "~3.3.0",
 		"react-native-paper": "5.15.2",
-		"react-native-reanimated": "4.3.1",
-		"react-native-safe-area-context": "5.7.0",
-		"react-native-screens": "4.24.0",
-		"react-native-svg": "15.15.4",
-		"react-native-web": "0.21.2",
-		"react-native-worklets": "0.8.3"
+		"react-native-reanimated": "4.7.1",
+		"react-native-safe-area-context": "~5.10.1",
+		"react-native-screens": "~4.30.0",
+		"react-native-svg": "15.16.0",
+		"react-native-web": "^0.21.4",
+		"react-native-worklets": "0.13.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.15",
 		"@playwright/test": "^1.62.1",
-		"@react-native/jest-preset": "^0.85.3",
+		"@react-native/jest-preset": "0.88.0",
 		"@testing-library/react-native": "~14.0.0",
 		"@types/jest": "~30",
 		"@types/node": "^26.3.0",
-		"@types/react": "19.2.14",
+		"@types/react": "~19.3.0",
 		"fallow": "^3.0.0",
 		"firebase-admin": "^14.2.0",
 		"firebase-tools": "^15.28.1",
-		"jest": "^30.0.0",
-		"jest-expo": "~57.0.0",
+		"jest": "~30.5.2",
+		"jest-expo": "~58.0.12",
 		"test-renderer": "1.2",
 		"typescript": "6.0.3"
 	},
 	"private": true,
+	"expo": {
+		"install": {
+			"exclude": [
+				"@react-native-async-storage/async-storage"
+			]
+		}
+	},
 	"resolutions": {
 		"postcss": ">=8.5.10"
 	}

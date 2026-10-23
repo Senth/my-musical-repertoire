@@ -754,6 +754,7 @@ export function PiecePracticeContent({
 					<PracticeHeaderMenu
 						onEdit={() => router.push(`/piece/${pieceId}/edit`)}
 						onDelete={() => setDeleteDialogVisible(true)}
+						dialogOpen={deleteDialogVisible}
 						labels={{
 							edit: t("screen.pieces.menu.edit"),
 							delete: t("screen.pieces.menu.delete"),

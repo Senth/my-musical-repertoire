@@ -11,7 +11,7 @@ export async function saveExport(
 	contents: string,
 ): Promise<void> {
 	const file = new File(Paths.cache, filename);
-	file.write(contents);
+	await file.write(contents);
 	await Sharing.shareAsync(file.uri, {
 		mimeType: "application/json",
 		dialogTitle: filename,

@@ -5,6 +5,8 @@ import { PracticeHeaderMenu } from "./PracticeHeaderMenu";
 
 const mockMenuMounts = jest.fn();
 
+jest.mock("expo-router", () => ({ useFocusEffect: jest.fn() }));
+
 jest.mock("react-native-paper", () => {
 	const actual = jest.requireActual("react-native-paper");
 	const { View } = require("react-native");
@@ -38,6 +40,7 @@ it("never mounts a closed Paper Menu, whose hide animation steals focus on web",
 		<PracticeHeaderMenu
 			onEdit={jest.fn()}
 			onDelete={jest.fn()}
+			dialogOpen={false}
 			labels={labels}
 		/>,
 	);
@@ -47,7 +50,12 @@ it("never mounts a closed Paper Menu, whose hide animation steals focus on web",
 it("opens on the anchor and unmounts after an item is chosen", async () => {
 	const onEdit = jest.fn();
 	const screen = await render(
-		<PracticeHeaderMenu onEdit={onEdit} onDelete={jest.fn()} labels={labels} />,
+		<PracticeHeaderMenu
+			onEdit={onEdit}
+			onDelete={jest.fn()}
+			dialogOpen={false}
+			labels={labels}
+		/>,
 	);
 	await fireEvent.press(screen.getByLabelText("More options"));
 	expect(mockMenuMounts).toHaveBeenLastCalledWith(true);

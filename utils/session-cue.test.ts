@@ -1,11 +1,5 @@
+import { Platform } from "react-native";
 import { playBlockEndCue } from "./session-cue";
-
-const mockPlatform = { OS: "web" };
-
-jest.mock("react-native/Libraries/Utilities/Platform", () => ({
-	__esModule: true,
-	default: mockPlatform,
-}));
 
 function fakeAudioContext() {
 	const log: string[] = [];
@@ -46,17 +40,19 @@ function fakeAudioContext() {
 describe("playBlockEndCue", () => {
 	beforeEach(() => {
 		jest.useFakeTimers();
+		jest.replaceProperty(Platform, "OS", "web");
 	});
 
 	afterEach(() => {
 		jest.useRealTimers();
+		jest.restoreAllMocks();
 		delete (globalThis as { window?: unknown }).window;
 	});
 
 	it("plays a fading tone on web and closes the context", () => {
 		const audio = fakeAudioContext();
 		(globalThis as { window?: object }).window = {
-			AudioContext: () => audio.ctx,
+			AudioContext: jest.fn(() => audio.ctx),
 		};
 
 		playBlockEndCue();
@@ -79,7 +75,7 @@ describe("playBlockEndCue", () => {
 	it("falls back to webkitAudioContext", () => {
 		const audio = fakeAudioContext();
 		(globalThis as { window?: object }).window = {
-			webkitAudioContext: () => audio.ctx,
+			webkitAudioContext: jest.fn(() => audio.ctx),
 		};
 
 		playBlockEndCue();
@@ -88,7 +84,7 @@ describe("playBlockEndCue", () => {
 	});
 
 	it("stays quiet off-web", () => {
-		mockPlatform.OS = "ios";
+		jest.replaceProperty(Platform, "OS", "ios");
 		const ctor = jest.fn();
 		(globalThis as { window?: object }).window = { AudioContext: ctor };
 
@@ -105,9 +101,9 @@ describe("playBlockEndCue", () => {
 
 	it("swallows audio errors", () => {
 		(globalThis as { window?: object }).window = {
-			AudioContext: () => {
+			AudioContext: jest.fn(() => {
 				throw new Error("no audio device");
-			},
+			}),
 		};
 
 		expect(() => playBlockEndCue()).not.toThrow();

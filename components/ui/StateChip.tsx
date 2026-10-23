@@ -4,13 +4,14 @@ import {
 	type Insets,
 	Platform,
 	View,
+	type ViewInstance,
 } from "react-native";
 import { Chip, TouchableRipple, useTheme } from "react-native-paper";
 import { border, radius, space, type } from "@/theme/tokens";
 import { type StateVisual, withAlpha } from "@/utils/state-colors";
 
 interface StateChipProps {
-	ref?: Ref<View>;
+	ref?: Ref<View & ViewInstance>;
 	label: string;
 	visual: StateVisual;
 	onPress?: () => void;
