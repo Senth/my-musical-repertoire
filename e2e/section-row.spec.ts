@@ -642,3 +642,23 @@ test("section state menu survives rapid Escape and immediate reopen", async ({
 	}
 	expect(consoleErrors).toEqual([]);
 });
+
+test("practice options menu returns focus to its trigger on close", async ({
+	page,
+}) => {
+	const consoleErrors = collectConsoleErrors(page);
+	await page.goto(`/piece/${SEED_IDS.invention}/practice`);
+	const trigger = page.getByRole("button", { name: t("a11y.menu.options") });
+	const firstItem = page.getByRole("menuitem").first();
+	await trigger.click();
+	await expect(firstItem).toBeFocused();
+	await page.keyboard.press("Escape");
+	await expect(firstItem).toHaveCount(0);
+	await expect(trigger).toBeFocused();
+	await page.keyboard.press("Enter");
+	await expect(firstItem).toBeFocused();
+	await page.keyboard.press("Escape");
+	await expect(firstItem).toHaveCount(0);
+	await expect(trigger).toBeFocused();
+	expect(consoleErrors).toEqual([]);
+});

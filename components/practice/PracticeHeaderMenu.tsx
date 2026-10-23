@@ -26,7 +26,13 @@ export function PracticeHeaderMenu({
 	const anchorRef = useRef<View & ViewInstance>(null);
 
 	useEffect(() => {
-		if (visible === false && Platform.OS === "web") anchorRef.current?.focus();
+		const trigger = anchorRef.current;
+		if (
+			visible === false &&
+			Platform.OS === "web" &&
+			trigger instanceof HTMLElement
+		)
+			trigger.querySelector<HTMLElement>('[role="button"]')?.focus();
 	}, [visible]);
 
 	const anchor = (
