@@ -24,8 +24,6 @@ interface FirestoreSection {
 	label: string;
 	order: number;
 	state?: SectionState;
-	/** Legacy field name from before #84; read as a fallback until the migration has run everywhere. */
-	phase?: SectionState;
 	startBar?: number | null;
 	endBar?: number | null;
 	targetBpmOverride?: number | null;
@@ -37,8 +35,6 @@ interface FirestoreSection {
 	lastEffort?: 1 | 2 | 3 | 4 | 5 | null;
 	byMode?: unknown;
 	stateChangedAt?: { toDate: () => Date } | null;
-	/** Legacy field name from before #84; read as a fallback until the migration has run everywhere. */
-	phaseChangedAt?: { toDate: () => Date } | null;
 	timeSignatureOverride?: unknown;
 }
 
@@ -54,8 +50,7 @@ function fromFirestore(
 		userId,
 		label: data.label,
 		order: data.order,
-		// Dual-read during the #84 rollout: pre-migration docs carry `phase`.
-		state: (data.state ?? data.phase) as SectionState,
+		state: data.state as SectionState,
 		startBar: data.startBar ?? null,
 		endBar: data.endBar ?? null,
 		targetBpmOverride: data.targetBpmOverride ?? null,
@@ -66,9 +61,7 @@ function fromFirestore(
 		lastQuality: data.lastQuality ?? null,
 		lastEffort: data.lastEffort ?? null,
 		byMode: byModeFromFirestore(data.byMode),
-		// Dual-read during the #84 rollout: pre-migration docs carry `phaseChangedAt`.
-		stateChangedAt:
-			(data.stateChangedAt ?? data.phaseChangedAt)?.toDate() ?? null,
+		stateChangedAt: data.stateChangedAt?.toDate() ?? null,
 		timeSignatureOverride: timeSignatureFromFirestore(
 			data.timeSignatureOverride,
 		),
