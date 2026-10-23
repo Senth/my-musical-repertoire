@@ -200,6 +200,45 @@ test.describe("craft", () => {
 	}
 });
 
+test.describe("contrast audit", () => {
+	test("judges text on a painted pointer-events:none ancestor", async ({
+		page,
+	}) => {
+		await page.setContent(`
+			<body style="margin:0;background:#000">
+				<div style="pointer-events:none;background:#fff;padding:20px">
+					<span style="pointer-events:auto;color:#fff">Hidden</span>
+				</div>
+			</body>`);
+		expect(await page.evaluate(contrastAudit)).toEqual([
+			'"Hidden" 1.00:1, needs 4.5:1',
+		]);
+	});
+
+	test("judges header text on its absolutely positioned background", async ({
+		page,
+	}) => {
+		await page.setContent(`
+			<body style="margin:0;background:rgb(242,242,242)">
+				<div style="position:relative;padding:20px">
+					<div style="position:absolute;inset:0;background:rgb(18,18,18)"></div>
+					<div style="position:relative;color:#fff">Overview</div>
+				</div>
+			</body>`);
+		expect(await page.evaluate(contrastAudit)).toEqual([]);
+	});
+
+	test("judges SVG text by its fill, not its color", async ({ page }) => {
+		await page.setContent(`
+			<body style="margin:0;background:rgb(28,28,28);color:#000">
+				<svg width="200" height="40">
+					<text x="10" y="25" fill="rgb(202,196,208)">Aug</text>
+				</svg>
+			</body>`);
+		expect(await page.evaluate(contrastAudit)).toEqual([]);
+	});
+});
+
 /**
  * WCAG AA on every visible run of text: 4.5:1, or 3:1 for large text.
  *
@@ -244,10 +283,12 @@ function contrastAudit(): string[] {
 	 * same hue as its tint then reports 1.00:1 — a bug in the audit that looks
 	 * exactly like a catastrophic bug in the app.
 	 *
-	 * The layers are what is painted under the text's centre, not its ancestors:
-	 * a navigation header paints its colour on an absolutely positioned sibling,
-	 * while its ancestors carry the navigator's own light background. Text the
-	 * hit test cannot see falls back to the ancestor chain.
+	 * The layers are what is painted under the text's centre, not only its
+	 * ancestors: a navigation header paints its colour on an absolutely
+	 * positioned sibling, while its ancestors carry the navigator's own light
+	 * background. The hit test skips `pointer-events: none` ancestors, which
+	 * still paint, so each missing ancestor goes back in just beneath its own
+	 * descendants.
 	 */
 	function backgroundOf(el: Element): Rgb {
 		const box = el.getBoundingClientRect();
@@ -256,9 +297,13 @@ function contrastAudit(): string[] {
 			box.y + box.height / 2,
 		);
 		const at = painted.indexOf(el);
-		const below = at >= 0 ? painted.slice(at) : [];
-		if (at < 0)
-			for (let n: Element | null = el; n; n = n.parentElement) below.push(n);
+		const below = at >= 0 ? painted.slice(at) : [el];
+		for (let a = el.parentElement; a; a = a.parentElement) {
+			if (below.includes(a)) continue;
+			const ancestor = a;
+			const under = below.findIndex((n, i) => i > 0 && !ancestor.contains(n));
+			below.splice(under < 0 ? below.length : under, 0, ancestor);
+		}
 		const layers: Rgb[] = [];
 		for (const node of below) {
 			const c = parse(getComputedStyle(node).backgroundColor);
@@ -308,7 +353,7 @@ function contrastAudit(): string[] {
 		const box = el.getBoundingClientRect();
 		if (box.width === 0 || box.height === 0) continue;
 
-		const fg = parse(style.color);
+		const fg = parse(el instanceof SVGElement ? style.fill : style.color);
 		if (!fg) continue;
 		const bg = backgroundOf(el);
 		const composited = over(fg, bg);

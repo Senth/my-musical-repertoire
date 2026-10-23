@@ -147,8 +147,12 @@ start_web() {
 	# under test is the old one, so a test can pass against a change that was
 	# never there. GitHub Actions sets CI itself, which is where freezing the
 	# bundle for the length of a run is the right behaviour.
+	# --stack-size: React's dev server render recurses ~1,260 frames deep through
+	# the router's providers on /piece/add, past Node's default ~1MB stack while
+	# cold ("Invalid regular expression: ... Stack overflow"). 4000KB fits the 8MB
+	# main-thread stack.
 	EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_USE_EMULATORS=1 \
-		setsid yarn --silent expo start --web --port "$WEB_PORT" \
+		setsid node --stack-size=4000 node_modules/expo/bin/cli start --web --port "$WEB_PORT" \
 		</dev/null >"$RUN_DIR/$WEB.log" 2>&1 &
 	echo $! >"$RUN_DIR/$WEB.pid"
 	wait_for "$WEB_PORT" "expo web server" 180
