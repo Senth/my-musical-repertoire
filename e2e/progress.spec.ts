@@ -1,10 +1,10 @@
-import { expect, test } from "@playwright/test";
 import {
 	collectConsoleErrors,
 	expectCleanPage,
 	SEED_IDS,
 	t,
 } from "@/e2e/support/app";
+import { expect, test } from "@/e2e/support/test";
 
 test("progress sorts seeded passages, shows hand tempos, expands at target and opens history", async ({
 	page,
@@ -70,7 +70,10 @@ test("progress sorts seeded passages, shows hand tempos, expands at target and o
 				exposition
 					.getByTestId(`progress-fill-${hands}-fill`)
 					.evaluate(
-						(bar) => new DOMMatrixReadOnly(getComputedStyle(bar).transform).a,
+						(bar: HTMLElement) =>
+							1 +
+							new DOMMatrixReadOnly(getComputedStyle(bar).transform).e /
+								bar.offsetWidth,
 					),
 			)
 			.toBeCloseTo((bpm - 20) / (96 - 20), 3);

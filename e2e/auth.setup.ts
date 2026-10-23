@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises";
-import { expect, test as setup } from "@playwright/test";
 import { signIn } from "@/e2e/support/app";
+import { expect, test as setup } from "@/e2e/support/test";
 import { AUTH_STATE } from "@/playwright.config";
 
 /**

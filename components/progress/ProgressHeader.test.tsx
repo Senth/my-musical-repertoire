@@ -164,55 +164,55 @@ it("does not claim an empty chart when a read fails", async () => {
 	expect(mockProgress).toHaveBeenLastCalledWith(scope, "1y");
 });
 
-it.each([
-	96,
-	undefined,
-])("shows run-through counts from the worse mistake with target %s", async (target) => {
-	mockState.series = buildSeries(
-		[
-			{
-				date: new Date(2026, 8, 1),
-				achievedBpm: 60,
-				technicalMistakes: PracticeMistakes.none,
-				memoryMistakes: PracticeMistakes.few,
-			},
-			{
-				date: new Date(2026, 9, 1),
-				achievedBpm: 64,
-				technicalMistakes: PracticeMistakes.few,
-				memoryMistakes: PracticeMistakes.many,
-			},
-			{
-				date: new Date(2026, 9, 2),
-				achievedBpm: 72,
-				technicalMistakes: PracticeMistakes.some,
-				memoryMistakes: PracticeMistakes.none,
-			},
-		],
-		"run-through",
-	);
-	const screen = await renderHeader(target, {
-		type: "run-throughs",
-		pieceId: "piece",
-	});
-	expect(screen.getByText("Run-throughs")).toBeTruthy();
-	expect(screen.getByText("1 shaky · 1 some slips · 1 clean")).toBeTruthy();
-	expect(screen.getByText("3 practices")).toBeTruthy();
-	expect(
-		screen.getByText("Line width: worst of technical and memory mistakes"),
-	).toBeTruthy();
-	for (const label of ["None or few", "Some", "Many or everywhere"])
-		expect(screen.getByText(label)).toBeTruthy();
-	expect(screen.getByText(/whole piece/)).toBeTruthy();
-	expect(screen.queryByText("Left hand")).toBeNull();
-	expect(screen.queryByText("Hands together")).toBeNull();
-	if (target == null) {
-		expect(screen.queryByText("Target")).toBeNull();
-		expect(screen.queryByText(/to go/)).toBeNull();
-	} else {
-		expect(screen.getByText("72 BPM · 24 to go")).toBeTruthy();
-	}
-});
+it.each([96, undefined])(
+	"shows run-through counts from the worse mistake with target %s",
+	async (target) => {
+		mockState.series = buildSeries(
+			[
+				{
+					date: new Date(2026, 8, 1),
+					achievedBpm: 60,
+					technicalMistakes: PracticeMistakes.none,
+					memoryMistakes: PracticeMistakes.few,
+				},
+				{
+					date: new Date(2026, 9, 1),
+					achievedBpm: 64,
+					technicalMistakes: PracticeMistakes.few,
+					memoryMistakes: PracticeMistakes.many,
+				},
+				{
+					date: new Date(2026, 9, 2),
+					achievedBpm: 72,
+					technicalMistakes: PracticeMistakes.some,
+					memoryMistakes: PracticeMistakes.none,
+				},
+			],
+			"run-through",
+		);
+		const screen = await renderHeader(target, {
+			type: "run-throughs",
+			pieceId: "piece",
+		});
+		expect(screen.getByText("Run-throughs")).toBeTruthy();
+		expect(screen.getByText("1 shaky · 1 some slips · 1 clean")).toBeTruthy();
+		expect(screen.getByText("3 practices")).toBeTruthy();
+		expect(
+			screen.getByText("Line width: worst of technical and memory mistakes"),
+		).toBeTruthy();
+		for (const label of ["None or few", "Some", "Many or everywhere"])
+			expect(screen.getByText(label)).toBeTruthy();
+		expect(screen.getByText(/whole piece/)).toBeTruthy();
+		expect(screen.queryByText("Left hand")).toBeNull();
+		expect(screen.queryByText("Hands together")).toBeNull();
+		if (target == null) {
+			expect(screen.queryByText("Target")).toBeNull();
+			expect(screen.queryByText(/to go/)).toBeNull();
+		} else {
+			expect(screen.getByText("72 BPM · 24 to go")).toBeTruthy();
+		}
+	},
+);
 
 it("shows sight-reading tempo and stops without target or hand legend", async () => {
 	mockState.series = buildSeries(

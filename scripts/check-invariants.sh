@@ -335,6 +335,26 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 10. e2e specs take `test` from e2e/support/test.ts
+#
+# Its `page.goto` waits for React's first commit. The dev server sends static
+# HTML that the client then renders over, so a spec on Playwright's own `test`
+# can type into or click a node that is about to be thrown away.
+# ---------------------------------------------------------------------------
+E2E_SPECS=()
+for f in "${ALL_TS[@]}"; do
+	[[ "$f" =~ ^e2e/ && "$f" != e2e/support/test.ts ]] && E2E_SPECS+=("$f")
+done
+PATTERN='import[[:space:]]*\{[^}]*\btest\b[^}]*\}[[:space:]]*from[[:space:]]*"@playwright/test"'
+hits=$(scan "${E2E_SPECS[@]}" | drop_allowed | strip_comments)
+if [[ -n "$hits" ]]; then
+	report 10 "e2e test from support/test" FAIL "$hits" \
+		'Import { expect, test } from "@/e2e/support/test".'
+else
+	report 10 "e2e test from support/test" ok
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 printf '\ncheck-invariants — %d files\n\n' "${#ALL_TS[@]}"

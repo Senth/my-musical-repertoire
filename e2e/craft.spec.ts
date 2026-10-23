@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import {
 	collectConsoleErrors,
 	expectCleanPage,
@@ -6,6 +6,7 @@ import {
 	SEED_IDS,
 	t,
 } from "@/e2e/support/app";
+import { expect, test } from "@/e2e/support/test";
 import { touchTarget } from "@/theme/tokens";
 
 /**

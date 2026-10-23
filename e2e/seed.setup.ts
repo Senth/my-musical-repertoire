@@ -1,5 +1,4 @@
 import { writeFile } from "node:fs/promises";
-import { expect, test as setup } from "@playwright/test";
 import {
 	deleteApp as deleteClientApp,
 	initializeApp as initializeClientApp,
@@ -26,6 +25,7 @@ import {
 import { deleteApp, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { SEED_IDS, SEED_USER } from "@/e2e/support/app";
+import { expect, test as setup } from "@/e2e/support/test";
 import type { PieceState } from "@/models/piece";
 import { type ByMode, PracticeMistakes } from "@/models/practice";
 import type { SectionState } from "@/models/section";

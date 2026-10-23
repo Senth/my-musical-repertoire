@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { createInstance } from "i18next";
 import {
 	collectConsoleErrors,
@@ -8,6 +8,7 @@ import {
 	SEED_IDS,
 	t,
 } from "@/e2e/support/app";
+import { expect, test } from "@/e2e/support/test";
 import en from "@/i18n/locales/en-US.json";
 import { formatDaysAgo } from "@/utils/date";
 

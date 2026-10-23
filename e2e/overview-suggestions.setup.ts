@@ -1,4 +1,4 @@
-import { expect, test as setup } from "@playwright/test";
+import { expect, test as setup } from "@/e2e/support/test";
 import { OVERVIEW_AUTH_STATE } from "@/playwright.config";
 import { t } from "./support/app";
 
