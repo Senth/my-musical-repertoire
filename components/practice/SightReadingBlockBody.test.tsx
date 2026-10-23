@@ -155,20 +155,20 @@ describe("SightReadingBlockBody save", () => {
 		);
 	});
 
-	it.each(["", "abc"])(
-		"saves null when editing %p shows no numeric tempo",
-		async (bpm) => {
-			const screen = await render(<Harness />);
-			await fireEvent.press(screen.getByLabelText("Edit tempo"));
-			await fireEvent.changeText(screen.getByLabelText("Edit tempo"), bpm);
-			await fireEvent.press(screen.getByText("Save & next"));
-			await waitFor(() => expect(advance).toHaveBeenCalledTimes(1));
-			expect(addDoc).toHaveBeenCalledWith(
-				expect.anything(),
-				expect.objectContaining({ achievedBpm: null }),
-			);
-		},
-	);
+	it.each([
+		"",
+		"abc",
+	])("saves null when editing %p shows no numeric tempo", async (bpm) => {
+		const screen = await render(<Harness />);
+		await fireEvent.press(screen.getByLabelText("Edit tempo"));
+		await fireEvent.changeText(screen.getByLabelText("Edit tempo"), bpm);
+		await fireEvent.press(screen.getByText("Save & next"));
+		await waitFor(() => expect(advance).toHaveBeenCalledTimes(1));
+		expect(addDoc).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ achievedBpm: null }),
+		);
+	});
 
 	it("saves the displayed fallback after clearing and leaving the tempo field", async () => {
 		const screen = await render(<Harness />);

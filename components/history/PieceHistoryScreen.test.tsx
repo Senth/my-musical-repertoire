@@ -169,17 +169,17 @@ it("preselects a live section and includes its run-through credits", async () =>
 	expect(screen.queryByText("From a run-through")).toBeNull();
 });
 
-it.each(["old", "unknown"])(
-	"falls back to All for %s section parameter",
-	async (sectionId) => {
-		mockParams.sectionId = sectionId;
-		const screen = await renderScreen();
-		expect(screen.getByLabelText("All").props.accessibilityState.selected).toBe(
-			true,
-		);
-		expect(screen.getByText("Run-through")).toBeTruthy();
-	},
-);
+it.each([
+	"old",
+	"unknown",
+])("falls back to All for %s section parameter", async (sectionId) => {
+	mockParams.sectionId = sectionId;
+	const screen = await renderScreen();
+	expect(screen.getByLabelText("All").props.accessibilityState.selected).toBe(
+		true,
+	);
+	expect(screen.getByText("Run-through")).toBeTruthy();
+});
 
 it("waits for live sections before settling route preselection", async () => {
 	mockParams.sectionId = "coda";
@@ -236,39 +236,36 @@ it("loads older pages without changing the filter or hiding existing rows", asyn
 it.each([
 	["Coda", "No practice on Coda yet.", "Bars 208–264", () => entry("coda")],
 	["Run-throughs", "No run-throughs yet.", "Run-through", () => entry()],
-])(
-	"loads pages until an older-only %s match appears",
-	async (filter, empty, match, olderEntry) => {
-		mockHistory.entries = [entry("intro")];
-		mockHistory.hasMore = true;
-		const screen = await renderScreen();
-		await fireEvent.press(screen.getByLabelText(filter));
-		expect(screen.queryByText(empty)).toBeNull();
-		expect(mockHistory.loadMore).toHaveBeenCalledTimes(1);
-		expect(screen.queryByRole("button", { name: "Show older" })).toBeNull();
-		for (const loading of [true, false]) {
-			mockHistory.loading = loading;
-			await screen.rerender(
-				<PaperProvider theme={lightTheme}>
-					<PieceHistoryScreen />
-				</PaperProvider>,
-			);
-		}
-		expect(mockHistory.loadMore).toHaveBeenCalledTimes(2);
-		expect(screen.queryByText(empty)).toBeNull();
-		mockHistory.entries = [...mockHistory.entries, olderEntry()];
+])("loads pages until an older-only %s match appears", async (filter, empty, match, olderEntry) => {
+	mockHistory.entries = [entry("intro")];
+	mockHistory.hasMore = true;
+	const screen = await renderScreen();
+	await fireEvent.press(screen.getByLabelText(filter));
+	expect(screen.queryByText(empty)).toBeNull();
+	expect(mockHistory.loadMore).toHaveBeenCalledTimes(1);
+	expect(screen.queryByRole("button", { name: "Show older" })).toBeNull();
+	for (const loading of [true, false]) {
+		mockHistory.loading = loading;
 		await screen.rerender(
 			<PaperProvider theme={lightTheme}>
 				<PieceHistoryScreen />
 			</PaperProvider>,
 		);
-		expect(screen.getByText(match)).toBeTruthy();
-		expect(mockHistory.loadMore).toHaveBeenCalledTimes(2);
-		expect(
-			screen.getByLabelText(filter).props.accessibilityState.selected,
-		).toBe(true);
-	},
-);
+	}
+	expect(mockHistory.loadMore).toHaveBeenCalledTimes(2);
+	expect(screen.queryByText(empty)).toBeNull();
+	mockHistory.entries = [...mockHistory.entries, olderEntry()];
+	await screen.rerender(
+		<PaperProvider theme={lightTheme}>
+			<PieceHistoryScreen />
+		</PaperProvider>,
+	);
+	expect(screen.getByText(match)).toBeTruthy();
+	expect(mockHistory.loadMore).toHaveBeenCalledTimes(2);
+	expect(screen.getByLabelText(filter).props.accessibilityState.selected).toBe(
+		true,
+	);
+});
 
 it("claims a filtered history is empty only after exhausting pages", async () => {
 	mockHistory.entries = [entry("intro")];

@@ -2210,31 +2210,31 @@ describe("run-through credit invariants", () => {
 			expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b", "c"]);
 		});
 
-		it.each(["maintenance", "performance"] as const)(
-			"takes only learning and stabilizing sections out of a %s piece",
-			(state) => {
-				const pieces: Piece[] = [
-					makePiece({ id: "pm", state, lastPracticed: days }),
-				];
-				const sections: Section[] = [
-					makeSection({ id: "a", pieceId: "pm", state: "learning", order: 0 }),
-					makeSection({
-						id: "b",
-						pieceId: "pm",
-						state: "stabilizing",
-						order: 1,
-					}),
-					makeSection({
-						id: "c",
-						pieceId: "pm",
-						state: "maintenance",
-						order: 2,
-					}),
-				];
-				const pool = stabilizingLinePool(pieces, sections, NOW);
-				expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b"]);
-			},
-		);
+		it.each([
+			"maintenance",
+			"performance",
+		] as const)("takes only learning and stabilizing sections out of a %s piece", (state) => {
+			const pieces: Piece[] = [
+				makePiece({ id: "pm", state, lastPracticed: days }),
+			];
+			const sections: Section[] = [
+				makeSection({ id: "a", pieceId: "pm", state: "learning", order: 0 }),
+				makeSection({
+					id: "b",
+					pieceId: "pm",
+					state: "stabilizing",
+					order: 1,
+				}),
+				makeSection({
+					id: "c",
+					pieceId: "pm",
+					state: "maintenance",
+					order: 2,
+				}),
+			];
+			const pool = stabilizingLinePool(pieces, sections, NOW);
+			expect(pool.map((c) => c.section?.id).sort()).toEqual(["a", "b"]);
+		});
 	});
 });
 
@@ -2247,16 +2247,6 @@ describe("blockSectionIds", () => {
 				sectionIds: ["a", "b"],
 			}),
 		).toEqual(["a", "b"]);
-	});
-
-	it("falls back to the deprecated sectionId for a plan stored before sectionIds existed", () => {
-		expect(
-			blockSectionIds({
-				kind: "repertoire-review",
-				allocatedMinutes: 6,
-				sectionId: "a",
-			}),
-		).toEqual(["a"]);
 	});
 
 	it("is empty for a block with neither field", () => {
@@ -2283,24 +2273,6 @@ describe("producers write sectionIds", () => {
 		];
 		const { blocks } = pickRepertoireMaintenanceBlocks(pieces, 10, NOW);
 		expect(blocks[0]?.sectionIds).toBeNull();
-	});
-
-	it("no producer writes the deprecated sectionId", () => {
-		const days = new Date(NOW.getTime() - 30 * 86400000);
-		const pieces: Piece[] = [
-			makePiece({ id: "p1", state: "learning" }),
-			makePiece({ id: "p2", state: "stabilizing" }),
-			makePiece({ id: "pm", state: "maintenance", lastPracticed: days }),
-		];
-		const sections: Section[] = [
-			makeSection({ id: "s1", pieceId: "p1", state: "learning" }),
-			makeSection({ id: "s2", pieceId: "p2", state: "stabilizing" }),
-		];
-		const plan = buildPlan(BALANCED_60, pieces, sections, [], NOW);
-		expect(plan.blocks.length).toBeGreaterThan(0);
-		for (const block of plan.blocks) {
-			expect(block.sectionId).toBeUndefined();
-		}
 	});
 });
 

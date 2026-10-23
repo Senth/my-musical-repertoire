@@ -53,21 +53,21 @@ beforeEach(() => {
 		.mockResolvedValue(log(twoDaysAgo));
 });
 
-it.each([lightTheme, darkTheme])(
-	"shows recency and opens history through the shared link",
-	async (theme) => {
-		const screen = await render(row(theme));
-		await waitFor(() =>
-			expect(screen.getByText("Last read 2 days ago")).toBeTruthy(),
-		);
-		expect(fetchLastSightReading).toHaveBeenCalledTimes(1);
-		expect(fetchLastSightReading).toHaveBeenCalledWith("u");
-		await fireEvent.press(
-			screen.getByRole("link", { name: "Sight-reading history" }),
-		);
-		expect(mockPush).toHaveBeenCalledWith("/sight-reading/history");
-	},
-);
+it.each([
+	lightTheme,
+	darkTheme,
+])("shows recency and opens history through the shared link", async (theme) => {
+	const screen = await render(row(theme));
+	await waitFor(() =>
+		expect(screen.getByText("Last read 2 days ago")).toBeTruthy(),
+	);
+	expect(fetchLastSightReading).toHaveBeenCalledTimes(1);
+	expect(fetchLastSightReading).toHaveBeenCalledWith("u");
+	await fireEvent.press(
+		screen.getByRole("link", { name: "Sight-reading history" }),
+	);
+	expect(mockPush).toHaveBeenCalledWith("/sight-reading/history");
+});
 
 it("shows Not read yet only after a successful empty read", async () => {
 	jest.mocked(fetchLastSightReading).mockResolvedValue(null);
