@@ -44,13 +44,13 @@ const written = () =>
 describe("useUpdateTechnique dateIntroduced", () => {
 	const { updateTechnique } = useUpdateTechnique();
 
-	it.each<TechniqueState>([
-		"not_started",
-		"maintenance",
-	])("stamps dateIntroduced when %s becomes active", async (previous) => {
-		await updateTechnique("t1", { state: "active" }, previous);
-		expect(written().dateIntroduced).toBeInstanceOf(Date);
-	});
+	it.each<TechniqueState>(["not_started", "maintenance"])(
+		"stamps dateIntroduced when %s becomes active",
+		async (previous) => {
+			await updateTechnique("t1", { state: "active" }, previous);
+			expect(written().dateIntroduced).toBeInstanceOf(Date);
+		},
+	);
 
 	it("leaves dateIntroduced alone when the technique was already active", async () => {
 		await updateTechnique("t1", { state: "active" }, "active");

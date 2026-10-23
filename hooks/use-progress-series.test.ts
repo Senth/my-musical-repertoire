@@ -89,44 +89,43 @@ describe("useProgressSeries", () => {
 				range,
 			})),
 		),
-	)("reads exactly once with bounded constraints for $scope.type / $range", async ({
-		scope,
-		path,
-		range,
-	}) => {
-		const before = rangeStart(range, new Date());
-		const { result, rerender } = await renderHook(() =>
-			useProgressSeries({ ...scope }, range),
-		);
-		await waitFor(() => expect(result.current.loading).toBe(false));
-		expect(getDocs).toHaveBeenCalledTimes(1);
-		expect(getDocs).toHaveBeenCalledWith({
-			ref: path,
-			constraints: [
-				...(before
-					? [
-							{
-								kind: "where",
-								field: "date",
-								operator: ">=",
-								value: { timestamp: before },
-							},
-						]
-					: []),
-				{ kind: "orderBy", field: "date", direction: "desc" },
-				{ kind: "limit", value: 500 },
-			],
-		});
-		expect(Timestamp.fromDate).toHaveBeenCalledTimes(range === "all" ? 0 : 1);
-		expect(onSnapshot).not.toHaveBeenCalled();
-		await rerender(undefined);
-		expect(getDocs).toHaveBeenCalledTimes(1);
-		expect(result.current).toEqual({
-			series: [],
-			loading: false,
-			error: null,
-		});
-	});
+	)(
+		"reads exactly once with bounded constraints for $scope.type / $range",
+		async ({ scope, path, range }) => {
+			const before = rangeStart(range, new Date());
+			const { result, rerender } = await renderHook(() =>
+				useProgressSeries({ ...scope }, range),
+			);
+			await waitFor(() => expect(result.current.loading).toBe(false));
+			expect(getDocs).toHaveBeenCalledTimes(1);
+			expect(getDocs).toHaveBeenCalledWith({
+				ref: path,
+				constraints: [
+					...(before
+						? [
+								{
+									kind: "where",
+									field: "date",
+									operator: ">=",
+									value: { timestamp: before },
+								},
+							]
+						: []),
+					{ kind: "orderBy", field: "date", direction: "desc" },
+					{ kind: "limit", value: 500 },
+				],
+			});
+			expect(Timestamp.fromDate).toHaveBeenCalledTimes(range === "all" ? 0 : 1);
+			expect(onSnapshot).not.toHaveBeenCalled();
+			await rerender(undefined);
+			expect(getDocs).toHaveBeenCalledTimes(1);
+			expect(result.current).toEqual({
+				series: [],
+				loading: false,
+				error: null,
+			});
+		},
+	);
 
 	it("normalizes hands, includes credits, excludes drills and missing tempos, and sorts oldest first", async () => {
 		jest
@@ -167,18 +166,17 @@ describe("useProgressSeries", () => {
 			accuracy: "shaky",
 		},
 		{ scope: scopes[3][0], data: { keptGoing: 3 }, accuracy: "slips" },
-	])("normalizes single-series $scope.type accuracy", async ({
-		scope,
-		data,
-		accuracy,
-	}) => {
-		jest.mocked(getDocs).mockResolvedValue(snapshot([log(100, data)]));
-		const { result } = await renderHook(() => useProgressSeries(scope));
-		await waitFor(() => expect(result.current.loading).toBe(false));
-		expect(result.current.series).toEqual([
-			{ hands: null, points: [{ date: new Date(100), bpm: 80, accuracy }] },
-		]);
-	});
+	])(
+		"normalizes single-series $scope.type accuracy",
+		async ({ scope, data, accuracy }) => {
+			jest.mocked(getDocs).mockResolvedValue(snapshot([log(100, data)]));
+			const { result } = await renderHook(() => useProgressSeries(scope));
+			await waitFor(() => expect(result.current.loading).toBe(false));
+			expect(result.current.series).toEqual([
+				{ hands: null, points: [{ date: new Date(100), bpm: 80, accuracy }] },
+			]);
+		},
+	);
 
 	it("accepts a full cap without pagination or errors", async () => {
 		jest
@@ -251,18 +249,20 @@ describe("useProgressSeries", () => {
 		expect(result.current).toEqual({ series: [], loading: false, error: null });
 	});
 
-	it.each([
-		"unavailable",
-		"permission-denied",
-	])("handles %s without treating offline cache misses as errors", async (code) => {
-		const failure = Object.assign(new Error("Read failed"), { code });
-		jest.mocked(getDocs).mockRejectedValueOnce(failure);
-		const { result } = await renderHook(() => useProgressSeries(scopes[2][0]));
-		await waitFor(() => expect(result.current.loading).toBe(false));
-		expect(result.current).toEqual({
-			series: [],
-			loading: false,
-			error: code === "unavailable" ? null : failure,
-		});
-	});
+	it.each(["unavailable", "permission-denied"])(
+		"handles %s without treating offline cache misses as errors",
+		async (code) => {
+			const failure = Object.assign(new Error("Read failed"), { code });
+			jest.mocked(getDocs).mockRejectedValueOnce(failure);
+			const { result } = await renderHook(() =>
+				useProgressSeries(scopes[2][0]),
+			);
+			await waitFor(() => expect(result.current.loading).toBe(false));
+			expect(result.current).toEqual({
+				series: [],
+				loading: false,
+				error: code === "unavailable" ? null : failure,
+			});
+		},
+	);
 });

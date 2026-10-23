@@ -88,61 +88,59 @@ beforeEach(() => {
 	jest.mocked(getDocs).mockResolvedValue(snapshot());
 });
 
-it.each([
-	"1m",
-	"3m",
-	"1y",
-	"all",
-] as ChartRange[])("reads only rendered scopes once with a 50-log ascending cap for %s", async (range) => {
-	const start = rangeStart(range, new Date());
-	const visible = [...rows(), technique];
-	jest
-		.mocked(getDocs)
-		.mockResolvedValue(
-			snapshot([
-				{ hands: "LH", achievedBpm: 10, drill: "staccato" },
-				{ hands: "LH", achievedBpm: null },
-				{ hands: "LH", achievedBpm: 60, source: "run-through" },
-				{ hands: "LH", achievedBpm: 80 },
-				{ hands: "RH", achievedBpm: Number.NaN },
-				{ hands: "RH", achievedBpm: 64 },
-				{ achievedBpm: 72 },
-			]),
+it.each(["1m", "3m", "1y", "all"] as ChartRange[])(
+	"reads only rendered scopes once with a 50-log ascending cap for %s",
+	async (range) => {
+		const start = rangeStart(range, new Date());
+		const visible = [...rows(), technique];
+		jest
+			.mocked(getDocs)
+			.mockResolvedValue(
+				snapshot([
+					{ hands: "LH", achievedBpm: 10, drill: "staccato" },
+					{ hands: "LH", achievedBpm: null },
+					{ hands: "LH", achievedBpm: 60, source: "run-through" },
+					{ hands: "LH", achievedBpm: 80 },
+					{ hands: "RH", achievedBpm: Number.NaN },
+					{ hands: "RH", achievedBpm: 64 },
+					{ achievedBpm: 72 },
+				]),
+			);
+		const { result, rerender } = await renderHook(() =>
+			useProgressMoved(visible, range),
 		);
-	const { result, rerender } = await renderHook(() =>
-		useProgressMoved(visible, range),
-	);
-	await waitFor(() =>
-		expect(Object.keys(result.current.baselines)).toHaveLength(2),
-	);
-	expect(result.current.baselines[progressRowId(visible[0])]).toEqual({
-		LH: 60,
-		RH: 64,
-		HT: 72,
-	});
-	for (const row of visible)
-		expect(getDocs).toHaveBeenCalledWith({
-			ref: `users/u/${progressRowId(row)}/practiceLogs`,
-			constraints: [
-				...(start
-					? [
-							{
-								kind: "where",
-								field: "date",
-								operator: ">=",
-								value: { timestamp: start },
-							},
-						]
-					: []),
-				{ kind: "orderBy", field: "date", direction: "asc" },
-				{ kind: "limit", value: 50 },
-			],
+		await waitFor(() =>
+			expect(Object.keys(result.current.baselines)).toHaveLength(2),
+		);
+		expect(result.current.baselines[progressRowId(visible[0])]).toEqual({
+			LH: 60,
+			RH: 64,
+			HT: 72,
 		});
-	await rerender(undefined);
-	expect(getDocs).toHaveBeenCalledTimes(2);
-	expect(getDocsFromCache).toHaveBeenCalledTimes(2);
-	expect(onSnapshot).not.toHaveBeenCalled();
-});
+		for (const row of visible)
+			expect(getDocs).toHaveBeenCalledWith({
+				ref: `users/u/${progressRowId(row)}/practiceLogs`,
+				constraints: [
+					...(start
+						? [
+								{
+									kind: "where",
+									field: "date",
+									operator: ">=",
+									value: { timestamp: start },
+								},
+							]
+						: []),
+					{ kind: "orderBy", field: "date", direction: "asc" },
+					{ kind: "limit", value: 50 },
+				],
+			});
+		await rerender(undefined);
+		expect(getDocs).toHaveBeenCalledTimes(2);
+		expect(getDocsFromCache).toHaveBeenCalledTimes(2);
+		expect(onSnapshot).not.toHaveBeenCalled();
+	},
+);
 
 it("caches each range and scope until focus, fetching collapsed rows only on expand", async () => {
 	const section = rows()[0];
@@ -305,22 +303,24 @@ it("does no signed-out reads and never reuses another user's cache", async () =>
 	});
 });
 
-it.each([
-	"unavailable",
-	"permission-denied",
-])("keeps cached baselines and reports only non-offline failures: %s", async (code) => {
-	const failure = Object.assign(new Error("Read failed"), { code });
-	jest
-		.mocked(getDocsFromCache)
-		.mockResolvedValue(snapshot([{ hands: "LH", achievedBpm: 70 }]));
-	jest.mocked(getDocs).mockRejectedValueOnce(failure);
-	const { result } = await renderHook(() => useProgressMoved(rows(), "3m"));
-	await waitFor(() =>
-		expect(result.current.baselines["pieces/p/sections/s0"]).toEqual({
-			LH: 70,
-		}),
-	);
-	await waitFor(() =>
-		expect(result.current.error).toBe(code === "unavailable" ? null : failure),
-	);
-});
+it.each(["unavailable", "permission-denied"])(
+	"keeps cached baselines and reports only non-offline failures: %s",
+	async (code) => {
+		const failure = Object.assign(new Error("Read failed"), { code });
+		jest
+			.mocked(getDocsFromCache)
+			.mockResolvedValue(snapshot([{ hands: "LH", achievedBpm: 70 }]));
+		jest.mocked(getDocs).mockRejectedValueOnce(failure);
+		const { result } = await renderHook(() => useProgressMoved(rows(), "3m"));
+		await waitFor(() =>
+			expect(result.current.baselines["pieces/p/sections/s0"]).toEqual({
+				LH: 70,
+			}),
+		);
+		await waitFor(() =>
+			expect(result.current.error).toBe(
+				code === "unavailable" ? null : failure,
+			),
+		);
+	},
+);

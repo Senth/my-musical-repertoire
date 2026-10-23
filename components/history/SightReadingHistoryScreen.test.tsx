@@ -56,32 +56,32 @@ beforeEach(() => {
 	];
 });
 
-it.each([
-	lightTheme,
-	darkTheme,
-])("shows day, minutes, full rating and optional tempo without a legend", async (theme) => {
-	const screen = await render(
-		<PaperProvider theme={theme}>
-			<SightReadingHistoryScreen />
-		</PaperProvider>,
-	);
-	expect(screen.getByText("History")).toBeTruthy();
-	expect(screen.getByText("Sight-reading")).toBeTruthy();
-	expect(screen.getAllByText("Today")).toHaveLength(1);
-	expect(screen.getByText("9 min")).toBeTruthy();
-	expect(screen.getByText("~5 min")).toBeTruthy();
-	expect(screen.getByText("A few stops")).toBeTruthy();
-	expect(screen.getByText("Not rated")).toBeTruthy();
-	expect(screen.getByText("72")).toBeTruthy();
-	expect(screen.getAllByText("BPM")).toHaveLength(1);
-	expect(screen.queryByText("Quality")).toBeNull();
-	expect(screen.queryByText("Effort")).toBeNull();
-	expect(screen.queryByText("Kept going")).toBeNull();
-	expect(screen.queryByRole("button", { name: "Practice" })).toBeNull();
-	await fireEvent.press(screen.getByLabelText("Back"));
-	expect(mockBack).toHaveBeenCalledTimes(1);
-	expect(mockUpNavigation).toHaveBeenCalledWith("/technique");
-});
+it.each([lightTheme, darkTheme])(
+	"shows day, minutes, full rating and optional tempo without a legend",
+	async (theme) => {
+		const screen = await render(
+			<PaperProvider theme={theme}>
+				<SightReadingHistoryScreen />
+			</PaperProvider>,
+		);
+		expect(screen.getByText("History")).toBeTruthy();
+		expect(screen.getByText("Sight-reading")).toBeTruthy();
+		expect(screen.getAllByText("Today")).toHaveLength(1);
+		expect(screen.getByText("9 min")).toBeTruthy();
+		expect(screen.getByText("~5 min")).toBeTruthy();
+		expect(screen.getByText("A few stops")).toBeTruthy();
+		expect(screen.getByText("Not rated")).toBeTruthy();
+		expect(screen.getByText("72")).toBeTruthy();
+		expect(screen.getAllByText("BPM")).toHaveLength(1);
+		expect(screen.queryByText("Quality")).toBeNull();
+		expect(screen.queryByText("Effort")).toBeNull();
+		expect(screen.queryByText("Kept going")).toBeNull();
+		expect(screen.queryByRole("button", { name: "Practice" })).toBeNull();
+		await fireEvent.press(screen.getByLabelText("Back"));
+		expect(mockBack).toHaveBeenCalledTimes(1);
+		expect(mockUpNavigation).toHaveBeenCalledWith("/technique");
+	},
+);
 
 it("explains empty history without a Practice action", async () => {
 	mockHistory.entries = [];
@@ -111,25 +111,25 @@ it("loads older pages through the shared footer", async () => {
 	expect(mockLoadMore).toHaveBeenCalledTimes(1);
 });
 
-it.each([
-	true,
-	false,
-])("offers retry after a read failure, retaining any loaded rows", async (empty) => {
-	if (empty) mockHistory.entries = [];
-	mockHistory.error = new Error("read failed");
-	const screen = await render(
-		<PaperProvider>
-			<SightReadingHistoryScreen />
-		</PaperProvider>,
-	);
-	expect(
-		screen.getByText("Could not load practice history. Try again."),
-	).toBeTruthy();
-	expect(screen.queryByText("Nothing practiced yet")).toBeNull();
-	if (!empty) expect(screen.getByText("9 min")).toBeTruthy();
-	await fireEvent.press(screen.getByRole("button", { name: "Try again" }));
-	expect(mockLoadMore).toHaveBeenCalledTimes(1);
-});
+it.each([true, false])(
+	"offers retry after a read failure, retaining any loaded rows",
+	async (empty) => {
+		if (empty) mockHistory.entries = [];
+		mockHistory.error = new Error("read failed");
+		const screen = await render(
+			<PaperProvider>
+				<SightReadingHistoryScreen />
+			</PaperProvider>,
+		);
+		expect(
+			screen.getByText("Could not load practice history. Try again."),
+		).toBeTruthy();
+		expect(screen.queryByText("Nothing practiced yet")).toBeNull();
+		if (!empty) expect(screen.getByText("9 min")).toBeTruthy();
+		await fireEvent.press(screen.getByRole("button", { name: "Try again" }));
+		expect(mockLoadMore).toHaveBeenCalledTimes(1);
+	},
+);
 
 it("does not claim empty history while loading", async () => {
 	mockHistory.entries = [];
