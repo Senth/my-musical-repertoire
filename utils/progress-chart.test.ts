@@ -18,23 +18,18 @@ const log = (over: Partial<ChartLog> = {}): ChartLog => ({
 });
 
 describe("accuracyLevel", () => {
-	it.each([
-		1,
-		2,
-		3,
-		4,
-		5,
-		null,
-		undefined,
-	] as const)("maps quality and keptGoing %s", (value) => {
-		const expected =
-			value == null || value >= 4 ? "clean" : value === 3 ? "slips" : "shaky";
-		for (const kind of ["section", "technique", "sight-reading"] as const) {
-			expect(
-				accuracyLevel(log({ quality: value, keptGoing: value }), kind),
-			).toBe(expected);
-		}
-	});
+	it.each([1, 2, 3, 4, 5, null, undefined] as const)(
+		"maps quality and keptGoing %s",
+		(value) => {
+			const expected =
+				value == null || value >= 4 ? "clean" : value === 3 ? "slips" : "shaky";
+			for (const kind of ["section", "technique", "sight-reading"] as const) {
+				expect(
+					accuracyLevel(log({ quality: value, keptGoing: value }), kind),
+				).toBe(expected);
+			}
+		},
+	);
 	it("uses worse mistake count in either field, including missing values", () => {
 		const values = [
 			PracticeMistakes.none,
@@ -80,16 +75,18 @@ describe("buildSeries", () => {
 		expect(lineWidth(series[0].points[1].accuracy)).toBe(4);
 		expect(logs[0].date.getDate()).toBe(3);
 	});
-	it.each([
-		"run-through",
-		"sight-reading",
-	] as const)("uses one handless series for %s", (kind) => {
-		expect(buildSeries([log(), log({ hands: "RH" })], kind)[0]).toMatchObject({
-			hands: null,
-			points: expect.any(Array),
-		});
-		expect(buildSeries([log(), log({ hands: "RH" })], kind)).toHaveLength(1);
-	});
+	it.each(["run-through", "sight-reading"] as const)(
+		"uses one handless series for %s",
+		(kind) => {
+			expect(buildSeries([log(), log({ hands: "RH" })], kind)[0]).toMatchObject(
+				{
+					hands: null,
+					points: expect.any(Array),
+				},
+			);
+			expect(buildSeries([log(), log({ hands: "RH" })], kind)).toHaveLength(1);
+		},
+	);
 	it("maps all widths and takes each segment's width from its end point", () => {
 		const points = buildSeries(
 			[log({ quality: 1 }), log({ quality: 3 }), log({ quality: 5 })],

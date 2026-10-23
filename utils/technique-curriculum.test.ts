@@ -103,13 +103,12 @@ describe("techniqueNudge", () => {
 		expect(snoozed(at(29))).not.toBeNull();
 	});
 
-	it.each([
-		"not_started",
-		"maintenance",
-		"retired",
-	] as const)("never nudges a %s technique", (state) => {
-		expect(nudge(cleanDays(3), { ...quality, state })).toBeNull();
-	});
+	it.each(["not_started", "maintenance", "retired"] as const)(
+		"never nudges a %s technique",
+		(state) => {
+			expect(nudge(cleanDays(3), { ...quality, state })).toBeNull();
+		},
+	);
 
 	it("names the next Not started technique", () => {
 		const next = makeTechnique({ id: "n", state: "not_started" });
