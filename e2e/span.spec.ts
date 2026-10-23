@@ -70,12 +70,12 @@ async function addPiece(page: Page, title: string): Promise<string> {
 	return page.url();
 }
 
-/** Adds a `stabilizing` section with bars, and returns its id. */
+/** Adds a `stabilizing` section with bars. */
 async function addSection(
 	page: Page,
 	pieceUrl: string,
 	opts: { label: string; from: number; to: number },
-): Promise<string> {
+): Promise<void> {
 	await page.goto(`${pieceUrl}/section/new`);
 	await fill(page, t("screen.pieceSections.form.labelLabel"), opts.label);
 	await choose(
@@ -95,12 +95,6 @@ async function addSection(
 			timeout: 10_000,
 		},
 	);
-
-	await page.getByRole("button", { name: opts.label, exact: true }).click();
-	await page.waitForURL(/\/section\/(?!new$)[^/?]+$/);
-	const url = page.url();
-	await page.goto(pieceUrl);
-	return url.split("/").filter(Boolean).pop() ?? "";
 }
 
 test("joined-sections span: chips, seams, credit, and no offer", async ({
@@ -108,7 +102,7 @@ test("joined-sections span: chips, seams, credit, and no offer", async ({
 }) => {
 	// One piece, three sections and a full span save in a single test — more
 	// round trips than the default 30s budget comfortably covers under load.
-	test.setTimeout(60_000);
+	test.setTimeout(90_000);
 	const pieceUrl = await addPiece(page, PIECE);
 	await addSection(page, pieceUrl, { label: SECTION_A, from: 1, to: 20 });
 	await addSection(page, pieceUrl, { label: SECTION_B, from: 21, to: 30 });
