@@ -662,3 +662,57 @@ test("practice options menu returns focus to its trigger on close", async ({
 	await expect(trigger).toBeFocused();
 	expect(consoleErrors).toEqual([]);
 });
+
+test("practice options menu returns focus after Delete cancel and Edit back", async ({
+	page,
+}) => {
+	test.setTimeout(90_000);
+	const consoleErrors = collectConsoleErrors(page);
+	const trigger = page.getByRole("button", { name: t("a11y.menu.options") });
+	const back = page.getByRole("button", { name: "Back", exact: true });
+	for (const [path, screen] of [
+		[`/piece/${SEED_IDS.invention}/practice`, "pieces"],
+		[`/technique/${SEED_IDS.scale}/practice`, "techniques"],
+	] as const) {
+		const edit = page.getByRole("menuitem", {
+			name: t(`screen.${screen}.menu.edit`),
+		});
+		const remove = page.getByRole("menuitem", {
+			name: t(`screen.${screen}.menu.delete`),
+		});
+		const cancel = page.getByRole("button", {
+			name: t(`screen.${screen}.deleteDialog.cancel`),
+		});
+		for (const width of [412, 1280]) {
+			await page.setViewportSize({ width, height: 900 });
+			await page.goto(path);
+			await trigger.click();
+			await remove.click();
+			await cancel.click();
+			await expect(cancel).toHaveCount(0);
+			await expect(trigger).toBeFocused();
+			await page.keyboard.press("Enter");
+			await expect(edit).toBeFocused();
+			await page.keyboard.press("Tab");
+			await expect(remove).toBeFocused();
+			await page.keyboard.press("Enter");
+			await cancel.focus();
+			await page.keyboard.press("Enter");
+			await expect(cancel).toHaveCount(0);
+			await expect(trigger).toBeFocused();
+			await trigger.click();
+			await edit.click();
+			await back.click();
+			await expect(page).toHaveURL(path);
+			await expect(trigger).toBeFocused();
+			await page.keyboard.press("Enter");
+			await expect(edit).toBeFocused();
+			await page.keyboard.press("Enter");
+			await back.focus();
+			await page.keyboard.press("Enter");
+			await expect(page).toHaveURL(path);
+			await expect(trigger).toBeFocused();
+		}
+	}
+	expect(consoleErrors).toEqual([]);
+});

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, type View, type ViewInstance } from "react-native";
 import { Appbar, Menu } from "react-native-paper";
@@ -6,7 +7,13 @@ import { Appbar, Menu } from "react-native-paper";
 interface PracticeHeaderMenuProps {
 	onEdit: () => void;
 	onDelete: () => void;
+	dialogOpen: boolean;
 	labels: { edit: string; delete: string };
+}
+
+function focusTrigger(trigger: unknown) {
+	if (Platform.OS === "web" && trigger instanceof HTMLElement)
+		trigger.querySelector<HTMLElement>('[role="button"]')?.focus();
 }
 
 /**
@@ -19,21 +26,26 @@ interface PracticeHeaderMenuProps {
 export function PracticeHeaderMenu({
 	onEdit,
 	onDelete,
+	dialogOpen,
 	labels,
 }: PracticeHeaderMenuProps) {
 	const { t } = useTranslation();
 	const [visible, setVisible] = useState<boolean | null>(null);
 	const anchorRef = useRef<View & ViewInstance>(null);
 
+	const editing = useRef(false);
+
 	useEffect(() => {
-		const trigger = anchorRef.current;
-		if (
-			visible === false &&
-			Platform.OS === "web" &&
-			trigger instanceof HTMLElement
-		)
-			trigger.querySelector<HTMLElement>('[role="button"]')?.focus();
-	}, [visible]);
+		if (visible === false && !dialogOpen) focusTrigger(anchorRef.current);
+	}, [visible, dialogOpen]);
+
+	useFocusEffect(
+		useCallback(() => {
+			if (!editing.current) return;
+			editing.current = false;
+			focusTrigger(anchorRef.current);
+		}, []),
+	);
 
 	const anchor = (
 		<Appbar.Action
@@ -52,6 +64,7 @@ export function PracticeHeaderMenu({
 				leadingIcon="pencil"
 				onPress={() => {
 					setVisible(false);
+					editing.current = true;
 					onEdit();
 				}}
 				title={labels.edit}
