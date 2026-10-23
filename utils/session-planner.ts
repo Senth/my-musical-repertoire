@@ -70,13 +70,9 @@ function compareTitle(a: string, b: string): number {
 	return a.localeCompare(b);
 }
 
-/**
- * A block's sections, in play order. `sectionIds` is what every producer
- * writes; `sectionId` is read only here, for a `SessionPlan` persisted before
- * `sectionIds` existed.
- */
+/** A block's sections, in play order. */
 export function blockSectionIds(block: PlannedBlock): string[] {
-	return block.sectionIds ?? (block.sectionId ? [block.sectionId] : []);
+	return block.sectionIds ?? [];
 }
 
 /**
