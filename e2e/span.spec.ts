@@ -97,6 +97,7 @@ async function addSection(
 	);
 
 	await page.getByRole("button", { name: opts.label, exact: true }).click();
+	await page.waitForURL(/\/section\/(?!new$)[^/?]+$/);
 	const url = page.url();
 	await page.goto(pieceUrl);
 	return url.split("/").filter(Boolean).pop() ?? "";

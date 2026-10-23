@@ -190,8 +190,11 @@ test.describe("craft", () => {
 			await open(page, path, ready);
 			for (const scheme of ["light", "dark"] as const) {
 				await page.emulateMedia({ colorScheme: scheme });
-				const failures = await page.evaluate(contrastAudit);
-				expect(failures, `${scheme} scheme contrast on ${path}`).toEqual([]);
+				await expect
+					.poll(() => page.evaluate(contrastAudit), {
+						message: `${scheme} scheme contrast on ${path}`,
+					})
+					.toEqual([]);
 			}
 		});
 	}
@@ -201,7 +204,7 @@ test.describe("craft", () => {
  * WCAG AA on every visible run of text: 4.5:1, or 3:1 for large text.
  *
  * Runs in the page because it needs computed styles. Backgrounds are resolved
- * by walking up to the first non-transparent ancestor — a text node's own
+ * down to the first opaque layer beneath the text — a text node's own
  * background is almost always `rgba(0,0,0,0)` in this stack, and comparing
  * against that is how a contrast check quietly passes everything.
  */
@@ -240,17 +243,29 @@ function contrastAudit(): string[] {
 	 * a 12%-alpha chip tint as if it were solid, and a chip whose text is the
 	 * same hue as its tint then reports 1.00:1 — a bug in the audit that looks
 	 * exactly like a catastrophic bug in the app.
+	 *
+	 * The layers are what is painted under the text's centre, not its ancestors:
+	 * a navigation header paints its colour on an absolutely positioned sibling,
+	 * while its ancestors carry the navigator's own light background. Text the
+	 * hit test cannot see falls back to the ancestor chain.
 	 */
 	function backgroundOf(el: Element): Rgb {
+		const box = el.getBoundingClientRect();
+		const painted = document.elementsFromPoint(
+			box.x + box.width / 2,
+			box.y + box.height / 2,
+		);
+		const at = painted.indexOf(el);
+		const below = at >= 0 ? painted.slice(at) : [];
+		if (at < 0)
+			for (let n: Element | null = el; n; n = n.parentElement) below.push(n);
 		const layers: Rgb[] = [];
-		let node: Element | null = el;
-		while (node) {
+		for (const node of below) {
 			const c = parse(getComputedStyle(node).backgroundColor);
 			if (c && c[3] > 0) {
 				layers.push(c);
 				if (c[3] >= 1) break;
 			}
-			node = node.parentElement;
 		}
 		let base: Rgb = [255, 255, 255, 1];
 		for (const layer of layers.reverse()) base = over(layer, base);
