@@ -21,6 +21,14 @@ interface SectionRowProps {
 	showProgress?: boolean;
 }
 
+const CHIP_HIT_SLOP = {
+	top: space.xs,
+	bottom: space.md,
+	left: space.lg,
+	right: space.sm,
+};
+const CHIP_HIT_SLOP_ABOVE_NOTES = { ...CHIP_HIT_SLOP, bottom: space.xs };
+
 export function SectionRow({
 	section,
 	pieceTargetBpm,
@@ -127,12 +135,9 @@ export function SectionRow({
 								<SectionStateChip
 									state={section.state}
 									onChangeState={onChangeState}
-									hitSlop={{
-										top: space.xs,
-										bottom: section.notes ? space.xs : space.md,
-										left: space.lg,
-										right: space.sm,
-									}}
+									hitSlop={
+										section.notes ? CHIP_HIT_SLOP_ABOVE_NOTES : CHIP_HIT_SLOP
+									}
 								/>
 								{lastPracticed != null && (
 									<Text

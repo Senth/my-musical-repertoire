@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	type Insets,
@@ -32,15 +32,22 @@ export function SectionStateChip({
 		if (menuOpen === false && Platform.OS === "web") chipRef.current?.focus();
 	}, [menuOpen]);
 
-	const chip = (
-		<StateChip
-			ref={chipRef}
-			label={t(`section.state.${state}`)}
-			visual={sectionStateVisual(state, theme.dark)}
-			hitSlop={hitSlop}
-			onPress={onChangeState ? () => setMenuOpen(true) : undefined}
-			expanded={onChangeState ? menuOpen === true : undefined}
-		/>
+	const canChange = onChangeState != null;
+	// Paper's Menu restarts its open animation whenever `anchor` changes
+	// identity, and a restart mid-animation can leave the menu stuck
+	// half-transparent, so the anchor survives parent re-renders.
+	const chip = useMemo(
+		() => (
+			<StateChip
+				ref={chipRef}
+				label={t(`section.state.${state}`)}
+				visual={sectionStateVisual(state, theme.dark)}
+				hitSlop={hitSlop}
+				onPress={canChange ? () => setMenuOpen(true) : undefined}
+				expanded={canChange ? menuOpen === true : undefined}
+			/>
+		),
+		[t, state, theme.dark, hitSlop, canChange, menuOpen],
 	);
 
 	if (!onChangeState || !menuOpen) return chip;
