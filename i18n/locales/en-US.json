@@ -277,6 +277,13 @@
 			"group": {
 				"key": "{{major}} major · {{minor}} minor",
 				"notTiedToKey": "Not tied to a key",
+				"majorScales": "Major scales",
+				"majorArpeggios": "Major arpeggios",
+				"dominant7Arpeggios": "Dominant 7th arpeggios",
+				"harmonicMinorScales": "Harmonic minor scales",
+				"melodicMinorScales": "Melodic minor scales",
+				"minorArpeggios": "Minor arpeggios",
+				"chromaticScale": "Chromatic scale",
 				"type": {
 					"scale": "Scale",
 					"arpeggio": "Arpeggio",

@@ -77,26 +77,55 @@ describe("technique catalogue", () => {
 			entries: [entries[18]],
 		});
 		expect(types.map((group) => group.key)).toEqual([
-			"scale",
-			"arpeggio",
-			"exercise",
-			"chord",
-			"octave",
-			"trill",
-			"other",
+			"scale.major",
+			"arpeggio.major",
+			"arpeggio.dominant7",
+			"scale.harmonicMinor",
+			"scale.melodicMinor",
+			"arpeggio.minor",
+			"scale.chromatic",
 		]);
 		expect(types.map((group) => group.entries.length)).toEqual([
-			37, 36, 0, 0, 0, 0, 0,
+			12, 12, 12, 12, 12, 12, 1,
 		]);
-		expect(types[0].entries.map((entry) => entry.key)).toEqual(
-			entries
-				.filter((entry) => entry.type === "scale")
-				.map((entry) => entry.key),
-		);
-		expect(types[1].entries.map((entry) => entry.key)).toEqual(
-			entries
-				.filter((entry) => entry.type === "arpeggio")
-				.map((entry) => entry.key),
+		expect(types.map((group) => group.titleKey)).toEqual([
+			"technique.catalog.group.majorScales",
+			"technique.catalog.group.majorArpeggios",
+			"technique.catalog.group.dominant7Arpeggios",
+			"technique.catalog.group.harmonicMinorScales",
+			"technique.catalog.group.melodicMinorScales",
+			"technique.catalog.group.minorArpeggios",
+			"technique.catalog.group.chromaticScale",
+		]);
+		expect(
+			types.map((group) =>
+				i18n.t(group.titleKey as Parameters<typeof i18n.t>[0]),
+			),
+		).toEqual([
+			"Major scales",
+			"Major arpeggios",
+			"Dominant 7th arpeggios",
+			"Harmonic minor scales",
+			"Melodic minor scales",
+			"Minor arpeggios",
+			"Chromatic scale",
+		]);
+		expect(
+			types.map((group) => group.entries.map((entry) => entry.key)),
+		).toEqual(
+			[
+				["scale", "major"],
+				["arpeggio", "major"],
+				["arpeggio", "dominant7"],
+				["scale", "harmonicMinor"],
+				["scale", "melodicMinor"],
+				["arpeggio", "minor"],
+				["scale", "chromatic"],
+			].map(([type, quality]) =>
+				entries
+					.filter((entry) => entry.type === type && entry.quality === quality)
+					.map((entry) => entry.key),
+			),
 		);
 	});
 

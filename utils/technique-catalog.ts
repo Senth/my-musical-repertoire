@@ -1,5 +1,4 @@
 import type { TFunction } from "i18next";
-import { TECHNIQUE_TYPES } from "@/models/technique";
 
 export type TechniqueCatalogEntry = {
 	key: string;
@@ -110,6 +109,55 @@ const CATALOG = KEY_ENTRIES.flatMap((entries, index) => [
 	...entries,
 	...(index === 2 ? [CHROMATIC_ENTRY] : []),
 ]);
+const TYPE_GROUPS: {
+	key: string;
+	type: TechniqueCatalogEntry["type"];
+	quality: TechniqueCatalogEntry["quality"];
+	titleKey: string;
+}[] = [
+	{
+		key: "scale.major",
+		type: "scale",
+		quality: "major",
+		titleKey: "technique.catalog.group.majorScales",
+	},
+	{
+		key: "arpeggio.major",
+		type: "arpeggio",
+		quality: "major",
+		titleKey: "technique.catalog.group.majorArpeggios",
+	},
+	{
+		key: "arpeggio.dominant7",
+		type: "arpeggio",
+		quality: "dominant7",
+		titleKey: "technique.catalog.group.dominant7Arpeggios",
+	},
+	{
+		key: "scale.harmonicMinor",
+		type: "scale",
+		quality: "harmonicMinor",
+		titleKey: "technique.catalog.group.harmonicMinorScales",
+	},
+	{
+		key: "scale.melodicMinor",
+		type: "scale",
+		quality: "melodicMinor",
+		titleKey: "technique.catalog.group.melodicMinorScales",
+	},
+	{
+		key: "arpeggio.minor",
+		type: "arpeggio",
+		quality: "minor",
+		titleKey: "technique.catalog.group.minorArpeggios",
+	},
+	{
+		key: "scale.chromatic",
+		type: "scale",
+		quality: "chromatic",
+		titleKey: "technique.catalog.group.chromaticScale",
+	},
+];
 
 export function catalogEntries(): TechniqueCatalogEntry[] {
 	return CATALOG.map((catalogEntry) => ({
@@ -147,9 +195,13 @@ export function byKey(): TechniqueCatalogGroup[] {
 
 export function byType(): TechniqueCatalogGroup[] {
 	const entries = catalogEntries();
-	return TECHNIQUE_TYPES.map((type) => ({
-		key: type,
-		titleKey: `technique.catalog.group.type.${type}`,
-		entries: entries.filter((catalogEntry) => catalogEntry.type === type),
+	return TYPE_GROUPS.map((group) => ({
+		key: group.key,
+		titleKey: group.titleKey,
+		entries: entries.filter(
+			(catalogEntry) =>
+				catalogEntry.type === group.type &&
+				catalogEntry.quality === group.quality,
+		),
 	}));
 }
