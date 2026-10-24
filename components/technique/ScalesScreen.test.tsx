@@ -1,4 +1,5 @@
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import type { ReactNode } from "react";
 import { PaperProvider } from "react-native-paper";
 import "@/i18n";
 import ScalesScreen from "@/app/(app)/technique/scales";
@@ -36,10 +37,21 @@ jest.mock("react-native-paper", () => ({
 	Menu: ({
 		visible,
 		children,
+		anchor,
 	}: {
 		visible: boolean;
-		children: React.ReactNode;
-	}) => (visible ? children : null),
+		children: ReactNode;
+		anchor: ReactNode | { x: number; y: number };
+	}) => (
+		<>
+			{jest
+				.requireActual<typeof import("react")>("react")
+				.isValidElement(anchor)
+				? anchor
+				: null}
+			{visible ? children : null}
+		</>
+	),
 }));
 
 const technique = (

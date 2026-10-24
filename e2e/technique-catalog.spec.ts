@@ -73,9 +73,40 @@ test("catalog adds scales, links one near match, and fills the curriculum", asyn
 		.click();
 	await expect(page.getByText("F maj", { exact: true })).toBeVisible();
 
-	await page.getByLabel(t("a11y.fab.addTechnique"), { exact: true }).click();
+	const addTechniqueFab = page.getByRole("button", {
+		name: t("a11y.fab.addTechnique"),
+		exact: true,
+	});
+	const writeYourOwn = page.getByRole("menuitem", {
+		name: t("screen.techniques.writeYourOwn"),
+		exact: true,
+	});
+	await addTechniqueFab.focus();
+	await page.keyboard.press("Enter");
+	await expect(addTechniqueFab).toHaveAttribute("aria-expanded", "true");
+	await expect(writeYourOwn).toBeFocused();
+	await page.keyboard.press("Tab");
+	await expect(
+		page.getByRole("menuitem", {
+			name: t("technique.catalog.pageTitle"),
+			exact: true,
+		}),
+	).toBeFocused();
+	await writeYourOwn.click();
+	await expect(
+		page.getByRole("textbox", {
+			name: t("screen.addTechnique.titleLabel"),
+			exact: true,
+		}),
+	).toBeVisible();
 	await page
-		.getByRole("button", {
+		.getByRole("button", { name: t("common.back"), exact: true })
+		.click();
+	await addTechniqueFab.focus();
+	await page.keyboard.press("Enter");
+	await expect(addTechniqueFab).toHaveAttribute("aria-expanded", "true");
+	await page
+		.getByRole("menuitem", {
 			name: t("technique.catalog.pageTitle"),
 			exact: true,
 		})
@@ -85,16 +116,32 @@ test("catalog adds scales, links one near match, and fills the curriculum", asyn
 	});
 	await search.fill("C major");
 	await expect(page.getByText("C major scale", { exact: true })).toBeVisible();
+	const cMajorAdd = page.getByRole("button", {
+		name: copy("technique.catalog.add", { title: "C major scale" }),
+		exact: true,
+	});
+	await cMajorAdd.focus();
+	await page.keyboard.press("Enter");
+	const startPracticing = page.getByRole("menuitem", {
+		name: t("technique.catalog.menu.start"),
+	});
+	await expect(startPracticing).toBeVisible();
+	const addButtonBox = await cMajorAdd.boundingBox();
+	const menuItemBox = await startPracticing.boundingBox();
+	if (!addButtonBox || !menuItemBox) {
+		throw new Error("Catalog menu anchor or menu item has no bounding box");
+	}
+	expect(menuItemBox.y).toBeGreaterThan(100);
+	expect(
+		Math.abs(
+			menuItemBox.x + menuItemBox.width - (addButtonBox.x + addButtonBox.width),
+		),
+	).toBeLessThan(100);
+	await page.keyboard.press("Escape");
+	await expect(cMajorAdd).toBeFocused();
+	await cMajorAdd.click();
 	await page
-		.getByRole("button", {
-			name: copy("technique.catalog.add", { title: "C major scale" }),
-			exact: true,
-		})
-		.click();
-	await page
-		.getByRole("menuitem", {
-			name: t("technique.catalog.menu.start"),
-		})
+		.getByRole("menuitem", { name: t("technique.catalog.menu.start") })
 		.click();
 	await expect(
 		page
@@ -160,7 +207,7 @@ test("catalog adds scales, links one near match, and fills the curriculum", asyn
 		.fill("");
 	await page.getByLabel(t("a11y.fab.addTechnique"), { exact: true }).click();
 	await page
-		.getByRole("button", {
+		.getByRole("menuitem", {
 			name: t("technique.catalog.pageTitle"),
 			exact: true,
 		})
