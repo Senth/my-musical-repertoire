@@ -7,7 +7,7 @@ export type TechniqueCatalogMatch = {
 	technique?: TechniqueItem;
 };
 
-function normalize(title: string): string {
+export function normalizeTechniqueTitle(title: string): string {
 	return title
 		.toLowerCase()
 		.replace(/#/g, "♯")
@@ -57,7 +57,9 @@ export function matchCatalog(
 	techniques: readonly TechniqueItem[],
 	entries: readonly TechniqueCatalogEntry[],
 ): TechniqueCatalogMatch[] {
-	const normalized = techniques.map((technique) => normalize(technique.title));
+	const normalized = techniques.map((technique) =>
+		normalizeTechniqueTitle(technique.title),
+	);
 	const used = new Set<number>();
 	const results: TechniqueCatalogMatch[] = entries.map((entry) => {
 		const linked = techniques.findIndex(
@@ -74,7 +76,9 @@ export function matchCatalog(
 		const titles = enUS.technique.catalog.title;
 		const template =
 			titles[entry.titleKey.split(".").at(-1) as keyof typeof titles];
-		const title = normalize(template.replace("{{tonic}}", entry.tonic ?? ""));
+		const title = normalizeTechniqueTitle(
+			template.replace("{{tonic}}", entry.tonic ?? ""),
+		);
 		const exact = techniques.findIndex(
 			(technique, candidate) =>
 				!technique.curriculumKey &&
