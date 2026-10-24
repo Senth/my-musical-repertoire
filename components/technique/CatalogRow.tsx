@@ -24,16 +24,22 @@ export function CatalogRow({ entry, match, disabled, onAdd }: CatalogRowProps) {
 	const theme = useTheme();
 	const pageInset = usePageInset();
 	const { width } = useWindowDimensions();
-	const [menuVisible, setMenuVisible] = useState(false);
+	const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(
+		null,
+	);
 	const title = catalogTitle(entry, t);
 	const exact = match.kind === "exact";
 
-	return (
+	const row = (
 		<List.Item
 			title={title}
 			titleNumberOfLines={1}
 			titleStyle={exact ? { color: theme.colors.onSurfaceVariant } : undefined}
-			style={{ paddingHorizontal: pageInset - space.sm }}
+			style={{
+				flex: exact ? undefined : 1,
+				paddingHorizontal: pageInset - space.sm,
+				paddingRight: exact ? pageInset - space.sm : 0,
+			}}
 			description={
 				match.kind === "none"
 					? undefined
@@ -63,56 +69,66 @@ export function CatalogRow({ entry, match, disabled, onAdd }: CatalogRowProps) {
 							</View>
 						)
 			}
-			right={(props) =>
-				exact ? (
-					<List.Icon {...props} icon="check" color={theme.colors.outline} />
-				) : (
-					<Menu
-						visible={menuVisible}
-						onDismiss={() => setMenuVisible(false)}
-						anchor={
-							<IconButton
-								icon="plus"
-								size={icon.md}
-								iconColor={theme.colors.primary}
-								disabled={disabled}
-								accessibilityLabel={t("technique.catalog.add", { title })}
-								onPress={() => setMenuVisible(true)}
-							/>
-						}
-					>
-						{(["start", "later"] as const).map((mode) => (
-							<List.Item
-								key={mode}
-								title={t(`technique.catalog.menu.${mode}`)}
-								description={t(`technique.catalog.menu.${mode}Hint`)}
-								titleNumberOfLines={2}
-								descriptionNumberOfLines={3}
-								descriptionStyle={{
-									...theme.fonts.bodySmall,
-									color: theme.colors.onSurfaceVariant,
-								}}
-								style={{
-									width: Math.min(contentWidth.form, width - pageInset * 2),
-								}}
-								left={(props) => (
-									<List.Icon
-										{...props}
-										icon={
-											mode === "start" ? "play-circle-outline" : "clock-outline"
-										}
-									/>
-								)}
-								accessibilityRole="menuitem"
-								onPress={() => {
-									setMenuVisible(false);
-									onAdd(mode);
-								}}
-							/>
-						))}
-					</Menu>
-				)
+			right={
+				exact
+					? (props) => (
+							<List.Icon {...props} icon="check" color={theme.colors.outline} />
+						)
+					: undefined
 			}
 		/>
+	);
+	if (exact) return row;
+
+	return (
+		<View style={{ flexDirection: "row", alignItems: "center" }}>
+			{row}
+			{menuAnchor && (
+				<Menu visible onDismiss={() => setMenuAnchor(null)} anchor={menuAnchor}>
+					{(["start", "later"] as const).map((mode) => (
+						<List.Item
+							key={mode}
+							title={t(`technique.catalog.menu.${mode}`)}
+							description={t(`technique.catalog.menu.${mode}Hint`)}
+							titleNumberOfLines={2}
+							descriptionNumberOfLines={3}
+							descriptionStyle={{
+								...theme.fonts.bodySmall,
+								color: theme.colors.onSurfaceVariant,
+							}}
+							style={{
+								width: Math.min(contentWidth.form, width - pageInset * 2),
+							}}
+							left={(props) => (
+								<List.Icon
+									{...props}
+									icon={
+										mode === "start" ? "play-circle-outline" : "clock-outline"
+									}
+								/>
+							)}
+							accessibilityRole="menuitem"
+							onPress={() => {
+								setMenuAnchor(null);
+								onAdd(mode);
+							}}
+						/>
+					))}
+				</Menu>
+			)}
+			<IconButton
+				icon="plus"
+				size={icon.md}
+				iconColor={theme.colors.primary}
+				disabled={disabled}
+				accessibilityLabel={t("technique.catalog.add", { title })}
+				onPress={(event) =>
+					setMenuAnchor({
+						x: event.nativeEvent.pageX,
+						y: event.nativeEvent.pageY,
+					})
+				}
+			/>
+		</View>
 	);
 }

@@ -1,7 +1,7 @@
 import { useNavigation, useRouter } from "expo-router";
 import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FlatList, Platform, View } from "react-native";
+import { FlatList, Pressable, View } from "react-native";
 import {
 	ActivityIndicator,
 	Button,
@@ -10,10 +10,10 @@ import {
 	FAB,
 	IconButton,
 	List,
-	Menu,
 	Portal,
 	Searchbar,
 	Snackbar,
+	Surface,
 	Text,
 	useTheme,
 } from "react-native-paper";
@@ -46,7 +46,7 @@ import {
 	TECHNIQUE_TYPES,
 	type TechniqueItem,
 } from "@/models/technique";
-import { scrollTail, space } from "@/theme/tokens";
+import { elevation, radius, scrollTail, space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
 import {
 	DEFAULT_TECHNIQUE_FILTERS,
@@ -582,64 +582,102 @@ export default function TechniquesScreen() {
 
 			{fabVisible && (
 				<Portal>
-					{Platform.OS === "web" ? (
-						<Menu
-							visible={fabOpen}
-							onDismiss={() => setFabOpen(false)}
-							anchor={
-								<FAB
-									icon={fabOpen ? "close" : "plus"}
-									accessibilityLabel={t("a11y.fab.addTechnique")}
-									style={fabStyle}
-									onPress={() => setFabOpen((open) => !open)}
-								/>
-							}
-						>
-							<Menu.Item
-								leadingIcon="pencil-outline"
-								title={t("screen.techniques.writeYourOwn")}
-								onPress={() => {
-									setFabOpen(false);
-									router.push("/technique/add");
-								}}
-							/>
-							<Menu.Item
-								leadingIcon="playlist-plus"
-								title={t("technique.catalog.pageTitle")}
-								onPress={() => {
-									setFabOpen(false);
-									router.push("/technique/scales");
-								}}
-							/>
-						</Menu>
-					) : (
-						<FAB.Group
-							open={fabOpen}
-							visible
-							icon={fabOpen ? "close" : "plus"}
-							accessibilityLabel={t("a11y.fab.addTechnique")}
-							style={fabStyle}
-							actions={[
-								{
-									icon: "pencil-outline",
-									label: t("screen.techniques.writeYourOwn"),
-									onPress: () => {
-										setFabOpen(false);
-										router.push("/technique/add");
-									},
-								},
-								{
-									icon: "playlist-plus",
-									label: t("technique.catalog.pageTitle"),
-									onPress: () => {
-										setFabOpen(false);
-										router.push("/technique/scales");
-									},
-								},
-							]}
-							onStateChange={({ open }) => setFabOpen(open)}
+					{fabOpen && (
+						<Pressable
+							style={{
+								position: "absolute",
+								top: 0,
+								left: 0,
+								right: 0,
+								bottom: 0,
+							}}
+							onPress={() => setFabOpen(false)}
 						/>
 					)}
+					{fabOpen && (
+						<View
+							style={{
+								position: "absolute",
+								right: fabStyle.right as number,
+								bottom: (fabStyle.bottom as number) + space.xxl + space.xxl,
+								alignItems: "flex-end",
+								gap: space.sm,
+							}}
+						>
+							<View
+								style={{
+									flexDirection: "row",
+									alignItems: "center",
+									gap: space.md,
+								}}
+							>
+								<Surface
+									style={{
+										borderRadius: radius.chip,
+										elevation: elevation.level2,
+									}}
+								>
+									<Text
+										variant="labelLarge"
+										style={{
+											paddingHorizontal: space.md,
+											paddingVertical: space.sm,
+										}}
+									>
+										{t("screen.techniques.writeYourOwn")}
+									</Text>
+								</Surface>
+								<FAB
+									size="small"
+									icon="pencil-outline"
+									accessibilityLabel={t("screen.techniques.writeYourOwn")}
+									onPress={() => {
+										setFabOpen(false);
+										router.push("/technique/add");
+									}}
+								/>
+							</View>
+							<View
+								style={{
+									flexDirection: "row",
+									alignItems: "center",
+									gap: space.md,
+								}}
+							>
+								<Surface
+									style={{
+										borderRadius: radius.chip,
+										elevation: elevation.level2,
+									}}
+								>
+									<Text
+										variant="labelLarge"
+										style={{
+											paddingHorizontal: space.md,
+											paddingVertical: space.sm,
+										}}
+									>
+										{t("technique.catalog.pageTitle")}
+									</Text>
+								</Surface>
+								<FAB
+									size="small"
+									icon="playlist-plus"
+									accessibilityLabel={t("technique.catalog.pageTitle")}
+									onPress={() => {
+										setFabOpen(false);
+										router.push("/technique/scales");
+									}}
+								/>
+							</View>
+						</View>
+					)}
+					<FAB
+						icon={fabOpen ? "close" : "plus"}
+						accessibilityLabel={t("a11y.fab.addTechnique")}
+						style={fabStyle}
+						onPress={() => setFabOpen((open) => !open)}
+					/>
 				</Portal>
 			)}
 		</View>

@@ -34,19 +34,12 @@ jest.mock("react-native-paper", () => ({
 	...jest.requireActual("react-native-paper"),
 	ActivityIndicator: () => null,
 	Menu: ({
-		anchor,
 		visible,
 		children,
 	}: {
-		anchor: React.ReactNode;
 		visible: boolean;
 		children: React.ReactNode;
-	}) => (
-		<>
-			{anchor}
-			{visible && children}
-		</>
-	),
+	}) => (visible ? children : null),
 }));
 
 const technique = (

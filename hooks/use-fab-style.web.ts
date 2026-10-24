@@ -26,7 +26,7 @@ const FAB_RIGHT = MD3_FAB_MARGIN + SCROLLBAR_WIDTH; // 24
 export function useFabStyleTabs(): ViewStyle {
 	const tabBarHeight = useBottomTabBarHeight();
 	return {
-		position: "absolute",
+		position: "fixed",
 		right: FAB_RIGHT,
 		bottom: tabBarHeight + MD3_FAB_MARGIN,
 	};
