@@ -1,8 +1,10 @@
 jest.mock("firebase/firestore", () => ({
 	addDoc: jest.fn(),
-	collection: jest.fn(),
+	collection: jest.fn((_db, ...path: string[]) => path.join("/")),
 	deleteDoc: jest.fn(),
-	doc: jest.fn((_db, ...path: string[]) => path.join("/")),
+	doc: jest.fn((dbOrRef, ...path: string[]) =>
+		[...(typeof dbOrRef === "string" ? [dbOrRef] : []), ...path].join("/"),
+	),
 	documentId: jest.fn(),
 	getDoc: jest.fn(),
 	getDocs: jest.fn(),
@@ -18,6 +20,7 @@ jest.mock("firebase/firestore", () => ({
 }));
 
 const mockBatch = {
+	set: jest.fn(),
 	update: jest.fn(),
 	commit: jest.fn(() => Promise.resolve()),
 };
@@ -25,16 +28,33 @@ jest.mock("@/config/firebase", () => ({ db: {}, auth: {} }));
 jest.mock("@/contexts/AuthContext", () => ({
 	useAuth: () => ({ user: { uid: "u1" } }),
 }));
+jest.mock("react-i18next", () => ({
+	useTranslation: () => ({
+		t: (key: string, params?: { tonic?: string }) =>
+			params?.tonic ? `${params.tonic} major scale` : key,
+	}),
+}));
 
 import { act, renderHook } from "@testing-library/react-native";
-import { addDoc, getDocs, onSnapshot, updateDoc } from "firebase/firestore";
+import {
+	addDoc,
+	collection,
+	getDocs,
+	onSnapshot,
+	updateDoc,
+} from "firebase/firestore";
+import { db } from "@/config/firebase";
 import type { TechniqueState } from "@/models/technique";
+import type { TechniqueCatalogEntry } from "@/utils/technique-catalog";
 import {
 	fromFirestore,
 	QUEUE_PAGE,
+	useAddAllCatalog,
+	useAddCatalogTechnique,
 	useAddTechnique,
 	useAdvanceTechnique,
 	useCurriculumTechniques,
+	useLinkCatalogTechnique,
 	useSnoozeTechniqueNudge,
 	useUpdateTechnique,
 } from "./use-techniques";
@@ -125,6 +145,83 @@ describe("curriculumKey persistence", () => {
 		});
 		await updateTechnique("t1", { curriculumKey: technique.curriculumKey });
 		expect(written()).toMatchObject({ curriculumKey: "scale.major.C" });
+	});
+});
+
+describe("catalogue technique writes", () => {
+	const entry: TechniqueCatalogEntry = {
+		key: "scale.major.C",
+		type: "scale",
+		tonic: "C",
+		quality: "major",
+		titleKey: "technique.catalog.title.majorScale",
+		titleParams: { tonic: "C" },
+	};
+
+	beforeEach(() => jest.clearAllMocks());
+
+	it("adds one catalogue technique through awaitWrite", async () => {
+		(addDoc as jest.Mock).mockResolvedValueOnce(undefined);
+		const { result } = await renderHook(() => useAddCatalogTechnique());
+		await act(async () => {
+			await result.current.addCatalogTechnique(entry, "C major scale", "start");
+		});
+		expect(addDoc).toHaveBeenCalledWith(
+			collection(db, "users", "u1", "techniques"),
+			expect.objectContaining({
+				curriculumKey: entry.key,
+				state: "active",
+				type: "scale",
+				handsMode: "separate",
+				activeDrills: [],
+				targetTempoBpm: null,
+				dateIntroduced: expect.any(Date),
+			}),
+		);
+	});
+
+	it("adds catalogue documents and near-match links in one batch", async () => {
+		const { result } = await renderHook(() => useAddAllCatalog());
+		await act(async () => {
+			await result.current.addAllCatalog(
+				[entry],
+				["C major scale"],
+				[
+					{
+						id: "existing",
+						entry,
+						rename: true,
+						currentType: null,
+					},
+				],
+			);
+		});
+		expect(mockBatch.set).toHaveBeenCalledTimes(1);
+		expect(mockBatch.set.mock.calls[0][1]).toMatchObject({
+			state: "not_started",
+			curriculumKey: entry.key,
+		});
+		expect(mockBatch.update).toHaveBeenCalledWith(
+			"users/u1/techniques/existing",
+			{ curriculumKey: entry.key, title: "C major scale", type: "scale" },
+		);
+		expect(mockBatch.commit).toHaveBeenCalledTimes(1);
+	});
+
+	it("links and optionally renames without replacing a known type", async () => {
+		const { result } = await renderHook(() => useLinkCatalogTechnique());
+		await act(async () => {
+			await result.current.linkCatalogTechnique(
+				"existing",
+				entry,
+				true,
+				"arpeggio",
+			);
+		});
+		expect(updateDoc).toHaveBeenCalledWith("users/u1/techniques/existing", {
+			curriculumKey: entry.key,
+			title: "C major scale",
+		});
 	});
 });
 

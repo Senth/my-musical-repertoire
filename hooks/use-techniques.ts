@@ -19,6 +19,7 @@ import {
 	writeBatch,
 } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { PracticeDrill, TechniqueHandsMode } from "@/models/practice";
@@ -34,6 +35,15 @@ import {
 	type ModeEntry,
 	mergeByMode,
 } from "@/utils/practice-modes";
+import {
+	catalogTitle,
+	type TechniqueCatalogEntry,
+} from "@/utils/technique-catalog";
+import {
+	addAllDocs,
+	catalogLinkUpdates,
+	newCatalogTechnique,
+} from "@/utils/technique-catalog-writes";
 import { timeSignatureFromFirestore } from "@/utils/time-signature";
 
 interface FirestoreTechnique {
@@ -241,6 +251,86 @@ export function useAddTechnique() {
 	};
 
 	return { addTechnique };
+}
+
+export function useAddCatalogTechnique() {
+	const { user } = useAuth();
+
+	const addCatalogTechnique = async (
+		entry: TechniqueCatalogEntry,
+		title: string,
+		mode: "start" | "later",
+	) => {
+		if (!user) throw new Error("Not authenticated");
+
+		const now = new Date();
+		await awaitWrite(
+			addDoc(
+				collection(db, "users", user.uid, "techniques"),
+				newCatalogTechnique(entry, title, mode, now),
+			),
+		);
+	};
+
+	return { addCatalogTechnique };
+}
+
+type CatalogTechniqueLink = {
+	id: string;
+	entry: TechniqueCatalogEntry;
+	rename: boolean;
+	currentType: TechniqueType | null | undefined;
+};
+
+export function useAddAllCatalog() {
+	const { user } = useAuth();
+	const { t } = useTranslation();
+
+	const addAllCatalog = async (
+		entries: readonly TechniqueCatalogEntry[],
+		titles: readonly string[],
+		links: readonly CatalogTechniqueLink[] = [],
+	) => {
+		if (!user) throw new Error("Not authenticated");
+
+		const ref = collection(db, "users", user.uid, "techniques");
+		const batch = writeBatch(db);
+		addAllDocs(entries, titles, new Date()).forEach((data) => {
+			batch.set(doc(ref), data);
+		});
+		links.forEach(({ id, entry, rename, currentType }) => {
+			batch.update(
+				doc(ref, id),
+				catalogLinkUpdates(entry, catalogTitle(entry, t), rename, currentType),
+			);
+		});
+		await awaitWrite(batch.commit());
+	};
+
+	return { addAllCatalog };
+}
+
+export function useLinkCatalogTechnique() {
+	const { user } = useAuth();
+	const { t } = useTranslation();
+
+	const linkCatalogTechnique = async (
+		id: string,
+		entry: TechniqueCatalogEntry,
+		rename: boolean,
+		currentType: TechniqueType | null | undefined,
+	) => {
+		if (!user) throw new Error("Not authenticated");
+
+		await awaitWrite(
+			updateDoc(
+				doc(db, "users", user.uid, "techniques", id),
+				catalogLinkUpdates(entry, catalogTitle(entry, t), rename, currentType),
+			),
+		);
+	};
+
+	return { linkCatalogTechnique };
 }
 
 export function useUpdateTechnique() {
