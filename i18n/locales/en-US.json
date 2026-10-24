@@ -245,6 +245,19 @@
 			"nearMatch": "You have “{{title}}”",
 			"add": "Add {{title}}",
 			"addError": "Could not add this technique. Try again.",
+			"addAll": "Add all {{count}}",
+			"addAllHint": "Adds every one you do not have yet as Not started, easiest key first.",
+			"addAllError": "Could not add these techniques. Try again.",
+			"confirm": {
+				"title": "Is “{{currentTitle}}” the same as {{catalogTitle}}?",
+				"body": "You already have a technique called “{{currentTitle}}”.",
+				"keep": "Yes, keep the name “{{currentTitle}}”",
+				"rename": "Yes, rename it to “{{catalogTitle}}”",
+				"add": "No, add {{catalogTitle}} too",
+				"progress": "{{n}} of {{total}} possible matches. Adding all {{others}} others as Not started.",
+				"cancel": "Cancel",
+				"cancelAll": "Cancel, add nothing"
+			},
 			"noResults": "No scales or arpeggios match your search. Try another name or key.",
 			"menu": {
 				"start": "Start practicing now",

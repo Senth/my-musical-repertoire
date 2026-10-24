@@ -30,8 +30,14 @@ jest.mock("@/contexts/AuthContext", () => ({
 }));
 jest.mock("react-i18next", () => ({
 	useTranslation: () => ({
-		t: (key: string, params?: { tonic?: string }) =>
-			params?.tonic ? `${params.tonic} major scale` : key,
+		t: (key: string, params?: { tonic?: string }) => {
+			const titles = jest.requireActual("@/i18n/locales/en-US.json").technique
+				.catalog.title;
+			return (titles[key.split(".").at(-1) ?? ""] ?? key).replace(
+				"{{tonic}}",
+				params?.tonic ?? "",
+			);
+		},
 	}),
 }));
 
@@ -43,9 +49,13 @@ import {
 	onSnapshot,
 	updateDoc,
 } from "firebase/firestore";
+import { Platform } from "react-native";
 import { db } from "@/config/firebase";
 import type { TechniqueState } from "@/models/technique";
-import type { TechniqueCatalogEntry } from "@/utils/technique-catalog";
+import {
+	catalogEntries,
+	type TechniqueCatalogEntry,
+} from "@/utils/technique-catalog";
 import {
 	fromFirestore,
 	QUEUE_PAGE,
@@ -181,31 +191,95 @@ describe("catalogue technique writes", () => {
 	});
 
 	it("adds catalogue documents and near-match links in one batch", async () => {
+		const entries = catalogEntries();
 		const { result } = await renderHook(() => useAddAllCatalog());
 		await act(async () => {
 			await result.current.addAllCatalog(
-				[entry],
-				["C major scale"],
+				[entries[0], entries[6]],
+				["C major scale", "G major scale"],
 				[
 					{
 						id: "existing",
-						entry,
+						entry: entries[3],
 						rename: true,
 						currentType: null,
+					},
+					{
+						id: "kept",
+						entry: entries[4],
+						rename: false,
+						currentType: "scale",
 					},
 				],
 			);
 		});
-		expect(mockBatch.set).toHaveBeenCalledTimes(1);
+		expect(mockBatch.set).toHaveBeenCalledTimes(2);
 		expect(mockBatch.set.mock.calls[0][1]).toMatchObject({
 			state: "not_started",
 			curriculumKey: entry.key,
 		});
+		expect(mockBatch.set.mock.calls[1][1]).toMatchObject({
+			state: "not_started",
+			curriculumKey: entries[6].key,
+		});
+		expect(
+			mockBatch.set.mock.calls[1][1].dateIntroduced.getTime() -
+				mockBatch.set.mock.calls[0][1].dateIntroduced.getTime(),
+		).toBe(1);
 		expect(mockBatch.update).toHaveBeenCalledWith(
 			"users/u1/techniques/existing",
-			{ curriculumKey: entry.key, title: "C major scale", type: "scale" },
+			{
+				curriculumKey: entries[3].key,
+				title: "A harmonic minor scale",
+				type: "scale",
+			},
 		);
+		expect(mockBatch.update).toHaveBeenCalledWith("users/u1/techniques/kept", {
+			curriculumKey: entries[4].key,
+		});
 		expect(mockBatch.commit).toHaveBeenCalledTimes(1);
+	});
+
+	it("finishes new, linked and bulk writes offline without server acknowledgement", async () => {
+		const originalOnline = Object.getOwnPropertyDescriptor(navigator, "onLine");
+		const originalPlatform = Platform.OS;
+		jest.replaceProperty(Platform, "OS", "web");
+		Object.defineProperty(navigator, "onLine", {
+			value: false,
+			configurable: true,
+		});
+		(addDoc as jest.Mock).mockReturnValueOnce(new Promise(() => {}));
+		(updateDoc as jest.Mock).mockReturnValueOnce(new Promise(() => {}));
+		mockBatch.commit.mockReturnValueOnce(new Promise(() => {}));
+		try {
+			const { result } = await renderHook(() => ({
+				...useAddCatalogTechnique(),
+				...useLinkCatalogTechnique(),
+				...useAddAllCatalog(),
+			}));
+			await act(async () => {
+				await result.current.addCatalogTechnique(
+					entry,
+					"C major scale",
+					"later",
+				);
+				await result.current.linkCatalogTechnique(
+					"existing",
+					entry,
+					false,
+					null,
+				);
+				await result.current.addAllCatalog([entry], ["C major scale"]);
+			});
+			expect(addDoc).toHaveBeenCalledTimes(1);
+			expect(updateDoc).toHaveBeenCalledTimes(1);
+			expect(mockBatch.commit).toHaveBeenCalledTimes(1);
+		} finally {
+			jest.replaceProperty(Platform, "OS", originalPlatform);
+			if (originalOnline)
+				Object.defineProperty(navigator, "onLine", originalOnline);
+			else Reflect.deleteProperty(navigator, "onLine");
+		}
 	});
 
 	it("links and optionally renames without replacing a known type", async () => {
