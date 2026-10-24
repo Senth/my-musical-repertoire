@@ -12,12 +12,6 @@ export function normalizeTechniqueTitle(title: string): string {
 		.toLowerCase()
 		.replace(/#/g, "♯")
 		.replace(/\b([a-g])b/g, "$1♭")
-		.replace(/\bmaj\b/g, "major")
-		.replace(/\bmin\b/g, "minor")
-		.replace(/\bharm\b/g, "harmonic")
-		.replace(/\bmel\b/g, "melodic")
-		.replace(/\b(?:arp|arpeggios)\b/g, "arpeggio")
-		.replace(/\b(?:dom\s*7|dominant\s+(?:seventh|7))\b/g, "dominant 7th")
 		.replace(/\s+/g, " ")
 		.trim();
 }
@@ -30,10 +24,17 @@ function withoutScale(title: string): string {
 }
 
 function isNear(title: string, entry: TechniqueCatalogEntry): boolean {
-	const ordered = title.replace(
-		/^dominant 7th( arpeggio)?(?: in)? ([a-g][♯♭]?)$/,
-		"$2 dominant 7th$1",
-	);
+	const ordered = title
+		.replace(/\bmaj\b/g, "major")
+		.replace(/\bmin\b/g, "minor")
+		.replace(/\bharm\b/g, "harmonic")
+		.replace(/\bmel\b/g, "melodic")
+		.replace(/\b(?:arp|arpeggios)\b/g, "arpeggio")
+		.replace(/\b(?:dom\s*7|dominant\s+(?:seventh|7))\b/g, "dominant 7th")
+		.replace(
+			/^dominant 7th( arpeggio)?(?: in)? ([a-g][♯♭]?)$/,
+			"$2 dominant 7th$1",
+		);
 	const parts = ordered.match(
 		/^([a-g][♯♭]?)\s*(?:(harmonic|melodic) )?(major|minor|m|dominant 7th)(?: (scale|arpeggio))?$/,
 	);

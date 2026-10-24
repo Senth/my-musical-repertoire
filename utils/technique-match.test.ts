@@ -29,15 +29,9 @@ describe("matchCatalog", () => {
 	it.each([
 		["  C   MAJOR scale  ", "scale.major.C"],
 		["Bb major", "scale.major.B♭"],
-		["F# maj", "scale.major.F♯"],
-		["A harm min scale", "scale.harmonicMinor.A"],
-		["A mel min", "scale.melodicMinor.A"],
-		["C major arp", "arpeggio.major.C"],
-		["A min arpeggios", "arpeggio.minor.A"],
-		["dom 7 arpeggio in C", "arpeggio.dominant7.C"],
-		["dom7 arpeggio in C", "arpeggio.dominant7.C"],
-		["dominant seventh arpeggio in C", "arpeggio.dominant7.C"],
-		["dominant 7 arpeggio in C", "arpeggio.dominant7.C"],
+		["F# major", "scale.major.F♯"],
+		["bb minor arpeggio", "arpeggio.minor.B♭"],
+		["Dominant 7th arpeggio in C", "arpeggio.dominant7.C"],
 		["Chromatic", "scale.chromatic"],
 	])("normalizes %s to an exact match", (title, key) => {
 		expect(match(title, key).kind).toBe("exact");
@@ -73,6 +67,19 @@ describe("matchCatalog", () => {
 	});
 
 	it.each([
+		["F maj", "scale.major.F"],
+		["F# maj", "scale.major.F♯"],
+		["C min", "scale.harmonicMinor.C"],
+		["A harm minor", "scale.harmonicMinor.A"],
+		["A harm min scale", "scale.harmonicMinor.A"],
+		["A mel min", "scale.melodicMinor.A"],
+		["C major arp", "arpeggio.major.C"],
+		["A minor arpeggios", "arpeggio.minor.A"],
+		["A min arpeggios", "arpeggio.minor.A"],
+		["dom 7 arpeggio in C", "arpeggio.dominant7.C"],
+		["dom7 arpeggio in C", "arpeggio.dominant7.C"],
+		["dominant seventh arpeggio in C", "arpeggio.dominant7.C"],
+		["dominant 7 arpeggio in C", "arpeggio.dominant7.C"],
 		["G minor", "scale.harmonicMinor.G"],
 		["G minor", "scale.melodicMinor.G"],
 		["G minor", "arpeggio.minor.G"],
@@ -90,6 +97,9 @@ describe("matchCatalog", () => {
 		["G minor arpeggio", "scale.harmonicMinor.G"],
 		["G minor scale", "arpeggio.minor.G"],
 		["F major", "scale.major.F♯"],
+		["A harm min", "scale.melodicMinor.A"],
+		["G min arp", "scale.harmonicMinor.G"],
+		["G min scale", "arpeggio.minor.G"],
 	])("rejects incompatible %s against %s", (title, key) => {
 		expect(match(title, key)).toEqual({ kind: "none" });
 	});
@@ -104,6 +114,19 @@ describe("matchCatalog", () => {
 		expect(
 			match("C major scale", "scale.major.C", { type: "exercise" }).kind,
 		).toBe("exact");
+	});
+
+	it("matches F maj with type Scale as near for F major scale only", () => {
+		const item = technique("F maj", { type: "scale" });
+		const results = matchCatalog([item], entries);
+		expect(
+			entries
+				.filter((_, index) => results[index].kind !== "none")
+				.map((entry) => entry.key),
+		).toEqual(["scale.major.F"]);
+		expect(
+			results[entries.findIndex((entry) => entry.key === "scale.major.F")],
+		).toEqual({ kind: "near", technique: item });
 	});
 
 	it("counts retired techniques and prefers exact over earlier near matches", () => {
