@@ -878,6 +878,7 @@
 				"state": "Status"
 			},
 			"addTechnique": "Add technique",
+			"writeYourOwn": "Write your own",
 			"neverPracticed": "Never practiced",
 			"menu": {
 				"practice": "Practice",

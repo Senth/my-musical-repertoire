@@ -1,7 +1,7 @@
 import { useNavigation, useRouter } from "expo-router";
 import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FlatList, View } from "react-native";
+import { FlatList, Platform, View } from "react-native";
 import {
 	ActivityIndicator,
 	Button,
@@ -10,6 +10,7 @@ import {
 	FAB,
 	IconButton,
 	List,
+	Menu,
 	Portal,
 	Searchbar,
 	Snackbar,
@@ -82,6 +83,7 @@ export default function TechniquesScreen() {
 	const { deleteTechnique } = useDeleteTechnique();
 	const fabStyle = useFabStyleTabs();
 	const fabVisible = useFabVisible();
+	const [fabOpen, setFabOpen] = useState(false);
 	const [menuVisible, setMenuVisible] = useState<string | null>(null);
 	const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
 	const [deletingItem, setDeletingItem] = useState<TechniqueItem | null>(null);
@@ -365,9 +367,27 @@ export default function TechniquesScreen() {
 						: t("screen.techniques.noMatchFilters")}
 			</Text>
 			{libraryEmpty ? (
-				<Button mode="contained" onPress={() => router.push("/technique/add")}>
-					{t("screen.techniques.addTechnique")}
-				</Button>
+				<View
+					style={{
+						flexDirection: "row",
+						flexWrap: "wrap",
+						justifyContent: "center",
+						gap: space.sm,
+					}}
+				>
+					<Button
+						mode="contained"
+						onPress={() => router.push("/technique/add")}
+					>
+						{t("screen.techniques.addTechnique")}
+					</Button>
+					<Button
+						mode="outlined"
+						onPress={() => router.push("/technique/scales")}
+					>
+						{t("technique.catalog.pageTitle")}
+					</Button>
+				</View>
 			) : (
 				<Button
 					mode="outlined"
@@ -437,7 +457,10 @@ export default function TechniquesScreen() {
 						</View>
 					}
 					ListEmptyComponent={emptyState}
-					contentContainerStyle={{ flexGrow: 1 }}
+					contentContainerStyle={{
+						flexGrow: 1,
+						paddingBottom: scrollTail.fab,
+					}}
 					style={{ flex: 1 }}
 				/>
 			) : (
@@ -559,12 +582,64 @@ export default function TechniquesScreen() {
 
 			{fabVisible && (
 				<Portal>
-					<FAB
-						icon="plus"
-						accessibilityLabel={t("a11y.fab.addTechnique")}
-						style={fabStyle}
-						onPress={() => router.push("/technique/add")}
-					/>
+					{Platform.OS === "web" ? (
+						<Menu
+							visible={fabOpen}
+							onDismiss={() => setFabOpen(false)}
+							anchor={
+								<FAB
+									icon={fabOpen ? "close" : "plus"}
+									accessibilityLabel={t("a11y.fab.addTechnique")}
+									style={fabStyle}
+									onPress={() => setFabOpen((open) => !open)}
+								/>
+							}
+						>
+							<Menu.Item
+								leadingIcon="pencil-outline"
+								title={t("screen.techniques.writeYourOwn")}
+								onPress={() => {
+									setFabOpen(false);
+									router.push("/technique/add");
+								}}
+							/>
+							<Menu.Item
+								leadingIcon="playlist-plus"
+								title={t("technique.catalog.pageTitle")}
+								onPress={() => {
+									setFabOpen(false);
+									router.push("/technique/scales");
+								}}
+							/>
+						</Menu>
+					) : (
+						<FAB.Group
+							open={fabOpen}
+							visible
+							icon={fabOpen ? "close" : "plus"}
+							accessibilityLabel={t("a11y.fab.addTechnique")}
+							style={fabStyle}
+							actions={[
+								{
+									icon: "pencil-outline",
+									label: t("screen.techniques.writeYourOwn"),
+									onPress: () => {
+										setFabOpen(false);
+										router.push("/technique/add");
+									},
+								},
+								{
+									icon: "playlist-plus",
+									label: t("technique.catalog.pageTitle"),
+									onPress: () => {
+										setFabOpen(false);
+										router.push("/technique/scales");
+									},
+								},
+							]}
+							onStateChange={({ open }) => setFabOpen(open)}
+						/>
+					)}
 				</Portal>
 			)}
 		</View>
