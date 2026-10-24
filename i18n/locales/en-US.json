@@ -234,6 +234,30 @@
 				"create": "Create a new technique",
 				"more": "Show more"
 			}
+		},
+		"catalog": {
+			"title": {
+				"majorScale": "{{tonic}} major scale",
+				"majorArpeggio": "{{tonic}} major arpeggio",
+				"dominant7Arpeggio": "Dominant 7th arpeggio in {{tonic}}",
+				"harmonicMinorScale": "{{tonic}} harmonic minor scale",
+				"melodicMinorScale": "{{tonic}} melodic minor scale",
+				"minorArpeggio": "{{tonic}} minor arpeggio",
+				"chromaticScale": "Chromatic scale"
+			},
+			"group": {
+				"key": "{{major}} major · {{minor}} minor",
+				"notTiedToKey": "Not tied to a key",
+				"type": {
+					"scale": "Scale",
+					"arpeggio": "Arpeggio",
+					"exercise": "Exercise",
+					"chord": "Chord",
+					"octave": "Octave",
+					"trill": "Trill",
+					"other": "Other"
+				}
+			}
 		}
 	},
 	"error": {

@@ -37,6 +37,7 @@ export interface TechniqueItem {
 	id?: string;
 	userId: string;
 	title: string;
+	curriculumKey?: string | null;
 	state: TechniqueState;
 	type?: TechniqueType | null;
 	targetTempoBpm?: number | null;

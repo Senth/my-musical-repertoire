@@ -38,6 +38,7 @@ import { timeSignatureFromFirestore } from "@/utils/time-signature";
 
 interface FirestoreTechnique {
 	title: string;
+	curriculumKey?: string | null;
 	state: TechniqueState;
 	type?: TechniqueType | null;
 	targetTempoBpm?: number | null;
@@ -63,6 +64,7 @@ export function fromFirestore(
 		id,
 		userId,
 		title: data.title,
+		curriculumKey: data.curriculumKey ?? null,
 		state: data.state ?? "active",
 		type: data.type ?? null,
 		targetTempoBpm: data.targetTempoBpm ?? null,
@@ -210,6 +212,7 @@ export function useAddTechnique() {
 	const addTechnique = async (
 		title: string,
 		options: {
+			curriculumKey?: string | null;
 			type?: TechniqueType | null;
 			targetTempoBpm?: number | null;
 			notes?: string | null;
@@ -224,6 +227,7 @@ export function useAddTechnique() {
 		await awaitWrite(
 			addDoc(ref, {
 				title,
+				curriculumKey: options.curriculumKey ?? null,
 				state: options.state ?? "active",
 				type: options.type ?? null,
 				targetTempoBpm: options.targetTempoBpm ?? null,
@@ -248,6 +252,7 @@ export function useUpdateTechnique() {
 			Pick<
 				TechniqueItem,
 				| "title"
+				| "curriculumKey"
 				| "state"
 				| "type"
 				| "targetTempoBpm"

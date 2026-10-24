@@ -64,7 +64,10 @@ describe("collectExportData", () => {
 			{ id: "pl1", data: () => ({ accuracy: 1 }) },
 		];
 		mockTree["users/u1/techniques"] = [
-			{ id: "t1", data: () => ({ name: "C major scale" }) },
+			{
+				id: "t1",
+				data: () => ({ name: "C major scale", curriculumKey: "scale.major.C" }),
+			},
 		];
 		mockTree["users/u1/techniques/t1/practiceLogs"] = [
 			{ id: "tl1", data: () => ({ accuracy: 0.8 }) },
@@ -112,6 +115,7 @@ describe("collectExportData", () => {
 			{
 				id: "t1",
 				name: "C major scale",
+				curriculumKey: "scale.major.C",
 				practiceLogs: [{ id: "tl1", accuracy: 0.8 }],
 			},
 		]);

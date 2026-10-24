@@ -27,11 +27,12 @@ jest.mock("@/contexts/AuthContext", () => ({
 }));
 
 import { act, renderHook } from "@testing-library/react-native";
-import { getDocs, onSnapshot, updateDoc } from "firebase/firestore";
+import { addDoc, getDocs, onSnapshot, updateDoc } from "firebase/firestore";
 import type { TechniqueState } from "@/models/technique";
 import {
 	fromFirestore,
 	QUEUE_PAGE,
+	useAddTechnique,
 	useAdvanceTechnique,
 	useCurriculumTechniques,
 	useSnoozeTechniqueNudge,
@@ -83,6 +84,47 @@ describe("fromFirestore nudgeSnoozedUntil", () => {
 
 	it("reads a missing snooze as null", () => {
 		expect(map()).toBeNull();
+	});
+});
+
+describe("curriculumKey persistence", () => {
+	it("reads a missing curriculum key as null", () => {
+		const technique = fromFirestore(
+			"t1",
+			{
+				title: "C major scale",
+				state: "active",
+				dateIntroduced: { toDate: () => new Date(0) },
+			} as unknown as Parameters<typeof fromFirestore>[1],
+			"u1",
+		);
+
+		expect(technique.curriculumKey).toBeNull();
+	});
+
+	it("reads and writes a curriculum key", async () => {
+		const technique = fromFirestore(
+			"t1",
+			{
+				title: "C major scale",
+				state: "active",
+				dateIntroduced: { toDate: () => new Date(0) },
+				curriculumKey: "scale.major.C",
+			} as unknown as Parameters<typeof fromFirestore>[1],
+			"u1",
+		);
+		const { addTechnique } = useAddTechnique();
+		const { updateTechnique } = useUpdateTechnique();
+
+		expect(technique.curriculumKey).toBe("scale.major.C");
+		await addTechnique("C major scale", {
+			curriculumKey: technique.curriculumKey,
+		});
+		expect((addDoc as jest.Mock).mock.calls[0][1]).toMatchObject({
+			curriculumKey: "scale.major.C",
+		});
+		await updateTechnique("t1", { curriculumKey: technique.curriculumKey });
+		expect(written()).toMatchObject({ curriculumKey: "scale.major.C" });
 	});
 });
 
