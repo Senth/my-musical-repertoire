@@ -4,17 +4,10 @@ import {
 	useEffect,
 	useLayoutEffect,
 	useMemo,
-	useRef,
 	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import {
-	FlatList,
-	Platform,
-	Pressable,
-	View,
-	type ViewInstance,
-} from "react-native";
+import { FlatList, Platform, Pressable, View } from "react-native";
 import {
 	ActivityIndicator,
 	Button,
@@ -87,6 +80,13 @@ import { techniqueStateVisual } from "@/utils/state-colors";
 
 type ContextMenu = { techniqueId: string; x: number; y: number };
 
+function focusTechniqueFabButton() {
+	document
+		.getElementById("technique-add-fab")
+		?.querySelector<HTMLElement>('[role="button"]')
+		?.focus();
+}
+
 export default function TechniquesScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -97,7 +97,6 @@ export default function TechniquesScreen() {
 	const fabStyle = useFabStyleTabs();
 	const fabVisible = useFabVisible();
 	const [fabOpen, setFabOpen] = useState(false);
-	const fabRef = useRef<View & ViewInstance>(null);
 	useEffect(() => {
 		if (!fabOpen || Platform.OS !== "web") return;
 		const frame = requestAnimationFrame(() =>
@@ -114,7 +113,7 @@ export default function TechniquesScreen() {
 			if (event.key !== "Escape") return;
 			event.preventDefault();
 			setFabOpen(false);
-			fabRef.current?.focus();
+			focusTechniqueFabButton();
 		};
 		document.addEventListener("keydown", closeOnEscape);
 		return () => document.removeEventListener("keydown", closeOnEscape);
@@ -631,7 +630,7 @@ export default function TechniquesScreen() {
 									}}
 									onPress={() => {
 										setFabOpen(false);
-										fabRef.current?.focus();
+										focusTechniqueFabButton();
 									}}
 								/>
 								<View
@@ -675,7 +674,7 @@ export default function TechniquesScreen() {
 							</>
 						)}
 						<FAB
-							ref={fabRef}
+							nativeID="technique-add-fab"
 							icon={fabOpen ? "close" : "plus"}
 							accessibilityLabel={t("a11y.fab.addTechnique")}
 							accessibilityState={{ expanded: fabOpen }}
@@ -687,11 +686,11 @@ export default function TechniquesScreen() {
 				) : (
 					<Portal>
 						<FAB.Group
+							style={fabStyle}
 							open={fabOpen}
 							visible
 							icon={fabOpen ? "close" : "plus"}
 							accessibilityLabel={t("a11y.fab.addTechnique")}
-							fabStyle={fabStyle}
 							actions={[
 								{
 									icon: "pencil-outline",

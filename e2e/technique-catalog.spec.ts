@@ -92,6 +92,11 @@ test("catalog adds scales, links one near match, and fills the curriculum", asyn
 			exact: true,
 		}),
 	).toBeFocused();
+	await page.keyboard.press("Escape");
+	await expect(addTechniqueFab).toHaveAttribute("aria-expanded", "false");
+	await expect(addTechniqueFab).toBeFocused();
+	await page.keyboard.press("Enter");
+	await expect(addTechniqueFab).toHaveAttribute("aria-expanded", "true");
 	await writeYourOwn.click();
 	await expect(
 		page.getByRole("textbox", {
