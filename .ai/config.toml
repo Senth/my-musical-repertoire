@@ -74,11 +74,8 @@ ready = "Suggested Practices"
 # truth: when the contract and the file disagree, the file is right and the contract
 # is stale. Nobody edits the contract mid-run — a finding cites a rule in it or is
 # flagged a taste call, and proposed rule changes go to the human as one diff.
-# Personal repo: the product-specific taste lives in `docs/DESIGN.md` sections, not
-# in a repo design skill.
-#
-# `theme/tokens.ts` does not exist yet. It arrives with #127, which converts the
-# app's NativeWind classes onto it; until then the contract is what holds, and a
-# new style prop is written against the scale the contract names.
+# Personal repo: the product-specific taste lives in `docs/DESIGN.md`, not in a repo
+# design skill. It holds app-wide rules only, at most 200 lines, enforced by
+# `docs/design-contract.test.ts`.
 contract = "docs/DESIGN.md"
 tokens = "theme/tokens.ts"
