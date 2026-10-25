@@ -40,7 +40,7 @@ reaching production by accident.
 ```bash
 scripts/dev-stack.sh up      # emulators + an emulator-backed web server
 yarn e2e                     # the suite
-scripts/dev-stack.sh down    # stops only what it started
+scripts/dev-stack.sh down    # stops this web server; emulators stop after the last lease
 ```
 
 `up` is idempotent: it reuses a suite that is already listening rather than
@@ -53,6 +53,14 @@ Firestore), which has no env interpolation, so **every checkout shares one
 emulator suite**. Each checkout gets its own fixture account, so simultaneous
 e2e runs cannot overwrite each other's fixture. The seed makes each run
 deterministic.
+
+Each `up` writes or refreshes a checkout lease under
+`~/.cache/my-musical-repertoire/dev-stack/leases/`. `down` stops this checkout's
+web server, removes its lease, and prunes leases whose web-server pid is dead.
+It stops the emulators only when no leases remain, regardless of which checkout
+started them. Otherwise it lists the checkouts still holding leases and leaves
+the emulators running. Leases from `up --no-web` have no pid and remain until
+that checkout runs `down`. `scripts/dev-stack.sh status` lists the live leases.
 
 Services are started with `setsid` so `down` can signal the whole process group.
 Signalling the `yarn` wrapper alone leaves the `node` process it spawned holding
