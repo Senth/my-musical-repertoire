@@ -189,34 +189,56 @@ stop_groups() {
 	echo "$name: stopped"
 }
 
+firebase_launcher() {
+	local command
+	command="$(ps -o args= -p "$1" || true)"
+	[[ "$command" =~ ^([^[:space:]]*/)?(node(js)?[[:space:]]+)?([^[:space:]]*/)?(firebase(\.js)?|yarn(\.js)?([[:space:]]+--silent)?[[:space:]]+firebase)[[:space:]]+emulators:start([[:space:]]|$) ]]
+}
+
 stop_emulators() {
-	local pid command pgid listener_group
-	pid="$(lsof -t -iTCP:"$FIRESTORE_PORT" -sTCP:LISTEN || true)"
+	local pid pgid listener port
+	for port in "$FIRESTORE_PORT" "$AUTH_PORT" "$UI_PORT"; do
+		pid="$(lsof -t -iTCP:"$port" -sTCP:LISTEN || true)"
+		[[ -z "$pid" ]] || break
+	done
 	[[ -n "$pid" ]] || return 0
-	listener_group="$(ps -o pgid= -p "$pid" | tr -d ' ')"
+	listener="$pid"
 	while [[ "$pid" -gt 1 ]]; do
-		command="$(ps -o args= -p "$pid" || true)"
-		if [[ "$command" =~ (^|[[:space:]/])firebase[[:space:]]emulators:start([[:space:]]|$) ]]; then
+		if firebase_launcher "$pid"; then
 			pgid="$(ps -o pgid= -p "$pid" | tr -d ' ')"
-			stop_groups emulators "$FIRESTORE_PORT" "-$pgid" "-$listener_group"
+			if ! firebase_launcher "$pgid"; then
+				echo "dev-stack: refusing to stop shared emulator process group $pgid" >&2
+				return 1
+			fi
+			stop_groups emulators "$port" "-$pgid" "$listener"
 			rm -f "$RUN_DIR/emulators.pid"
 			return
 		fi
 		pid="$(ps -o ppid= -p "$pid" | tr -d ' ' || true)"
 	done
-	echo "dev-stack: refusing to stop $FIRESTORE_PORT; no firebase emulators:start ancestor" >&2
+	echo "dev-stack: refusing to stop $port; no firebase emulators:start ancestor" >&2
 	return 1
 }
 
+process_start() {
+	local stat
+	local -a fields
+	stat="$(cat "/proc/$1/stat" 2>/dev/null)" || return 1
+	read -r -a fields <<<"${stat##*) }"
+	[[ "${fields[0]}" != Z ]] || return 1
+	printf '%s:%s\n' "$(cat /proc/sys/kernel/random/boot_id)" "${fields[19]}"
+}
+
 live_leases() {
-	local lease checkout pid
+	local lease checkout pid start current
 	for lease in "$LEASE_DIR"/*; do
 		[[ -f "$lease" ]] || continue
 		{
 			IFS= read -r checkout
 			IFS= read -r pid
+			IFS= read -r start || true
 		} <"$lease"
-		if [[ -n "$pid" ]] && ! kill -0 "$pid" 2>/dev/null; then
+		if [[ -n "$pid" ]] && { ! current="$(process_start "$pid")" || [[ "$start" != "$current" ]]; }; then
 			rm -f "$lease"
 		else
 			printf '  %s (web pid: %s)\n' "$checkout" "${pid:-none}"
@@ -237,7 +259,7 @@ cmd_down() {
 }
 
 cmd_up() {
-	local web=1 pid=""
+	local web=1 pid="" start=""
 	for arg in "$@"; do
 		case "$arg" in
 		--no-web) web=0 ;;
@@ -252,8 +274,9 @@ cmd_up() {
 	if [[ "$web" == 1 ]]; then
 		start_web
 		pid="$(lsof -t -iTCP:"$WEB_PORT" -sTCP:LISTEN)"
+		start="$(process_start "$pid")"
 	fi
-	printf '%s\n%s\n' "$ROOT" "$pid" >"$LEASE_DIR/$CHECKOUT_ID"
+	printf '%s\n%s\n%s\n' "$ROOT" "$pid" "$start" >"$LEASE_DIR/$CHECKOUT_ID"
 	echo "SEED_EMAIL=$SEED_EMAIL"
 	[[ "$web" == 1 ]] || return 0
 	echo "WEB_URL=http://localhost:$WEB_PORT"
