@@ -4,7 +4,7 @@
 # the Firebase emulator suite plus an Expo web server wired to it.
 #
 #   scripts/dev-stack.sh up [--no-web]   start what is not already running
-#   scripts/dev-stack.sh down            stop only what this script started
+#   scripts/dev-stack.sh down            release this checkout; stop the last shared stack
 #   scripts/dev-stack.sh status          what is listening, and whose it is
 #   scripts/dev-stack.sh ports           the e2e web port for this checkout
 #   scripts/dev-stack.sh fixture         this checkout's e2e fixture email
@@ -24,11 +24,6 @@
 # already serving returns immediately. `DEV_STACK_WEB_TIMEOUT` overrides the
 # deadline in seconds.
 #
-# `up` is idempotent and deliberately asymmetric with `down`: a port already
-# listening is left completely alone, and `down` only ever stops what this
-# script started. Reusing a stack you did not start is normal — it is your own
-# `yarn emulators` in another terminal — but a run against it rewrites only
-# this checkout's fixture account.
 #
 # The web server is the exception to reuse. Every worktree shares 8056, and a
 # server another checkout started serves *that* checkout's code, so a suite run
@@ -68,6 +63,8 @@ WEB_PORT="${E2E_WEB_PORT:-$WEB_PORT}"
 WEB="web-$WEB_PORT"
 
 RUN_DIR="$ROOT/.tmp/dev-stack"
+STACK_DIR="$HOME/.cache/my-musical-repertoire/dev-stack"
+LEASE_DIR="$STACK_DIR/leases"
 
 listening() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 
@@ -123,7 +120,7 @@ start_emulators() {
 		exit 1
 	fi
 	setsid yarn --silent firebase emulators:start \
-		>"$RUN_DIR/emulators.log" 2>&1 &
+		>"$RUN_DIR/emulators.log" 2>&1 9>&- &
 	echo $! >"$RUN_DIR/emulators.pid"
 	wait_for "$FIRESTORE_PORT" "firestore emulator" 120
 	wait_for "$AUTH_PORT" "auth emulator" 30
@@ -155,7 +152,7 @@ start_web() {
 	# overflow"). 4000KB fits the 8MB main-thread stack.
 	EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_USE_EMULATORS=1 \
 		setsid yarn --silent start --web --port "$WEB_PORT" \
-		</dev/null >"$RUN_DIR/$WEB.log" 2>&1 &
+		</dev/null >"$RUN_DIR/$WEB.log" 2>&1 9>&- &
 	echo $! >"$RUN_DIR/$WEB.pid"
 	wait_for "$WEB_PORT" "expo web server" 180
 	wait_http "http://localhost:$WEB_PORT" "expo web server (first bundle)" "${DEV_STACK_WEB_TIMEOUT:-420}"
@@ -170,25 +167,77 @@ stop_one() { # name, port to wait on
 	[[ -f "$pidfile" ]] || return 0
 	local pid pgid
 	pid="$(cat "$pidfile")"
-	pgid="$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')"
+	pgid="$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ' || true)"
 	rm -f "$pidfile"
 	[[ -n "$pgid" ]] || return 0
+	stop_groups "$1" "$2" "-$pgid"
+}
 
-	kill -TERM -- "-$pgid" 2>/dev/null || true
+stop_groups() {
+	local name="$1" port="$2"
+	shift 2
+	kill -TERM -- "$@" 2>/dev/null || true
 	# The Firestore emulator is a JVM and does not always go on the first
 	# TERM. Leaving it holding the port is worse than being blunt: the next
 	# `up` sees a half-up suite and refuses to start.
 	local deadline=$((SECONDS + 15))
-	while listening "$2" && ((SECONDS < deadline)); do sleep 1; done
-	if listening "$2"; then
-		kill -KILL -- "-$pgid" 2>/dev/null || true
+	while listening "$port" && ((SECONDS < deadline)); do sleep 1; done
+	if listening "$port"; then
+		kill -KILL -- "$@" 2>/dev/null || true
 		sleep 1
 	fi
-	echo "$1: stopped"
+	echo "$name: stopped"
+}
+
+stop_emulators() {
+	local pid command pgid listener_group
+	pid="$(lsof -t -iTCP:"$FIRESTORE_PORT" -sTCP:LISTEN || true)"
+	[[ -n "$pid" ]] || return 0
+	listener_group="$(ps -o pgid= -p "$pid" | tr -d ' ')"
+	while [[ "$pid" -gt 1 ]]; do
+		command="$(ps -o args= -p "$pid" || true)"
+		if [[ "$command" =~ (^|[[:space:]/])firebase[[:space:]]emulators:start([[:space:]]|$) ]]; then
+			pgid="$(ps -o pgid= -p "$pid" | tr -d ' ')"
+			stop_groups emulators "$FIRESTORE_PORT" "-$pgid" "-$listener_group"
+			rm -f "$RUN_DIR/emulators.pid"
+			return
+		fi
+		pid="$(ps -o ppid= -p "$pid" | tr -d ' ' || true)"
+	done
+	echo "dev-stack: refusing to stop $FIRESTORE_PORT; no firebase emulators:start ancestor" >&2
+	return 1
+}
+
+live_leases() {
+	local lease checkout pid
+	for lease in "$LEASE_DIR"/*; do
+		[[ -f "$lease" ]] || continue
+		{
+			IFS= read -r checkout
+			IFS= read -r pid
+		} <"$lease"
+		if [[ -n "$pid" ]] && ! kill -0 "$pid" 2>/dev/null; then
+			rm -f "$lease"
+		else
+			printf '  %s (web pid: %s)\n' "$checkout" "${pid:-none}"
+		fi
+	done
+}
+
+cmd_down() {
+	stop_one "$WEB" "$WEB_PORT"
+	rm -f "$LEASE_DIR/$CHECKOUT_ID"
+	local holders
+	holders="$(live_leases)"
+	if [[ -n "$holders" ]]; then
+		printf 'emulators: kept for checkouts:\n%s\n' "$holders"
+	else
+		stop_emulators
+	fi
 }
 
 cmd_up() {
-	local web=1
+	local web=1 pid=""
 	for arg in "$@"; do
 		case "$arg" in
 		--no-web) web=0 ;;
@@ -198,11 +247,13 @@ cmd_up() {
 			;;
 		esac
 	done
-	mkdir -p "$RUN_DIR"
+	mkdir -p "$RUN_DIR" "$LEASE_DIR"
 	start_emulators
 	if [[ "$web" == 1 ]]; then
 		start_web
+		pid="$(lsof -t -iTCP:"$WEB_PORT" -sTCP:LISTEN)"
 	fi
+	printf '%s\n%s\n' "$ROOT" "$pid" >"$LEASE_DIR/$CHECKOUT_ID"
 	echo "SEED_EMAIL=$SEED_EMAIL"
 	[[ "$web" == 1 ]] || return 0
 	echo "WEB_URL=http://localhost:$WEB_PORT"
@@ -228,7 +279,17 @@ cmd_status() {
 		echo "  $WEB_PORT  free"
 	fi
 	[[ "$any" == 1 ]] || echo "dev-stack: nothing running"
+	echo "leases:"
+	live_leases
 }
+
+case "${1:-up}" in
+up | down | status)
+	mkdir -p "$LEASE_DIR"
+	exec 9>"$STACK_DIR/lock"
+	flock 9
+	;;
+esac
 
 case "${1:-up}" in
 up)
@@ -236,8 +297,7 @@ up)
 	cmd_up "$@"
 	;;
 down)
-	stop_one "$WEB" "$WEB_PORT"
-	stop_one emulators "$FIRESTORE_PORT"
+	cmd_down
 	;;
 status)
 	cmd_status
