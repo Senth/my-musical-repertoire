@@ -34,6 +34,7 @@
 		"tempoOfTarget": "{{current}} / {{target}} BPM"
 	},
 	"common": {
+		"back": "Back",
 		"today": "Today",
 		"yesterday": "Yesterday",
 		"daysAgo_one": "{{count}} day ago",
@@ -233,6 +234,65 @@
 				"search": "Search techniques",
 				"create": "Create a new technique",
 				"more": "Show more"
+			}
+		},
+		"catalog": {
+			"pageTitle": "Scales and arpeggios",
+			"searchPlaceholder": "Search scales and arpeggios",
+			"byKey": "By key",
+			"byType": "By type",
+			"inYourList": "In your list",
+			"nearMatch": "You have “{{title}}”",
+			"add": "Add {{title}}",
+			"addError": "Could not add this technique. Try again.",
+			"addAll": "Add all {{count}}",
+			"addAllHint": "Adds every one you do not have yet as Not started, easiest key first.",
+			"addAllError": "Could not add these techniques. Try again.",
+			"confirm": {
+				"title": "Is “{{currentTitle}}” the same as {{catalogTitle}}?",
+				"body": "You already have a technique called “{{currentTitle}}”.",
+				"keep": "Yes, keep the name “{{currentTitle}}”",
+				"rename": "Yes, rename it to “{{catalogTitle}}”",
+				"add": "No, add {{catalogTitle}} too",
+				"progress": "{{n}} of {{total}} possible matches. Adding all {{others}} others as Not started.",
+				"cancel": "Cancel",
+				"cancelAll": "Cancel, add nothing"
+			},
+			"noResults": "No scales or arpeggios match your search. Try another name or key.",
+			"menu": {
+				"start": "Start practicing now",
+				"startHint": "Shows up in your plans from today",
+				"later": "Save for later",
+				"laterHint": "Waits as Not started, in curriculum order"
+			},
+			"title": {
+				"majorScale": "{{tonic}} major scale",
+				"majorArpeggio": "{{tonic}} major arpeggio",
+				"dominant7Arpeggio": "Dominant 7th arpeggio in {{tonic}}",
+				"harmonicMinorScale": "{{tonic}} harmonic minor scale",
+				"melodicMinorScale": "{{tonic}} melodic minor scale",
+				"minorArpeggio": "{{tonic}} minor arpeggio",
+				"chromaticScale": "Chromatic scale"
+			},
+			"group": {
+				"key": "{{major}} major · {{minor}} minor",
+				"notTiedToKey": "Not tied to a key",
+				"majorScales": "Major scales",
+				"majorArpeggios": "Major arpeggios",
+				"dominant7Arpeggios": "Dominant 7th arpeggios",
+				"harmonicMinorScales": "Harmonic minor scales",
+				"melodicMinorScales": "Melodic minor scales",
+				"minorArpeggios": "Minor arpeggios",
+				"chromaticScale": "Chromatic scale",
+				"type": {
+					"scale": "Scale",
+					"arpeggio": "Arpeggio",
+					"exercise": "Exercise",
+					"chord": "Chord",
+					"octave": "Octave",
+					"trill": "Trill",
+					"other": "Other"
+				}
 			}
 		}
 	},
@@ -825,6 +885,7 @@
 				"state": "Status"
 			},
 			"addTechnique": "Add technique",
+			"writeYourOwn": "Write your own",
 			"neverPracticed": "Never practiced",
 			"menu": {
 				"practice": "Practice",

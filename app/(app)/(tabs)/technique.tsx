@@ -1,7 +1,13 @@
 import { useNavigation, useRouter } from "expo-router";
-import { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useState,
+} from "react";
 import { useTranslation } from "react-i18next";
-import { FlatList, View } from "react-native";
+import { FlatList, Platform, Pressable, View } from "react-native";
 import {
 	ActivityIndicator,
 	Button,
@@ -13,6 +19,7 @@ import {
 	Portal,
 	Searchbar,
 	Snackbar,
+	Surface,
 	Text,
 	useTheme,
 } from "react-native-paper";
@@ -45,7 +52,7 @@ import {
 	TECHNIQUE_TYPES,
 	type TechniqueItem,
 } from "@/models/technique";
-import { scrollTail, space } from "@/theme/tokens";
+import { elevation, radius, scrollTail, space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
 import {
 	DEFAULT_TECHNIQUE_FILTERS,
@@ -73,6 +80,13 @@ import { techniqueStateVisual } from "@/utils/state-colors";
 
 type ContextMenu = { techniqueId: string; x: number; y: number };
 
+function focusTechniqueFabButton() {
+	document
+		.getElementById("technique-add-fab")
+		?.querySelector<HTMLElement>('[role="button"]')
+		?.focus();
+}
+
 export default function TechniquesScreen() {
 	const { t } = useTranslation();
 	const theme = useTheme();
@@ -82,6 +96,28 @@ export default function TechniquesScreen() {
 	const { deleteTechnique } = useDeleteTechnique();
 	const fabStyle = useFabStyleTabs();
 	const fabVisible = useFabVisible();
+	const [fabOpen, setFabOpen] = useState(false);
+	useEffect(() => {
+		if (!fabOpen || Platform.OS !== "web") return;
+		const frame = requestAnimationFrame(() =>
+			document
+				.getElementById("technique-add-menu")
+				?.querySelector<HTMLElement>('[role="menuitem"]')
+				?.focus(),
+		);
+		return () => cancelAnimationFrame(frame);
+	}, [fabOpen]);
+	useEffect(() => {
+		if (!fabOpen || Platform.OS !== "web") return;
+		const closeOnEscape = (event: KeyboardEvent) => {
+			if (event.key !== "Escape") return;
+			event.preventDefault();
+			setFabOpen(false);
+			focusTechniqueFabButton();
+		};
+		document.addEventListener("keydown", closeOnEscape);
+		return () => document.removeEventListener("keydown", closeOnEscape);
+	}, [fabOpen]);
 	const [menuVisible, setMenuVisible] = useState<string | null>(null);
 	const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
 	const [deletingItem, setDeletingItem] = useState<TechniqueItem | null>(null);
@@ -365,9 +401,27 @@ export default function TechniquesScreen() {
 						: t("screen.techniques.noMatchFilters")}
 			</Text>
 			{libraryEmpty ? (
-				<Button mode="contained" onPress={() => router.push("/technique/add")}>
-					{t("screen.techniques.addTechnique")}
-				</Button>
+				<View
+					style={{
+						flexDirection: "row",
+						flexWrap: "wrap",
+						justifyContent: "center",
+						gap: space.sm,
+					}}
+				>
+					<Button
+						mode="contained"
+						onPress={() => router.push("/technique/add")}
+					>
+						{t("screen.techniques.addTechnique")}
+					</Button>
+					<Button
+						mode="outlined"
+						onPress={() => router.push("/technique/scales")}
+					>
+						{t("technique.catalog.pageTitle")}
+					</Button>
+				</View>
 			) : (
 				<Button
 					mode="outlined"
@@ -437,7 +491,10 @@ export default function TechniquesScreen() {
 						</View>
 					}
 					ListEmptyComponent={emptyState}
-					contentContainerStyle={{ flexGrow: 1 }}
+					contentContainerStyle={{
+						flexGrow: 1,
+						paddingBottom: scrollTail.fab,
+					}}
 					style={{ flex: 1 }}
 				/>
 			) : (
@@ -557,16 +614,99 @@ export default function TechniquesScreen() {
 				{deleteError ?? ""}
 			</Snackbar>
 
-			{fabVisible && (
-				<Portal>
-					<FAB
-						icon="plus"
-						accessibilityLabel={t("a11y.fab.addTechnique")}
-						style={fabStyle}
-						onPress={() => router.push("/technique/add")}
-					/>
-				</Portal>
-			)}
+			{fabVisible &&
+				(Platform.OS === "web" ? (
+					<Portal>
+						{fabOpen && (
+							<>
+								<Pressable
+									accessible={false}
+									style={{
+										position: "absolute",
+										top: 0,
+										left: 0,
+										right: 0,
+										bottom: 0,
+									}}
+									onPress={() => {
+										setFabOpen(false);
+										focusTechniqueFabButton();
+									}}
+								/>
+								<View
+									nativeID="technique-add-menu"
+									accessibilityRole="menu"
+									accessibilityLabel={t("a11y.fab.addTechnique")}
+									style={{
+										position: "absolute",
+										right: fabStyle.right,
+										bottom: (fabStyle.bottom as number) + space.xxl + space.xxl,
+									}}
+								>
+									<Surface
+										elevation={elevation.level2}
+										style={{ borderRadius: radius.card }}
+									>
+										<Button
+											mode="text"
+											icon="pencil-outline"
+											accessibilityRole="menuitem"
+											onPress={() => {
+												setFabOpen(false);
+												router.push("/technique/add");
+											}}
+										>
+											{t("screen.techniques.writeYourOwn")}
+										</Button>
+										<Button
+											mode="text"
+											icon="playlist-plus"
+											accessibilityRole="menuitem"
+											onPress={() => {
+												setFabOpen(false);
+												router.push("/technique/scales");
+											}}
+										>
+											{t("technique.catalog.pageTitle")}
+										</Button>
+									</Surface>
+								</View>
+							</>
+						)}
+						<FAB
+							nativeID="technique-add-fab"
+							icon={fabOpen ? "close" : "plus"}
+							accessibilityLabel={t("a11y.fab.addTechnique")}
+							accessibilityState={{ expanded: fabOpen }}
+							aria-expanded={fabOpen}
+							style={fabStyle}
+							onPress={() => setFabOpen((open) => !open)}
+						/>
+					</Portal>
+				) : (
+					<Portal>
+						<FAB.Group
+							style={fabStyle}
+							open={fabOpen}
+							visible
+							icon={fabOpen ? "close" : "plus"}
+							accessibilityLabel={t("a11y.fab.addTechnique")}
+							actions={[
+								{
+									icon: "pencil-outline",
+									label: t("screen.techniques.writeYourOwn"),
+									onPress: () => router.push("/technique/add"),
+								},
+								{
+									icon: "playlist-plus",
+									label: t("technique.catalog.pageTitle"),
+									onPress: () => router.push("/technique/scales"),
+								},
+							]}
+							onStateChange={({ open }) => setFabOpen(open)}
+						/>
+					</Portal>
+				))}
 		</View>
 	);
 }
