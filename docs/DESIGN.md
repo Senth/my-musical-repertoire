@@ -96,7 +96,7 @@ outline is a defect. The left accent stripe is not an outline and is allowed.
 
 ## Space and density
 
-- **Base** — a 4pt grid, named `xxs` through `xxl` in the token file. Extend the scale
+- **Base** — the `space` scale in the token file, `xxs` through `xxl`. Extend the scale
   rather than inlining a number between two steps.
 - **Density** — comfortable, one step down below the compact breakpoint: full-bleed rows
   with hairline dividers there, elevated cards in the centred band above it.
@@ -148,7 +148,7 @@ The canonical implementation owns the styling. Extend it. **Restyling a copy is 
 - **Buttons** — filled for the one primary action, outlined for a real second action, text
   for anything tertiary, and Paper's error colour for destructive.
 - **Control height** — Paper's own sizes, no padding added for reach. A web touch handler
-  keeps 48dp around each control's centre free of other controls.
+  keeps `touchTarget.minimum` around each control's centre free of other controls.
 - **Forms** — Paper's `TextInput` with its floating label, helper text and errors below the
   field. Required is the norm, so mark the optional ones.
 - **Focus ring** — in the accent, and it has to clear both schemes.
@@ -158,17 +158,17 @@ The canonical implementation owns the styling. Extend it. **Restyling a copy is 
 - **Empty states** — say what the screen is for and offer the action that fills it. Text and
   one icon; never an illustration.
 - **Charts** — hand-drawn with `react-native-svg`; no chart library. Lines, not dots. Hue
-  identifies a series, never a judgement: left hand `handLeft`, right hand `handRight`,
-  hands together `onSurface`, and every line is end-labelled. How a practice went is line
-  width — clean 1, some slips 2, shaky 4. Targets are a dashed `outline` line. Lifecycle
-  hues never colour a series.
+  identifies a series, never a judgement: `handLeft`, `handRight`, and `onSurface` for both
+  hands together; every line is end-labelled. Line width says how a practice went
+  (`lineWidth` in [`utils/progress-chart.ts`](../utils/progress-chart.ts)). Targets are a
+  dashed `outline` line. Lifecycle hues never colour a series.
 
 ## Motion
 
 Functional. Paper's defaults and almost nothing else, on transform and opacity only.
 
-**Animates:** what the user interacts with, and anything new that appears on a page already
-on screen unasked. **Never animates:** lists, cards, chips, screen content, or anything the
+**Animates:** what the user interacts with or their interaction moves, and anything new
+that appears on a page already on screen unasked. **Never animates:** lists, cards, chips, screen content, or anything the
 user asked for on entry.
 
 ## Voice
