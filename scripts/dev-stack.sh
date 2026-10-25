@@ -238,7 +238,10 @@ live_leases() {
 			IFS= read -r pid
 			IFS= read -r start || true
 		} <"$lease"
-		if [[ -n "$pid" ]] && { ! current="$(process_start "$pid")" || [[ "$start" != "$current" ]]; }; then
+		if [[ -n "$pid" ]] && {
+			! kill -0 "$pid" 2>/dev/null ||
+				{ [[ -n "$start" ]] && { ! current="$(process_start "$pid")" || [[ "$start" != "$current" ]]; }; }
+		}; then
 			rm -f "$lease"
 		else
 			printf '  %s (web pid: %s)\n' "$checkout" "${pid:-none}"

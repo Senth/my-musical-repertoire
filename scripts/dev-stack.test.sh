@@ -37,6 +37,18 @@ grep -q "$TEST_DIR/sibling" "$TEST_DIR/output"
 ! grep -q 'emulators stopped' "$TEST_DIR/events"
 
 rm "$LEASE_DIR/sibling"
+cmd_up >/dev/null
+printf '%s\n%s\n' "$TEST_DIR/legacy sibling" "$$" >"$LEASE_DIR/legacy"
+cmd_down >"$TEST_DIR/output"
+if [[ ! -f "$LEASE_DIR/legacy" ]]; then
+	echo "FAIL: live legacy sibling lease pruned during mixed-format teardown" >&2
+	exit 1
+fi
+[[ ! -f "$LEASE_DIR/$CHECKOUT_ID" ]]
+grep -q "$TEST_DIR/legacy sibling" "$TEST_DIR/output"
+! grep -q 'emulators stopped' "$TEST_DIR/events"
+rm "$LEASE_DIR/legacy"
+
 cmd_up --no-web >/dev/null
 [[ -z "$(tail -1 "$LEASE_DIR/$CHECKOUT_ID")" ]]
 printf '%s\n\n' "$TEST_DIR/headless sibling" >"$LEASE_DIR/headless"
