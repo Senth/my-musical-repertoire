@@ -7,6 +7,7 @@
 #   scripts/dev-stack.sh down            stop only what this script started
 #   scripts/dev-stack.sh status          what is listening, and whose it is
 #   scripts/dev-stack.sh ports           the e2e web port for this checkout
+#   scripts/dev-stack.sh fixture         this checkout's e2e fixture email
 #   scripts/dev-stack.sh dev-port        the hand-driven web port
 #
 #   --no-web   emulators only; for anything that never renders
@@ -26,9 +27,8 @@
 # `up` is idempotent and deliberately asymmetric with `down`: a port already
 # listening is left completely alone, and `down` only ever stops what this
 # script started. Reusing a stack you did not start is normal — it is your own
-# `yarn emulators` in another terminal — but a run against it still starts by
-# rewriting the fixture account, so only the throwaway accounts of earlier
-# runs linger, not a dirty fixture.
+# `yarn emulators` in another terminal — but a run against it rewrites only
+# this checkout's fixture account.
 #
 # The web server is the exception to reuse. Every worktree shares 8056, and a
 # server another checkout started serves *that* checkout's code, so a suite run
@@ -42,10 +42,12 @@ set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
+CHECKOUT_ID="$(printf '%s' "$ROOT" | sha256sum | cut -c1-6)"
+SEED_EMAIL="pianist-$CHECKOUT_ID@example.com"
 
 # Emulator ports come from firebase.json, which has no env interpolation, so
-# every checkout shares one suite. Two checkouts running e2e at once share
-# throwaway data — which is what a seeded fixture is for.
+# every checkout shares one suite. Each checkout's seeded fixture account is
+# separate, even when two checkouts run e2e at once.
 UI_PORT=8050
 AUTH_PORT=8051
 FIRESTORE_PORT=8052
@@ -198,8 +200,11 @@ cmd_up() {
 	done
 	mkdir -p "$RUN_DIR"
 	start_emulators
+	if [[ "$web" == 1 ]]; then
+		start_web
+	fi
+	echo "SEED_EMAIL=$SEED_EMAIL"
 	[[ "$web" == 1 ]] || return 0
-	start_web
 	echo "WEB_URL=http://localhost:$WEB_PORT"
 }
 
@@ -240,12 +245,15 @@ status)
 ports)
 	echo "$WEB_PORT"
 	;;
+fixture)
+	echo "$SEED_EMAIL"
+	;;
 dev-port)
 	# The hand-driven server (`yarn web`), which talks to the real dev project.
 	echo "$DEV_PORT"
 	;;
 *)
-	echo "usage: scripts/dev-stack.sh up [--no-web] [--fresh] | down | status | ports | dev-port" >&2
+	echo "usage: scripts/dev-stack.sh up [--no-web] | down | status | ports | fixture | dev-port" >&2
 	exit 2
 	;;
 esac
