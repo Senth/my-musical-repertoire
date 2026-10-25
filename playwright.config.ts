@@ -1,5 +1,10 @@
+import { execFileSync } from "node:child_process";
 import { basename } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+
+process.env.E2E_SEED_EMAIL = execFileSync("scripts/dev-stack.sh", ["fixture"], {
+	encoding: "utf8",
+}).trim();
 
 /**
  * The e2e stack runs against the Firebase emulator suite, never the dev

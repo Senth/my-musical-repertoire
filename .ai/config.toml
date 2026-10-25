@@ -40,23 +40,25 @@ browser = true
 # Ports are per checkout, not per worktree pool: the emulators come from
 # `firebase.json` and are shared, the web server is 8055 in the main checkout and
 # 8056 in a worktree. `ports` prints the one for the checkout you are in, and `up`
-# prints `WEB_URL=` on its last line. Never assume 8055.
+# prints `SEED_EMAIL=` before its final `WEB_URL=` line. Never assume 8055.
 start = "scripts/dev-stack.sh up"
 url = "http://localhost:$(scripts/dev-stack.sh ports)"
 # Sign-in is an **email and password form** against the Auth emulator, not a
-# redirect: type pianist@example.com / practice123, then "Sign in with Email".
+# redirect: type the email from `scripts/dev-stack.sh fixture` / practice123,
+# then "Sign in with Email". `up` prints it as `SEED_EMAIL=`.
 # The account and the readiness marker are a contract with the e2e seed, and
 # they live in `e2e/support/app.ts`. `.tmp/e2e/auth.json` does not shortcut
 # this: it is a Playwright storage state including IndexedDB, and `state-load`
 # restores cookies and `localStorage` only.
-auth = "type pianist@example.com / practice123 -> click 'Sign in with Email'"
+auth = "type the email from scripts/dev-stack.sh fixture / practice123 -> click 'Sign in with Email'"
 ready = "Suggested Practices"
 
 # What the e2e seed writes, so an empty screen is judged and not reported.
 # There is no committed fixture export: `e2e/seed.setup.ts` runs as the first
 # Playwright project of every `yarn e2e` and writes the fixture through the
 # app's own Firebase shapes, with dates computed at run time. It holds one
-# account — pianist@example.com — four pieces and three techniques. Sight-reading
+# account per checkout — email from `scripts/dev-stack.sh fixture` — four pieces
+# and three techniques. Sight-reading
 # history has three logs, today rated Kept going, yesterday rated A few stops,
 # and two days ago unrated. Invention
 # No. 1 has Exposition LH/RH/HT two days ago, Middle entries HT yesterday and

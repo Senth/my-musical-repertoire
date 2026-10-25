@@ -40,20 +40,27 @@ reaching production by accident.
 ```bash
 scripts/dev-stack.sh up      # emulators + an emulator-backed web server
 yarn e2e                     # the suite
-scripts/dev-stack.sh down    # stops only what it started
+scripts/dev-stack.sh down    # stops this web server; emulators stop after the last lease
 ```
 
 `up` is idempotent: it reuses a suite that is already listening rather than
-failing, and the emulators always boot **empty** — the fixture is written
+failing, and fresh emulators boot **empty** — the fixture is written
 programmatically at the start of every run, so there is no committed export to
-import. Only the throwaway accounts of earlier runs linger on a reused suite,
-never a dirty fixture.
+import. Other checkout accounts remain untouched when a reused suite is seeded.
 
 Emulator ports come from `firebase.json` (`8050` UI, `8051` auth, `8052`
 Firestore), which has no env interpolation, so **every checkout shares one
-emulator suite**. Two checkouts running e2e simultaneously share throwaway data.
-That is an accepted trade: reviews rarely overlap, and the seed is the thing
-that makes a run deterministic.
+emulator suite**. Each checkout gets its own fixture account, so simultaneous
+e2e runs cannot overwrite each other's fixture. The seed makes each run
+deterministic.
+
+Each `up` writes or refreshes a checkout lease under
+`~/.cache/my-musical-repertoire/dev-stack/leases/`. `down` stops this checkout's
+web server, removes its lease, and prunes leases whose web-server pid is dead.
+It stops the emulators only when no leases remain, regardless of which checkout
+started them. Otherwise it lists the checkouts still holding leases and leaves
+the emulators running. Leases from `up --no-web` have no pid and remain until
+that checkout runs `down`. `scripts/dev-stack.sh status` lists the live leases.
 
 Services are started with `setsid` so `down` can signal the whole process group.
 Signalling the `yarn` wrapper alone leaves the `node` process it spawned holding
@@ -63,11 +70,13 @@ the port, which then reads as "reused" on the next `up`.
 
 There is no committed fixture export. **The e2e suite seeds the emulator
 itself**: `e2e/seed.setup.ts` runs as the first Playwright project of every
-`yarn e2e` (`seed` in `playwright.config.ts`), before any spec. It creates
-**pianist@example.com** in the Auth emulator under a fixed uid, wipes whatever
-a previous run left on that account, and writes the repertoire below through
-the emulator with the app's own Firebase SDK, signed in as the fixture user so
-the Firestore rules are enforced exactly as they are for the app.
+`yarn e2e` (`seed` in `playwright.config.ts`), before any spec. It creates the
+email from `scripts/dev-stack.sh fixture` in the Auth emulator under a
+checkout-specific fixed uid, wipes whatever a previous run left on that
+account, and writes the repertoire below through the emulator with the app's
+own Firebase SDK, signed in as the fixture user so the Firestore rules are
+enforced exactly as they are for the app. `up` prints the same address as
+`SEED_EMAIL=`.
 
 The fixture must stay honest about the shapes the app actually writes —
 hand-invented document shapes drift, and the first thing to notice is a test
@@ -76,8 +85,8 @@ flows field for field (`useAddPiece`, `useAddSection`, `useAddTechnique`). Pract
 logs and their parent summary fields mirror `savePractice`, `saveSectionPractice`
 and `saveTechniqueLog`, including one shared timestamp per multi-mode save.
 
-It holds one account — **pianist@example.com** — and a small repertoire chosen to
-exercise the screens rather than to look realistic:
+Each checkout has one account, named by `scripts/dev-stack.sh fixture`, and a
+small repertoire chosen to exercise the screens rather than to look realistic:
 
 | | |
 | --- | --- |
@@ -98,9 +107,9 @@ of maintenance or performance pieces. Nocturne, Für Elise and Gymnopédie remai
 
 Because the ids are fixed constants (`SEED_IDS` in `e2e/support/app.ts`), a
 rewritten seed overwrites the same documents instead of minting new ones, and
-the routes in that file keep pointing at the same pieces. The fixed uid keeps
-saved Playwright storage states (`.tmp/e2e/auth.json`) valid across an emulator
-restart.
+the routes in that file keep pointing at the same pieces. The per-checkout uid
+keeps saved Playwright storage states (`.tmp/e2e/auth.json`) valid across an
+emulator restart.
 
 The fixture is a contract with `e2e/support/app.ts`: `SEED_USER`, `SEED_IDS`,
 the `ROUTES` readiness markers, and every title a spec waits on. Changing the

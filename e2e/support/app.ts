@@ -25,12 +25,22 @@ export function t(key: string): string {
 
 /**
  * The account the e2e seed (`e2e/seed.setup.ts`) creates and rewrites at the
- * start of every run. The fixture is what makes a run deterministic, so these
- * two values, the ids below and the seeded repertoire are a contract: changing
- * any of them means re-checking every readiness marker in this file.
+ * start of every run. The fixture is what makes a run deterministic, so its
+ * email, uid, ids and seeded repertoire are a contract: changing any means
+ * re-checking every readiness marker in this file.
  */
+const seedEmail = process.env.E2E_SEED_EMAIL;
+if (!seedEmail) {
+	throw new Error("E2E_SEED_EMAIL must be set by playwright.config.ts");
+}
+const seedId = /^pianist-([a-f0-9]{6})@example\.com$/.exec(seedEmail)?.[1];
+if (!seedId) {
+	throw new Error("E2E_SEED_EMAIL must be a checkout fixture email");
+}
+
 export const SEED_USER = {
-	email: "pianist@example.com",
+	email: seedEmail,
+	uid: `seed-pianist-${seedId}`,
 	password: "practice123",
 } as const;
 

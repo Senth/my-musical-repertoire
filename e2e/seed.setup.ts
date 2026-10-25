@@ -43,14 +43,14 @@ import { nextPracticeDaysSinceSpan } from "@/utils/span-cadence";
  * fixture account depends on it. There is no committed export: dates are
  * computed at run time, so the fixture can express "practised eight days ago"
  * the moment a spec needs it, and every run starts from a rewritten
- * `SEED_USER` even when the emulator suite was already running.
+ * this checkout's `SEED_USER` even when the emulator suite was already running.
  *
  * The fixture must stay honest about the shapes the app actually writes, so
  * the documents below mirror the add flows field for field —
  * `hooks/use-pieces.ts` `addPiece`, `hooks/use-sections.ts` `addSection`,
  * `hooks/use-techniques.ts` `addTechnique` — and the writes go through the
- * app's own Firebase SDK, signed in as `SEED_USER`, so the Firestore rules are
- * enforced exactly as they are for the app. A hand-invented document shape
+ * app's own Firebase SDK, signed in as this checkout's `SEED_USER`, so the
+ * Firestore rules are enforced exactly as they are for the app. A hand-invented document shape
  * drifts; a mirrored one cannot.
  *
  * Ids come from `e2e/support/app.ts`, which is what makes them a contract: the
@@ -64,14 +64,6 @@ const AUTH_PORT = 8051;
 const FIRESTORE_PORT = 8052;
 const PROJECT_ID =
 	process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? "my-musical-repertoire-dev";
-
-/**
- * Fixed uid, chosen by us rather than minted by the emulator: a saved
- * Playwright storage state (`.tmp/e2e/auth.json` carries the uid) stays valid
- * across an emulator restart, which a freshly minted uid would invalidate on
- * every boot. The Admin SDK can name a uid; the client SDK cannot.
- */
-const SEED_UID = "seed-pianist";
 
 /** Firestore caps a batch at 500 writes; stay clear of the edge, as elsewhere. */
 const DELETE_BATCH_LIMIT = 450;
@@ -205,10 +197,11 @@ const TECHNIQUES: {
 /**
  * Deletes every document under the fixture account, children before parents —
  * the walk `utils/delete-account.ts` does. This makes a reused emulator irrelevant:
- * whatever a previous run left on `SEED_USER` is gone before anything is written.
+ * whatever a previous run left on this checkout's `SEED_USER` is gone before
+ * anything is written.
  */
 async function wipeUserData(db: Firestore) {
-	const userRoot = doc(db, "users", SEED_UID);
+	const userRoot = doc(db, "users", SEED_USER.uid);
 	const targets: ReturnType<typeof doc>[] = [];
 
 	const pieces = await getDocs(collection(userRoot, "pieces"));
@@ -272,7 +265,7 @@ setup("seed the emulator fixture", async () => {
 
 	try {
 		await getAuth(adminApp).createUser({
-			uid: SEED_UID,
+			uid: SEED_USER.uid,
 			email: SEED_USER.email,
 			password: SEED_USER.password,
 		});
@@ -293,7 +286,7 @@ setup("seed the emulator fixture", async () => {
 		await signInWithEmailAndPassword(auth, SEED_USER.email, SEED_USER.password);
 		await wipeUserData(db);
 
-		const userRoot = doc(db, "users", SEED_UID);
+		const userRoot = doc(db, "users", SEED_USER.uid);
 
 		for (const piece of PIECES) {
 			await setDoc(doc(userRoot, "pieces", piece.id), {
@@ -620,7 +613,7 @@ setup("seed the emulator fixture", async () => {
 		}
 
 		console.log(
-			`seed: ${PIECES.length} pieces, ${TECHNIQUES.length} techniques for ${SEED_USER.email} (uid ${SEED_UID})`,
+			`seed: ${PIECES.length} pieces, ${TECHNIQUES.length} techniques for ${SEED_USER.email} (uid ${SEED_USER.uid})`,
 		);
 	} finally {
 		await deleteClientApp(app);
