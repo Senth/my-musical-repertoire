@@ -225,8 +225,8 @@ fi
 # 8. No colour literal outside the value files
 #
 # The palettes live in theme/, the lifecycle set in utils/state-colors.ts —
-# the contract's two value homes. Two exclusions, both named: `*.test.ts`
-# files hold hex fixtures for those value files, not styling, and
+# the two value homes `docs/DESIGN.md` names. Two exclusions, both named:
+# `*.test.ts` files hold hex fixtures for those value files, not styling, and
 # app/+html.tsx is the static HTML shell, which renders in Node during
 # `expo export` and cannot reach the React Native theme graph — its PWA
 # metas carry the brand hexes directly.

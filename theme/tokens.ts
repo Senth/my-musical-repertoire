@@ -1,8 +1,8 @@
 /**
- * The design scale from `docs/DESIGN.md`. Ground truth for every spacing,
- * radius, width and size in the app: style props read from here, never hold a
- * bare number. Colours are the exception — they live in `theme/index.ts` (the
- * Paper palettes) and `utils/state-colors.ts` (the lifecycle set), per role.
+ * The design scale, whose roles `docs/DESIGN.md` defines. Ground truth for every
+ * spacing, radius, width and size in the app: style props read from here, never
+ * hold a bare number. Colours are the exception — they live in `theme/index.ts`
+ * (the Paper palettes) and `utils/state-colors.ts` (the lifecycle set), per role.
  */
 
 /** 4pt grid, named xxs through xxl. Extend the scale rather than inlining a
