@@ -42,9 +42,9 @@ export default defineConfig({
 	outputDir: ".tmp/e2e/results",
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
-	// A transient network blip in the dev server should cost a rerun, not a
-	// red gate. A real failure fails twice.
+	// A flaky test passes locally and fails CI.
 	retries: 1,
+	failOnFlakyTests: !!process.env.CI,
 	workers: 2,
 	reporter: process.env.CI
 		? [["list"], ["html", { outputFolder: ".tmp/e2e/report", open: "never" }]]

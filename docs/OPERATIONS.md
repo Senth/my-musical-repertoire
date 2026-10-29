@@ -162,6 +162,7 @@ pattern, which stops it catching the real thing. A new rule a regex could decide
 belongs in that script.
 
 CI runs the same list on every PR, emulators included.
+CI fails on a flaky test; local runs report it.
 
 `types.d.ts` exists for that: it repeats the `expo/types` reference that
 `expo-env.d.ts` carries, because the Expo CLI generates that file and gitignores
