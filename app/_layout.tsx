@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { View } from "react-native";
 import { PaperProvider } from "react-native-paper";
+import { LoadingScreen } from "@/components/ui/CenteredScreen";
 import { OfflineBar } from "@/components/ui/OfflineBar";
 import { UpdateBanner } from "@/components/ui/UpdateBanner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -37,7 +38,7 @@ function AuthGate() {
 	return (
 		<View style={{ flex: 1 }}>
 			<OfflineBar />
-			<Slot />
+			{loading ? <LoadingScreen /> : <Slot />}
 			<UpdateBanner />
 		</View>
 	);

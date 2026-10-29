@@ -1,11 +1,61 @@
 import type { Locator } from "@playwright/test";
-import { collectConsoleErrors, SEED_IDS, t } from "@/e2e/support/app";
+import { collectConsoleErrors, ROUTES, SEED_IDS, t } from "@/e2e/support/app";
 import { expect, test } from "@/e2e/support/test";
 
 const INVENTION_SECTIONS = [
 	{ name: "Exposition", bars: "Bars 1–6", bpm: 72 },
 	{ name: "Middle entries", bars: "Bars 7–14", bpm: 60 },
 ];
+
+test("piece cold open waits for auth restoration without showing not found", async ({
+	page,
+}) => {
+	const notFound = t("screen.pieceDetail.pieceNotFound");
+	await page.addInitScript((message) => {
+		new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				const nodes = [...mutation.addedNodes];
+				if (mutation.type === "characterData") nodes.push(mutation.target);
+				if (nodes.some((node) => node.textContent?.includes(message))) {
+					document.documentElement.dataset.pieceNotFoundSeen = "true";
+				}
+			}
+		}).observe(document, {
+			childList: true,
+			characterData: true,
+			subtree: true,
+		});
+	}, notFound);
+	let lookupDelayed = false;
+	await page.route(
+		"**/identitytoolkit.googleapis.com/v1/accounts:lookup*",
+		async (route) => {
+			const response = await route.fetch();
+			lookupDelayed = true;
+			await new Promise((resolve) => setTimeout(resolve, 3_000));
+			await route.fulfill({ response });
+		},
+	);
+	const piece = ROUTES.find(
+		(route) => route.path === `/piece/${SEED_IDS.invention}`,
+	);
+	if (!piece) throw new Error("Invention detail route missing");
+	await page.goto(piece.path);
+	await expect(
+		page.getByRole("heading", {
+			name: "Invention No. 1 in C major",
+			exact: true,
+		}),
+	).toBeVisible({
+		timeout: 30_000,
+	});
+	expect(lookupDelayed).toBe(true);
+	await expect(page.getByText(notFound, { exact: true })).toHaveCount(0);
+	await expect(page.locator("html")).not.toHaveAttribute(
+		"data-piece-not-found-seen",
+		"true",
+	);
+});
 
 async function chipAppearance(pill: Locator, label: string) {
 	return {
