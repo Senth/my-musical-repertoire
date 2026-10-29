@@ -10,6 +10,12 @@ const INVENTION_SECTIONS = [
 test("piece cold open waits for auth restoration without showing not found", async ({
 	page,
 }) => {
+	const googleRequests: string[] = [];
+	page.on("request", (request) => {
+		if (new URL(request.url()).hostname === "apis.google.com") {
+			googleRequests.push(request.url());
+		}
+	});
 	const notFound = t("screen.pieceDetail.pieceNotFound");
 	await page.addInitScript((message) => {
 		new MutationObserver((mutations) => {
@@ -55,6 +61,7 @@ test("piece cold open waits for auth restoration without showing not found", asy
 		"data-piece-not-found-seen",
 		"true",
 	);
+	expect(googleRequests).toEqual([]);
 });
 
 async function chipAppearance(pill: Locator, label: string) {

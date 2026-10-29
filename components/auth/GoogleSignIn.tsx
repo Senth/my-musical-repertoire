@@ -1,6 +1,7 @@
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import {
+	browserPopupRedirectResolver,
 	GoogleAuthProvider,
 	signInWithCredential,
 	signInWithPopup,
@@ -67,7 +68,7 @@ function GoogleSignInWeb({
 			const provider = new GoogleAuthProvider();
 			provider.addScope("profile");
 			provider.addScope("email");
-			await signInWithPopup(auth, provider);
+			await signInWithPopup(auth, provider, browserPopupRedirectResolver);
 		} catch (e) {
 			console.error("Google sign-in error:", e);
 			onError?.(t("error.googleSignIn"));

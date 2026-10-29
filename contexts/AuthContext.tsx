@@ -1,4 +1,5 @@
 import {
+	browserPopupRedirectResolver,
 	createUserWithEmailAndPassword,
 	deleteUser,
 	EmailAuthProvider,
@@ -96,7 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		const current = auth.currentUser;
 		if (!current) throw new Error("Not authenticated");
 		const provider = new GoogleAuthProvider();
-		await reauthenticateWithPopup(current, provider);
+		await reauthenticateWithPopup(
+			current,
+			provider,
+			browserPopupRedirectResolver,
+		);
 	};
 
 	const deleteAccount = async () => {
