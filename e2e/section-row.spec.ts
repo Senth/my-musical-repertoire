@@ -1,5 +1,6 @@
 import type { Locator } from "@playwright/test";
 import { collectConsoleErrors, ROUTES, SEED_IDS, t } from "@/e2e/support/app";
+import { waitForFonts } from "@/e2e/support/fonts";
 import { expect, test } from "@/e2e/support/test";
 
 const INVENTION_SECTIONS = [
@@ -99,12 +100,19 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 	const playButton = page.getByRole("button", {
 		name: "Practice section Middle entries",
 	});
+	const detailRoute = ROUTES.find(
+		(route) => route.path === `/piece/${SEED_IDS.invention}`,
+	);
+	if (!detailRoute) throw new Error("Invention detail route missing");
 	for (const [colorScheme, containerColor, iconColor] of [
 		["light", "rgb(205, 232, 231)", "rgb(5, 42, 42)"],
 		["dark", "rgb(38, 67, 67)", "rgb(202, 228, 228)"],
 	] as const) {
 		await page.emulateMedia({ colorScheme });
-		await page.goto(`/piece/${SEED_IDS.invention}`);
+		await page.goto(detailRoute.path);
+		await expect(
+			page.getByText(detailRoute.ready, { exact: true }),
+		).toBeVisible({ timeout: 30_000 });
 		await expect(playButton.locator("xpath=..")).toHaveCSS(
 			"background-color",
 			containerColor,
@@ -336,6 +344,7 @@ for (const width of [412, 1280]) {
 			exact: true,
 		});
 		await chip.scrollIntoViewIfNeeded();
+		await waitForFonts(page);
 		const metrics = async () => ({
 			row: await edit.boundingBox(),
 			name: await body
@@ -355,10 +364,6 @@ for (const width of [412, 1280]) {
 		await testInfo.attach("compact-section-geometry", {
 			body: JSON.stringify({ interactive, hitBox }, null, 2),
 			contentType: "application/json",
-		});
-		await page.screenshot({
-			path: testInfo.outputPath(`detail-${width}.png`),
-			fullPage: true,
 		});
 		await chip.evaluate((button) => {
 			const pill = button.parentElement?.querySelector(
@@ -381,6 +386,10 @@ for (const width of [412, 1280]) {
 			expect(name.y).toBe(558);
 			expect(pillBox.y).toBe(586);
 		}
+		await page.screenshot({
+			path: testInfo.outputPath(`detail-${width}.png`),
+			fullPage: true,
+		});
 	});
 }
 
@@ -411,6 +420,7 @@ test("section hit expansion stops before notes without changing their compact li
 	);
 	await expect(chip).toHaveAttribute("aria-expanded", "true");
 	await page.keyboard.press("Escape");
+	await expect(chip).toBeFocused();
 	await page.touchscreen.tap(notesBox.x + 1, notesBox.y + 1);
 	await expect(
 		page.getByText(t("screen.pieceSections.editSection")),
@@ -453,6 +463,7 @@ for (const colorScheme of ["light", "dark"] as const) {
 			await expect(
 				page.getByRole("checkbox", { name: /Flag section/ }),
 			).toHaveCount(0);
+			await waitForFonts(page);
 			const hitBox = await chip.boundingBox();
 			const nameBox = await row
 				.getByText(fixture.section, { exact: true })
@@ -662,6 +673,7 @@ test("section state menu survives rapid Escape and immediate reopen", async ({
 			await chip.focus();
 			await open();
 			await expect.poll(menuOpacity, { intervals: [16] }).toBeGreaterThan(0);
+			await expect(firstItem).toBeFocused();
 			await page.keyboard.press("Escape");
 			await open();
 			await expectOpen();

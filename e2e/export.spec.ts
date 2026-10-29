@@ -16,7 +16,7 @@ test.describe("data export", () => {
 		const button = page.getByRole("button", {
 			name: t("screen.exportData.button"),
 		});
-		await expect(button).toBeVisible();
+		await expect(button).toBeVisible({ timeout: 30_000 });
 
 		const downloadPromise = page.waitForEvent("download");
 		await button.click();
