@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { isValidElement, type ReactNode, useEffect, useState } from "react";
 import { Menu } from "react-native-paper";
 
 interface RowActionsMenuProps {
@@ -25,6 +25,12 @@ export function RowActionsMenu({
 	onDelete,
 	labels,
 }: RowActionsMenuProps) {
+	const [hasOpened, setHasOpened] = useState(visible);
+	useEffect(() => {
+		if (visible) setHasOpened(true);
+	}, [visible]);
+	if (!visible && !hasOpened) return isValidElement(anchor) ? anchor : null;
+
 	return (
 		<Menu visible={visible} onDismiss={onDismiss} anchor={anchor}>
 			<Menu.Item
