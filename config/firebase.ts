@@ -1,5 +1,11 @@
 import { initializeApp } from "firebase/app";
-import { connectAuthEmulator, getAuth, initializeAuth } from "firebase/auth";
+import {
+	browserLocalPersistence,
+	browserSessionPersistence,
+	connectAuthEmulator,
+	indexedDBLocalPersistence,
+	initializeAuth,
+} from "firebase/auth";
 import {
 	connectFirestoreEmulator,
 	getFirestore,
@@ -27,7 +33,16 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-const auth = Platform.OS === "web" ? getAuth(app) : initializeAuth(app);
+const auth =
+	Platform.OS === "web"
+		? initializeAuth(app, {
+				persistence: [
+					indexedDBLocalPersistence,
+					browserLocalPersistence,
+					browserSessionPersistence,
+				],
+			})
+		: initializeAuth(app);
 
 // IndexedDB persistence is what makes the installed PWA usable offline: reads
 // come from cache and writes queue until reconnect. The multi-tab manager keeps

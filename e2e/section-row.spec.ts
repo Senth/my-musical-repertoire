@@ -1,11 +1,69 @@
 import type { Locator } from "@playwright/test";
-import { collectConsoleErrors, SEED_IDS, t } from "@/e2e/support/app";
+import { collectConsoleErrors, ROUTES, SEED_IDS, t } from "@/e2e/support/app";
+import { waitForFonts } from "@/e2e/support/fonts";
 import { expect, test } from "@/e2e/support/test";
 
 const INVENTION_SECTIONS = [
 	{ name: "Exposition", bars: "Bars 1–6", bpm: 72 },
 	{ name: "Middle entries", bars: "Bars 7–14", bpm: 60 },
 ];
+
+test("piece cold open waits for auth restoration without showing not found", async ({
+	page,
+}) => {
+	const googleRequests: string[] = [];
+	page.on("request", (request) => {
+		if (new URL(request.url()).hostname === "apis.google.com") {
+			googleRequests.push(request.url());
+		}
+	});
+	const notFound = t("screen.pieceDetail.pieceNotFound");
+	await page.addInitScript((message) => {
+		new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				const nodes = [...mutation.addedNodes];
+				if (mutation.type === "characterData") nodes.push(mutation.target);
+				if (nodes.some((node) => node.textContent?.includes(message))) {
+					document.documentElement.dataset.pieceNotFoundSeen = "true";
+				}
+			}
+		}).observe(document, {
+			childList: true,
+			characterData: true,
+			subtree: true,
+		});
+	}, notFound);
+	let lookupDelayed = false;
+	await page.route(
+		"**/identitytoolkit.googleapis.com/v1/accounts:lookup*",
+		async (route) => {
+			const response = await route.fetch();
+			lookupDelayed = true;
+			await new Promise((resolve) => setTimeout(resolve, 3_000));
+			await route.fulfill({ response });
+		},
+	);
+	const piece = ROUTES.find(
+		(route) => route.path === `/piece/${SEED_IDS.invention}`,
+	);
+	if (!piece) throw new Error("Invention detail route missing");
+	await page.goto(piece.path);
+	await expect(
+		page.getByRole("heading", {
+			name: "Invention No. 1 in C major",
+			exact: true,
+		}),
+	).toBeVisible({
+		timeout: 30_000,
+	});
+	expect(lookupDelayed).toBe(true);
+	await expect(page.getByText(notFound, { exact: true })).toHaveCount(0);
+	await expect(page.locator("html")).not.toHaveAttribute(
+		"data-piece-not-found-seen",
+		"true",
+	);
+	expect(googleRequests).toEqual([]);
+});
 
 async function chipAppearance(pill: Locator, label: string) {
 	return {
@@ -42,12 +100,19 @@ test("section row keeps bars beside name and opens practice or edit", async ({
 	const playButton = page.getByRole("button", {
 		name: "Practice section Middle entries",
 	});
+	const detailRoute = ROUTES.find(
+		(route) => route.path === `/piece/${SEED_IDS.invention}`,
+	);
+	if (!detailRoute) throw new Error("Invention detail route missing");
 	for (const [colorScheme, containerColor, iconColor] of [
 		["light", "rgb(205, 232, 231)", "rgb(5, 42, 42)"],
 		["dark", "rgb(38, 67, 67)", "rgb(202, 228, 228)"],
 	] as const) {
 		await page.emulateMedia({ colorScheme });
-		await page.goto(`/piece/${SEED_IDS.invention}`);
+		await page.goto(detailRoute.path);
+		await expect(
+			page.getByText(detailRoute.ready, { exact: true }),
+		).toBeVisible({ timeout: 30_000 });
 		await expect(playButton.locator("xpath=..")).toHaveCSS(
 			"background-color",
 			containerColor,
@@ -279,6 +344,7 @@ for (const width of [412, 1280]) {
 			exact: true,
 		});
 		await chip.scrollIntoViewIfNeeded();
+		await waitForFonts(page);
 		const metrics = async () => ({
 			row: await edit.boundingBox(),
 			name: await body
@@ -298,10 +364,6 @@ for (const width of [412, 1280]) {
 		await testInfo.attach("compact-section-geometry", {
 			body: JSON.stringify({ interactive, hitBox }, null, 2),
 			contentType: "application/json",
-		});
-		await page.screenshot({
-			path: testInfo.outputPath(`detail-${width}.png`),
-			fullPage: true,
 		});
 		await chip.evaluate((button) => {
 			const pill = button.parentElement?.querySelector(
@@ -324,6 +386,10 @@ for (const width of [412, 1280]) {
 			expect(name.y).toBe(558);
 			expect(pillBox.y).toBe(586);
 		}
+		await page.screenshot({
+			path: testInfo.outputPath(`detail-${width}.png`),
+			fullPage: true,
+		});
 	});
 }
 
@@ -354,6 +420,7 @@ test("section hit expansion stops before notes without changing their compact li
 	);
 	await expect(chip).toHaveAttribute("aria-expanded", "true");
 	await page.keyboard.press("Escape");
+	await expect(chip).toBeFocused();
 	await page.touchscreen.tap(notesBox.x + 1, notesBox.y + 1);
 	await expect(
 		page.getByText(t("screen.pieceSections.editSection")),
@@ -396,6 +463,7 @@ for (const colorScheme of ["light", "dark"] as const) {
 			await expect(
 				page.getByRole("checkbox", { name: /Flag section/ }),
 			).toHaveCount(0);
+			await waitForFonts(page);
 			const hitBox = await chip.boundingBox();
 			const nameBox = await row
 				.getByText(fixture.section, { exact: true })
@@ -605,6 +673,7 @@ test("section state menu survives rapid Escape and immediate reopen", async ({
 			await chip.focus();
 			await open();
 			await expect.poll(menuOpacity, { intervals: [16] }).toBeGreaterThan(0);
+			await expect(firstItem).toBeFocused();
 			await page.keyboard.press("Escape");
 			await open();
 			await expectOpen();

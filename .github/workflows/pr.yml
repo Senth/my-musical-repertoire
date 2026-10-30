@@ -88,8 +88,8 @@ jobs:
       - name: Install Playwright browser
         run: yarn playwright install --with-deps chromium
 
-      # Boots the emulator suite from the committed fixture plus an
-      # emulator-backed web server, the same stack the review runs against.
+      # Boots the emulator suite and emulator-backed web server; e2e seeds its
+      # fixture at run time, the same stack the review runs against.
       - name: Start the e2e stack
         run: scripts/dev-stack.sh up
 

@@ -53,12 +53,12 @@ test("catalog adds scales, links one near match, and fills the curriculum", asyn
 		})
 		.first()
 		.click();
-	await page
-		.getByRole("textbox", {
-			name: t("screen.addTechnique.titleLabel"),
-			exact: true,
-		})
-		.fill("F maj");
+	const titleInput = page.getByRole("textbox", {
+		name: t("screen.addTechnique.titleLabel"),
+		exact: true,
+	});
+	await expect(titleInput).toBeFocused();
+	await titleInput.fill("F maj");
 	await page
 		.getByRole("combobox", {
 			name: t("screen.addTechnique.typeLabel"),
@@ -97,6 +97,7 @@ test("catalog adds scales, links one near match, and fills the curriculum", asyn
 	await expect(addTechniqueFab).toBeFocused();
 	await page.keyboard.press("Enter");
 	await expect(addTechniqueFab).toHaveAttribute("aria-expanded", "true");
+	await expect(writeYourOwn).toBeFocused();
 	await writeYourOwn.click();
 	await expect(
 		page.getByRole("textbox", {
@@ -110,6 +111,7 @@ test("catalog adds scales, links one near match, and fills the curriculum", asyn
 	await addTechniqueFab.focus();
 	await page.keyboard.press("Enter");
 	await expect(addTechniqueFab).toHaveAttribute("aria-expanded", "true");
+	await expect(writeYourOwn).toBeFocused();
 	await page
 		.getByRole("menuitem", {
 			name: t("technique.catalog.pageTitle"),
@@ -131,6 +133,7 @@ test("catalog adds scales, links one near match, and fills the curriculum", asyn
 		name: t("technique.catalog.menu.start"),
 	});
 	await expect(startPracticing).toBeVisible();
+	await expect(startPracticing).toBeFocused();
 	const addButtonBox = await cMajorAdd.boundingBox();
 	const menuItemBox = await startPracticing.boundingBox();
 	if (!addButtonBox || !menuItemBox) {
@@ -160,6 +163,11 @@ test("catalog adds scales, links one near match, and fills the curriculum", asyn
 	).toBeVisible();
 
 	await search.fill("");
+	await expect(
+		page.getByText(t("technique.catalog.title.chromaticScale"), {
+			exact: true,
+		}),
+	).toBeVisible();
 	await page
 		.getByRole("button", {
 			name: copy("technique.catalog.addAll", { count: titles.length - 1 }),

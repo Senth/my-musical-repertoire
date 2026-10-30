@@ -4,6 +4,7 @@ import {
 	SEED_IDS,
 	t,
 } from "@/e2e/support/app";
+import { waitForFonts } from "@/e2e/support/fonts";
 import { expect, test } from "@/e2e/support/test";
 
 test("progress sorts seeded passages, shows hand tempos, expands at target and opens history", async ({
@@ -35,6 +36,7 @@ test("progress sorts seeded passages, shows hand tempos, expands at target and o
 	await expect(exposition.getByTestId("progress-moved-HT")).toHaveText("±0");
 	const closing = page.getByRole("link", { name: /^Closing bars\./ });
 	await expect(closing.getByTestId("progress-moved-HT")).toHaveText("+8");
+	await waitForFonts(page);
 	const track = exposition.getByTestId("progress-fill-LH");
 	const before = await track.boundingBox();
 	await page
@@ -45,10 +47,13 @@ test("progress sorts seeded passages, shows hand tempos, expands at target and o
 		.click();
 	await expect(exposition.getByTestId("progress-moved-LH")).toHaveText("+8");
 	await expect(closing.getByTestId("progress-moved-HT")).toHaveCount(0);
-	const after = await track.boundingBox();
-	if (!before || !after) throw new Error("Progress track not measurable");
-	expect(after.x).toBe(before.x);
-	expect(after.width).toBe(before.width);
+	if (!before) throw new Error("Progress track not measurable");
+	await expect
+		.poll(() => track.boundingBox())
+		.toMatchObject({
+			x: before.x,
+			width: before.width,
+		});
 	await expect(rows.nth(0)).toHaveAccessibleName(/^Middle entries\./);
 	await expect(rows.nth(1)).toHaveAccessibleName(/^Exposition\./);
 	await expect(rows.nth(2)).toHaveAccessibleName(/^Closing bars\./);
