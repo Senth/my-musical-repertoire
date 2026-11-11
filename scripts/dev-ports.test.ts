@@ -4,10 +4,11 @@ import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import {
-	allocPorts,
+	allocPorts as allocate,
+	ownPorts,
 	portArg,
 	readStack,
-	releasePorts,
+	releasePorts as release,
 	scanStart,
 	writeStack,
 } from "./dev-ports";
@@ -22,9 +23,15 @@ const startOf = (pid: number) =>
 const root = "/test/worktree";
 let tmp: string;
 let oldRegistry: string | undefined;
+let lease: string;
+const allocPorts = (names: string[], pid: number, root: string) =>
+	allocate(names, pid, root, lease);
+const releasePorts = (ports: Record<string, number>, pid: number) =>
+	release(ports, pid, lease);
 
 beforeEach(() => {
 	tmp = path.resolve(`.tmp/test-dev-ports-${randomUUID()}`);
+	lease = randomUUID();
 	oldRegistry = process.env.DEV_STACK_REGISTRY;
 	process.env.DEV_STACK_REGISTRY = path.join(tmp, "registry");
 });
@@ -178,7 +185,7 @@ describe("allocPorts", () => {
 
 	it("hands distinct ports to concurrent processes", async () => {
 		const script = `import("./scripts/dev-ports.ts").then(async ({ allocPorts }) => {
-			console.log(JSON.stringify(Object.values(await allocPorts(["web", "mongo"], process.pid, ${JSON.stringify(root)}))))
+			console.log(JSON.stringify(Object.values(await allocPorts(["web", "mongo"], process.pid, ${JSON.stringify(root)}, ${JSON.stringify(lease)}))))
 			process.stdin.resume()
 		})`;
 		const children = Array.from({ length: 6 }, () =>
@@ -216,6 +223,36 @@ describe("allocPorts", () => {
 });
 
 describe("releasePorts", () => {
+	it("cannot own or release a successor's claims after a delayed handoff", async () => {
+		const first = await allocPorts(["web", "firestore"], 0, root);
+		for (const port of Object.values(first)) {
+			const old = new Date(Date.now() - 4_000);
+			fs.utimesSync(claimDir(port), old, old);
+		}
+		let collidingRoot = "/other/0";
+		for (let i = 1; scanStart(collidingRoot) !== scanStart(root); i++)
+			collidingRoot = `/other/${i}`;
+		const successorLease = randomUUID();
+		const successor = await allocate(
+			["web", "firestore"],
+			0,
+			collidingRoot,
+			successorLease,
+		);
+		expect(successor).toEqual(first);
+		await expect(
+			ownPorts(process.pid, Object.values(first), lease),
+		).rejects.toThrow();
+		await releasePorts(first, process.pid);
+		for (const port of Object.values(successor)) {
+			expect(fs.existsSync(claimDir(port))).toBe(true);
+			expect(
+				fs.readFileSync(path.join(claimDir(port), "worktree"), "utf8"),
+			).toBe(collidingRoot);
+		}
+		await ownPorts(process.pid, Object.values(successor), successorLease);
+		await release(successor, process.pid, successorLease);
+	});
 	it("removes only claims owned by the given pid or whose pid is dead", async () => {
 		const ports = await allocPorts(["web"], process.pid, root);
 		await releasePorts(ports, deadPid());
@@ -335,13 +372,13 @@ describe("dev-ports CLI", () => {
 		});
 
 	it("allocates without a pid, owns claims, and releases matching claims", async () => {
-		const ports = JSON.parse(run(["alloc", "web", "firestore"])) as Record<
-			string,
-			number
-		>;
+		const { ports, lease: allocationLease } = JSON.parse(
+			run(["alloc", "web", "firestore"]),
+		);
 		expect(fs.existsSync(path.join(claimDir(ports.web), "pid"))).toBe(false);
 		run([
 			"own",
+			allocationLease,
 			String(process.pid),
 			String(ports.web),
 			String(ports.firestore),
@@ -349,7 +386,12 @@ describe("dev-ports CLI", () => {
 		expect(fs.readFileSync(path.join(claimDir(ports.web), "pid"), "utf8")).toBe(
 			String(process.pid),
 		);
-		run(["release", String(ports.web), String(ports.firestore)]);
+		run([
+			"release",
+			allocationLease,
+			String(ports.web),
+			String(ports.firestore),
+		]);
 		expect(fs.existsSync(claimDir(ports.web))).toBe(false);
 		expect(fs.existsSync(claimDir(ports.firestore))).toBe(false);
 	});
@@ -360,7 +402,7 @@ describe("dev-ports CLI", () => {
 			path.join(claimDir(web as number), "pid"),
 			String(deadPid()),
 		);
-		run(["release", String(web)]);
+		run(["release", lease, String(web)]);
 		expect(fs.existsSync(claimDir(web as number))).toBe(false);
 	});
 });

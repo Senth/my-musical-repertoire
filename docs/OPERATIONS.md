@@ -42,9 +42,11 @@ scripts/dev-stack.sh down    # stops this checkout's web server and emulators
 there is no committed export to import.
 
 Each checkout has its own emulator suite running its own `firestore.rules` and
-indexes. `up` claims ports for `web`, `auth`, `firestore`, `hub` and `logging`, then
-writes the runtime Firebase config to `.tmp/dev-stack/firebase.json`. The emulator
-UI is disabled. Stack ports and process identities live in
+indexes. `up` claims six ports: `web`, `auth`, `firestore`, `firestoreWebsocket`,
+`hub` and `logging`, then writes the runtime Firebase config to
+`.tmp/dev-stack/firebase.json`. The emulator UI is disabled, but Firestore still
+opens its WebSocket listener on the claimed `firestoreWebsocket` port. Stack ports,
+allocation lease and process identities live in
 `.tmp/dev-stack/stack.json`.
 
 `scripts/dev-stack.sh ports` prints the running e2e web port.
@@ -53,14 +55,20 @@ UI is disabled. Stack ports and process identities live in
 running Playwright directly. `scripts/dev-stack.sh status` lists each stack service's
 port and process state. `up --no-web` starts only the emulators.
 
-`down` stops only this checkout's recorded web and emulator process groups and
-frees their claims. It does not stop another checkout's stack or the separate
+`down` stops only this checkout's recorded web and emulator process groups, including
+detached Firestore Java groups recorded during startup. It waits for non-listening
+children too, escalating to SIGKILL after 15 seconds. Claims and state are removed
+only after every recorded group has exited and every stack port has closed.
+It does not stop another checkout's stack or the separate
 `yarn web` process. When the dispatcher finishes every step, it runs the `[dev] stop`
 command in `.ai/config.toml`.
 
 Services are started with `setsid` so `down` can signal the whole process group.
 Signalling the `yarn` wrapper alone leaves the `node` process it spawned holding
-the port, which then reads as "reused" on the next `up`.
+the port, which then reads as "reused" on the next `up`. Each allocation also gets
+a random lease identity, required when assigning or releasing claims. A delayed
+launcher cannot take over or delete claims reallocated to another checkout after
+the three-second ownerless grace period.
 
 ## The review fixture
 

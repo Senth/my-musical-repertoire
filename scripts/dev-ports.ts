@@ -175,7 +175,12 @@ export async function withLock<T>(fn: () => T) {
 	}
 }
 
-async function claimPort(port: number, pid: number, root: string) {
+async function claimPort(
+	port: number,
+	pid: number,
+	root: string,
+	lease: string,
+) {
 	if (!(await portFree(port))) return false;
 	const dir = path.join(registryDir(), String(port));
 	return withLock(() => {
@@ -187,6 +192,7 @@ async function claimPort(port: number, pid: number, root: string) {
 			fs.mkdirSync(dir);
 			if (pid > 0) fs.writeFileSync(path.join(dir, "pid"), String(pid));
 			fs.writeFileSync(path.join(dir, "worktree"), root);
+			fs.writeFileSync(path.join(dir, "lease"), lease);
 			return true;
 		} catch {
 			return false;
@@ -198,17 +204,19 @@ export async function allocPorts(
 	names: string[],
 	pid: number,
 	root = worktreeRoot(),
+	lease: string,
 ) {
+	if (!lease) throw new Error("missing allocation lease");
 	const pending = [...names];
 	const ports: Record<string, number> = {};
 	const offset = scanStart(root) - FIRST_PORT;
 	for (let i = 0; i < PORT_COUNT && pending.length > 0; i++) {
 		const port = FIRST_PORT + ((offset + i) % PORT_COUNT);
-		if (await claimPort(port, pid, root))
+		if (await claimPort(port, pid, root, lease))
 			ports[pending.shift() as string] = port;
 	}
 	if (pending.length > 0) {
-		await releasePorts(ports, pid);
+		await releasePorts(ports, pid, lease);
 		throw new Error(
 			`no free ports in ${FIRST_PORT}-${FIRST_PORT + PORT_COUNT - 1} for: ${pending.join(" ")}`,
 		);
@@ -231,7 +239,17 @@ function assertPort(port: number) {
 	}
 }
 
-export async function ownPorts(pid: number, ports: number[]) {
+function matchingLease(dir: string, lease: string) {
+	try {
+		return (
+			!!lease && fs.readFileSync(path.join(dir, "lease"), "utf8") === lease
+		);
+	} catch {
+		return false;
+	}
+}
+
+export async function ownPorts(pid: number, ports: number[], lease: string) {
 	if (!Number.isInteger(pid) || pid <= 0)
 		throw new Error(`invalid pid: ${pid}`);
 	for (const port of ports) assertPort(port);
@@ -239,7 +257,7 @@ export async function ownPorts(pid: number, ports: number[]) {
 		for (const port of ports) {
 			const dir = path.join(registryDir(), String(port));
 			const owner = claimPid(dir);
-			if (!fs.existsSync(dir) || (owner > 0 && owner !== pid)) {
+			if (!matchingLease(dir, lease) || (owner > 0 && owner !== pid)) {
 				throw new Error(`port ${port} is not an unowned claim`);
 			}
 		}
@@ -252,14 +270,18 @@ export async function ownPorts(pid: number, ports: number[]) {
 	});
 }
 
-export async function releasePorts(ports: Record<string, number>, pid: number) {
+export async function releasePorts(
+	ports: Record<string, number>,
+	pid: number,
+	lease: string,
+) {
 	for (const port of Object.values(ports)) assertPort(port);
 	const errors = await withLock(() =>
 		Object.values(ports).flatMap((port) => {
 			const dir = path.join(registryDir(), String(port));
 			try {
 				const owner = claimPid(dir);
-				if (owner === pid || !pidAlive(owner))
+				if (matchingLease(dir, lease) && (owner === pid || !pidAlive(owner)))
 					fs.rmSync(dir, { recursive: true, force: true });
 				return [];
 			} catch (error) {
@@ -305,24 +327,28 @@ export function clearStack(pid: number) {
 async function runCli(args: string[]) {
 	const [command, ...values] = args;
 	if (command === "alloc" && values.length > 0) {
-		process.stdout.write(`${JSON.stringify(await allocPorts(values, 0))}\n`);
+		const lease = randomUUID();
+		const ports = await allocPorts(values, 0, worktreeRoot(), lease);
+		process.stdout.write(`${JSON.stringify({ lease, ports })}\n`);
 		return;
 	}
-	if (command === "own" && values.length > 1) {
-		const [pid, ...ports] = values.map(Number);
-		await ownPorts(pid as number, ports);
+	if (command === "own" && values.length > 2) {
+		const [lease, pid, ...ports] = values;
+		await ownPorts(Number(pid), ports.map(Number), lease as string);
 		return;
 	}
-	if (command === "release" && values.length > 0) {
-		const ports = values.map(Number);
+	if (command === "release" && values.length > 1) {
+		const [lease, ...numbers] = values;
+		const ports = numbers.map(Number);
 		await releasePorts(
 			Object.fromEntries(ports.map((port) => [String(port), port])),
 			process.ppid,
+			lease as string,
 		);
 		return;
 	}
 	throw new Error(
-		"usage: node scripts/dev-ports.ts alloc <name>... | own <pid> <port>... | release <port>...",
+		"usage: node scripts/dev-ports.ts alloc <name>... | own <lease> <pid> <port>... | release <lease> <port>...",
 	);
 }
 

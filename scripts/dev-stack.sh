@@ -8,8 +8,9 @@ SEED_EMAIL="pianist-$CHECKOUT_ID@example.com"
 RUN_DIR="$ROOT/.tmp/dev-stack"
 STATE="$RUN_DIR/stack.json"
 DEV_WEB_STATE="$RUN_DIR/dev-web.json"
-WEB_PORT=0 AUTH_PORT=0 FIRESTORE_PORT=0 HUB_PORT=0 LOGGING_PORT=0
+WEB_PORT=0 AUTH_PORT=0 FIRESTORE_PORT=0 FIRESTORE_WEBSOCKET_PORT=0 HUB_PORT=0 LOGGING_PORT=0
 EMULATOR_PID=0 WEB_PID=0 EMULATOR_START="" WEB_START=""
+LEASE="" EMULATOR_GROUPS=""
 DEV_WEB_PORT=0 DEV_WEB_PID=0 DEV_WEB_START=""
 
 ports() { node "$ROOT/scripts/dev-ports.ts" "$@"; }
@@ -30,12 +31,12 @@ alive() {
 
 read_state() {
 	[[ -f "$STATE" ]] || return 1
-	read -r WEB_PORT AUTH_PORT FIRESTORE_PORT HUB_PORT LOGGING_PORT EMULATOR_PID WEB_PID EMULATOR_START WEB_START < <(
+	read -r WEB_PORT AUTH_PORT FIRESTORE_PORT FIRESTORE_WEBSOCKET_PORT HUB_PORT LOGGING_PORT EMULATOR_PID WEB_PID EMULATOR_START WEB_START LEASE EMULATOR_GROUPS < <(
 		node -e '
 const state = require(process.argv[1]);
-const keys = ["web", "auth", "firestore", "hub", "logging", "emulatorPid", "webPid"];
-if (keys.some(key => !Number.isInteger(state[key]) || state[key] < 0)) process.exit(1);
-console.log([...keys.map(key => state[key]), state.emulatorStart || "-", state.webStart || "-"].join(" "));
+const keys = ["web", "auth", "firestore", "firestoreWebsocket", "hub", "logging", "emulatorPid", "webPid"];
+if (keys.some(key => !Number.isInteger(state[key]) || state[key] < 0) || !state.lease) process.exit(1);
+console.log([...keys.map(key => state[key]), state.emulatorStart || "-", state.webStart || "-", state.lease, ...(state.emulatorGroups || []).map(group => `${group.pid}@${group.start}`)].join(" "));
 ' "$STATE"
 	)
 }
@@ -54,15 +55,39 @@ console.log(`${state.port} ${state.pid} ${state.start}`);
 write_state() {
 	node -e '
 const fs = require("node:fs");
-const [file, web, auth, firestore, hub, logging, emulatorPid, webPid, emulatorStart, webStart] = process.argv.slice(1);
-fs.writeFileSync(file, JSON.stringify({ web: +web, auth: +auth, firestore: +firestore, hub: +hub, logging: +logging, emulatorPid: +emulatorPid, webPid: +webPid, emulatorStart, webStart }));
-' "$STATE" "$WEB_PORT" "$AUTH_PORT" "$FIRESTORE_PORT" "$HUB_PORT" "$LOGGING_PORT" "$EMULATOR_PID" "$WEB_PID" "$EMULATOR_START" "$WEB_START"
+const [file, web, auth, firestore, firestoreWebsocket, hub, logging, emulatorPid, webPid, emulatorStart, webStart, lease, groups] = process.argv.slice(1);
+const emulatorGroups = groups.trim().split(/\s+/).filter(Boolean).map(group => { const [pid, start] = group.split("@"); return { pid: +pid, start }; });
+fs.writeFileSync(file, JSON.stringify({ web: +web, auth: +auth, firestore: +firestore, firestoreWebsocket: +firestoreWebsocket, hub: +hub, logging: +logging, emulatorPid: +emulatorPid, webPid: +webPid, emulatorStart, webStart, lease, emulatorGroups }));
+' "$STATE" "$WEB_PORT" "$AUTH_PORT" "$FIRESTORE_PORT" "$FIRESTORE_WEBSOCKET_PORT" "$HUB_PORT" "$LOGGING_PORT" "$EMULATOR_PID" "$WEB_PID" "$EMULATOR_START" "$WEB_START" "$LEASE" "$EMULATOR_GROUPS"
+}
+
+capture_emulator_groups() {
+	alive "$EMULATOR_PID" "$EMULATOR_START" || return 0
+	local pid start changed=0
+	while read -r pid; do
+		start="$(process_start "$pid" || true)"
+		[[ -n "$start" ]] || continue
+		if [[ " $EMULATOR_GROUPS " != *" $pid@$start "* ]]; then
+			EMULATOR_GROUPS="${EMULATOR_GROUPS:+$EMULATOR_GROUPS }$pid@$start"
+			changed=1
+		fi
+	done < <(ps -eo pid=,ppid=,pgid= | awk -v root="$EMULATOR_PID" '
+{ parent[$1]=$2; group[$1]=$3 }
+END {
+  descendant[root]=1;
+  do {
+    changed=0;
+    for (pid in parent) if (!descendant[pid] && descendant[parent[pid]]) { descendant[pid]=1; changed=1 }
+  } while (changed);
+  for (pid in parent) if (descendant[pid] && pid != root && group[pid] == pid) print pid;
+}')
+	if [[ "$changed" == 1 ]]; then write_state; fi
 }
 
 running() {
 	alive "$EMULATOR_PID" "$EMULATOR_START" || return 1
 	local port
-	for port in "$AUTH_PORT" "$FIRESTORE_PORT" "$HUB_PORT" "$LOGGING_PORT"; do
+	for port in "$AUTH_PORT" "$FIRESTORE_PORT" "$FIRESTORE_WEBSOCKET_PORT" "$HUB_PORT" "$LOGGING_PORT"; do
 		listening "$port" || return 1
 	done
 	[[ "$WEB_PID" == 0 ]] || { alive "$WEB_PID" "$WEB_START" && listening "$WEB_PORT"; }
@@ -78,12 +103,14 @@ require_stack() {
 wait_for() {
 	local port="$1" label="$2" pid="$3" start="$4" deadline=$((SECONDS + 120))
 	until listening "$port"; do
+		capture_emulator_groups
 		if ! alive "$pid" "$start" || ((SECONDS >= deadline)); then
 			echo "dev-stack: $label did not come up on $port; see $RUN_DIR" >&2
 			return 1
 		fi
 		sleep 1
 	done
+	capture_emulator_groups
 }
 
 wait_http() {
@@ -98,9 +125,12 @@ wait_http() {
 	done
 }
 
+group_alive() {
+	ps -eo pgid=,stat= | awk -v group="$1" '$1 == group && $2 !~ /^Z/ { found=1 } END { exit !found }'
+}
+
 stop_group() {
-	local pid="$1" start="$2" current port busy deadline=$((SECONDS + 15))
-	shift 2
+	local pid="$1" start="$2" current deadline=$((SECONDS + 15))
 	[[ "$pid" -gt 0 ]] || return 0
 	current="$(process_start "$pid" || true)"
 	if [[ -n "$current" && "$current" != "$start" ]]; then
@@ -108,12 +138,7 @@ stop_group() {
 		return 1
 	fi
 	kill -TERM -- "-$pid" 2>/dev/null || true
-	while :; do
-		busy=0
-		for port in "$@"; do
-			if listening "$port"; then busy=1; fi
-		done
-		[[ "$busy" == 1 ]] || break
+	while group_alive "$pid"; do
 		if ((SECONDS >= deadline)); then
 			kill -KILL -- "-$pid" 2>/dev/null || true
 			sleep 1
@@ -121,20 +146,30 @@ stop_group() {
 		fi
 		sleep 1
 	done
-	for port in "$@"; do
-		if listening "$port"; then
-			echo "dev-stack: port $port still listening after stopping group $pid" >&2
-			return 1
-		fi
-	done
+	if group_alive "$pid"; then
+		echo "dev-stack: process group $pid still alive after shutdown" >&2
+		return 1
+	fi
 }
 
 cmd_down() {
 	[[ -f "$STATE" ]] || return 0
 	read_state
-	stop_group "$WEB_PID" "$WEB_START" "$WEB_PORT"
-	stop_group "$EMULATOR_PID" "$EMULATOR_START" "$AUTH_PORT" "$FIRESTORE_PORT" "$HUB_PORT" "$LOGGING_PORT"
-	ports release "$WEB_PORT" "$AUTH_PORT" "$FIRESTORE_PORT" "$HUB_PORT" "$LOGGING_PORT"
+	capture_emulator_groups
+	local group port failed=0
+	stop_group "$WEB_PID" "$WEB_START" || failed=1
+	stop_group "$EMULATOR_PID" "$EMULATOR_START" || failed=1
+	for group in $EMULATOR_GROUPS; do
+		stop_group "${group%%@*}" "${group#*@}" || failed=1
+	done
+	for port in "$WEB_PORT" "$AUTH_PORT" "$FIRESTORE_PORT" "$FIRESTORE_WEBSOCKET_PORT" "$HUB_PORT" "$LOGGING_PORT"; do
+		if listening "$port"; then
+			echo "dev-stack: port $port still listening after shutdown" >&2
+			failed=1
+		fi
+	done
+	[[ "$failed" == 0 ]] || return 1
+	ports release "$LEASE" "$WEB_PORT" "$AUTH_PORT" "$FIRESTORE_PORT" "$FIRESTORE_WEBSOCKET_PORT" "$HUB_PORT" "$LOGGING_PORT"
 	rm -f "$STATE"
 }
 
@@ -153,33 +188,33 @@ cmd_up() {
 		echo "dev-stack: reused"
 	else
 		cmd_down
-		read -r WEB_PORT AUTH_PORT FIRESTORE_PORT HUB_PORT LOGGING_PORT < <(
-			ports alloc web auth firestore hub logging | node -e '
+		read -r LEASE WEB_PORT AUTH_PORT FIRESTORE_PORT FIRESTORE_WEBSOCKET_PORT HUB_PORT LOGGING_PORT < <(
+			ports alloc web auth firestore firestoreWebsocket hub logging | node -e '
 let input = "";
 process.stdin.on("data", chunk => input += chunk);
-process.stdin.on("end", () => console.log(Object.values(JSON.parse(input)).join(" ")));
+process.stdin.on("end", () => { const { lease, ports } = JSON.parse(input); console.log([lease, ...Object.values(ports)].join(" ")); });
 '
 		)
-		EMULATOR_PID=0 WEB_PID=0 EMULATOR_START="" WEB_START=""
+		EMULATOR_PID=0 WEB_PID=0 EMULATOR_START="" WEB_START="" EMULATOR_GROUPS=""
 		write_state
 		trap 'cmd_down' ERR
 		node -e '
 const fs = require("node:fs");
 const path = require("node:path");
-const [root, web, auth, firestore, hub, logging] = process.argv.slice(1);
+const [root, web, auth, firestore, firestoreWebsocket, hub, logging] = process.argv.slice(1);
 const config = JSON.parse(fs.readFileSync(path.join(root, "firebase.json")));
 config.firestore.rules = path.join(root, config.firestore.rules);
 config.firestore.indexes = path.join(root, config.firestore.indexes);
-config.emulators = { auth: { port: +auth }, firestore: { port: +firestore }, hub: { port: +hub }, logging: { port: +logging }, ui: { enabled: false }, singleProjectMode: true };
+config.emulators = { auth: { port: +auth }, firestore: { port: +firestore, websocketPort: +firestoreWebsocket }, hub: { port: +hub }, logging: { port: +logging }, ui: { enabled: false }, singleProjectMode: true };
 fs.writeFileSync(path.join(root, ".tmp/dev-stack/firebase.json"), JSON.stringify(config));
-' "$ROOT" "$WEB_PORT" "$AUTH_PORT" "$FIRESTORE_PORT" "$HUB_PORT" "$LOGGING_PORT"
+' "$ROOT" "$WEB_PORT" "$AUTH_PORT" "$FIRESTORE_PORT" "$FIRESTORE_WEBSOCKET_PORT" "$HUB_PORT" "$LOGGING_PORT"
 		setsid yarn --silent firebase emulators:start --config "$RUN_DIR/firebase.json" \
 			--project my-musical-repertoire-dev --only auth,firestore \
 			</dev/null >"$RUN_DIR/emulators.log" 2>&1 9>&- &
 		EMULATOR_PID=$!
 		EMULATOR_START="$(process_start "$EMULATOR_PID")"
 		write_state
-		ports own "$EMULATOR_PID" "$AUTH_PORT" "$FIRESTORE_PORT" "$HUB_PORT" "$LOGGING_PORT"
+		ports own "$LEASE" "$EMULATOR_PID" "$AUTH_PORT" "$FIRESTORE_PORT" "$FIRESTORE_WEBSOCKET_PORT" "$HUB_PORT" "$LOGGING_PORT"
 		if [[ "$web" == 1 ]]; then
 			EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_USE_EMULATORS=1 \
 				EXPO_PUBLIC_AUTH_EMULATOR_PORT="$AUTH_PORT" EXPO_PUBLIC_FIRESTORE_EMULATOR_PORT="$FIRESTORE_PORT" \
@@ -188,11 +223,11 @@ fs.writeFileSync(path.join(root, ".tmp/dev-stack/firebase.json"), JSON.stringify
 			WEB_PID=$!
 			WEB_START="$(process_start "$WEB_PID")"
 			write_state
-			ports own "$WEB_PID" "$WEB_PORT"
+			ports own "$LEASE" "$WEB_PID" "$WEB_PORT"
 		else
-			ports own "$EMULATOR_PID" "$WEB_PORT"
+			ports own "$LEASE" "$EMULATOR_PID" "$WEB_PORT"
 		fi
-		for port in "$AUTH_PORT" "$FIRESTORE_PORT" "$HUB_PORT" "$LOGGING_PORT"; do
+		for port in "$AUTH_PORT" "$FIRESTORE_PORT" "$FIRESTORE_WEBSOCKET_PORT" "$HUB_PORT" "$LOGGING_PORT"; do
 			wait_for "$port" emulators "$EMULATOR_PID" "$EMULATOR_START"
 		done
 		trap - ERR
@@ -208,20 +243,20 @@ fs.writeFileSync(path.join(root, ".tmp/dev-stack/firebase.json"), JSON.stringify
 }
 
 cmd_web() {
-	local port
+	local port lease
 	mkdir -p "$RUN_DIR"
-	port="$(ports alloc dev-web | node -e '
+	read -r lease port < <(ports alloc dev-web | node -e '
 let input = "";
 process.stdin.on("data", chunk => input += chunk);
-process.stdin.on("end", () => console.log(JSON.parse(input)["dev-web"]));
-')"
-	trap 'ports release "$port"' ERR
-	ports own "$$" "$port"
+process.stdin.on("end", () => { const { lease, ports } = JSON.parse(input); console.log(lease, ports["dev-web"]); });
+')
+	trap 'ports release "$lease" "$port"' ERR
+	ports own "$lease" "$$" "$port"
 	node -e '
 const fs = require("node:fs");
-const [file, port, pid, start] = process.argv.slice(1);
-	fs.writeFileSync(file, JSON.stringify({ port: +port, pid: +pid, start }));
-' "$DEV_WEB_STATE" "$port" "$$" "$(process_start "$$")"
+const [file, port, pid, start, lease] = process.argv.slice(1);
+	fs.writeFileSync(file, JSON.stringify({ port: +port, pid: +pid, start, lease }));
+' "$DEV_WEB_STATE" "$port" "$$" "$(process_start "$$")" "$lease"
 	trap - ERR
 	unset EXPO_PUBLIC_USE_EMULATORS EXPO_PUBLIC_AUTH_EMULATOR_PORT EXPO_PUBLIC_FIRESTORE_EMULATOR_PORT
 	exec yarn start --web --port "$port"
@@ -273,7 +308,7 @@ env)
 fixture) echo "$SEED_EMAIL" ;;
 status)
 	if read_state; then
-		for name in web auth firestore hub logging; do
+		for name in web auth firestore firestoreWebsocket hub logging; do
 			case "$name" in
 			web)
 				port="$WEB_PORT"
@@ -286,6 +321,7 @@ status)
 				start="$EMULATOR_START"
 				;;
 			firestore) port="$FIRESTORE_PORT" ;;
+			firestoreWebsocket) port="$FIRESTORE_WEBSOCKET_PORT" ;;
 			hub) port="$HUB_PORT" ;;
 			logging) port="$LOGGING_PORT" ;;
 			esac
