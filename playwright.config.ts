@@ -1,20 +1,14 @@
 import { execFileSync } from "node:child_process";
-import { basename } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
-process.env.E2E_SEED_EMAIL = execFileSync("scripts/dev-stack.sh", ["fixture"], {
+const stackEnv = execFileSync("scripts/dev-stack.sh", ["env"], {
 	encoding: "utf8",
 }).trim();
-
-/**
- * The e2e stack runs against the Firebase emulator suite, never the dev
- * project — see `scripts/dev-stack.sh` and docs/OPERATIONS.md. Its web server
- * is per-checkout, mirroring the 8053/8054 rule for the servers started by
- * hand, so a run here never steals the one you are using.
- */
-const webPort =
-	Number(process.env.E2E_WEB_PORT) ||
-	(basename(process.cwd()) === "my-musical-repertoire" ? 8055 : 8056);
+for (const line of stackEnv.split("\n")) {
+	const separator = line.indexOf("=");
+	process.env[line.slice(0, separator)] = line.slice(separator + 1);
+}
+const webPort = Number(process.env.E2E_WEB_PORT);
 
 export const AUTH_STATE = ".tmp/e2e/auth.json";
 

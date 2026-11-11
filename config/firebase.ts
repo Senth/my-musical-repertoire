@@ -64,8 +64,16 @@ const db =
 // does, which is why a stray emulator connection cannot reach production.
 if (process.env.EXPO_PUBLIC_USE_EMULATORS === "1") {
 	const host = process.env.EXPO_PUBLIC_EMULATOR_HOST ?? "127.0.0.1";
-	connectAuthEmulator(auth, `http://${host}:8051`, { disableWarnings: true });
-	connectFirestoreEmulator(db, host, 8052);
+	connectAuthEmulator(
+		auth,
+		`http://${host}:${process.env.EXPO_PUBLIC_AUTH_EMULATOR_PORT}`,
+		{ disableWarnings: true },
+	);
+	connectFirestoreEmulator(
+		db,
+		host,
+		Number(process.env.EXPO_PUBLIC_FIRESTORE_EMULATOR_PORT),
+	);
 }
 
 export { auth, db };

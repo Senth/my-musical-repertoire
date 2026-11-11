@@ -25,18 +25,5 @@
 	"firestore": {
 		"rules": "firestore.rules",
 		"indexes": "firestore.indexes.json"
-	},
-	"emulators": {
-		"auth": {
-			"port": 8051
-		},
-		"firestore": {
-			"port": 8052
-		},
-		"ui": {
-			"enabled": true,
-			"port": 8050
-		},
-		"singleProjectMode": true
 	}
 }

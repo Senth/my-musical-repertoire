@@ -139,7 +139,9 @@ describe("allocPorts", () => {
 			fs.mkdirSync(${JSON.stringify(dir)})
 			fs.writeFileSync(${JSON.stringify(path.join(dir, "pid"))}, String(process.pid))
 		})).then(() => process.stdin.resume())`;
-			const holder = spawn(process.execPath, ["-e", script], { env: process.env });
+			const holder = spawn(process.execPath, ["-e", script], {
+				env: process.env,
+			});
 			try {
 				await new Promise((resolve) => holder.stdout.once("data", resolve));
 				const allocating = allocPorts(["web"], process.pid, root);

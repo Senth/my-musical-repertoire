@@ -15,8 +15,7 @@
 		"invariants": "scripts/check-invariants.sh",
 		"format": "biome format --write",
 		"test": "jest",
-		"e2e": "playwright test",
-		"emulators": "firebase emulators:start"
+		"e2e": "playwright test"
 	},
 	"jest": {
 		"preset": "jest-expo",

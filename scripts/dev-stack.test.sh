@@ -2,131 +2,123 @@
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
-SCRIPT="$ROOT/scripts/dev-stack.sh"
+mkdir -p "$ROOT/.tmp"
 TEST_DIR="$(mktemp -d "$ROOT/.tmp/dev-stack-test.XXXXXX")"
-trap 'rm -rf "$TEST_DIR"' EXIT
-export HOME="$TEST_DIR"
-source <(sed '/^case "${1:-up}" in/,$d' "$SCRIPT")
-RUN_DIR="$TEST_DIR/run"
-ROOT="$TEST_DIR/checkout with spaces"
+export DEV_STACK_REGISTRY="$TEST_DIR/registry"
+export PATH="$TEST_DIR/bin:$PATH"
+FIRST="$TEST_DIR/checkout with spaces"
+SECOND="$TEST_DIR/sibling"
+cleanup() {
+	for checkout in "$FIRST" "$SECOND"; do
+		(cd "$checkout" && scripts/dev-stack.sh down) || true
+	done
+	rm -rf "$TEST_DIR"
+}
+trap cleanup EXIT
+mkdir -p "$TEST_DIR/bin"
+for checkout in "$FIRST" "$SECOND"; do
+	mkdir -p "$checkout/scripts"
+	git -C "$checkout" init -q
+	cp "$ROOT/scripts/dev-stack.sh" "$ROOT/scripts/dev-ports.ts" "$checkout/scripts/"
+	cp "$ROOT/firebase.json" "$checkout/"
+done
+cat >"$TEST_DIR/bin/yarn" <<'MOCK'
+#!/usr/bin/env node
+const fs = require("node:fs");
+const http = require("node:http");
+const { spawn } = require("node:child_process");
+const args = process.argv.slice(2);
+if (args.includes("emulators:start")) {
+  if (!args.includes("--project") || args[args.indexOf("--project") + 1] !== "my-musical-repertoire-dev") process.exit(1);
+  const config = JSON.parse(fs.readFileSync(args[args.indexOf("--config") + 1]));
+  for (const name of ["auth", "firestore", "hub", "logging"]) http.createServer((req, res) => res.end("ok")).listen(config.emulators[name].port, "127.0.0.1");
+} else {
+  if (process.env.MOCK_FAIL_WEB === "1") process.exit(1);
+  fs.writeFileSync(".tmp/dev-stack/web-env.json", JSON.stringify(process.env));
+  const port = args[args.indexOf("--port") + 1];
+  const child = spawn(process.execPath, ["-e", `require("node:http").createServer((req, res) => res.end("ok")).listen(${port}, "127.0.0.1")`], { stdio: "ignore" });
+  fs.writeFileSync(".tmp/dev-stack/web-child.pid", String(child.pid));
+  setInterval(() => {}, 1000);
+}
+MOCK
+chmod +x "$TEST_DIR/bin/yarn"
 
-start_emulators() { :; }
-start_web() { :; }
-lsof() { echo "$$"; }
-stop_one() { echo "web stopped" >>"$TEST_DIR/events"; }
-stop_emulators() { echo "emulators stopped" >>"$TEST_DIR/events"; }
-listening() { return 1; }
+stack() { (cd "$1" && scripts/dev-stack.sh "${@:2}"); }
 
-cmd_up >/dev/null
-[[ -f "$LEASE_DIR/$CHECKOUT_ID" ]]
-[[ "$(head -1 "$LEASE_DIR/$CHECKOUT_ID")" == "$ROOT" ]]
-[[ "$(sed -n '2p' "$LEASE_DIR/$CHECKOUT_ID")" == "$$" ]]
-[[ "$(sed -n '3p' "$LEASE_DIR/$CHECKOUT_ID")" == "$(process_start "$$")" ]]
+if stack "$FIRST" ports >"$TEST_DIR/output" 2>&1; then exit 1; fi
+grep -q 'run `scripts/dev-stack.sh up` first' "$TEST_DIR/output"
+if stack "$FIRST" env >"$TEST_DIR/output" 2>&1; then exit 1; fi
 
-printf '%s\n%s\n%s\n' "$TEST_DIR/reused pid" "$$" "different-process-start" >"$LEASE_DIR/reused"
-cmd_status >"$TEST_DIR/output"
-if [[ -f "$LEASE_DIR/reused" ]]; then
-	echo "FAIL: lease with reused PID retained" >&2
-	exit 1
-fi
+E2E_WEB_PORT=7999 stack "$FIRST" up >"$TEST_DIR/output"
+[[ "$(tail -2 "$TEST_DIR/output" | head -1)" == "SEED_EMAIL=$(stack "$FIRST" fixture)" ]]
+[[ "$(tail -1 "$TEST_DIR/output")" == "WEB_URL=http://localhost:$(stack "$FIRST" ports)" ]]
+cp "$FIRST/.tmp/dev-stack/stack.json" "$TEST_DIR/first.json"
+stack "$FIRST" up >"$TEST_DIR/output"
+cmp "$FIRST/.tmp/dev-stack/stack.json" "$TEST_DIR/first.json"
+stack "$FIRST" status >"$TEST_DIR/output"
+[[ "$(grep -c 'alive=yes listening=yes' "$TEST_DIR/output")" == 5 ]]
+FORCE_COLOR=1 stack "$FIRST" env >"$TEST_DIR/env"
+[[ "$(wc -l <"$TEST_DIR/env")" == 4 ]]
+grep -q "E2E_SEED_EMAIL=$(stack "$FIRST" fixture)" "$TEST_DIR/env"
 
-printf '%s\n%s\n%s\n' "$TEST_DIR/sibling" "$$" "$(process_start "$$")" >"$LEASE_DIR/sibling"
-cmd_down >"$TEST_DIR/output"
-[[ ! -f "$LEASE_DIR/$CHECKOUT_ID" ]]
-grep -q "$TEST_DIR/sibling" "$TEST_DIR/output"
-! grep -q 'emulators stopped' "$TEST_DIR/events"
+stack "$SECOND" up >"$TEST_DIR/output"
+node - "$FIRST" "$SECOND" "$DEV_STACK_REGISTRY" <<'CHECK'
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const [first, second, registry] = process.argv.slice(2);
+const names = ["web", "auth", "firestore", "hub", "logging"];
+const ports = [];
+for (const root of [first, second]) {
+  const state = JSON.parse(fs.readFileSync(path.join(root, ".tmp/dev-stack/stack.json")));
+  const config = JSON.parse(fs.readFileSync(path.join(root, ".tmp/dev-stack/firebase.json")));
+  const env = JSON.parse(fs.readFileSync(path.join(root, ".tmp/dev-stack/web-env.json")));
+  assert.equal(config.firestore.rules, path.join(root, "firestore.rules"));
+  assert.equal(config.firestore.indexes, path.join(root, "firestore.indexes.json"));
+  assert.equal(config.emulators.ui.enabled, false);
+  assert.equal(env.EXPO_PUBLIC_USE_EMULATORS, "1");
+  assert.equal(env.EXPO_PUBLIC_AUTH_EMULATOR_PORT, String(state.auth));
+  assert.equal(env.EXPO_PUBLIC_FIRESTORE_EMULATOR_PORT, String(state.firestore));
+  for (const name of names) {
+    const port = state[name];
+    ports.push(port);
+    assert.ok(port >= 7000 && port <= 7999);
+    assert.equal(fs.readFileSync(path.join(registry, String(port), "worktree"), "utf8"), root);
+    assert.equal(+fs.readFileSync(path.join(registry, String(port), "pid")), name === "web" ? state.webPid : state.emulatorPid);
+    if (name !== "web") assert.equal(config.emulators[name].port, port);
+  }
+}
+assert.equal(new Set(ports).size, 10);
+CHECK
 
-rm "$LEASE_DIR/sibling"
-cmd_up >/dev/null
-printf '%s\n%s\n' "$TEST_DIR/legacy sibling" "$$" >"$LEASE_DIR/legacy"
-cmd_down >"$TEST_DIR/output"
-if [[ ! -f "$LEASE_DIR/legacy" ]]; then
-	echo "FAIL: live legacy sibling lease pruned during mixed-format teardown" >&2
-	exit 1
-fi
-[[ ! -f "$LEASE_DIR/$CHECKOUT_ID" ]]
-grep -q "$TEST_DIR/legacy sibling" "$TEST_DIR/output"
-! grep -q 'emulators stopped' "$TEST_DIR/events"
-rm "$LEASE_DIR/legacy"
+stack "$FIRST" down
+[[ ! -f "$FIRST/.tmp/dev-stack/stack.json" ]]
+[[ "$(find "$DEV_STACK_REGISTRY" -mindepth 1 -maxdepth 1 -type d | wc -l)" == 5 ]]
+stack "$SECOND" ports >/dev/null
+stack "$SECOND" down
+[[ -z "$(find "$DEV_STACK_REGISTRY" -mindepth 1 -maxdepth 1 -type d)" ]]
+node - "$TEST_DIR/first.json" <<'CHECK'
+const fs = require("node:fs");
+const net = require("node:net");
+const state = JSON.parse(fs.readFileSync(process.argv[2]));
+for (const name of ["web", "auth", "firestore", "hub", "logging"]) {
+  const socket = net.connect(state[name], "127.0.0.1");
+  socket.once("connect", () => { process.exitCode = 1; socket.destroy(); });
+  socket.once("error", () => {});
+}
+CHECK
 
-cmd_up --no-web >/dev/null
-[[ -z "$(tail -1 "$LEASE_DIR/$CHECKOUT_ID")" ]]
-printf '%s\n\n' "$TEST_DIR/headless sibling" >"$LEASE_DIR/headless"
-printf '%s\n%s\n' "$TEST_DIR/dead sibling" 2147483647 >"$LEASE_DIR/dead"
-cmd_status >"$TEST_DIR/output"
-grep -q "$TEST_DIR/headless sibling" "$TEST_DIR/output"
-[[ ! -f "$LEASE_DIR/dead" ]]
-cmd_down >/dev/null
-[[ -f "$LEASE_DIR/headless" ]]
-! grep -q 'emulators stopped' "$TEST_DIR/events"
+stack "$FIRST" up --no-web >/dev/null
+[[ "$(find "$DEV_STACK_REGISTRY" -mindepth 1 -maxdepth 1 -type d | wc -l)" == 5 ]]
+if stack "$FIRST" ports >"$TEST_DIR/output" 2>&1; then exit 1; fi
+stack "$FIRST" up >/dev/null
+web_pid="$(node -p "require('$FIRST/.tmp/dev-stack/stack.json').webPid")"
+kill -KILL "$web_pid"
+stack "$FIRST" down
+[[ -z "$(find "$DEV_STACK_REGISTRY" -mindepth 1 -maxdepth 1 -type d)" ]]
 
-rm "$LEASE_DIR/headless"
-printf '%s\n%s\n' "$TEST_DIR/dead sibling" 2147483647 >"$LEASE_DIR/dead"
-cmd_down >/dev/null
-[[ ! -f "$LEASE_DIR/dead" ]]
-[[ "$(tail -1 "$TEST_DIR/events")" == 'emulators stopped' ]]
-
-(
-	source <(sed '/^case "${1:-up}" in/,$d' "$SCRIPT")
-	RUN_DIR="$TEST_DIR/run"
-	lsof() { echo 7001; }
-	ps() {
-		case "$2:$4" in
-		pgid=:7001) echo 7001 ;;
-		args=:7001) echo java ;;
-		ppid=:7001) echo 7000 ;;
-		args=:7000) echo 'node /fixture/node_modules/.bin/firebase emulators:start' ;;
-		pgid=:7000) echo 6999 ;;
-		args=:6999) echo 'node /fixture/bin/yarn --silent firebase emulators:start' ;;
-		*) return 1 ;;
-		esac
-	}
-	kill() { echo "$*" >>"$TEST_DIR/signals"; }
-	stop_emulators >/dev/null
-	grep -q -- '-TERM -- -6999 7001' "$TEST_DIR/signals"
-	rm "$TEST_DIR/signals"
-	(
-		ps() {
-			case "$2:$4" in
-			pgid=:7001) echo 7001 ;;
-			args=:7001) echo java ;;
-			ppid=:7001) echo 7000 ;;
-			args=:7000) echo 'node /fixture/node_modules/.bin/firebase emulators:start' ;;
-			pgid=:7000) echo 6000 ;;
-			args=:6000) echo 'bash -c firebase emulators:start' ;;
-			*) return 1 ;;
-			esac
-		}
-		if stop_emulators >"$TEST_DIR/output" 2>&1; then
-			echo "FAIL: shared emulator process group accepted" >&2
-			exit 1
-		fi
-		grep -q 'refusing to stop shared emulator process group 6000' "$TEST_DIR/output"
-		[[ ! -f "$TEST_DIR/signals" ]]
-	)
-	(
-		for listener_port in "$AUTH_PORT" "$UI_PORT"; do
-			lsof() {
-				[[ "$*" == *"-iTCP:$listener_port"* ]] && echo 7001
-			}
-			stop_emulators >/dev/null
-			if ! grep -q -- '-TERM -- -6999 7001' "$TEST_DIR/signals" 2>/dev/null; then
-				echo "FAIL: surviving emulator listener on $listener_port not stopped" >&2
-				exit 1
-			fi
-			rm "$TEST_DIR/signals"
-		done
-	)
-	ps() {
-		case "$2" in
-		pgid=) echo 7001 ;;
-		args=) echo 'unrelated server' ;;
-		ppid=) echo 1 ;;
-		esac
-	}
-	if stop_emulators >"$TEST_DIR/output" 2>&1; then exit 1; fi
-	grep -q 'no firebase emulators:start ancestor' "$TEST_DIR/output"
-	[[ ! -f "$TEST_DIR/signals" ]]
-)
-
-echo "dev-stack lease lifecycle: pass"
+if MOCK_FAIL_WEB=1 stack "$FIRST" up >"$TEST_DIR/output" 2>&1; then exit 1; fi
+[[ ! -f "$FIRST/.tmp/dev-stack/stack.json" ]]
+[[ -z "$(find "$DEV_STACK_REGISTRY" -mindepth 1 -maxdepth 1 -type d)" ]]
+stack "$FIRST" down
+echo "dev-stack claims, isolation, reuse, process groups and failure cleanup: pass"
