@@ -28,8 +28,7 @@ yarn web
 
 5. (Optional) Run with Firebase emulators:
 ```bash
-firebase emulators:start
-yarn web
+scripts/dev-stack.sh up
 ```
 
 ## Web-First Development Workflow

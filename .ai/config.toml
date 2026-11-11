@@ -37,11 +37,12 @@ browser = true
 [dev]
 # How a browser review brings the app up. Nothing else boots anything.
 #
-# Ports are per checkout, not per worktree pool: the emulators come from
-# `firebase.json` and are shared, the web server is 8055 in the main checkout and
-# 8056 in a worktree. `ports` prints the one for the checkout you are in, and `up`
-# prints `SEED_EMAIL=` before its final `WEB_URL=` line. Never assume 8055.
+# Every checkout claims its own ports in 7000-7999 from
+# `~/.local/state/dev-ports/`, with its own emulator suite. `ports` reads back
+# this checkout's web port. `up` prints `SEED_EMAIL=` before its final
+# `WEB_URL=` line. Never assume a port.
 start = "scripts/dev-stack.sh up"
+stop = "scripts/dev-stack.sh down"
 url = "http://localhost:$(scripts/dev-stack.sh ports)"
 # Sign-in is an **email and password form** against the Auth emulator, not a
 # redirect: type the email from `scripts/dev-stack.sh fixture` / practice123,
@@ -57,7 +58,8 @@ ready = "Suggested Practices"
 # There is no committed fixture export: `e2e/seed.setup.ts` runs as the first
 # Playwright project of every `yarn e2e` and writes the fixture through the
 # app's own Firebase shapes, with dates computed at run time. It holds one
-# account per checkout — email from `scripts/dev-stack.sh fixture` — four pieces
+# account in each checkout's own emulator suite, with email from
+# `scripts/dev-stack.sh fixture`, four pieces
 # and three techniques. Sight-reading
 # history has three logs, today rated Kept going, yesterday rated A few stops,
 # and two days ago unrated. Invention
