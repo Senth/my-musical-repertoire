@@ -5,6 +5,7 @@ ROOT="$(git rev-parse --show-toplevel)"
 mkdir -p "$ROOT/.tmp"
 TEST_DIR="$(mktemp -d "$ROOT/.tmp/dev-stack-test.XXXXXX")"
 export DEV_STACK_REGISTRY="$TEST_DIR/registry"
+REAL_YARN="$(command -v yarn)"
 export PATH="$TEST_DIR/bin:$PATH"
 FIRST="$TEST_DIR/checkout with spaces"
 SECOND="$TEST_DIR/sibling"
@@ -20,7 +21,7 @@ for checkout in "$FIRST" "$SECOND"; do
 	mkdir -p "$checkout/scripts"
 	git -C "$checkout" init -q
 	cp "$ROOT/scripts/dev-stack.sh" "$ROOT/scripts/dev-ports.ts" "$checkout/scripts/"
-	cp "$ROOT/firebase.json" "$checkout/"
+	cp "$ROOT/firebase.json" "$ROOT/package.json" "$checkout/"
 done
 cat >"$TEST_DIR/bin/yarn" <<'MOCK'
 #!/usr/bin/env node
@@ -28,7 +29,11 @@ const fs = require("node:fs");
 const http = require("node:http");
 const { spawn } = require("node:child_process");
 const args = process.argv.slice(2);
-if (args.includes("emulators:start")) {
+if (args[0] === "start") {
+  fs.writeFileSync(".tmp/dev-stack/dev-web-env.json", JSON.stringify(process.env));
+  const port = args[args.indexOf("--port") + 1];
+  http.createServer((req, res) => res.end("ok")).listen(port, "127.0.0.1");
+} else if (args.includes("emulators:start")) {
   if (!args.includes("--project") || args[args.indexOf("--project") + 1] !== "my-musical-repertoire-dev") process.exit(1);
   const config = JSON.parse(fs.readFileSync(args[args.indexOf("--config") + 1]));
   for (const name of ["auth", "firestore", "hub", "logging"]) http.createServer((req, res) => res.end("ok")).listen(config.emulators[name].port, "127.0.0.1");
@@ -42,6 +47,14 @@ if (args.includes("emulators:start")) {
 }
 MOCK
 chmod +x "$TEST_DIR/bin/yarn"
+mkdir -p "$FIRST/node_modules/expo/bin"
+cat >"$FIRST/node_modules/expo/bin/cli" <<'MOCK'
+const fs = require("node:fs");
+const http = require("node:http");
+const port = process.argv[process.argv.indexOf("--port") + 1];
+fs.writeFileSync(".tmp/dev-stack/dev-web-env.json", JSON.stringify(process.env));
+http.createServer((req, res) => res.end("ok")).listen(port, "127.0.0.1");
+MOCK
 
 stack() { (cd "$1" && scripts/dev-stack.sh "${@:2}"); }
 
@@ -90,6 +103,43 @@ for (const root of [first, second]) {
 }
 assert.equal(new Set(ports).size, 10);
 CHECK
+
+(cd "$FIRST" && exec setsid "$REAL_YARN" web) >"$TEST_DIR/dev-web.log" 2>&1 &
+dev_web_pid=$!
+dev_web_port=""
+for _ in {1..50}; do
+	if dev_web_port="$(stack "$FIRST" dev-port 2>/dev/null)" && curl -fsS "http://127.0.0.1:$dev_web_port" >/dev/null; then break; fi
+	sleep 0.1
+done
+[[ "$dev_web_port" =~ ^[0-9]+$ ]] || {
+	cat "$TEST_DIR/dev-web.log" >&2
+	exit 1
+}
+node - "$FIRST/.tmp/dev-stack/stack.json" "$FIRST/.tmp/dev-stack/dev-web.json" "$FIRST/.tmp/dev-stack/dev-web-env.json" "$dev_web_port" <<'CHECK'
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const [stackFile, webFile, envFile, port] = process.argv.slice(2);
+const stack = JSON.parse(fs.readFileSync(stackFile));
+const web = JSON.parse(fs.readFileSync(webFile));
+const env = JSON.parse(fs.readFileSync(envFile));
+assert.equal(web.port, +port);
+assert.doesNotThrow(() => process.kill(web.pid, 0));
+assert.equal(env.EXPO_PUBLIC_USE_EMULATORS, undefined);
+assert.equal(env.EXPO_PUBLIC_AUTH_EMULATOR_PORT, undefined);
+assert.equal(env.EXPO_PUBLIC_FIRESTORE_EMULATOR_PORT, undefined);
+assert.equal(new Set([stack.web, stack.auth, stack.firestore, stack.hub, stack.logging, web.port]).size, 6);
+CHECK
+kill -TERM -- "-$dev_web_pid"
+wait "$dev_web_pid" || true
+if stack "$FIRST" dev-port >"$TEST_DIR/output" 2>&1; then exit 1; fi
+grep -q 'run `yarn web` first' "$TEST_DIR/output"
+reclaimed_port="$(cd "$FIRST" && node scripts/dev-ports.ts alloc dev-web-reclaimed | node -e '
+let input = "";
+process.stdin.on("data", chunk => input += chunk);
+process.stdin.on("end", () => console.log(JSON.parse(input)["dev-web-reclaimed"]));
+')"
+[[ "$reclaimed_port" == "$dev_web_port" ]]
+(cd "$FIRST" && node scripts/dev-ports.ts release "$reclaimed_port")
 
 stack "$FIRST" down
 [[ ! -f "$FIRST/.tmp/dev-stack/stack.json" ]]
