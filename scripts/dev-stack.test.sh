@@ -239,13 +239,13 @@ const processes = () => fs.readdirSync("/proc").filter(pid => /^\d+$/.test(pid))
 });
 (async () => {
   for (const mode of ["failed-up", "explicit-down"]) {
-    for (let run = 1; run <= 5; run++) {
+    for (let run = 0; run <= 5; run++) {
       const log = path.join(root, `.tmp/dev-stack/startup-crash-${mode}-${run}.log`);
       const fd = fs.openSync(log, "w");
       const up = spawn("scripts/dev-stack.sh", ["up", "--no-web"], { cwd: root, stdio: ["ignore", fd, fd] });
       const done = new Promise(resolve => up.once("exit", code => resolve(code)));
       fs.closeSync(fd);
-      let state, cli, java, foreign;
+      let state, cli, java, foreign, supervisor, sentinel;
       try {
         const deadline = Date.now() + 60000;
         while (Date.now() < deadline && !java) {
@@ -263,6 +263,27 @@ const processes = () => fs.readdirSync("/proc").filter(pid => /^\d+$/.test(pid))
         assert.ok(java, `detached Java not found; ${log}`);
         state = JSON.parse(fs.readFileSync(stateFile));
         assert.ok(!state.emulatorGroups.some(group => group.pid === java.pid), "Java must escape ancestry sampling");
+        if (run === 0) {
+          process.kill(java.pid, "SIGKILL");
+          while (live(java.pid)) await sleep(10);
+          supervisor = spawn(process.execPath, ["-e", `
+const { spawn } = require("node:child_process");
+const sentinel = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: "ignore" });
+const java = spawn(${JSON.stringify(java.args[0])}, ${JSON.stringify(java.args.slice(1).filter(Boolean))}, { cwd: ${JSON.stringify(root)}, stdio: "ignore" });
+console.log(JSON.stringify({ java: java.pid, sentinel: sentinel.pid }));
+setInterval(() => {}, 1000);
+`], { cwd: path.dirname(root), detached: true, stdio: ["ignore", "pipe", "inherit"] });
+          const children = await new Promise((resolve, reject) => {
+            supervisor.stdout.once("data", data => { try { resolve(JSON.parse(String(data))); } catch (error) { reject(error); } });
+            supervisor.once("error", reject);
+            supervisor.once("exit", () => reject(new Error("shared-group supervisor exited before readiness")));
+          });
+          sentinel = children.sentinel;
+          java = { pid: children.java, group: supervisor.pid };
+          await sleep(1000);
+          assert.ok(live(java.pid), "shared-group Java must survive until cleanup");
+          for (const pid of [java.pid, sentinel]) assert.equal(processes().find(row => row.pid === pid)?.group, supervisor.pid);
+        }
         if (mode === "explicit-down") process.kill(up.pid, "SIGKILL");
         process.kill(cli.pid, "SIGKILL");
         if (mode === "failed-up") process.kill(up.pid, "SIGCONT");
@@ -293,9 +314,15 @@ const processes = () => fs.readdirSync("/proc").filter(pid => /^\d+$/.test(pid))
         assert.ok(!live(java.pid), `Java survived down: ${java.pid}`);
         assert.ok(!fs.existsSync(stateFile));
         assert.equal(fs.readdirSync(registry).length, 0);
-        console.log(`startup CLI crash ${mode} ${run}/5: pass`);
+        if (supervisor) {
+          assert.ok(live(supervisor.pid), `${mode} killed unrelated group leader`);
+          assert.ok(live(sentinel), `${mode} killed unrelated group member`);
+          console.log(`shared-group supervisor and sentinel survive ${mode}: pass`);
+        }
+        if (run > 0) console.log(`startup CLI crash ${mode} ${run}/5: pass`);
       } finally {
         for (const pid of [up.pid, cli?.pid, foreign?.pid]) if (pid && live(pid)) { try { process.kill(pid, "SIGKILL"); } catch {} }
+        if (supervisor) { try { process.kill(-supervisor.pid, "SIGKILL"); } catch {} }
         const detached = processes().filter(row => path.basename(row.args[0]) === "java" && row.args.includes(path.join(root, "firestore.rules")));
         for (const pid of [java?.group, state?.emulatorPid, ...detached.map(row => row.group)]) if (pid) { try { process.kill(-pid, "SIGKILL"); } catch {} }
         spawnSync("scripts/dev-stack.sh", ["down"], { cwd: root, stdio: "inherit", timeout: 60000 });

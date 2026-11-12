@@ -10,7 +10,7 @@ STATE="$RUN_DIR/stack.json"
 DEV_WEB_STATE="$RUN_DIR/dev-web.json"
 WEB_PORT=0 AUTH_PORT=0 FIRESTORE_PORT=0 FIRESTORE_WEBSOCKET_PORT=0 HUB_PORT=0 LOGGING_PORT=0
 EMULATOR_PID=0 WEB_PID=0 EMULATOR_START="" WEB_START=""
-LEASE="" EMULATOR_GROUPS=""
+LEASE="" EMULATOR_GROUPS="" EMULATOR_MEMBERS=""
 DEV_WEB_PORT=0 DEV_WEB_PID=0 DEV_WEB_START=""
 
 ports() { node "$ROOT/scripts/dev-ports.ts" "$@"; }
@@ -62,10 +62,16 @@ fs.writeFileSync(file, JSON.stringify({ web: +web, auth: +auth, firestore: +fire
 }
 
 capture_emulator_groups() {
-	local pid start changed=0
-	while read -r pid; do
+	local pid scope start changed=0
+	while read -r pid scope; do
 		start="$(process_start "$pid" || true)"
 		[[ -n "$start" ]] || continue
+		if [[ "$scope" == member ]]; then
+			if [[ " $EMULATOR_MEMBERS " != *" $pid@$start "* ]]; then
+				EMULATOR_MEMBERS="${EMULATOR_MEMBERS:+$EMULATOR_MEMBERS }$pid@$start"
+			fi
+			continue
+		fi
 		if [[ " $EMULATOR_GROUPS " != *" $pid@$start "* ]]; then
 			EMULATOR_GROUPS="${EMULATOR_GROUPS:+$EMULATOR_GROUPS }$pid@$start"
 			changed=1
@@ -92,7 +98,6 @@ const [file, root, ...ports] = process.argv.slice(2);
 const config = JSON.parse(fs.readFileSync(file));
 let listeners = new Set();
 try { listeners = new Set(execFileSync("lsof", ["-t", "-a", `-iTCP:${ports.join(",")}`, "-sTCP:LISTEN"], { encoding: "utf8" }).trim().split(/\s+/)); } catch {}
-const groups = new Set();
 for (const pid of fs.readdirSync("/proc").filter(pid => /^\d+$/.test(pid))) {
   try {
     const args = fs.readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0");
@@ -101,10 +106,9 @@ for (const pid of fs.readdirSync("/proc").filter(pid => /^\d+$/.test(pid))) {
     const java = path.basename(args[0]) === "java" && /\/cloud-firestore-emulator-v[\w.-]+\.jar$/.test(args[args.indexOf("-jar") + 1] || "") && flag("--rules", config.firestore.rules) && flag("--port", config.emulators.firestore.port) && ports.includes(String(config.emulators.firestore.port)) && flag("--websocket_port", config.emulators.firestore.websocketPort) && ports.includes(String(config.emulators.firestore.websocketPort));
     if ((!cli && !java) || fs.readlinkSync(`/proc/${pid}/cwd`) !== root) continue;
     const fields = fs.readFileSync(`/proc/${pid}/stat`, "utf8").split(") ").pop().split(" ");
-    groups.add(fields[2]);
+    console.log(`${pid} ${fields[2] === pid ? "group" : "member"}`);
   } catch {}
 }
-for (const group of groups) console.log(group);
 DISCOVER
 		fi
 	)
@@ -156,25 +160,30 @@ group_alive() {
 	ps -eo pgid=,stat= | awk -v group="$1" '$1 == group && $2 !~ /^Z/ { found=1 } END { exit !found }'
 }
 
-stop_group() {
-	local pid="$1" start="$2" current deadline=$((SECONDS + 15))
+stop_process() {
+	local pid="$1" start="$2" current deadline=$((SECONDS + 15)) target="-$1" check=group_alive
 	[[ "$pid" -gt 0 ]] || return 0
+	if [[ "${3:-}" == member ]]; then target="$pid" check=alive; fi
 	current="$(process_start "$pid" || true)"
 	if [[ -n "$current" && "$current" != "$start" ]]; then
 		echo "dev-stack: pid $pid was reused; leaving it alone" >&2
 		return 1
 	fi
-	kill -TERM -- "-$pid" 2>/dev/null || true
-	while group_alive "$pid"; do
+	if [[ "$check" == group_alive && -n "$current" && "$(ps -o pgid= -p "$pid" | tr -d ' ')" != "$pid" ]]; then
+		echo "dev-stack: pid $pid is not its process group leader; leaving group alone" >&2
+		return 1
+	fi
+	kill -TERM -- "$target" 2>/dev/null || true
+	while "$check" "$pid" "$start"; do
 		if ((SECONDS >= deadline)); then
-			kill -KILL -- "-$pid" 2>/dev/null || true
+			kill -KILL -- "$target" 2>/dev/null || true
 			sleep 1
 			break
 		fi
 		sleep 1
 	done
-	if group_alive "$pid"; then
-		echo "dev-stack: process group $pid still alive after shutdown" >&2
+	if "$check" "$pid" "$start"; then
+		echo "dev-stack: process target $target still alive after shutdown" >&2
 		return 1
 	fi
 }
@@ -184,11 +193,14 @@ cmd_down() {
 	read_state
 	capture_emulator_groups shutdown
 	local group port failed=0
-	stop_group "$WEB_PID" "$WEB_START" || failed=1
-	stop_group "$EMULATOR_PID" "$EMULATOR_START" || failed=1
+	stop_process "$WEB_PID" "$WEB_START" || failed=1
+	stop_process "$EMULATOR_PID" "$EMULATOR_START" || failed=1
 	capture_emulator_groups shutdown
 	for group in $EMULATOR_GROUPS; do
-		stop_group "${group%%@*}" "${group#*@}" || failed=1
+		stop_process "${group%%@*}" "${group#*@}" || failed=1
+	done
+	for group in $EMULATOR_MEMBERS; do
+		stop_process "${group%%@*}" "${group#*@}" member || failed=1
 	done
 	for port in "$WEB_PORT" "$AUTH_PORT" "$FIRESTORE_PORT" "$FIRESTORE_WEBSOCKET_PORT" "$HUB_PORT" "$LOGGING_PORT"; do
 		if listening "$port"; then
@@ -223,7 +235,7 @@ process.stdin.on("data", chunk => input += chunk);
 process.stdin.on("end", () => { const { lease, ports } = JSON.parse(input); console.log([lease, ...Object.values(ports)].join(" ")); });
 '
 		)
-		EMULATOR_PID=0 WEB_PID=0 EMULATOR_START="" WEB_START="" EMULATOR_GROUPS=""
+		EMULATOR_PID=0 WEB_PID=0 EMULATOR_START="" WEB_START="" EMULATOR_GROUPS="" EMULATOR_MEMBERS=""
 		write_state
 		trap 'cmd_down' ERR
 		node -e '
