@@ -218,4 +218,90 @@ for (const name of ["web", "auth", "firestore", "firestoreWebsocket", "hub", "lo
   socket.once("error", () => {});
 }
 CHECK
-echo "dev-stack claims, isolation, reuse, non-listening children, real CLI crash and failure cleanup: pass"
+PATH="$ORIGINAL_PATH" node - "$SECOND" "$DEV_STACK_REGISTRY" <<'CHECK'
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const { spawn, spawnSync } = require("node:child_process");
+const { setTimeout: sleep } = require("node:timers/promises");
+const [root, registry] = process.argv.slice(2);
+const stateFile = path.join(root, ".tmp/dev-stack/stack.json");
+const configFile = path.join(root, ".tmp/dev-stack/firebase.json");
+const live = pid => {
+  try { return fs.readFileSync(`/proc/${pid}/stat`, "utf8").split(") ").pop().split(" ")[0] !== "Z"; }
+  catch { return false; }
+};
+const processes = () => fs.readdirSync("/proc").filter(pid => /^\d+$/.test(pid)).flatMap(pid => {
+  try {
+    const fields = fs.readFileSync(`/proc/${pid}/stat`, "utf8").split(") ").pop().split(" ");
+    return [{ pid: +pid, parent: +fields[1], group: +fields[2], args: fs.readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0") }];
+  } catch { return []; }
+});
+(async () => {
+  for (const mode of ["failed-up", "explicit-down"]) {
+    for (let run = 1; run <= 5; run++) {
+      const log = path.join(root, `.tmp/dev-stack/startup-crash-${mode}-${run}.log`);
+      const fd = fs.openSync(log, "w");
+      const up = spawn("scripts/dev-stack.sh", ["up", "--no-web"], { cwd: root, stdio: ["ignore", fd, fd] });
+      const done = new Promise(resolve => up.once("exit", code => resolve(code)));
+      fs.closeSync(fd);
+      let state, cli, java, foreign;
+      try {
+        const deadline = Date.now() + 60000;
+        while (Date.now() < deadline && !java) {
+          try { state = JSON.parse(fs.readFileSync(stateFile)); } catch {}
+          if (state?.emulatorPid) {
+            const rows = processes();
+            if (!cli) {
+              cli = rows.find(row => row.args[1]?.endsWith("/firebase") && row.args.includes(configFile) && row.args.includes("emulators:start"));
+              if (cli) process.kill(up.pid, "SIGSTOP");
+            }
+            if (cli) java = rows.find(row => row.parent === cli.pid && row.group === row.pid && path.basename(row.args[0]) === "java");
+          }
+          if (!java) await sleep(2);
+        }
+        assert.ok(java, `detached Java not found; ${log}`);
+        state = JSON.parse(fs.readFileSync(stateFile));
+        assert.ok(!state.emulatorGroups.some(group => group.pid === java.pid), "Java must escape ancestry sampling");
+        if (mode === "explicit-down") process.kill(up.pid, "SIGKILL");
+        process.kill(cli.pid, "SIGKILL");
+        if (mode === "failed-up") process.kill(up.pid, "SIGCONT");
+        const timeout = setTimeout(() => up.kill("SIGKILL"), 60000);
+        const code = await done;
+        clearTimeout(timeout);
+        if (mode === "failed-up") {
+          assert.notEqual(code, 0, `up unexpectedly passed; ${log}`);
+          assert.ok(!live(java.pid), `Java survived failed up: ${java.pid}; ${log}`);
+          assert.ok(!fs.existsSync(stateFile), `state survived failed up; ${log}`);
+          assert.equal(fs.readdirSync(registry).length, 0);
+        }
+        if (mode === "explicit-down" && run === 1) {
+          foreign = spawn(process.execPath, ["-e", `require("node:http").createServer((req, res) => res.end("foreign")).listen(${state.web}, "127.0.0.1", () => console.log("ready"))`], { cwd: root, detached: true, stdio: ["ignore", "pipe", "inherit"] });
+          await new Promise((resolve, reject) => { foreign.stdout.once("data", resolve); foreign.once("error", reject); foreign.once("exit", () => reject(new Error("foreign listener exited before readiness"))); });
+          const refused = spawnSync("scripts/dev-stack.sh", ["down"], { cwd: root, encoding: "utf8", timeout: 60000 });
+          assert.equal(refused.status, 1);
+          assert.ok(refused.stderr.includes(`port ${state.web} still listening after shutdown`));
+          assert.ok(live(foreign.pid), "unverified listener must not be killed");
+          assert.ok(fs.existsSync(stateFile));
+          assert.equal(fs.readdirSync(registry).length, 6);
+          const exited = new Promise(resolve => foreign.once("exit", resolve));
+          foreign.kill("SIGKILL");
+          await exited;
+        }
+        const down = spawnSync("scripts/dev-stack.sh", ["down"], { cwd: root, encoding: "utf8", timeout: 60000 });
+        assert.equal(down.status, 0, down.stderr);
+        assert.ok(!live(java.pid), `Java survived down: ${java.pid}`);
+        assert.ok(!fs.existsSync(stateFile));
+        assert.equal(fs.readdirSync(registry).length, 0);
+        console.log(`startup CLI crash ${mode} ${run}/5: pass`);
+      } finally {
+        for (const pid of [up.pid, cli?.pid, foreign?.pid]) if (pid && live(pid)) { try { process.kill(pid, "SIGKILL"); } catch {} }
+        const detached = processes().filter(row => path.basename(row.args[0]) === "java" && row.args.includes(path.join(root, "firestore.rules")));
+        for (const pid of [java?.group, state?.emulatorPid, ...detached.map(row => row.group)]) if (pid) { try { process.kill(-pid, "SIGKILL"); } catch {} }
+        spawnSync("scripts/dev-stack.sh", ["down"], { cwd: root, stdio: "inherit", timeout: 60000 });
+      }
+    }
+  }
+})().catch(error => { console.error(error); process.exitCode = 1; });
+CHECK
+echo "dev-stack claims, isolation, reuse, non-listening children, real CLI crashes and failure cleanup: pass"

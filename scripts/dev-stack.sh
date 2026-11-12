@@ -62,7 +62,6 @@ fs.writeFileSync(file, JSON.stringify({ web: +web, auth: +auth, firestore: +fire
 }
 
 capture_emulator_groups() {
-	alive "$EMULATOR_PID" "$EMULATOR_START" || return 0
 	local pid start changed=0
 	while read -r pid; do
 		start="$(process_start "$pid" || true)"
@@ -71,7 +70,9 @@ capture_emulator_groups() {
 			EMULATOR_GROUPS="${EMULATOR_GROUPS:+$EMULATOR_GROUPS }$pid@$start"
 			changed=1
 		fi
-	done < <(ps -eo pid=,ppid=,pgid= | awk -v root="$EMULATOR_PID" '
+	done < <(
+		if alive "$EMULATOR_PID" "$EMULATOR_START"; then
+			ps -eo pid=,ppid=,pgid= | awk -v root="$EMULATOR_PID" '
 { parent[$1]=$2; group[$1]=$3 }
 END {
   descendant[root]=1;
@@ -80,7 +81,33 @@ END {
     for (pid in parent) if (!descendant[pid] && descendant[parent[pid]]) { descendant[pid]=1; changed=1 }
   } while (changed);
   for (pid in parent) if (descendant[pid] && pid != root && group[pid] == pid) print pid;
-}')
+}'
+		fi
+		if [[ "${1:-}" == shutdown && -f "$RUN_DIR/firebase.json" ]]; then
+			node - "$RUN_DIR/firebase.json" "$ROOT" "$WEB_PORT" "$AUTH_PORT" "$FIRESTORE_PORT" "$FIRESTORE_WEBSOCKET_PORT" "$HUB_PORT" "$LOGGING_PORT" <<'DISCOVER'
+const fs = require("node:fs");
+const path = require("node:path");
+const { execFileSync } = require("node:child_process");
+const [file, root, ...ports] = process.argv.slice(2);
+const config = JSON.parse(fs.readFileSync(file));
+let listeners = new Set();
+try { listeners = new Set(execFileSync("lsof", ["-t", "-a", `-iTCP:${ports.join(",")}`, "-sTCP:LISTEN"], { encoding: "utf8" }).trim().split(/\s+/)); } catch {}
+const groups = new Set();
+for (const pid of fs.readdirSync("/proc").filter(pid => /^\d+$/.test(pid))) {
+  try {
+    const args = fs.readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0");
+    const flag = (name, value) => args.indexOf(name) >= 0 && args[args.indexOf(name) + 1] === String(value);
+    const cli = listeners.has(pid) && /\/(firebase|firebase\.js)$/.test(args[1] || "") && args.includes("emulators:start") && flag("--config", file);
+    const java = path.basename(args[0]) === "java" && /\/cloud-firestore-emulator-v[\w.-]+\.jar$/.test(args[args.indexOf("-jar") + 1] || "") && flag("--rules", config.firestore.rules) && flag("--port", config.emulators.firestore.port) && ports.includes(String(config.emulators.firestore.port)) && flag("--websocket_port", config.emulators.firestore.websocketPort) && ports.includes(String(config.emulators.firestore.websocketPort));
+    if ((!cli && !java) || fs.readlinkSync(`/proc/${pid}/cwd`) !== root) continue;
+    const fields = fs.readFileSync(`/proc/${pid}/stat`, "utf8").split(") ").pop().split(" ");
+    groups.add(fields[2]);
+  } catch {}
+}
+for (const group of groups) console.log(group);
+DISCOVER
+		fi
+	)
 	if [[ "$changed" == 1 ]]; then write_state; fi
 }
 
@@ -155,10 +182,11 @@ stop_group() {
 cmd_down() {
 	[[ -f "$STATE" ]] || return 0
 	read_state
-	capture_emulator_groups
+	capture_emulator_groups shutdown
 	local group port failed=0
 	stop_group "$WEB_PID" "$WEB_START" || failed=1
 	stop_group "$EMULATOR_PID" "$EMULATOR_START" || failed=1
+	capture_emulator_groups shutdown
 	for group in $EMULATOR_GROUPS; do
 		stop_group "${group%%@*}" "${group#*@}" || failed=1
 	done
