@@ -419,7 +419,10 @@ test("section hit expansion stops before notes without changing their compact li
 		hitBox.y + hitBox.height - 1,
 	);
 	await expect(chip).toHaveAttribute("aria-expanded", "true");
+	await expect(page.getByRole("menuitem").first()).toBeFocused();
 	await page.keyboard.press("Escape");
+	await expect(chip).toHaveAttribute("aria-expanded", "false");
+	await expect(page.getByRole("menuitem")).toHaveCount(0);
 	await expect(chip).toBeFocused();
 	await page.touchscreen.tap(notesBox.x + 1, notesBox.y + 1);
 	await expect(

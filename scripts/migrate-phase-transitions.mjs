@@ -10,7 +10,7 @@
  *   node scripts/migrate-phase-transitions.mjs --project <id>
  *   node scripts/migrate-phase-transitions.mjs --project <id> --drop-legacy
  *
- * For emulator verification, set FIRESTORE_EMULATOR_HOST=127.0.0.1:8052.
+ * For emulator verification, set FIRESTORE_EMULATOR_HOST using scripts/dev-stack.sh env.
  */
 
 import { isDeepStrictEqual } from "node:util";

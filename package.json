@@ -7,7 +7,7 @@
 		"reset-project": "node ./scripts/reset-project.js",
 		"android": "yarn start --android",
 		"ios": "yarn start --ios",
-		"web": "yarn start --web --port $(scripts/dev-stack.sh dev-port)",
+		"web": "scripts/dev-stack.sh web",
 		"build:web": "expo export --platform web",
 		"deploy:dev": "firebase deploy --only firestore:rules,firestore:indexes --project default",
 		"lint": "biome check",
@@ -15,8 +15,7 @@
 		"invariants": "scripts/check-invariants.sh",
 		"format": "biome format --write",
 		"test": "jest",
-		"e2e": "playwright test",
-		"emulators": "firebase emulators:start"
+		"e2e": "playwright test"
 	},
 	"jest": {
 		"preset": "jest-expo",

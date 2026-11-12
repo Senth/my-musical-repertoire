@@ -8,27 +8,21 @@
 
 | Stack | Web port | Backend | Started by | Used for |
 | --- | --- | --- | --- | --- |
-| Hand-driven dev | 8053 (main) · 8054 (worktree) | real `my-musical-repertoire-dev` | you | day-to-day development, hand-driven `playwright-cli` checks |
-| e2e | 8055 (main) · 8056 (worktree) | Firebase emulators | `scripts/dev-stack.sh` | `yarn e2e`, the browser review, CI |
+| Hand-driven dev | `scripts/dev-stack.sh dev-port` | real `my-musical-repertoire-dev` | `yarn web` | day-to-day development, hand-driven `playwright-cli` checks |
+| e2e | `scripts/dev-stack.sh ports` | this checkout's Firebase emulators | `scripts/dev-stack.sh up` | `yarn e2e`, the browser review, CI |
 
 They exist separately so a test run cannot disturb the app you are looking at, and
-so `yarn e2e` never writes into the dev project. The port pairs follow the same
-rule: **main checkout takes the lower number, a worktree the higher**, decided from
-the directory name.
+so `yarn e2e` never writes into the dev project. Every checkout claims its own ports
+in **7000-7999** from the machine-wide registry at `~/.local/state/dev-ports/`.
+`scripts/dev-ports.ts` checks both the registry and listening sockets before claiming
+a port. Main checkouts, worktrees and other repos use the same allocation rules.
+Never assume a port.
 
-Every worktree shares 8056, and a web server serves the code of the checkout that
-started it. `scripts/dev-stack.sh up` therefore refuses a server on its web port that
-it did not start itself; when a sibling worktree holds 8056, run both commands with
-`E2E_WEB_PORT=<free port>` (`E2E_WEB_PORT=8057 scripts/dev-stack.sh up && E2E_WEB_PORT=8057 yarn e2e`).
-
-This project owns **8050-8056** outright. The sibling `home-backlog` owns 8060-8064
-and 8081, so neither repo's stack can ever take a port the other is using — which
-matters because both are Expo web apps and Expo's own default is 8081.
-
-Hand-driven checks — the `playwright-cli` skill, or just looking at something —
-run against the dev project on 8053, signed in as **senth.wallace@gmail.com** with
+For hand-driven checks with `playwright-cli`, start `yarn web`, then read
+`scripts/dev-stack.sh dev-port` for the dev-project web port. Sign in as **senth.wallace@gmail.com** with
 the password **hellomynameispassword123**. That is a throwaway dev-project account
-and nothing else. `yarn web` pins the port for you.
+and nothing else. `yarn web` claims a separate `dev-web` port and clears emulator
+environment variables before starting Expo. Stop it with Ctrl-C.
 
 `config/firebase.ts` connects to the emulators only when
 `EXPO_PUBLIC_USE_EMULATORS=1`, and only `scripts/dev-stack.sh` sets it. Nothing
@@ -40,31 +34,41 @@ reaching production by accident.
 ```bash
 scripts/dev-stack.sh up      # emulators + an emulator-backed web server
 yarn e2e                     # the suite
-scripts/dev-stack.sh down    # stops this web server; emulators stop after the last lease
+scripts/dev-stack.sh down    # stops this checkout's web server and emulators
 ```
 
-`up` is idempotent: it reuses a suite that is already listening rather than
-failing, and fresh emulators boot **empty** — the fixture is written
-programmatically at the start of every run, so there is no committed export to
-import. Other checkout accounts remain untouched when a reused suite is seeded.
+`up` is idempotent: it reuses this checkout's running stack. Fresh emulators boot
+**empty**. The fixture is written programmatically at the start of every run, so
+there is no committed export to import.
 
-Emulator ports come from `firebase.json` (`8050` UI, `8051` auth, `8052`
-Firestore), which has no env interpolation, so **every checkout shares one
-emulator suite**. Each checkout gets its own fixture account, so simultaneous
-e2e runs cannot overwrite each other's fixture. The seed makes each run
-deterministic.
+Each checkout has its own emulator suite running its own `firestore.rules` and
+indexes. `up` claims six ports: `web`, `auth`, `firestore`, `firestoreWebsocket`,
+`hub` and `logging`, then writes the runtime Firebase config to
+`.tmp/dev-stack/firebase.json`. The emulator UI is disabled, but Firestore still
+opens its WebSocket listener on the claimed `firestoreWebsocket` port. Stack ports,
+allocation lease and process identities live in
+`.tmp/dev-stack/stack.json`.
 
-Each `up` writes or refreshes a checkout lease under
-`~/.cache/my-musical-repertoire/dev-stack/leases/`. `down` stops this checkout's
-web server, removes its lease, and prunes leases whose web-server pid is dead.
-It stops the emulators only when no leases remain, regardless of which checkout
-started them. Otherwise it lists the checkouts still holding leases and leaves
-the emulators running. Leases from `up --no-web` have no pid and remain until
-that checkout runs `down`. `scripts/dev-stack.sh status` lists the live leases.
+`scripts/dev-stack.sh ports` prints the running e2e web port.
+`scripts/dev-stack.sh env` prints the web and emulator ports plus the fixture email;
+`playwright.config.ts` reads it before every run. Start the stack first, even when
+running Playwright directly. `scripts/dev-stack.sh status` lists each stack service's
+port and process state. `up --no-web` starts only the emulators.
+
+`down` stops only this checkout's recorded web and emulator process groups, including
+detached Firestore Java groups recorded during startup. It waits for non-listening
+children too, escalating to SIGKILL after 15 seconds. Claims and state are removed
+only after every recorded group has exited and every stack port has closed.
+It does not stop another checkout's stack or the separate
+`yarn web` process. When the dispatcher finishes every step, it runs the `[dev] stop`
+command in `.ai/config.toml`.
 
 Services are started with `setsid` so `down` can signal the whole process group.
 Signalling the `yarn` wrapper alone leaves the `node` process it spawned holding
-the port, which then reads as "reused" on the next `up`.
+the port, which then reads as "reused" on the next `up`. Each allocation also gets
+a random lease identity, required when assigning or releasing claims. A delayed
+launcher cannot take over or delete claims reallocated to another checkout after
+the three-second ownerless grace period.
 
 ## The review fixture
 

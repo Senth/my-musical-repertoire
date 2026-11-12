@@ -42,8 +42,7 @@ yarn web
 ### Running with Firebase Emulators
 
 ```bash
-firebase emulators:start
-yarn web
+scripts/dev-stack.sh up
 ```
 
 ## Project Structure

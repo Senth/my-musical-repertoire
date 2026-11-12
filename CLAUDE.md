@@ -26,15 +26,16 @@ My Musical Repertoire: an Expo / React Native web-first practice app on Firebase
   which makes the privacy policy a false statement.
 - Changing `firestore.rules` means `yarn deploy:dev`. An undeployed rule is not a rule,
   and it is the usual cause of "Missing or insufficient permissions".
-- Local e2e runs against the **Firebase emulators**, never the dev project. This repo
-  owns ports **8050-8056**; see [OPERATIONS.md](docs/OPERATIONS.md) for which is which
-  and how to boot the stack.
+- Local e2e runs against the **Firebase emulators**, never the dev project. Every checkout
+  claims its ports from the shared **7000-7999 registry**; see
+  [OPERATIONS.md](docs/OPERATIONS.md) for allocation and how to boot the stack.
 - After implementing: `yarn lint --write`, `yarn invariants`, `yarn typecheck`,
   `yarn test` — fix everything they report, including pre-existing failures. `yarn e2e`
   is the fifth gate, run by the review stage and by CI, and needs
   `scripts/dev-stack.sh up`. The ordered list is `[gates]` in
   [`.ai/config.toml`](.ai/config.toml), and that list is what a green report is
   measured against.
+- When the dispatcher finishes every step, run `[dev] stop` from `.ai/config.toml`.
 - `yarn invariants` ([`scripts/check-invariants.sh`](scripts/check-invariants.sh)) is
   where the greppable rules above are enforced. Silence a false positive with a trailing
   `// invariants:allow`, never by widening the pattern; the script drops those lines in

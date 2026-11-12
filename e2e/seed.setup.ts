@@ -58,10 +58,9 @@ import { nextPracticeDaysSinceSpan } from "@/utils/span-cadence";
  * twice is what makes the seed idempotent.
  */
 
-/** Ports come from firebase.json, like everywhere else that points at the suite. */
 const HOST = process.env.EXPO_PUBLIC_EMULATOR_HOST ?? "127.0.0.1";
-const AUTH_PORT = 8051;
-const FIRESTORE_PORT = 8052;
+const AUTH_PORT = Number(process.env.AUTH_EMULATOR_PORT);
+const FIRESTORE_PORT = Number(process.env.FIRESTORE_EMULATOR_PORT);
 const PROJECT_ID =
 	process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? "my-musical-repertoire-dev";
 

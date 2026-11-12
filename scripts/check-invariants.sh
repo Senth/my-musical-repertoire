@@ -354,6 +354,18 @@ else
 	report 10 "e2e test from support/test" ok
 fi
 
+mapfile -t -d '' PORT_FILES < <(
+	git ls-files -z --cached --others --exclude-standard scripts/ config/ e2e/ playwright.config.ts firebase.json package.json
+)
+PATTERN='\b(805[0-9]|4[45]00)\b'
+hits=$(scan "${PORT_FILES[@]}" | drop_allowed)
+if [[ -n "$hits" ]]; then
+	report 11 "no legacy dev ports" FAIL "$hits" \
+		"Read allocated ports from scripts/dev-stack.sh instead of hardcoding them."
+else
+	report 11 "no legacy dev ports" ok
+fi
+
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
