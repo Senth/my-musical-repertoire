@@ -2,7 +2,7 @@ import type { ModeKey } from "@/models/practice";
 import { parseModeKey } from "./practice-modes";
 
 /** Minimal shape of i18next's `t` — avoids threading its generics everywhere. */
-type Translate = (key: string, options?: Record<string, unknown>) => string;
+type Translate = (key: string) => string;
 
 /** Chip-sized label: `LH`, `HT`, `LH staccato`. */
 export function modeLabel(key: ModeKey, t: Translate): string {
