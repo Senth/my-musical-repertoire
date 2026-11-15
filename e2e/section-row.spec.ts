@@ -509,6 +509,22 @@ for (const colorScheme of ["light", "dark"] as const) {
 			await chip.evaluate((element) => (element as HTMLElement).click());
 			await expect(chip).toHaveAttribute("aria-expanded", "true");
 			const firstItem = page.getByRole("menuitem").first();
+			const menuOpacity = () =>
+				firstItem.evaluate((element) => {
+					let opacity = 1;
+					for (
+						let node: Element | null = element;
+						node;
+						node = node.parentElement
+					)
+						opacity *= Number(getComputedStyle(node).opacity);
+					return opacity;
+				});
+			const expectMenuClosed = async () => {
+				await expect(chip).toHaveAttribute("aria-expanded", "false");
+				await expect(page.getByRole("menuitem")).toHaveCount(0);
+				await expect(chip).toBeFocused();
+			};
 			await expect(firstItem).toBeFocused();
 			await page
 				.getByRole("menuitem", {
@@ -516,18 +532,19 @@ for (const colorScheme of ["light", "dark"] as const) {
 					exact: true,
 				})
 				.click();
-			await expect(chip).toHaveAttribute("aria-expanded", "false");
-			await expect(chip).toBeFocused();
+			await expectMenuClosed();
 			await chip.press("Enter");
 			await expect(chip).toHaveAttribute("aria-expanded", "true");
+			await expect.poll(menuOpacity).toBe(1);
 			await expect(firstItem).toBeFocused();
 			await page.keyboard.press("Escape");
-			await expect(chip).toBeFocused();
+			await expectMenuClosed();
 			await chip.press("Space");
 			await expect(chip).toHaveAttribute("aria-expanded", "true");
+			await expect.poll(menuOpacity).toBe(1);
 			await expect(firstItem).toBeFocused();
 			await page.keyboard.press("Escape");
-			await expect(chip).toBeFocused();
+			await expectMenuClosed();
 			for (const [x, y] of [
 				[hitBox.x + 1, hitBox.y + 1],
 				[hitBox.x + hitBox.width - 1, hitBox.y + 1],
@@ -537,9 +554,10 @@ for (const colorScheme of ["light", "dark"] as const) {
 			]) {
 				await page.touchscreen.tap(x, y);
 				await expect(chip).toHaveAttribute("aria-expanded", "true");
+				await expect.poll(menuOpacity).toBe(1);
 				await expect(firstItem).toBeFocused();
 				await page.keyboard.press("Escape");
-				await expect(chip).toBeFocused();
+				await expectMenuClosed();
 			}
 			await expect(
 				page.getByText(t("screen.pieceSections.editSection")),

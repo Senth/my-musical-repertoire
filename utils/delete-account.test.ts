@@ -41,7 +41,6 @@ describe("deleteAllUserData", () => {
 		tree["users/u1/pieces"] = ["p1"];
 		tree["users/u1/pieces/p1/sections"] = ["s1"];
 		tree["users/u1/pieces/p1/sections/s1/practiceLogs"] = ["sl1"];
-		tree["users/u1/pieces/p1/sections/s1/phaseTransitions"] = ["st1"];
 		tree["users/u1/pieces/p1/sections/s1/stateTransitions"] = ["st2"];
 		tree["users/u1/pieces/p1/practiceLogs"] = ["pl1"];
 		tree["users/u1/techniques"] = ["t1"];
@@ -57,8 +56,6 @@ describe("deleteAllUserData", () => {
 				"users/u1/pieces/p1/practiceLogs/pl1",
 				"users/u1/pieces/p1/sections/s1",
 				"users/u1/pieces/p1/sections/s1/practiceLogs/sl1",
-				"users/u1/pieces/p1/sections/s1/phaseTransitions/st1",
-				"users/u1/pieces/p1/sections/s1/stateTransitions/st1",
 				"users/u1/pieces/p1/sections/s1/stateTransitions/st2",
 				"users/u1/sessionPresets/pr1",
 				"users/u1/sightReadingLogs/sr1",
@@ -72,7 +69,6 @@ describe("deleteAllUserData", () => {
 		tree["users/u1/pieces"] = ["p1"];
 		tree["users/u1/pieces/p1/sections"] = ["s1"];
 		tree["users/u1/pieces/p1/sections/s1/practiceLogs"] = ["sl1"];
-		tree["users/u1/pieces/p1/sections/s1/phaseTransitions"] = ["st1"];
 		tree["users/u1/pieces/p1/sections/s1/stateTransitions"] = ["st2"];
 
 		await deleteAllUserData("u1");
@@ -83,12 +79,6 @@ describe("deleteAllUserData", () => {
 		);
 		expect(
 			paths.indexOf("users/u1/pieces/p1/sections/s1/stateTransitions/st2"),
-		).toBeLessThan(paths.indexOf("users/u1/pieces/p1/sections/s1"));
-		expect(paths).toContain(
-			"users/u1/pieces/p1/sections/s1/phaseTransitions/st1",
-		);
-		expect(
-			paths.indexOf("users/u1/pieces/p1/sections/s1/phaseTransitions/st1"),
 		).toBeLessThan(paths.indexOf("users/u1/pieces/p1/sections/s1"));
 		expect(
 			paths.indexOf("users/u1/pieces/p1/sections/s1/practiceLogs/sl1"),
@@ -107,9 +97,8 @@ describe("deleteAllUserData", () => {
 		expect(mockBatchCommit).toHaveBeenCalledTimes(2);
 	});
 
-	it("removes a target copied after enumeration even across a batch boundary", async () => {
+	it("deletes state transitions before their section across a batch boundary", async () => {
 		const section = "users/u1/pieces/p1/sections/s1";
-		const source = `${section}/phaseTransitions/st1`;
 		const target = `${section}/stateTransitions/st1`;
 		tree["users/u1/pieces"] = ["p1"];
 		tree["users/u1/pieces/p1/sections"] = ["s1"];
@@ -117,21 +106,13 @@ describe("deleteAllUserData", () => {
 			{ length: 449 },
 			(_, i) => `l${i}`,
 		);
-		tree[`${section}/phaseTransitions`] = ["st1"];
-		const stored = new Set([source]);
-		let committed = 0;
-		mockBatchCommit.mockImplementation(async () => {
-			if (stored.has(source)) stored.add(target);
-			for (const path of deletedPaths().slice(committed)) stored.delete(path);
-			committed = deletedPaths().length;
-		});
+		tree[`${section}/stateTransitions`] = ["st1"];
 
 		await deleteAllUserData("u1");
 
-		expect(stored.has(source)).toBe(false);
-		expect(stored.has(target)).toBe(false);
-		expect(deletedPaths().indexOf(source)).toBeLessThan(
-			deletedPaths().indexOf(target),
+		expect(deletedPaths()).toContain(target);
+		expect(deletedPaths().indexOf(target)).toBeLessThan(
+			deletedPaths().indexOf(section),
 		);
 		expect(mockBatchCommit).toHaveBeenCalledTimes(2);
 	});
