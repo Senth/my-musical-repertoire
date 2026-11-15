@@ -207,11 +207,7 @@ async function wipeUserData(db: Firestore) {
 	for (const piece of pieces.docs) {
 		const sections = await getDocs(collection(piece.ref, "sections"));
 		for (const section of sections.docs) {
-			for (const sub of [
-				"practiceLogs",
-				"stateTransitions",
-				"phaseTransitions",
-			]) {
+			for (const sub of ["practiceLogs", "stateTransitions"]) {
 				const logs = await getDocs(collection(section.ref, sub));
 				targets.push(...logs.docs.map((d) => d.ref));
 			}
