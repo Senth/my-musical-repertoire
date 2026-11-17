@@ -33,8 +33,11 @@ export default function TechniqueDetailScreen() {
 	const goBack = useUpNavigation("/(app)/(tabs)/technique");
 
 	const { technique: item, loading } = useTechnique(id);
-	const { techniques: curriculumTechniques, failed: curriculumFailed } =
-		useCurriculumTechniques(id ? [id] : []);
+	const {
+		techniques: curriculumTechniques,
+		failed: curriculumFailed,
+		loading: curriculumLoading,
+	} = useCurriculumTechniques(id ? [id] : []);
 	const { deleteTechnique } = useDeleteTechnique();
 
 	const pageInset = usePageInset();
@@ -65,7 +68,7 @@ export default function TechniqueDetailScreen() {
 		}
 	};
 
-	if (loading) {
+	if (loading || curriculumLoading) {
 		return <LoadingScreen />;
 	}
 

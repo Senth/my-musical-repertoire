@@ -70,6 +70,7 @@ import {
 	useAdvanceTechnique,
 	useCurriculumTechniques,
 	useHasAnyTechnique,
+	useHasPracticedTechnique,
 	useLinkCatalogTechnique,
 	useSnoozeTechniqueNudge,
 	useTechnique,
@@ -374,21 +375,26 @@ describe("useCurriculumTechniques", () => {
 		const [own] = listeners;
 		const [, queueFailed] = failures;
 		expect(result.current.failed).toBe(false);
+		expect(result.current.loading).toBe(true);
 		await act(() => {
 			own(snapshot(["c", "active"]));
 			queueFailed(new Error("failed-precondition"));
 		});
 		expect(result.current.failed).toBe(true);
+		expect(result.current.loading).toBe(false);
 		expect(result.current.techniques).toEqual([]);
 	});
 
 	it("withholds techniques until the queue's first page has arrived", async () => {
 		const { result } = await renderHook(() => useCurriculumTechniques(["c"]));
 		const [own, queue] = listeners;
+		expect(result.current.loading).toBe(true);
 		await act(() => own(snapshot(["c", "active"])));
 		expect(result.current.techniques).toEqual([]);
+		expect(result.current.loading).toBe(true);
 		await act(() => queue(snapshot(["g", "not_started"])));
 		expect(result.current.techniques.map((t) => t.id)).toEqual(["c", "g"]);
+		expect(result.current.loading).toBe(false);
 		expect(result.current.showMore).toBeUndefined();
 	});
 
@@ -415,6 +421,7 @@ describe("useCurriculumTechniques", () => {
 		const { result } = await renderHook(() => useCurriculumTechniques([]));
 		expect(listeners).toHaveLength(0);
 		expect(result.current.techniques).toEqual([]);
+		expect(result.current.loading).toBe(false);
 	});
 });
 
@@ -597,6 +604,26 @@ describe("constrained technique readers", () => {
 		await rerender({ enabled: false });
 		expect([true, false]).not.toContain(result.current);
 		expect(unsubscribe).toHaveBeenCalledTimes(1);
+
+		await unmount();
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
+	});
+
+	it("probes for any practiced technique with one constrained result", async () => {
+		const { result, unmount } = await renderHook(() =>
+			useHasPracticedTechnique(),
+		);
+
+		expect(where).toHaveBeenCalledWith("lastPracticedAt", "!=", null);
+		expect(limit).toHaveBeenCalledWith(1);
+		expect(query).toHaveBeenCalledWith(
+			"users/u1/techniques",
+			undefined,
+			undefined,
+		);
+		expect(result.current).toBeUndefined();
+		await act(() => listeners[0]({ size: 1 }));
+		expect(result.current).toBe(true);
 
 		await unmount();
 		expect(unsubscribe).toHaveBeenCalledTimes(1);

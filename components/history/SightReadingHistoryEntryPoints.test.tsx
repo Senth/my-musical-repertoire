@@ -25,6 +25,9 @@ let mockTechniques: TechniqueItem[] = [];
 let mockFilters: TechniqueFilters | undefined;
 let mockLoading = false;
 let mockHasAny: boolean | undefined = true;
+let mockHasPracticedTechnique: boolean | undefined = false;
+let mockInstallPromptAvailable = false;
+let mockInstallDismissed = true;
 const mockHasAnyTechnique = jest.fn((enabled: boolean) =>
 	enabled ? mockHasAny : undefined,
 );
@@ -51,6 +54,7 @@ jest.mock("@/hooks/use-techniques", () => ({
 	}),
 	useTechniquesByType: () => ({ techniques: [], loading: false }),
 	useHasAnyTechnique: (enabled: boolean) => mockHasAnyTechnique(enabled),
+	useHasPracticedTechnique: () => mockHasPracticedTechnique,
 	useDeleteTechnique: () => ({ deleteTechnique: jest.fn() }),
 }));
 jest.mock("@/hooks/use-pieces", () => ({
@@ -67,7 +71,10 @@ jest.mock("@/hooks/use-session-presets", () => ({
 	}),
 }));
 jest.mock("@/hooks/use-install-prompt", () => ({
-	useInstallPrompt: () => ({ promptAvailable: false, standalone: false }),
+	useInstallPrompt: () => ({
+		promptAvailable: mockInstallPromptAvailable,
+		standalone: false,
+	}),
 }));
 jest.mock("@/hooks/use-fab-visible", () => ({ useFabVisible: () => false }));
 jest.mock("@/hooks/use-fab-style", () => ({ useFabStyleTabs: () => ({}) }));
@@ -90,7 +97,9 @@ jest.mock("@/hooks/use-list-prefs", () => ({
 }));
 jest.mock("@/utils/session-storage", () => ({
 	readActiveSession: jest.fn().mockResolvedValue(null),
-	readInstallPromptDismissed: jest.fn().mockResolvedValue(true),
+	readInstallPromptDismissed: jest.fn(() =>
+		Promise.resolve(mockInstallDismissed),
+	),
 }));
 jest.mock("@/hooks/use-sight-reading-logs", () => ({
 	fetchLastSightReading: jest.fn().mockResolvedValue(null),
@@ -111,6 +120,9 @@ beforeEach(() => {
 	mockFilters = undefined;
 	mockLoading = false;
 	mockHasAny = true;
+	mockHasPracticedTechnique = false;
+	mockInstallPromptAvailable = false;
+	mockInstallDismissed = true;
 	mockTechniques = [
 		{
 			id: "scale",
@@ -244,3 +256,19 @@ it.each([lightTheme, darkTheme])(
 		expect(mockBack).toHaveBeenCalledTimes(1);
 	},
 );
+
+it("preserves install eligibility when only a retired technique was practiced", async () => {
+	mockTechniques = [];
+	mockHasPracticedTechnique = true;
+	mockInstallPromptAvailable = true;
+	mockInstallDismissed = false;
+	const screen = await render(
+		<PaperProvider theme={lightTheme}>
+			<OverviewScreen />
+		</PaperProvider>,
+	);
+
+	await waitFor(() =>
+		expect(screen.getByText("Install Repertoire")).toBeTruthy(),
+	);
+});

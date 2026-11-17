@@ -44,6 +44,7 @@ import {
 } from "@/hooks/use-session-presets";
 import {
 	ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES,
+	useHasPracticedTechnique,
 	useTechniquesByState,
 } from "@/hooks/use-techniques";
 import { SECTION_STATES } from "@/models/section";
@@ -91,6 +92,7 @@ export default function OverviewScreen() {
 	const { techniques, loading: techniquesLoading } = useTechniquesByState(
 		ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES,
 	);
+	const hasPracticedTechnique = useHasPracticedTechnique();
 	const { sections, loading: sectionsLoading } = useAllSections();
 	const tabBarHeight = useBottomTabBarHeight();
 	const fabStyle = useFabStyleTabs();
@@ -163,11 +165,16 @@ export default function OverviewScreen() {
 		// the app" is read off the repertoire's own practice timestamps.
 		hasPracticed:
 			pieces.some((p) => p.lastPracticed != null) ||
-			techniques.some((tn) => tn.lastPracticedAt != null),
+			hasPracticedTechnique === true,
 		dismissed: installDismissed,
 	});
 
-	if (piecesLoading || techniquesLoading || sectionsLoading) {
+	if (
+		piecesLoading ||
+		techniquesLoading ||
+		sectionsLoading ||
+		hasPracticedTechnique === undefined
+	) {
 		return <LoadingScreen />;
 	}
 

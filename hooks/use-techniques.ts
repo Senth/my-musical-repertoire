@@ -221,6 +221,29 @@ export function useHasAnyTechnique(enabled: boolean): boolean | undefined {
 	return hasAny;
 }
 
+export function useHasPracticedTechnique(): boolean | undefined {
+	const { user } = useAuth();
+	const uid = user?.uid;
+	const [hasPracticed, setHasPracticed] = useState<boolean>();
+
+	useEffect(() => {
+		setHasPracticed(undefined);
+		if (!uid) {
+			setHasPracticed(false);
+			return;
+		}
+
+		const ref = collection(db, "users", uid, "techniques");
+		return onSnapshot(
+			query(ref, where("lastPracticedAt", "!=", null), limit(1)),
+			(snapshot) => setHasPracticed(snapshot.size > 0),
+			() => setHasPracticed(false),
+		);
+	}, [uid]);
+
+	return hasPracticed;
+}
+
 export const QUEUE_PAGE = 20;
 
 const queuePage = (uid: string, ...after: QueryConstraint[]) =>
@@ -237,6 +260,7 @@ export function useCurriculumTechniques(ids: string[]): {
 	techniques: TechniqueItem[];
 	showMore?: () => Promise<void>;
 	failed: boolean;
+	loading: boolean;
 } {
 	const { user } = useAuth();
 	const [own, setOwn] = useState<TechniqueItem[] | null>(null);
@@ -260,6 +284,7 @@ export function useCurriculumTechniques(ids: string[]): {
 						fromFirestore(d.id, d.data() as FirestoreTechnique, uid),
 					),
 				),
+			() => setFailed(true),
 		);
 		const unsubscribeQueue = onSnapshot(
 			queuePage(uid),
@@ -293,7 +318,12 @@ export function useCurriculumTechniques(ids: string[]): {
 				}
 			: undefined;
 
-	return { techniques, showMore, failed };
+	return {
+		techniques,
+		showMore,
+		failed,
+		loading: Boolean(uid && key && (!own || pages.length === 0) && !failed),
+	};
 }
 
 export function useAddTechnique() {
