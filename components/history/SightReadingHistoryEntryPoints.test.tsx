@@ -49,6 +49,7 @@ jest.mock("@/hooks/use-techniques", () => ({
 		techniques: mockTechniques,
 		loading: mockLoading,
 	}),
+	useTechniquesByType: () => ({ techniques: [], loading: false }),
 	useHasAnyTechnique: (enabled: boolean) => mockHasAnyTechnique(enabled),
 	useDeleteTechnique: () => ({ deleteTechnique: jest.fn() }),
 }));

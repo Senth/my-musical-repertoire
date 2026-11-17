@@ -74,6 +74,7 @@ import {
 	useSnoozeTechniqueNudge,
 	useTechnique,
 	useTechniquesByState,
+	useTechniquesByType,
 	useUpdateTechnique,
 } from "./use-techniques";
 
@@ -479,6 +480,37 @@ describe("constrained technique readers", () => {
 		expect(result.current.techniques.map(({ id }) => id)).toEqual([
 			"active",
 			"maintenance",
+		]);
+		expect(result.current.loading).toBe(false);
+
+		await unmount();
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
+	});
+
+	it("queries requested types across every state", async () => {
+		const { result, unmount } = await renderHook(() =>
+			useTechniquesByType(["scale", "arpeggio"]),
+		);
+
+		expect(where).toHaveBeenCalledWith("type", "in", ["arpeggio", "scale"]);
+		expect(onSnapshot).toHaveBeenCalledTimes(1);
+		await act(() =>
+			listeners[0]({
+				docs: ["active", "not_started", "retired"].map((state) => ({
+					id: state,
+					data: () => ({
+						title: state,
+						state,
+						type: "scale",
+						dateIntroduced: { toDate: () => new Date(0) },
+					}),
+				})),
+			}),
+		);
+		expect(result.current.techniques.map(({ state }) => state)).toEqual([
+			"active",
+			"not_started",
+			"retired",
 		]);
 		expect(result.current.loading).toBe(false);
 

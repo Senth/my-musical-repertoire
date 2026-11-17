@@ -22,7 +22,7 @@ import {
 	useAddAllCatalog,
 	useAddCatalogTechnique,
 	useLinkCatalogTechnique,
-	useTechniques,
+	useTechniquesByType,
 } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { TechniqueItem } from "@/models/technique";
@@ -64,7 +64,7 @@ export default function ScalesScreen() {
 	const isCompact = useIsCompact();
 	const pageInset = usePageInset();
 	const goBack = useUpNavigation("/technique");
-	const { techniques, loading } = useTechniques();
+	const { techniques, loading } = useTechniquesByType(["scale", "arpeggio"]);
 	const { addCatalogTechnique } = useAddCatalogTechnique();
 	const { addAllCatalog } = useAddAllCatalog();
 	const { linkCatalogTechnique } = useLinkCatalogTechnique();

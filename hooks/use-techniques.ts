@@ -117,35 +117,6 @@ function sortTechniques(items: TechniqueItem[]): TechniqueItem[] {
 	});
 }
 
-export function useTechniques() {
-	const { user } = useAuth();
-	const [techniques, setTechniques] = useState<TechniqueItem[]>([]);
-	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		if (!user) {
-			setTechniques([]);
-			setLoading(false);
-			return;
-		}
-
-		const ref = collection(db, "users", user.uid, "techniques");
-		const q = query(ref);
-
-		const unsubscribe = onSnapshot(q, (snapshot) => {
-			const result = snapshot.docs.map((d) =>
-				fromFirestore(d.id, d.data() as FirestoreTechnique, user.uid),
-			);
-			setTechniques(sortTechniques(result));
-			setLoading(false);
-		});
-
-		return unsubscribe;
-	}, [user]);
-
-	return { techniques, loading };
-}
-
 export function useTechnique(id: string): {
 	technique: TechniqueItem | undefined;
 	loading: boolean;
@@ -180,7 +151,10 @@ export function useTechnique(id: string): {
 	return { technique, loading };
 }
 
-export function useTechniquesByState(states: readonly TechniqueState[]): {
+function useTechniquesBy(
+	field: "state" | "type",
+	values: readonly (TechniqueState | TechniqueType)[],
+): {
 	techniques: TechniqueItem[];
 	loading: boolean;
 } {
@@ -188,36 +162,45 @@ export function useTechniquesByState(states: readonly TechniqueState[]): {
 	const uid = user?.uid;
 	const [snapshot, setSnapshot] = useState<{
 		uid: string;
-		stateKey: string;
+		queryKey: string;
 		techniques: TechniqueItem[];
 	}>();
-	const stateKey = [...new Set(states)].sort().join(",");
+	const valueKey = [...new Set(values)].sort().join(",");
+	const queryKey = `${field}:${valueKey}`;
 
 	useEffect(() => {
-		if (!uid || !stateKey) {
+		if (!uid || !valueKey) {
 			setSnapshot(undefined);
 			return;
 		}
 
 		const ref = collection(db, "users", uid, "techniques");
-		const q = query(ref, where("state", "in", stateKey.split(",")));
+		const q = query(ref, where(field, "in", valueKey.split(",")));
 		return onSnapshot(q, (snapshot) => {
 			const result = snapshot.docs.map((d) =>
 				fromFirestore(d.id, d.data() as FirestoreTechnique, uid),
 			);
-			setSnapshot({ uid, stateKey, techniques: sortTechniques(result) });
+			setSnapshot({ uid, queryKey, techniques: sortTechniques(result) });
 		});
-	}, [stateKey, uid]);
+	}, [field, queryKey, uid, valueKey]);
 
 	return {
 		techniques:
-			uid && stateKey && snapshot?.uid === uid ? snapshot.techniques : [],
+			uid && valueKey && snapshot?.uid === uid ? snapshot.techniques : [],
 		loading: Boolean(
 			uid &&
-				stateKey &&
-				(snapshot?.uid !== uid || snapshot?.stateKey !== stateKey),
+				valueKey &&
+				(snapshot?.uid !== uid || snapshot?.queryKey !== queryKey),
 		),
 	};
+}
+
+export function useTechniquesByState(states: readonly TechniqueState[]) {
+	return useTechniquesBy("state", states);
+}
+
+export function useTechniquesByType(types: readonly TechniqueType[]) {
+	return useTechniquesBy("type", types);
 }
 
 export function useHasAnyTechnique(enabled: boolean): boolean | undefined {
