@@ -40,6 +40,7 @@ jest.mock("@/contexts/AuthContext", () => ({
 }));
 jest.mock("@/hooks/use-techniques", () => ({
 	useTechniques: () => ({ techniques: mockTechniques, loading: false }),
+	useTechniquesByState: () => ({ techniques: mockTechniques, loading: false }),
 	useDeleteTechnique: () => ({ deleteTechnique: jest.fn() }),
 }));
 jest.mock("@/hooks/use-pieces", () => ({

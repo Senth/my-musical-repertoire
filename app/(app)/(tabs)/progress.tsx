@@ -10,7 +10,10 @@ import { ScreenContent } from "@/components/ui/ScreenContent";
 import { usePieces } from "@/hooks/use-pieces";
 import { useProgressMoved } from "@/hooks/use-progress-moved";
 import { useAllSections } from "@/hooks/use-sections";
-import { useTechniques } from "@/hooks/use-techniques";
+import {
+	ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES,
+	useTechniquesByState,
+} from "@/hooks/use-techniques";
 import { HANDS_MODES } from "@/models/practice";
 import type { Section } from "@/models/section";
 import { useAppTheme } from "@/theme";
@@ -24,7 +27,9 @@ export default function ProgressScreen() {
 	const router = useRouter();
 	const { pieces, loading: piecesLoading } = usePieces();
 	const { sections, loading: sectionsLoading } = useAllSections();
-	const { techniques, loading: techniquesLoading } = useTechniques();
+	const { techniques, loading: techniquesLoading } = useTechniquesByState(
+		ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES,
+	);
 	const [expanded, setExpanded] = useState(false);
 	const [range, setRange] = useState<ChartRange>("3m");
 	const { rows, atTarget } = useMemo(() => {

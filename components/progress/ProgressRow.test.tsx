@@ -40,7 +40,7 @@ jest.mock("@/hooks/use-sections", () => ({
 	useAllSections: () => ({ sections: mockSections, loading: false }),
 }));
 jest.mock("@/hooks/use-techniques", () => ({
-	useTechniques: () => ({ techniques: mockTechniques, loading: false }),
+	useTechniquesByState: () => ({ techniques: mockTechniques, loading: false }),
 }));
 
 beforeEach(() => {

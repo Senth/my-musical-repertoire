@@ -42,7 +42,10 @@ import {
 	useSessionPresetActions,
 	useSessionPresets,
 } from "@/hooks/use-session-presets";
-import { useTechniques } from "@/hooks/use-techniques";
+import {
+	ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES,
+	useTechniquesByState,
+} from "@/hooks/use-techniques";
 import { SECTION_STATES } from "@/models/section";
 import { type ActiveSession, planPresetName } from "@/models/session";
 import {
@@ -85,7 +88,9 @@ export default function OverviewScreen() {
 	const router = useRouter();
 	const { user } = useAuth();
 	const { pieces, loading: piecesLoading } = usePieces();
-	const { techniques, loading: techniquesLoading } = useTechniques();
+	const { techniques, loading: techniquesLoading } = useTechniquesByState(
+		ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES,
+	);
 	const { sections, loading: sectionsLoading } = useAllSections();
 	const tabBarHeight = useBottomTabBarHeight();
 	const fabStyle = useFabStyleTabs();

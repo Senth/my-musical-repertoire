@@ -18,7 +18,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePieces } from "@/hooks/use-pieces";
 import { useAllSections } from "@/hooks/use-sections";
 import { useSessionPresets } from "@/hooks/use-session-presets";
-import { useTechniques } from "@/hooks/use-techniques";
+import {
+	ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES,
+	useTechniquesByState,
+} from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type {
 	ActiveSession,
@@ -59,7 +62,9 @@ export default function SessionSetupScreen() {
 
 	const { pieces, loading: piecesLoading } = usePieces();
 	const { sections, loading: sectionsLoading } = useAllSections();
-	const { techniques, loading: techniquesLoading } = useTechniques();
+	const { techniques, loading: techniquesLoading } = useTechniquesByState(
+		ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES,
+	);
 	const { presets, scratch, loading: presetsLoading } = useSessionPresets();
 
 	const [starting, setStarting] = useState<boolean>(false);

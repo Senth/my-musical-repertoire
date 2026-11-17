@@ -99,6 +99,11 @@ const STATE_ORDER: Record<TechniqueState, number> = {
 	retired: 3,
 };
 
+export const ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES = [
+	"active",
+	"maintenance",
+] as const;
+
 function sortTechniques(items: TechniqueItem[]): TechniqueItem[] {
 	return [...items].sort((a, b) => {
 		const stateDiff = STATE_ORDER[a.state] - STATE_ORDER[b.state];
