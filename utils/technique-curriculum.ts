@@ -82,7 +82,7 @@ export function nextNotStarted(
 
 export function techniqueNudge(
 	tech: TechniqueItem,
-	techniques: TechniqueItem[],
+	next: TechniqueItem | undefined,
 	logs: ProgressionLog[],
 	now: Date,
 ): TechniqueNudge | null {
@@ -98,7 +98,7 @@ export function techniqueNudge(
 	return {
 		cleanDays,
 		bpm: tech.targetTempoBpm ?? null,
-		next: nextNotStarted(techniques),
+		next: next ?? null,
 	};
 }
 
@@ -129,7 +129,12 @@ export function summaryTechniqueNudge(
 		const tech = techniques.find((t) => t.id === id);
 		const logs = logsById[id];
 		if (!tech || !logs) continue;
-		const nudge = techniqueNudge(tech, techniques, logs, now);
+		const nudge = techniqueNudge(
+			tech,
+			nextNotStarted(techniques) ?? undefined,
+			logs,
+			now,
+		);
 		if (nudge) return { tech: { ...tech, id }, nudge };
 	}
 	return null;

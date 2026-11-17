@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
 import { Appbar, Button, Divider, Text, useTheme } from "react-native-paper";
@@ -12,7 +12,11 @@ import { ErrorSnackbar } from "@/components/ui/ErrorSnackbar";
 import { MetaChip } from "@/components/ui/StateChip";
 import { useLastPracticeLog } from "@/hooks/use-last-practice-log";
 import { usePageInset } from "@/hooks/use-page-inset";
-import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
+import {
+	useCurriculumTechniques,
+	useDeleteTechnique,
+	useTechnique,
+} from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { contentWidth, scrollTail, space } from "@/theme/tokens";
 import { formatDaysAgo } from "@/utils/date";
@@ -28,10 +32,11 @@ export default function TechniqueDetailScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const goBack = useUpNavigation("/(app)/(tabs)/technique");
 
-	const { techniques, loading } = useTechniques();
+	const { technique: item, loading } = useTechnique(id);
+	const { techniques: curriculumTechniques, failed: curriculumFailed } =
+		useCurriculumTechniques(id ? [id] : []);
 	const { deleteTechnique } = useDeleteTechnique();
 
-	const item = techniques.find((tech) => tech.id === id);
 	const pageInset = usePageInset();
 	const { logs } = useLastPracticeLog(
 		{ type: "technique", techniqueId: id ?? "" },
@@ -41,6 +46,10 @@ export default function TechniqueDetailScreen() {
 	const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (curriculumFailed) setError(t("error.firebase"));
+	}, [curriculumFailed, t]);
 
 	const handleDelete = async () => {
 		if (!id) return;
@@ -64,7 +73,10 @@ export default function TechniqueDetailScreen() {
 		return <MessageScreen message={t("screen.techniqueDetail.notFound")} />;
 	}
 
-	const nudge = techniqueNudge(item, techniques, logs, new Date());
+	const nextTechnique = curriculumTechniques.find(
+		(technique) => technique.state === "not_started",
+	);
+	const nudge = techniqueNudge(item, nextTechnique, logs, new Date());
 
 	return (
 		<View
@@ -169,7 +181,7 @@ export default function TechniqueDetailScreen() {
 						}}
 					/>
 
-					{nudge && (
+					{curriculumTechniques.length > 0 && nudge && (
 						<View
 							style={{
 								paddingHorizontal: pageInset,
@@ -178,7 +190,6 @@ export default function TechniqueDetailScreen() {
 						>
 							<TechniqueCurriculumCard
 								tech={{ ...item, id }}
-								techniques={techniques}
 								nudge={nudge}
 								onError={setError}
 							/>

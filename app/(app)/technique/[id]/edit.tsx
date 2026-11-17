@@ -6,7 +6,7 @@ import { Button, TextInput } from "react-native-paper";
 import { TechniqueModeFields } from "@/components/technique/TechniqueModeFields";
 import { DropdownField } from "@/components/ui/DropdownField";
 import { FormScaffold } from "@/components/ui/FormScaffold";
-import { useTechniques, useUpdateTechnique } from "@/hooks/use-techniques";
+import { useTechnique, useUpdateTechnique } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { PracticeDrill, TechniqueHandsMode } from "@/models/practice";
 import {
@@ -21,10 +21,8 @@ export default function EditTechniqueScreen() {
 	const { t } = useTranslation();
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const goBack = useUpNavigation(`/technique/${id}`);
-	const { techniques } = useTechniques();
+	const { technique: item } = useTechnique(id);
 	const { updateTechnique } = useUpdateTechnique();
-
-	const item = techniques.find((tech) => tech.id === id);
 
 	const [title, setTitle] = useState(item?.title ?? "");
 	const [state, setState] = useState<TechniqueState>(item?.state ?? "active");

@@ -51,8 +51,7 @@ export default function SessionSummaryScreen() {
 				: [],
 		[session],
 	);
-	const { techniques, showMore, failed } =
-		useCurriculumTechniques(techniqueIds);
+	const { techniques, failed } = useCurriculumTechniques(techniqueIds);
 	useEffect(() => {
 		if (failed) setError(t("error.firebase"));
 	}, [failed, t]);
@@ -242,10 +241,8 @@ export default function SessionSummaryScreen() {
 				{techniqueCard && (
 					<TechniqueCurriculumCard
 						tech={techniqueCard.tech}
-						techniques={techniques}
 						nudge={techniqueCard.nudge}
 						showTitle
-						onShowMore={showMore}
 						onError={setError}
 					/>
 				)}

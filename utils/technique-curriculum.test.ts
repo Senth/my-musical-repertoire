@@ -29,7 +29,7 @@ const cleanDays = (n: number, over: Partial<ProgressionLog> = {}) =>
 
 const quality = makeTechnique({ id: "q", handsMode: "together" });
 const nudge = (logs: ProgressionLog[], tech = quality) =>
-	techniqueNudge(tech, [tech], logs, NOW);
+	techniqueNudge(tech, undefined, logs, NOW);
 
 describe("techniqueNudge", () => {
 	it("needs three clean days", () => {
@@ -110,11 +110,9 @@ describe("techniqueNudge", () => {
 		},
 	);
 
-	it("names the next Not started technique", () => {
+	it("uses the supplied next Not started technique", () => {
 		const next = makeTechnique({ id: "n", state: "not_started" });
-		expect(
-			techniqueNudge(quality, [quality, next], cleanDays(3), NOW)?.next,
-		).toBe(next);
+		expect(techniqueNudge(quality, next, cleanDays(3), NOW)?.next).toBe(next);
 	});
 
 	it("counts logs either side of 3am as two days", () => {

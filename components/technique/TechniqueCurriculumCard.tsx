@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card-style";
 import {
 	useAdvanceTechnique,
+	useCurriculumTechniques,
 	useSnoozeTechniqueNudge,
 } from "@/hooks/use-techniques";
 import type { TechniqueItem } from "@/models/technique";
@@ -18,7 +19,6 @@ import { icon, space } from "@/theme/tokens";
 import { techniqueStateVisual } from "@/utils/state-colors";
 import {
 	DEFAULT_SNOOZE_DAYS,
-	notStartedQueue,
 	SNOOZE_DAYS,
 	type TechniqueNudge,
 } from "@/utils/technique-curriculum";
@@ -31,19 +31,15 @@ const SNOOZE_LABELS = {
 
 interface TechniqueCurriculumCardProps {
 	tech: TechniqueItem & { id: string };
-	techniques: TechniqueItem[];
 	nudge: TechniqueNudge;
 	showTitle?: boolean;
-	onShowMore?: () => Promise<void>;
 	onError: (message: string) => void;
 }
 
 export function TechniqueCurriculumCard({
 	tech,
-	techniques,
 	nudge,
 	showTitle = false,
-	onShowMore,
 	onError,
 }: TechniqueCurriculumCardProps) {
 	const { t } = useTranslation();
@@ -51,6 +47,7 @@ export function TechniqueCurriculumCard({
 	const router = useRouter();
 	const { advance } = useAdvanceTechnique();
 	const { snooze } = useSnoozeTechniqueNudge();
+	const { techniques, showMore } = useCurriculumTechniques([tech.id]);
 	const [menuVisible, setMenuVisible] = useState(false);
 	const [sheetVisible, setSheetVisible] = useState(false);
 
@@ -189,10 +186,12 @@ export function TechniqueCurriculumCard({
 				visible={sheetVisible}
 				onDismiss={() => setSheetVisible(false)}
 				fromTitle={tech.title}
-				candidates={notStartedQueue(techniques)}
+				candidates={techniques.filter(
+					(candidate) => candidate.state === "not_started",
+				)}
 				onPick={start}
 				onCreate={addNew}
-				onShowMore={onShowMore && (() => run(onShowMore))}
+				onShowMore={showMore && (() => run(showMore))}
 			/>
 		</>
 	);

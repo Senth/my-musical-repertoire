@@ -245,7 +245,7 @@ test("seeded history reads grouped hands, section filters and technique drills w
 					exact: true,
 				})
 				.filter({ visible: true }),
-		).toHaveCount(2);
+		).toHaveCount(4);
 	}
 	await expect(
 		page.getByText(/\bnotes?\b/i).filter({ visible: true }),

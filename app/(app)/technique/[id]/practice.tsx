@@ -30,7 +30,7 @@ import { usePracticeSave } from "@/hooks/use-practice-save";
 import {
 	useDeleteTechnique,
 	useSaveTechniqueLog,
-	useTechniques,
+	useTechnique,
 	useUpdateTechnique,
 } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
@@ -70,14 +70,12 @@ export function TechniquePracticeContent({
 	const router = useRouter();
 	const coach = useCoach();
 	const inCoach = coach.inCoach;
-	const { techniques, loading: techniquesLoading } = useTechniques();
+	const { technique, loading: techniquesLoading } = useTechnique(techniqueId);
 	const { saveTechniqueLog } = useSaveTechniqueLog();
 	const { deleteTechnique } = useDeleteTechnique();
 	const { updateTechnique } = useUpdateTechnique();
 
 	const standaloneSessionId = useRef(randomUUID());
-	const technique = techniques.find((tn) => tn.id === techniqueId);
-
 	const { logsByMode, loading: lastLogLoading } = useLastPracticeLog({
 		type: "technique",
 		techniqueId,

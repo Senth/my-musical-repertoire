@@ -4,6 +4,7 @@ import "@/i18n";
 import TechniqueHistoryScreen from "@/app/(app)/technique/[id]/history";
 import TechniqueDetailScreen from "@/app/(app)/technique/[id]/index";
 import type { HistorySection } from "@/hooks/use-practice-history";
+import type { TechniqueItem } from "@/models/technique";
 import { lightTheme } from "@/theme";
 import {
 	groupHistoryLogs,
@@ -12,6 +13,19 @@ import {
 } from "@/utils/practice-history";
 
 const mockPush = jest.fn();
+const mockTechnique = {
+	id: "technique",
+	userId: "u1",
+	title: "C major scale, 4 octaves",
+	state: "active",
+	type: "scale",
+	dateIntroduced: new Date("2026-01-01"),
+	handsMode: "together",
+	targetTempoBpm: null,
+	lastPracticedAt: null,
+	notes: null,
+} as TechniqueItem;
+const mockCurriculumTechniques: TechniqueItem[] = [];
 jest.mock("@/hooks/use-progress-series", () => ({
 	useProgressSeries: () => ({ series: [], loading: false, error: null }),
 }));
@@ -45,18 +59,13 @@ jest.mock("@/hooks/use-page-inset", () => ({
 	usePageInset: () => jest.requireActual("@/theme/tokens").inset.compact,
 }));
 jest.mock("@/hooks/use-techniques", () => ({
-	useTechniques: () => ({
-		techniques: mockMissing
-			? []
-			: [
-					{
-						id: "technique",
-						title: "C major scale, 4 octaves",
-						state: "active",
-						type: "scale",
-					},
-				],
+	useTechnique: () => ({
+		technique: mockMissing ? undefined : mockTechnique,
 		loading: mockLoading,
+	}),
+	useCurriculumTechniques: () => ({
+		techniques: mockCurriculumTechniques,
+		failed: false,
 	}),
 	useDeleteTechnique: () => ({ deleteTechnique: jest.fn() }),
 }));
@@ -71,6 +80,7 @@ beforeEach(() => {
 	jest.clearAllMocks();
 	mockLoading = false;
 	mockMissing = false;
+	mockCurriculumTechniques.splice(0);
 	mockHistory.loading = false;
 	mockHistory.hasMore = false;
 	mockHistory.error = null;
