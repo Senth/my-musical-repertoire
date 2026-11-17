@@ -186,15 +186,16 @@ export function useTechniquesByState(states: readonly TechniqueState[]): {
 } {
 	const { user } = useAuth();
 	const uid = user?.uid;
-	const [techniques, setTechniques] = useState<TechniqueItem[]>([]);
-	const [loading, setLoading] = useState(true);
+	const [snapshot, setSnapshot] = useState<{
+		uid: string;
+		stateKey: string;
+		techniques: TechniqueItem[];
+	}>();
 	const stateKey = [...new Set(states)].sort().join(",");
 
 	useEffect(() => {
-		setTechniques([]);
-		setLoading(true);
 		if (!uid || !stateKey) {
-			setLoading(false);
+			setSnapshot(undefined);
 			return;
 		}
 
@@ -204,12 +205,19 @@ export function useTechniquesByState(states: readonly TechniqueState[]): {
 			const result = snapshot.docs.map((d) =>
 				fromFirestore(d.id, d.data() as FirestoreTechnique, uid),
 			);
-			setTechniques(sortTechniques(result));
-			setLoading(false);
+			setSnapshot({ uid, stateKey, techniques: sortTechniques(result) });
 		});
 	}, [stateKey, uid]);
 
-	return { techniques, loading };
+	return {
+		techniques:
+			uid && stateKey && snapshot?.uid === uid ? snapshot.techniques : [],
+		loading: Boolean(
+			uid &&
+				stateKey &&
+				(snapshot?.uid !== uid || snapshot?.stateKey !== stateKey),
+		),
+	};
 }
 
 export function useHasAnyTechnique(enabled: boolean): boolean | undefined {

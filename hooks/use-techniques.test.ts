@@ -493,6 +493,43 @@ describe("constrained technique readers", () => {
 		expect(result.current).toEqual({ techniques: [], loading: false });
 	});
 
+	it("keeps the settled list while a changed state query loads, then clears an empty selection", async () => {
+		const { result, rerender } = await renderHook(
+			({ states }: { states: readonly TechniqueState[] }) =>
+				useTechniquesByState(states),
+			{ initialProps: { states: ["active"] } },
+		);
+		await act(() =>
+			listeners[0]({
+				docs: [
+					{
+						id: "scale",
+						data: () => ({
+							title: "C major scale",
+							state: "active",
+							dateIntroduced: { toDate: () => new Date(0) },
+						}),
+					},
+				],
+			}),
+		);
+		const settled = result.current.techniques;
+
+		await rerender({ states: ["retired"] });
+		expect(result.current.loading).toBe(true);
+		expect(result.current.techniques).toBe(settled);
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
+		await act(() => listeners[1]({ docs: [] }));
+		expect(result.current).toEqual({ techniques: [], loading: false });
+
+		await rerender({ states: [] });
+		expect(result.current).toEqual({ techniques: [], loading: false });
+		expect(onSnapshot).toHaveBeenCalledTimes(2);
+		await rerender({ states: ["retired"] });
+		expect(result.current.loading).toBe(true);
+		expect(onSnapshot).toHaveBeenCalledTimes(3);
+	});
+
 	it("does not resubscribe when state set stays equal", async () => {
 		const { rerender, unmount } = await renderHook(
 			({ states }: { states: readonly TechniqueState[] }) =>

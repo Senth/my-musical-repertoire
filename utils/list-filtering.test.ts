@@ -15,6 +15,7 @@ import {
 	searchPieces,
 	searchTechniques,
 	techniquePills,
+	techniqueQueryStates,
 	toggleValue,
 } from "./list-filtering";
 import { makePiece, makeTechnique } from "./test-factories";
@@ -126,6 +127,21 @@ describe("filterPieces", () => {
 });
 
 describe("filterTechniques", () => {
+	it("maps Status selections to query states without widening an empty selection", () => {
+		expect(techniqueQueryStates(DEFAULT_TECHNIQUE_FILTERS)).toEqual([
+			"not_started",
+			"active",
+			"maintenance",
+		]);
+		expect(
+			techniqueQueryStates({
+				states: ["retired", "active"],
+				types: ["scale"],
+			}),
+		).toEqual(["active", "retired"]);
+		expect(techniqueQueryStates({ states: [], types: [] })).toEqual([]);
+	});
+
 	it("hides retired techniques by default and shows not started ones", () => {
 		const items = [
 			makeTechnique({ id: "active", state: "active" }),

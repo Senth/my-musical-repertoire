@@ -132,6 +132,12 @@ export function filterPieces(pieces: Piece[], filters: PieceFilters): Piece[] {
 	});
 }
 
+export function techniqueQueryStates(
+	filters: TechniqueFilters,
+): TechniqueState[] {
+	return TECHNIQUE_STATES.filter((state) => filters.states.includes(state));
+}
+
 export function filterTechniques(
 	techniques: TechniqueItem[],
 	filters: TechniqueFilters,
