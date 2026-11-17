@@ -141,6 +141,90 @@ export function useTechniques() {
 	return { techniques, loading };
 }
 
+export function useTechnique(id: string): {
+	technique: TechniqueItem | undefined;
+	loading: boolean;
+} {
+	const { user } = useAuth();
+	const uid = user?.uid;
+	const [technique, setTechnique] = useState<TechniqueItem>();
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		setTechnique(undefined);
+		setLoading(true);
+		if (!uid) {
+			setLoading(false);
+			return;
+		}
+
+		return onSnapshot(doc(db, "users", uid, "techniques", id), (snapshot) => {
+			setTechnique(
+				snapshot.exists()
+					? fromFirestore(
+							snapshot.id,
+							snapshot.data() as FirestoreTechnique,
+							uid,
+						)
+					: undefined,
+			);
+			setLoading(false);
+		});
+	}, [id, uid]);
+
+	return { technique, loading };
+}
+
+export function useTechniquesByState(states: readonly TechniqueState[]): {
+	techniques: TechniqueItem[];
+	loading: boolean;
+} {
+	const { user } = useAuth();
+	const uid = user?.uid;
+	const [techniques, setTechniques] = useState<TechniqueItem[]>([]);
+	const [loading, setLoading] = useState(true);
+	const stateKey = [...new Set(states)].sort().join(",");
+
+	useEffect(() => {
+		setTechniques([]);
+		setLoading(true);
+		if (!uid || !stateKey) {
+			setLoading(false);
+			return;
+		}
+
+		const ref = collection(db, "users", uid, "techniques");
+		const q = query(ref, where("state", "in", stateKey.split(",")));
+		return onSnapshot(q, (snapshot) => {
+			const result = snapshot.docs.map((d) =>
+				fromFirestore(d.id, d.data() as FirestoreTechnique, uid),
+			);
+			setTechniques(sortTechniques(result));
+			setLoading(false);
+		});
+	}, [stateKey, uid]);
+
+	return { techniques, loading };
+}
+
+export function useHasAnyTechnique(enabled: boolean): boolean | undefined {
+	const { user } = useAuth();
+	const uid = user?.uid;
+	const [hasAny, setHasAny] = useState<boolean>();
+
+	useEffect(() => {
+		setHasAny(undefined);
+		if (!enabled || !uid) return;
+
+		const ref = collection(db, "users", uid, "techniques");
+		return onSnapshot(query(ref, limit(1)), (snapshot) => {
+			setHasAny(snapshot.size > 0);
+		});
+	}, [enabled, uid]);
+
+	return hasAny;
+}
+
 export const QUEUE_PAGE = 20;
 
 const queuePage = (uid: string, ...after: QueryConstraint[]) =>
