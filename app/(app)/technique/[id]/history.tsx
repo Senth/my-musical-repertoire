@@ -4,7 +4,7 @@ import { HistoryScreen } from "@/components/history/HistoryScreen";
 import { ProgressHeader } from "@/components/progress/ProgressHeader";
 import { LoadingScreen, MessageScreen } from "@/components/ui/CenteredScreen";
 import { usePracticeHistory } from "@/hooks/use-practice-history";
-import { useTechniques } from "@/hooks/use-techniques";
+import { useTechnique } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 
 export default function TechniqueHistoryScreen() {
@@ -12,8 +12,7 @@ export default function TechniqueHistoryScreen() {
 	const { t } = useTranslation();
 	const router = useRouter();
 	const goBack = useUpNavigation(`/technique/${id}`);
-	const { techniques, loading } = useTechniques();
-	const technique = techniques.find((candidate) => candidate.id === id);
+	const { technique, loading } = useTechnique(id);
 	const history = usePracticeHistory({
 		type: "technique",
 		techniqueId: id ?? "",

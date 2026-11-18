@@ -99,6 +99,11 @@ const STATE_ORDER: Record<TechniqueState, number> = {
 	retired: 3,
 };
 
+export const ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES = [
+	"active",
+	"maintenance",
+] as const;
+
 function sortTechniques(items: TechniqueItem[]): TechniqueItem[] {
 	return [...items].sort((a, b) => {
 		const stateDiff = STATE_ORDER[a.state] - STATE_ORDER[b.state];
@@ -112,33 +117,131 @@ function sortTechniques(items: TechniqueItem[]): TechniqueItem[] {
 	});
 }
 
-export function useTechniques() {
+export function useTechnique(id: string): {
+	technique: TechniqueItem | undefined;
+	loading: boolean;
+} {
 	const { user } = useAuth();
-	const [techniques, setTechniques] = useState<TechniqueItem[]>([]);
+	const uid = user?.uid;
+	const [technique, setTechnique] = useState<TechniqueItem>();
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		if (!user) {
-			setTechniques([]);
+		setTechnique(undefined);
+		setLoading(true);
+		if (!uid) {
 			setLoading(false);
 			return;
 		}
 
-		const ref = collection(db, "users", user.uid, "techniques");
-		const q = query(ref);
-
-		const unsubscribe = onSnapshot(q, (snapshot) => {
-			const result = snapshot.docs.map((d) =>
-				fromFirestore(d.id, d.data() as FirestoreTechnique, user.uid),
+		return onSnapshot(doc(db, "users", uid, "techniques", id), (snapshot) => {
+			setTechnique(
+				snapshot.exists()
+					? fromFirestore(
+							snapshot.id,
+							snapshot.data() as FirestoreTechnique,
+							uid,
+						)
+					: undefined,
 			);
-			setTechniques(sortTechniques(result));
 			setLoading(false);
 		});
+	}, [id, uid]);
 
-		return unsubscribe;
-	}, [user]);
+	return { technique, loading };
+}
 
-	return { techniques, loading };
+function useTechniquesBy(
+	field: "state" | "type",
+	values: readonly (TechniqueState | TechniqueType)[],
+): {
+	techniques: TechniqueItem[];
+	loading: boolean;
+} {
+	const { user } = useAuth();
+	const uid = user?.uid;
+	const [snapshot, setSnapshot] = useState<{
+		uid: string;
+		queryKey: string;
+		techniques: TechniqueItem[];
+	}>();
+	const valueKey = [...new Set(values)].sort().join(",");
+	const queryKey = `${field}:${valueKey}`;
+
+	useEffect(() => {
+		if (!uid || !valueKey) {
+			setSnapshot(undefined);
+			return;
+		}
+
+		const ref = collection(db, "users", uid, "techniques");
+		const q = query(ref, where(field, "in", valueKey.split(",")));
+		return onSnapshot(q, (snapshot) => {
+			const result = snapshot.docs.map((d) =>
+				fromFirestore(d.id, d.data() as FirestoreTechnique, uid),
+			);
+			setSnapshot({ uid, queryKey, techniques: sortTechniques(result) });
+		});
+	}, [field, queryKey, uid, valueKey]);
+
+	return {
+		techniques:
+			uid && valueKey && snapshot?.uid === uid ? snapshot.techniques : [],
+		loading: Boolean(
+			uid &&
+				valueKey &&
+				(snapshot?.uid !== uid || snapshot?.queryKey !== queryKey),
+		),
+	};
+}
+
+export function useTechniquesByState(states: readonly TechniqueState[]) {
+	return useTechniquesBy("state", states);
+}
+
+export function useTechniquesByType(types: readonly TechniqueType[]) {
+	return useTechniquesBy("type", types);
+}
+
+export function useHasAnyTechnique(enabled: boolean): boolean | undefined {
+	const { user } = useAuth();
+	const uid = user?.uid;
+	const [hasAny, setHasAny] = useState<boolean>();
+
+	useEffect(() => {
+		setHasAny(undefined);
+		if (!enabled || !uid) return;
+
+		const ref = collection(db, "users", uid, "techniques");
+		return onSnapshot(query(ref, limit(1)), (snapshot) => {
+			setHasAny(snapshot.size > 0);
+		});
+	}, [enabled, uid]);
+
+	return hasAny;
+}
+
+export function useHasPracticedTechnique(): boolean | undefined {
+	const { user } = useAuth();
+	const uid = user?.uid;
+	const [hasPracticed, setHasPracticed] = useState<boolean>();
+
+	useEffect(() => {
+		setHasPracticed(undefined);
+		if (!uid) {
+			setHasPracticed(false);
+			return;
+		}
+
+		const ref = collection(db, "users", uid, "techniques");
+		return onSnapshot(
+			query(ref, where("lastPracticedAt", "!=", null), limit(1)),
+			(snapshot) => setHasPracticed(snapshot.size > 0),
+			() => setHasPracticed(false),
+		);
+	}, [uid]);
+
+	return hasPracticed;
 }
 
 export const QUEUE_PAGE = 20;
@@ -157,6 +260,7 @@ export function useCurriculumTechniques(ids: string[]): {
 	techniques: TechniqueItem[];
 	showMore?: () => Promise<void>;
 	failed: boolean;
+	loading: boolean;
 } {
 	const { user } = useAuth();
 	const [own, setOwn] = useState<TechniqueItem[] | null>(null);
@@ -180,6 +284,7 @@ export function useCurriculumTechniques(ids: string[]): {
 						fromFirestore(d.id, d.data() as FirestoreTechnique, uid),
 					),
 				),
+			() => setFailed(true),
 		);
 		const unsubscribeQueue = onSnapshot(
 			queuePage(uid),
@@ -213,7 +318,12 @@ export function useCurriculumTechniques(ids: string[]): {
 				}
 			: undefined;
 
-	return { techniques, showMore, failed };
+	return {
+		techniques,
+		showMore,
+		failed,
+		loading: Boolean(uid && key && (!own || pages.length === 0) && !failed),
+	};
 }
 
 export function useAddTechnique() {

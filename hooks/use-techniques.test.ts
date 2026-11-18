@@ -45,9 +45,14 @@ import { act, renderHook } from "@testing-library/react-native";
 import {
 	addDoc,
 	collection,
+	doc,
 	getDocs,
+	limit,
 	onSnapshot,
+	orderBy,
+	query,
 	updateDoc,
+	where,
 } from "firebase/firestore";
 import { Platform } from "react-native";
 import { db } from "@/config/firebase";
@@ -64,8 +69,13 @@ import {
 	useAddTechnique,
 	useAdvanceTechnique,
 	useCurriculumTechniques,
+	useHasAnyTechnique,
+	useHasPracticedTechnique,
 	useLinkCatalogTechnique,
 	useSnoozeTechniqueNudge,
+	useTechnique,
+	useTechniquesByState,
+	useTechniquesByType,
 	useUpdateTechnique,
 } from "./use-techniques";
 
@@ -365,21 +375,26 @@ describe("useCurriculumTechniques", () => {
 		const [own] = listeners;
 		const [, queueFailed] = failures;
 		expect(result.current.failed).toBe(false);
+		expect(result.current.loading).toBe(true);
 		await act(() => {
 			own(snapshot(["c", "active"]));
 			queueFailed(new Error("failed-precondition"));
 		});
 		expect(result.current.failed).toBe(true);
+		expect(result.current.loading).toBe(false);
 		expect(result.current.techniques).toEqual([]);
 	});
 
 	it("withholds techniques until the queue's first page has arrived", async () => {
 		const { result } = await renderHook(() => useCurriculumTechniques(["c"]));
 		const [own, queue] = listeners;
+		expect(result.current.loading).toBe(true);
 		await act(() => own(snapshot(["c", "active"])));
 		expect(result.current.techniques).toEqual([]);
+		expect(result.current.loading).toBe(true);
 		await act(() => queue(snapshot(["g", "not_started"])));
 		expect(result.current.techniques.map((t) => t.id)).toEqual(["c", "g"]);
+		expect(result.current.loading).toBe(false);
 		expect(result.current.showMore).toBeUndefined();
 	});
 
@@ -406,5 +421,211 @@ describe("useCurriculumTechniques", () => {
 		const { result } = await renderHook(() => useCurriculumTechniques([]));
 		expect(listeners).toHaveLength(0);
 		expect(result.current.techniques).toEqual([]);
+		expect(result.current.loading).toBe(false);
+	});
+});
+
+describe("constrained technique readers", () => {
+	let listeners: ((snapshot: unknown) => void)[];
+	let unsubscribe: jest.Mock;
+
+	beforeEach(() => {
+		jest.clearAllMocks();
+		listeners = [];
+		unsubscribe = jest.fn();
+		(onSnapshot as jest.Mock).mockImplementation((_query, onNext) => {
+			listeners.push(onNext);
+			return unsubscribe;
+		});
+	});
+
+	it("reads one technique document and resolves a missing document", async () => {
+		const { result, unmount } = await renderHook(() => useTechnique("t1"));
+
+		expect(doc).toHaveBeenCalledWith(db, "users", "u1", "techniques", "t1");
+		expect(onSnapshot).toHaveBeenCalledTimes(1);
+		await act(() => listeners[0]({ exists: () => false }));
+		expect(result.current).toEqual({ technique: undefined, loading: false });
+
+		await unmount();
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
+	});
+
+	it("queries requested states and sorts snapshot results", async () => {
+		const { result, unmount } = await renderHook(() =>
+			useTechniquesByState(["maintenance", "active"]),
+		);
+
+		expect(where).toHaveBeenCalledWith("state", "in", [
+			"active",
+			"maintenance",
+		]);
+		expect(orderBy).not.toHaveBeenCalled();
+		expect(query).toHaveBeenCalledWith("users/u1/techniques", undefined);
+		expect(onSnapshot).toHaveBeenCalledTimes(1);
+		const snapshot = {
+			docs: [
+				{
+					id: "maintenance",
+					data: () => ({
+						title: "Maintenance",
+						state: "maintenance",
+						dateIntroduced: { toDate: () => new Date(0) },
+					}),
+				},
+				{
+					id: "active",
+					data: () => ({
+						title: "Active",
+						state: "active",
+						dateIntroduced: { toDate: () => new Date(0) },
+					}),
+				},
+			],
+		};
+		await act(() => listeners[0](snapshot));
+		expect(result.current.techniques.map(({ id }) => id)).toEqual([
+			"active",
+			"maintenance",
+		]);
+		expect(result.current.loading).toBe(false);
+
+		await unmount();
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
+	});
+
+	it("queries requested types across every state", async () => {
+		const { result, unmount } = await renderHook(() =>
+			useTechniquesByType(["scale", "arpeggio"]),
+		);
+
+		expect(where).toHaveBeenCalledWith("type", "in", ["arpeggio", "scale"]);
+		expect(onSnapshot).toHaveBeenCalledTimes(1);
+		await act(() =>
+			listeners[0]({
+				docs: ["active", "not_started", "retired"].map((state) => ({
+					id: state,
+					data: () => ({
+						title: state,
+						state,
+						type: "scale",
+						dateIntroduced: { toDate: () => new Date(0) },
+					}),
+				})),
+			}),
+		);
+		expect(result.current.techniques.map(({ state }) => state)).toEqual([
+			"active",
+			"not_started",
+			"retired",
+		]);
+		expect(result.current.loading).toBe(false);
+
+		await unmount();
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
+	});
+
+	it("opens no listener for an empty state set", async () => {
+		const { result } = await renderHook(() => useTechniquesByState([]));
+
+		expect(onSnapshot).not.toHaveBeenCalled();
+		expect(result.current).toEqual({ techniques: [], loading: false });
+	});
+
+	it("keeps the settled list while a changed state query loads, then clears an empty selection", async () => {
+		const { result, rerender } = await renderHook(
+			({ states }: { states: readonly TechniqueState[] }) =>
+				useTechniquesByState(states),
+			{ initialProps: { states: ["active"] } },
+		);
+		await act(() =>
+			listeners[0]({
+				docs: [
+					{
+						id: "scale",
+						data: () => ({
+							title: "C major scale",
+							state: "active",
+							dateIntroduced: { toDate: () => new Date(0) },
+						}),
+					},
+				],
+			}),
+		);
+		const settled = result.current.techniques;
+
+		await rerender({ states: ["retired"] });
+		expect(result.current.loading).toBe(true);
+		expect(result.current.techniques).toBe(settled);
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
+		await act(() => listeners[1]({ docs: [] }));
+		expect(result.current).toEqual({ techniques: [], loading: false });
+
+		await rerender({ states: [] });
+		expect(result.current).toEqual({ techniques: [], loading: false });
+		expect(onSnapshot).toHaveBeenCalledTimes(2);
+		await rerender({ states: ["retired"] });
+		expect(result.current.loading).toBe(true);
+		expect(onSnapshot).toHaveBeenCalledTimes(3);
+	});
+
+	it("does not resubscribe when state set stays equal", async () => {
+		const { rerender, unmount } = await renderHook(
+			({ states }: { states: readonly TechniqueState[] }) =>
+				useTechniquesByState(states),
+			{ initialProps: { states: ["maintenance", "active"] as const } },
+		);
+
+		await rerender({ states: ["active", "maintenance"] });
+		expect(onSnapshot).toHaveBeenCalledTimes(1);
+
+		await unmount();
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
+	});
+
+	it("limits the existence query and subscribes only when enabled", async () => {
+		const { result, rerender, unmount } = await renderHook(
+			({ enabled }: { enabled: boolean }) => useHasAnyTechnique(enabled),
+			{ initialProps: { enabled: false } },
+		);
+
+		expect([true, false]).not.toContain(result.current);
+		expect(onSnapshot).not.toHaveBeenCalled();
+
+		await rerender({ enabled: true });
+		expect(limit).toHaveBeenCalledWith(1);
+		expect(query).toHaveBeenCalledWith("users/u1/techniques", undefined);
+		expect(onSnapshot).toHaveBeenCalledTimes(1);
+		await act(() => listeners[0]({ size: 0 }));
+		expect(result.current).toBe(false);
+		await act(() => listeners[0]({ size: 1 }));
+		expect(result.current).toBe(true);
+
+		await rerender({ enabled: false });
+		expect([true, false]).not.toContain(result.current);
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
+
+		await unmount();
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
+	});
+
+	it("probes for any practiced technique with one constrained result", async () => {
+		const { result, unmount } = await renderHook(() =>
+			useHasPracticedTechnique(),
+		);
+
+		expect(where).toHaveBeenCalledWith("lastPracticedAt", "!=", null);
+		expect(limit).toHaveBeenCalledWith(1);
+		expect(query).toHaveBeenCalledWith(
+			"users/u1/techniques",
+			undefined,
+			undefined,
+		);
+		expect(result.current).toBeUndefined();
+		await act(() => listeners[0]({ size: 1 }));
+		expect(result.current).toBe(true);
+
+		await unmount();
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
 	});
 });

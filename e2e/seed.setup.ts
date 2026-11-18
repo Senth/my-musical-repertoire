@@ -519,13 +519,15 @@ setup("seed the emulator fixture", async () => {
 			{
 				date: threeDaysAgo,
 				entries: [
-					{ hands: "HT", drill: null, bpm: null, quality: 4, effort: 2 },
+					{ hands: "LH", drill: null, bpm: 88, quality: 4, effort: 2 },
+					{ hands: "RH", drill: null, bpm: 88, quality: 4, effort: 2 },
 				] satisfies ModeEntry[],
 			},
 			{
 				date: twoDaysAgo,
 				entries: [
-					{ hands: "HT", drill: null, bpm: null, quality: 4, effort: 2 },
+					{ hands: "LH", drill: null, bpm: 88, quality: 4, effort: 2 },
+					{ hands: "RH", drill: null, bpm: 88, quality: 4, effort: 2 },
 				] satisfies ModeEntry[],
 			},
 			{
@@ -577,7 +579,16 @@ setup("seed the emulator fixture", async () => {
 			[pieceRef, [fortyFiveDaysAgo, tenDaysAgo, now]],
 			[
 				techniqueRef,
-				[threeDaysAgo, twoDaysAgo, yesterday, yesterday, yesterday, yesterday],
+				[
+					threeDaysAgo,
+					threeDaysAgo,
+					twoDaysAgo,
+					twoDaysAgo,
+					yesterday,
+					yesterday,
+					yesterday,
+					yesterday,
+				],
 			],
 		] as const) {
 			const logs = await getDocs(collection(ref, "practiceLogs"));

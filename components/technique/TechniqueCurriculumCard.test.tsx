@@ -5,6 +5,14 @@ import { TechniqueCurriculumCard } from "./TechniqueCurriculumCard";
 
 const mockPush = jest.fn();
 const mockAdvance = jest.fn();
+const mockShowMore = jest.fn();
+const mockQueue: TechniqueItem[] = [];
+const mockSheetProps = {
+	current: null as null | {
+		candidates: TechniqueItem[];
+		onShowMore?: () => Promise<boolean>;
+	},
+};
 
 jest.mock("expo-router", () => ({
 	useRouter: () => ({ push: mockPush }),
@@ -12,6 +20,11 @@ jest.mock("expo-router", () => ({
 
 jest.mock("@/hooks/use-techniques", () => ({
 	useAdvanceTechnique: () => ({ advance: mockAdvance }),
+	useCurriculumTechniques: () => ({
+		techniques: mockQueue,
+		showMore: mockShowMore,
+		failed: false,
+	}),
 	useSnoozeTechniqueNudge: () => ({ snooze: jest.fn() }),
 }));
 
@@ -23,7 +36,12 @@ jest.mock("react-native-paper", () => {
 	};
 });
 
-jest.mock("./StartTechniqueSheet", () => ({ StartTechniqueSheet: () => null }));
+jest.mock("./StartTechniqueSheet", () => ({
+	StartTechniqueSheet: (props: typeof mockSheetProps.current) => {
+		mockSheetProps.current = props;
+		return null;
+	},
+}));
 
 const tech = {
 	id: "c-major",
@@ -38,7 +56,6 @@ async function pressAdd() {
 	const screen = await render(
 		<TechniqueCurriculumCard
 			tech={tech}
-			techniques={[tech]}
 			nudge={{ cleanDays: 3, bpm: null, next: null }}
 			onError={onError}
 		/>,
@@ -51,6 +68,9 @@ describe("TechniqueCurriculumCard add technique", () => {
 	beforeEach(() => {
 		mockPush.mockClear();
 		mockAdvance.mockReset();
+		mockShowMore.mockReset().mockResolvedValue(undefined);
+		mockQueue.splice(0, mockQueue.length, tech);
+		mockSheetProps.current = null;
 	});
 
 	it("opens the add screen once the technique has moved", async () => {
@@ -70,5 +90,27 @@ describe("TechniqueCurriculumCard add technique", () => {
 			expect(onError).toHaveBeenCalledWith("Connection to Firebase failed"),
 		);
 		expect(mockPush).not.toHaveBeenCalled();
+	});
+
+	it("uses its first curriculum page for candidates and exposes Show more", async () => {
+		const next = {
+			...tech,
+			id: "g-major",
+			title: "G major scale",
+			state: "not_started",
+		} as TechniqueItem;
+		mockQueue.push(next);
+		await render(
+			<TechniqueCurriculumCard
+				tech={tech}
+				nudge={{ cleanDays: 3, bpm: null, next }}
+				onError={jest.fn()}
+			/>,
+		);
+
+		expect(mockSheetProps.current?.candidates).toEqual([next]);
+		expect(mockSheetProps.current?.onShowMore).toBeDefined();
+		await expect(mockSheetProps.current?.onShowMore?.()).resolves.toBe(true);
+		expect(mockShowMore).toHaveBeenCalledTimes(1);
 	});
 });

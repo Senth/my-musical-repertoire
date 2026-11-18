@@ -17,7 +17,10 @@ let mockTechniques: TechniqueItem[] = [];
 let mockLoading = false;
 
 jest.mock("@/hooks/use-techniques", () => ({
-	useTechniques: () => ({ techniques: mockTechniques, loading: mockLoading }),
+	useTechniquesByType: () => ({
+		techniques: mockTechniques,
+		loading: mockLoading,
+	}),
 	useAddCatalogTechnique: () => ({ addCatalogTechnique: mockAdd }),
 	useAddAllCatalog: () => ({ addAllCatalog: mockAddAll }),
 	useLinkCatalogTechnique: () => ({ linkCatalogTechnique: mockLink }),
@@ -131,6 +134,15 @@ it.each([true, false])(
 		expect(screen.getAllByLabelText(/^Add /)).toHaveLength(3);
 	},
 );
+
+it("counts a Retired scale as already added", async () => {
+	mockTechniques = [technique("C major scale", "retired")];
+	const screen = await render(page());
+	expect(screen.getByText("In your list")).toBeTruthy();
+	expect(screen.getByText("Retired")).toBeTruthy();
+	expect(screen.queryByLabelText("Add C major scale")).toBeNull();
+	expect(screen.getAllByText("C major scale")).toHaveLength(1);
+});
 
 it.each([
 	["Start practicing now", "start", "active", "Active"],

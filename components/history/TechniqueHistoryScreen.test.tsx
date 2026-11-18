@@ -4,14 +4,29 @@ import "@/i18n";
 import TechniqueHistoryScreen from "@/app/(app)/technique/[id]/history";
 import TechniqueDetailScreen from "@/app/(app)/technique/[id]/index";
 import type { HistorySection } from "@/hooks/use-practice-history";
+import type { TechniqueItem } from "@/models/technique";
 import { lightTheme } from "@/theme";
 import {
 	groupHistoryLogs,
 	type HistoryEntry,
 	normalizeHistoryLog,
 } from "@/utils/practice-history";
+import type { ProgressionLog } from "@/utils/section-progression";
 
 const mockPush = jest.fn();
+const mockTechnique = {
+	id: "technique",
+	userId: "u1",
+	title: "C major scale, 4 octaves",
+	state: "active",
+	type: "scale",
+	dateIntroduced: new Date("2026-01-01"),
+	handsMode: "together",
+	targetTempoBpm: null,
+	lastPracticedAt: null,
+	notes: null,
+} as TechniqueItem;
+const mockCurriculumTechniques: TechniqueItem[] = [];
 jest.mock("@/hooks/use-progress-series", () => ({
 	useProgressSeries: () => ({ series: [], loading: false, error: null }),
 }));
@@ -27,8 +42,11 @@ const mockHistory = {
 };
 const mockReadHistory = jest.fn((_scope: unknown) => mockHistory);
 const mockUpNavigation = jest.fn((_fallback: string) => mockBack);
+const mockLastPracticeLogs: ProgressionLog[] = [];
 let mockLoading = false;
 let mockMissing = false;
+let mockCurriculumLoading = false;
+let mockLogsLoading = false;
 
 jest.mock("expo-router", () => ({
 	useLocalSearchParams: () => ({ id: "technique" }),
@@ -45,23 +63,24 @@ jest.mock("@/hooks/use-page-inset", () => ({
 	usePageInset: () => jest.requireActual("@/theme/tokens").inset.compact,
 }));
 jest.mock("@/hooks/use-techniques", () => ({
-	useTechniques: () => ({
-		techniques: mockMissing
-			? []
-			: [
-					{
-						id: "technique",
-						title: "C major scale, 4 octaves",
-						state: "active",
-						type: "scale",
-					},
-				],
+	useTechnique: () => ({
+		technique: mockMissing ? undefined : mockTechnique,
 		loading: mockLoading,
 	}),
+	useCurriculumTechniques: () => ({
+		techniques: mockCurriculumTechniques,
+		failed: false,
+		loading: mockCurriculumLoading,
+	}),
 	useDeleteTechnique: () => ({ deleteTechnique: jest.fn() }),
+	useAdvanceTechnique: () => ({ advance: jest.fn() }),
+	useSnoozeTechniqueNudge: () => ({ snooze: jest.fn() }),
 }));
 jest.mock("@/hooks/use-last-practice-log", () => ({
-	useLastPracticeLog: () => ({ logs: [] }),
+	useLastPracticeLog: () => ({
+		logs: mockLastPracticeLogs,
+		loading: mockLogsLoading,
+	}),
 }));
 jest.mock("@/hooks/use-practice-history", () => ({
 	usePracticeHistory: (scope: unknown) => mockReadHistory(scope),
@@ -71,6 +90,11 @@ beforeEach(() => {
 	jest.clearAllMocks();
 	mockLoading = false;
 	mockMissing = false;
+	mockCurriculumLoading = false;
+	mockLogsLoading = false;
+	mockCurriculumTechniques.splice(0);
+	mockLastPracticeLogs.splice(0);
+	mockTechnique.dateIntroduced = new Date("2026-01-01");
 	mockHistory.loading = false;
 	mockHistory.hasMore = false;
 	mockHistory.error = null;
@@ -208,4 +232,74 @@ it("opens technique history from the detail entry", async () => {
 	);
 	await fireEvent.press(screen.getByRole("link", { name: "Practice history" }));
 	expect(mockPush).toHaveBeenCalledWith("/technique/technique/history");
+});
+
+it("holds detail until delayed curriculum queue snapshot arrives", async () => {
+	mockCurriculumLoading = true;
+	const now = new Date();
+	mockTechnique.dateIntroduced = new Date(now.getTime() - 10 * 86_400_000);
+	mockLastPracticeLogs.push(
+		...[1, 2, 3].map((daysAgo) => {
+			const date = new Date(now);
+			date.setHours(12, 0, 0, 0);
+			date.setDate(date.getDate() - daysAgo);
+			return { date, quality: 4 as const };
+		}),
+	);
+	mockCurriculumTechniques.push({
+		...mockTechnique,
+		id: "next",
+		title: "G major scale",
+		state: "not_started",
+	});
+	const view = () => (
+		<PaperProvider theme={lightTheme}>
+			<TechniqueDetailScreen />
+		</PaperProvider>
+	);
+	const screen = await render(view());
+
+	expect(screen.queryByText(mockTechnique.title)).toBeNull();
+	expect(screen.queryByText("Start G major scale")).toBeNull();
+
+	mockCurriculumLoading = false;
+	await screen.rerender(view());
+
+	expect(screen.getByText(mockTechnique.title)).toBeTruthy();
+	expect(screen.getByText("Start G major scale")).toBeTruthy();
+});
+
+it("holds detail until delayed practice logs determine the curriculum nudge", async () => {
+	mockLogsLoading = true;
+	const now = new Date();
+	mockTechnique.dateIntroduced = new Date(now.getTime() - 10 * 86_400_000);
+	mockLastPracticeLogs.push(
+		...[1, 2, 3].map((daysAgo) => {
+			const date = new Date(now);
+			date.setHours(12, 0, 0, 0);
+			date.setDate(date.getDate() - daysAgo);
+			return { date, quality: 4 as const };
+		}),
+	);
+	mockCurriculumTechniques.push({
+		...mockTechnique,
+		id: "next",
+		title: "G major scale",
+		state: "not_started",
+	});
+	const view = () => (
+		<PaperProvider theme={lightTheme}>
+			<TechniqueDetailScreen />
+		</PaperProvider>
+	);
+	const screen = await render(view());
+
+	expect(screen.queryByText(mockTechnique.title)).toBeNull();
+	expect(screen.queryByRole("button", { name: "Practice" })).toBeNull();
+
+	mockLogsLoading = false;
+	await screen.rerender(view());
+
+	expect(screen.getByText(mockTechnique.title)).toBeTruthy();
+	expect(screen.getByText("Start G major scale")).toBeTruthy();
 });

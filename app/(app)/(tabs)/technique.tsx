@@ -46,7 +46,11 @@ import { useFabVisible } from "@/hooks/use-fab-visible";
 import { useIsCompact } from "@/hooks/use-is-compact";
 import { useListPrefs } from "@/hooks/use-list-prefs";
 import { usePageInset } from "@/hooks/use-page-inset";
-import { useDeleteTechnique, useTechniques } from "@/hooks/use-techniques";
+import {
+	useDeleteTechnique,
+	useHasAnyTechnique,
+	useTechniquesByState,
+} from "@/hooks/use-techniques";
 import {
 	TECHNIQUE_STATES,
 	TECHNIQUE_TYPES,
@@ -62,6 +66,7 @@ import {
 	searchTechniques,
 	type TechniqueFilterPill,
 	techniquePills,
+	techniqueQueryStates,
 	toggleValue,
 } from "@/utils/list-filtering";
 import { DEFAULT_TECHNIQUE_LIST_PREFS } from "@/utils/list-prefs";
@@ -92,7 +97,6 @@ export default function TechniquesScreen() {
 	const theme = useTheme();
 	const router = useRouter();
 	const navigation = useNavigation();
-	const { techniques, loading } = useTechniques();
 	const { deleteTechnique } = useDeleteTechnique();
 	const fabStyle = useFabStyleTabs();
 	const fabVisible = useFabVisible();
@@ -137,6 +141,10 @@ export default function TechniquesScreen() {
 		writeTechniqueListPrefs,
 	);
 	const { filters } = prefs;
+	const queryStates = useMemo(() => techniqueQueryStates(filters), [filters]);
+	const { techniques, loading } = useTechniquesByState(queryStates);
+	const [displayStates, setDisplayStates] = useState<typeof queryStates>();
+	if (!loading && displayStates !== queryStates) setDisplayStates(queryStates);
 	const filtersActive = hasNonDefaultTechniqueFilters(filters);
 
 	const setFilters = useCallback(
@@ -173,14 +181,27 @@ export default function TechniquesScreen() {
 	const visibleTechniques = useMemo(() => {
 		const matched = filterTechniques(
 			searchTechniques(techniques, searchQuery),
-			filters,
+			{ ...filters, states: displayStates ?? queryStates },
 		);
 		return sortTechniqueItems(
 			matched,
 			{ key: prefs.sortKey, dir: prefs.sortDir },
 			scores,
 		);
-	}, [techniques, searchQuery, filters, prefs.sortKey, prefs.sortDir, scores]);
+	}, [
+		techniques,
+		searchQuery,
+		filters,
+		displayStates,
+		queryStates,
+		prefs.sortKey,
+		prefs.sortDir,
+		scores,
+	]);
+	const hiddenBySearch = searchQuery.trim().length > 0;
+	const hasAnyTechnique = useHasAnyTechnique(
+		!loading && visibleTechniques.length === 0 && !hiddenBySearch,
+	);
 
 	const pillLabel = useCallback(
 		(pill: TechniqueFilterPill): string =>
@@ -376,65 +397,65 @@ export default function TechniquesScreen() {
 		/>
 	);
 
-	const libraryEmpty = techniques.length === 0;
-	const hiddenBySearch = searchQuery.trim().length > 0;
+	const libraryEmpty = !hiddenBySearch && hasAnyTechnique === false;
 
-	const emptyState = (
-		<View
-			style={{
-				flex: 1,
-				minHeight: 0,
-				alignItems: "center",
-				justifyContent: "center",
-				padding: space.xxl,
-				gap: space.md,
-			}}
-		>
-			<Text
-				variant="bodyLarge"
-				style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}
+	const emptyState =
+		!hiddenBySearch && hasAnyTechnique === undefined ? null : (
+			<View
+				style={{
+					flex: 1,
+					minHeight: 0,
+					alignItems: "center",
+					justifyContent: "center",
+					padding: space.xxl,
+					gap: space.md,
+				}}
 			>
-				{libraryEmpty
-					? t("screen.techniques.noTechniques")
-					: hiddenBySearch
-						? t("screen.techniques.noResults")
-						: t("screen.techniques.noMatchFilters")}
-			</Text>
-			{libraryEmpty ? (
-				<View
-					style={{
-						flexDirection: "row",
-						flexWrap: "wrap",
-						justifyContent: "center",
-						gap: space.sm,
-					}}
+				<Text
+					variant="bodyLarge"
+					style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}
 				>
-					<Button
-						mode="contained"
-						onPress={() => router.push("/technique/add")}
+					{libraryEmpty
+						? t("screen.techniques.noTechniques")
+						: hiddenBySearch
+							? t("screen.techniques.noResults")
+							: t("screen.techniques.noMatchFilters")}
+				</Text>
+				{libraryEmpty ? (
+					<View
+						style={{
+							flexDirection: "row",
+							flexWrap: "wrap",
+							justifyContent: "center",
+							gap: space.sm,
+						}}
 					>
-						{t("screen.techniques.addTechnique")}
-					</Button>
+						<Button
+							mode="contained"
+							onPress={() => router.push("/technique/add")}
+						>
+							{t("screen.techniques.addTechnique")}
+						</Button>
+						<Button
+							mode="outlined"
+							onPress={() => router.push("/technique/scales")}
+						>
+							{t("technique.catalog.pageTitle")}
+						</Button>
+					</View>
+				) : (
 					<Button
 						mode="outlined"
-						onPress={() => router.push("/technique/scales")}
+						onPress={() => {
+							clearFilters();
+							setSearchQuery("");
+						}}
 					>
-						{t("technique.catalog.pageTitle")}
+						{t("common.filter.clearAllFilters")}
 					</Button>
-				</View>
-			) : (
-				<Button
-					mode="outlined"
-					onPress={() => {
-						clearFilters();
-						setSearchQuery("");
-					}}
-				>
-					{t("common.filter.clearAllFilters")}
-				</Button>
-			)}
-		</View>
-	);
+				)}
+			</View>
+		);
 
 	return (
 		<View
@@ -465,7 +486,7 @@ export default function TechniquesScreen() {
 				clearAllLabel={t("common.filter.clearAll")}
 			/>
 
-			{loading ? (
+			{loading && displayStates === undefined ? (
 				<View
 					style={{
 						flex: 1,
@@ -490,7 +511,7 @@ export default function TechniquesScreen() {
 							<Divider />
 						</View>
 					}
-					ListEmptyComponent={emptyState}
+					ListEmptyComponent={emptyState ?? undefined}
 					contentContainerStyle={{
 						flexGrow: 1,
 						paddingBottom: scrollTail.fab,

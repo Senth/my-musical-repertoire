@@ -42,7 +42,11 @@ import {
 	useSessionPresetActions,
 	useSessionPresets,
 } from "@/hooks/use-session-presets";
-import { useTechniques } from "@/hooks/use-techniques";
+import {
+	ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES,
+	useHasPracticedTechnique,
+	useTechniquesByState,
+} from "@/hooks/use-techniques";
 import { SECTION_STATES } from "@/models/section";
 import { type ActiveSession, planPresetName } from "@/models/session";
 import {
@@ -85,7 +89,10 @@ export default function OverviewScreen() {
 	const router = useRouter();
 	const { user } = useAuth();
 	const { pieces, loading: piecesLoading } = usePieces();
-	const { techniques, loading: techniquesLoading } = useTechniques();
+	const { techniques, loading: techniquesLoading } = useTechniquesByState(
+		ACTIVE_AND_MAINTENANCE_TECHNIQUE_STATES,
+	);
+	const hasPracticedTechnique = useHasPracticedTechnique();
 	const { sections, loading: sectionsLoading } = useAllSections();
 	const tabBarHeight = useBottomTabBarHeight();
 	const fabStyle = useFabStyleTabs();
@@ -158,11 +165,16 @@ export default function OverviewScreen() {
 		// the app" is read off the repertoire's own practice timestamps.
 		hasPracticed:
 			pieces.some((p) => p.lastPracticed != null) ||
-			techniques.some((tn) => tn.lastPracticedAt != null),
+			hasPracticedTechnique === true,
 		dismissed: installDismissed,
 	});
 
-	if (piecesLoading || techniquesLoading || sectionsLoading) {
+	if (
+		piecesLoading ||
+		techniquesLoading ||
+		sectionsLoading ||
+		hasPracticedTechnique === undefined
+	) {
 		return <LoadingScreen />;
 	}
 
