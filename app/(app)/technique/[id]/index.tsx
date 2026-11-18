@@ -41,7 +41,7 @@ export default function TechniqueDetailScreen() {
 	const { deleteTechnique } = useDeleteTechnique();
 
 	const pageInset = usePageInset();
-	const { logs } = useLastPracticeLog(
+	const { logs, loading: logsLoading } = useLastPracticeLog(
 		{ type: "technique", techniqueId: id ?? "" },
 		CURRICULUM_LOG_LIMIT,
 	);
@@ -68,7 +68,11 @@ export default function TechniqueDetailScreen() {
 		}
 	};
 
-	if (loading || curriculumLoading) {
+	if (
+		loading ||
+		curriculumLoading ||
+		(item?.state === "active" && logsLoading)
+	) {
 		return <LoadingScreen />;
 	}
 
