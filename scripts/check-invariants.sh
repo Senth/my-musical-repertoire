@@ -374,7 +374,7 @@ fi
 PATTERN='(from[[:space:]]*|import[[:space:]]*|require\()[[:space:]]*\(?["'\''`](@expo/vector-icons(/[^"'\''`[:space:]]*)?|expo-symbols)["'\''`]'
 valid_imports=$(awk '
 	FNR == 1 { active = 0 }
-	!active && /^[[:space:]]*import([[:space:]]|\{|\*)/ {
+	/^[[:space:]]*import([[:space:]]|\{|\*)/ {
 		active = 1
 		start = FNR
 		declaration = $0
