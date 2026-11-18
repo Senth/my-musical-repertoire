@@ -367,6 +367,21 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 12. One icon set
+#
+# Use MaterialCommunityIcons; expo-symbols is out.
+# ---------------------------------------------------------------------------
+PATTERN='(from[[:space:]]*|import[[:space:]]*|require\()[[:space:]]*\(?["'\''`](@expo/vector-icons(/[^"'\''`[:space:]]*)?|expo-symbols)["'\''`]'
+hits=$(scan "${SRC[@]}" | drop_allowed | strip_comments)
+hits=$(grep -vE "from[[:space:]]*['\"]@expo/vector-icons/MaterialCommunityIcons['\"]|import[[:space:]]*\\{[[:space:]]*MaterialCommunityIcons[[:space:]]*\\}[[:space:]]*from[[:space:]]*['\"]@expo/vector-icons['\"]" <<<"$hits" || true)
+if [[ -n "$hits" ]]; then
+	report 12 "one icon set" FAIL "$hits" \
+		"Use MaterialCommunityIcons, via Paper's icon prop where a Paper component takes one."
+else
+	report 12 "one icon set" ok
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 printf '\ncheck-invariants — %d files\n\n' "${#ALL_TS[@]}"
