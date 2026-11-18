@@ -1012,11 +1012,6 @@
   dependencies:
     tslib "^2.4.0"
 
-"@expo-google-fonts/material-symbols@^0.4.1":
-  version "0.4.36"
-  resolved "https://registry.yarnpkg.com/@expo-google-fonts/material-symbols/-/material-symbols-0.4.36.tgz#ea580f13742029ab729e0f0090091b80995c7a34"
-  integrity sha512-hFIN8h99qUid9OppB9Sj18sUQib2O0I9c0soBmgb932Kz+20pAaGe/PRH6NdAqm8/DdOs+Hwx8A4Fqn9ZNadhg==
-
 "@expo/cli@^58.1.19":
   version "58.1.19"
   resolved "https://registry.yarnpkg.com/@expo/cli/-/cli-58.1.19.tgz#e2197d8481be45306ae9bb5721a82a7fa3419fea"
@@ -5807,14 +5802,6 @@ expo-status-bar@^58.0.4, expo-status-bar@~58.0.4:
   resolved "https://registry.yarnpkg.com/expo-status-bar/-/expo-status-bar-58.0.4.tgz#a7264f706a2882a2c451cd792100d7a06121c59a"
   integrity sha512-e6JJHziSSNb1v1VSzmDrAPf6GFoPRdVOIDrTCcK3bHfbJEAZGZ3YZXfqlorZtUFDT0z6NcjaZf0mPWifJZcqew==
 
-expo-symbols@58.0.4:
-  version "58.0.4"
-  resolved "https://registry.yarnpkg.com/expo-symbols/-/expo-symbols-58.0.4.tgz#384f8e85f04a71cd9bd318e4a295442a13528d93"
-  integrity sha512-cZeIh4bf4uUI5GhI0BK88dV1BCoWlgp1fmbPuUY/bZnonmyGS881Yvy8MkbM+R+ozo7W9TdZFpbFRWjUA+spcA==
-  dependencies:
-    "@expo-google-fonts/material-symbols" "^0.4.1"
-    sf-symbols-typescript "^2.0.0"
-
 expo-web-browser@58.0.7, expo-web-browser@~58.0.7:
   version "58.0.7"
   resolved "https://registry.yarnpkg.com/expo-web-browser/-/expo-web-browser-58.0.7.tgz#48727ccdbdb7567902d4cb01a060553a46c8c8f2"
@@ -10135,7 +10122,7 @@ setprototypeof@1.2.0, setprototypeof@~1.2.0:
   resolved "https://registry.yarnpkg.com/setprototypeof/-/setprototypeof-1.2.0.tgz#66c9a24a73f9fc28cbe66b09fed3d33dcaf1b424"
   integrity sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==
 
-sf-symbols-typescript@^2.0.0, sf-symbols-typescript@^2.1.0:
+sf-symbols-typescript@^2.1.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/sf-symbols-typescript/-/sf-symbols-typescript-2.2.0.tgz#926d6e0715e3d8784cadf7658431e36581254208"
   integrity sha512-TPbeg0b7ylrswdGCji8FRGFAKuqbpQlLbL8SOle3j1iHSs5Ob5mhvMAxWN2UItOjgALAB5Zp3fmMfj8mbWvXKw==
