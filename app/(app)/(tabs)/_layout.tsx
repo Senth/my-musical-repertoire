@@ -1,7 +1,7 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "react-native-paper";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { icon } from "@/theme/tokens";
 
 export default function AppTabsLayout() {
@@ -25,9 +25,9 @@ export default function AppTabsLayout() {
 				options={{
 					title: t("screen.overview.title"),
 					tabBarIcon: ({ focused }) => (
-						<IconSymbol
+						<MaterialCommunityIcons
 							size={icon.tab}
-							name="music.note.list"
+							name="playlist-music"
 							color={tint(focused)}
 						/>
 					),
@@ -38,9 +38,9 @@ export default function AppTabsLayout() {
 				options={{
 					title: t("screen.pieces.title"),
 					tabBarIcon: ({ focused }) => (
-						<IconSymbol
+						<MaterialCommunityIcons
 							size={icon.tab}
-							name="books.vertical"
+							name="bookshelf"
 							color={tint(focused)}
 						/>
 					),
@@ -51,9 +51,9 @@ export default function AppTabsLayout() {
 				options={{
 					title: t("screen.techniques.title"),
 					tabBarIcon: ({ focused }) => (
-						<IconSymbol
+						<MaterialCommunityIcons
 							size={icon.tab}
-							name="pianokeys"
+							name="piano"
 							color={tint(focused)}
 						/>
 					),
@@ -65,9 +65,9 @@ export default function AppTabsLayout() {
 					title: t("screen.progress.title"),
 					headerShown: false,
 					tabBarIcon: ({ focused }) => (
-						<IconSymbol
+						<MaterialCommunityIcons
 							size={icon.tab}
-							name="chart.line.uptrend.xyaxis"
+							name="trending-up"
 							color={tint(focused)}
 						/>
 					),

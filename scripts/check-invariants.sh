@@ -367,6 +367,43 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 12. One icon set
+#
+# Use MaterialCommunityIcons; expo-symbols is out.
+# ---------------------------------------------------------------------------
+PATTERN='(from[[:space:]]*|import[[:space:]]*|require\()[[:space:]]*\(?["'\''`](@expo/vector-icons(/[^"'\''`[:space:]]*)?|expo-symbols)["'\''`]'
+valid_imports=$(awk '
+	FNR == 1 { active = 0 }
+	/^[[:space:]]*import([[:space:]]|\{|\*)/ {
+		active = 1
+		start = FNR
+		declaration = $0
+	}
+	active && FNR != start { declaration = declaration " " $0 }
+	active && $0 ~ /from[[:space:]]*["\047\140]/ {
+		if (declaration ~ /from[[:space:]]*["\047\140]@expo\/vector-icons\/MaterialCommunityIcons["\047\140]/ ||
+			declaration ~ /^[[:space:]]*import[[:space:]]*\{[[:space:]]*MaterialCommunityIcons([[:space:]]+as[[:space:]]+[[:alnum:]_$]+)?[[:space:]]*,?[[:space:]]*\}[[:space:]]*from[[:space:]]*["\047\140]@expo\/vector-icons["\047\140]/) {
+			print FILENAME ":" FNR
+		}
+		active = 0
+	}
+' "${SRC[@]}")
+hits=$(scan "${SRC[@]}" | drop_allowed | strip_comments | while IFS= read -r hit; do
+	path=${hit%%:*}
+	line=${hit#*:}
+	line=${line%%:*}
+	if ! grep -Fqx "$path:$line" <<<"$valid_imports"; then
+		printf '%s\n' "$hit"
+	fi
+done)
+if [[ -n "$hits" ]]; then
+	report 12 "one icon set" FAIL "$hits" \
+		"Use MaterialCommunityIcons, via Paper's icon prop where a Paper component takes one."
+else
+	report 12 "one icon set" ok
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 printf '\ncheck-invariants — %d files\n\n' "${#ALL_TS[@]}"
