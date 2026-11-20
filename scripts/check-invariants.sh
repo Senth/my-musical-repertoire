@@ -404,6 +404,42 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 13. Locale copy excludes banned words
+#
+# The design contract bans item, task, entry and allocation from user-facing
+# copy. Keys are identifiers, not copy; validate the locale before scanning so
+# an empty or unreadable file cannot pass.
+# ---------------------------------------------------------------------------
+LOCALE_FILE="i18n/locales/en-US.json"
+if [[ ! -r "$LOCALE_FILE" ]]; then
+	report 13 "locale copy excludes banned words" FAIL \
+		"$LOCALE_FILE is not readable"
+elif locale_hits=$(jq -ce '
+	if type != "object" then
+		error("expected a JSON object")
+	else
+		[paths(strings) as $path |
+			{key: ($path | map(tostring) | join(".")), value: getpath($path)}] as $values |
+		if ($values | length) == 0 then
+			error("no leaf string values")
+		else
+			[$values[] |
+				select(.value | test("\\b(item|items|task|tasks|entry|entries|allocation|allocations)\\b"; "i"))]
+		end
+	end
+' "$LOCALE_FILE" 2>&1); then
+	if [[ "$locale_hits" == "[]" ]]; then
+		report 13 "locale copy excludes banned words" ok
+	else
+		hits=$(jq -r '.[] | "\(.key): \(.value | @json)"' <<<"$locale_hits")
+		report 13 "locale copy excludes banned words" FAIL "$hits"
+	fi
+else
+	report 13 "locale copy excludes banned words" FAIL "$locale_hits" \
+		"Provide a readable, non-empty JSON object with leaf string values."
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 printf '\ncheck-invariants — %d files\n\n' "${#ALL_TS[@]}"
