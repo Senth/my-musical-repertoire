@@ -118,7 +118,7 @@ export default function LoginScreen() {
 								await sendPasswordResetEmail(email.trim());
 								setPasswordResetSent(true);
 							} catch {
-								// auto-send failed; user can still click "Set Password" manually
+								// auto-send failed; user can still click "Set password" manually
 							}
 							setGoogleAccountDetected(true);
 							return;

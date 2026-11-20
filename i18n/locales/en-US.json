@@ -8,15 +8,15 @@
 			"stabilizing": "Stabilizing",
 			"maintenance": "Maintenance",
 			"performance": "Performance",
-			"on_hold": "On Hold",
+			"on_hold": "On hold",
 			"shelved": "Shelved"
 		},
 		"difficulty": {
 			"notSet": "Not set",
 			"1": "1 – Easy",
-			"2": "2 – Easy-Medium",
+			"2": "2 – Easy-medium",
 			"3": "3 – Medium",
-			"4": "4 – Medium-Hard",
+			"4": "4 – Medium-hard",
 			"5": "5 – Hard"
 		},
 		"sectionCount_one": "{{count}} section",
@@ -134,7 +134,7 @@
 			"practice": "Practice"
 		},
 		"technique": {
-			"curriculumMove": "{{title}}: move from Active to Maintenance"
+			"curriculumMove": "{{title}}: move from active to maintenance"
 		}
 	},
 	"reason": {
@@ -246,7 +246,7 @@
 			"add": "Add {{title}}",
 			"addError": "Could not add this technique. Try again.",
 			"addAll": "Add all {{count}}",
-			"addAllHint": "Adds every one you do not have yet as Not started, easiest key first.",
+			"addAllHint": "Adds every one you do not have yet as not started, easiest key first.",
 			"addAllError": "Could not add these techniques. Try again.",
 			"confirm": {
 				"title": "Is “{{currentTitle}}” the same as {{catalogTitle}}?",
@@ -254,7 +254,7 @@
 				"keep": "Yes, keep the name “{{currentTitle}}”",
 				"rename": "Yes, rename it to “{{catalogTitle}}”",
 				"add": "No, add {{catalogTitle}} too",
-				"progress": "{{n}} of {{total}} possible matches. Adding all {{others}} others as Not started.",
+				"progress": "{{n}} of {{total}} possible matches. Adding all {{others}} others as not started.",
 				"cancel": "Cancel",
 				"cancelAll": "Cancel, add nothing"
 			},
@@ -263,7 +263,7 @@
 				"start": "Start practicing now",
 				"startHint": "Shows up in your plans from today",
 				"later": "Save for later",
-				"laterHint": "Waits as Not started, in curriculum order"
+				"laterHint": "Waits as not started, in curriculum order"
 			},
 			"title": {
 				"majorScale": "{{tonic}} major scale",
@@ -299,7 +299,7 @@
 	"error": {
 		"firebase": "Connection to Firebase failed",
 		"deletePiece": "Failed to delete piece. Please try again.",
-		"deleteTechnique": "Failed to delete technique item. Please try again.",
+		"deleteTechnique": "Failed to delete technique. Please try again.",
 		"deleteSection": "Failed to archive section. Please try again.",
 		"reorderSections": "Failed to reorder sections. Please try again.",
 		"bpmInvalid": "Enter a BPM between 20 and 240.",
@@ -324,9 +324,9 @@
 			"lastPracticed": "Last practiced: {{when}}"
 		},
 		"resetPassword": {
-			"title": "Set Your Password",
-			"newPasswordLabel": "New Password",
-			"submit": "Set Password",
+			"title": "Set your password",
+			"newPasswordLabel": "New password",
+			"submit": "Set password",
 			"invalidLink": "This link is invalid. Please request a new password reset.",
 			"successMessage": "Password set! You can now sign in with your email and password.",
 			"error": {
@@ -606,18 +606,18 @@
 			"error": "Could not export your data. Please try again."
 		},
 		"login": {
-			"title": "Sign In",
+			"title": "Sign in",
 			"titleRegister": "Register",
 			"google": "Sign in with Google",
-			"email": "Sign in with Email",
+			"email": "Sign in with email",
 			"register": "Register",
 			"emailLabel": "Email",
 			"passwordLabel": "Password",
-			"confirmPasswordLabel": "Confirm Password",
+			"confirmPasswordLabel": "Confirm password",
 			"or": "or",
 			"loading": "Logging in...",
 			"switchToRegister": "Don't have an account? Register",
-			"switchToSignIn": "Already have an account? Sign In",
+			"switchToSignIn": "Already have an account? Sign in",
 			"googleAccountDetected": "This email is registered with Google Sign-In.",
 			"setPassword": "Set a password",
 			"setPasswordSent": "Check your inbox (and spam folder) to set your password.",
@@ -635,13 +635,13 @@
 		},
 		"overview": {
 			"title": "Overview",
-			"practiceToday": "Suggested Practices",
+			"practiceToday": "Suggested practices",
 			"noPieces": "No pieces yet. Tap + to add your first piece!",
 			"neverPracticed": "Never practiced",
 			"lastPracticed": "Last practiced: {{date}}",
 			"seeAllPieces": "See all pieces",
 			"allCaughtUp": "You're all caught up! Great job.",
-			"techniqueToday": "Suggested Techniques",
+			"techniqueToday": "Suggested techniques",
 			"seeAllTechniques": "See all techniques",
 			"practice": "Practice",
 			"splitIntoPassages": "Split into passages",
@@ -659,12 +659,12 @@
 			}
 		},
 		"addPiece": {
-			"title": "Add Piece",
+			"title": "Add piece",
 			"titleLabel": "Title",
 			"composerLabel": "Composer",
 			"collectionLabel": "Collection",
 			"stateLabel": "State",
-			"targetTempoBpmLabel": "Target Tempo (BPM)",
+			"targetTempoBpmLabel": "Target tempo (BPM)",
 			"durationLabel": "Duration (minutes)",
 			"save": "Save",
 			"error": {
@@ -815,12 +815,12 @@
 			}
 		},
 		"editPiece": {
-			"title": "Edit Piece",
+			"title": "Edit piece",
 			"titleLabel": "Title",
 			"composerLabel": "Composer",
 			"collectionLabel": "Collection",
 			"stateLabel": "State",
-			"targetTempoBpmLabel": "Target Tempo (BPM)",
+			"targetTempoBpmLabel": "Target tempo (BPM)",
 			"durationLabel": "Duration (minutes)",
 			"difficultyLabel": "Difficulty",
 			"notesLabel": "Notes (optional)",
@@ -855,7 +855,7 @@
 				"delete": "Delete"
 			},
 			"deleteDialog": {
-				"title": "Delete Piece",
+				"title": "Delete piece",
 				"message": "\"{{name}}\" and all its practice history will be permanently deleted.",
 				"confirm": "Delete",
 				"cancel": "Cancel"
@@ -874,7 +874,7 @@
 		"techniques": {
 			"title": "Techniques",
 			"searchPlaceholder": "Search techniques...",
-			"noResults": "No technique items match your search",
+			"noResults": "No techniques match your search",
 			"noTechniques": "No techniques yet",
 			"noMatchFilters": "No techniques match your filters",
 			"sort": {
@@ -893,14 +893,14 @@
 				"delete": "Delete"
 			},
 			"deleteDialog": {
-				"title": "Delete Technique Item",
+				"title": "Delete technique",
 				"message": "\"{{name}}\" and all its practice history will be permanently deleted.",
 				"confirm": "Delete",
 				"cancel": "Cancel"
 			}
 		},
 		"addTechnique": {
-			"title": "Add Technique",
+			"title": "Add technique",
 			"titleLabel": "Title",
 			"typeLabel": "Type (optional)",
 			"typeNone": "None",
@@ -908,7 +908,7 @@
 			"handsLabel": "Hands",
 			"handsHelp": "Which hands this technique is practised with",
 			"drillsLabel": "Drills",
-			"targetTempoBpmLabel": "Target Tempo BPM (optional)",
+			"targetTempoBpmLabel": "Target tempo BPM (optional)",
 			"notesLabel": "Notes (optional)",
 			"save": "Save",
 			"error": {
@@ -916,7 +916,7 @@
 			}
 		},
 		"editTechnique": {
-			"title": "Edit Technique",
+			"title": "Edit technique",
 			"titleLabel": "Title",
 			"typeLabel": "Type (optional)",
 			"typeNone": "None",
@@ -924,7 +924,7 @@
 			"handsLabel": "Hands",
 			"handsHelp": "Which hands this technique is practised with",
 			"drillsLabel": "Drills",
-			"targetTempoBpmLabel": "Target Tempo BPM (optional)",
+			"targetTempoBpmLabel": "Target tempo BPM (optional)",
 			"notesLabel": "Notes (optional)",
 			"save": "Save",
 			"error": {
@@ -1042,7 +1042,7 @@
 			"notReadYet": "Not read yet"
 		},
 		"practiceTechnique": {
-			"notFound": "Technique item not found",
+			"notFound": "Technique not found",
 			"qualityLabel": "How clean?",
 			"effortLabel": "How hard?",
 			"save": "Save",
@@ -1065,7 +1065,7 @@
 			}
 		},
 		"session": {
-			"newSession": "New Practice Session",
+			"newSession": "New practice session",
 			"preset": {
 				"default": {
 					"balanced": "Balanced",
@@ -1082,7 +1082,7 @@
 				"duplicate": "Duplicate",
 				"delete": "Delete",
 				"copyName": "{{name}} (copy)",
-				"empty": "No presets — start a Custom session or restore the defaults",
+				"empty": "No presets — start a custom session or restore the defaults",
 				"start": "Start {{name}}"
 			},
 			"setup": {
@@ -1114,8 +1114,8 @@
 				"warmup": "Warmup",
 				"technique": "Technique",
 				"sight-reading": "Sight-reading",
-				"repertoire-review": "Learning: Review",
-				"repertoire-learning": "Learning: New",
+				"repertoire-review": "Learning: review",
+				"repertoire-learning": "Learning: new",
 				"repertoire-stabilizing": "Stabilizing",
 				"repertoire-maintenance": "Maintenance",
 				"minutes": "{{minutes}} min",
@@ -1186,7 +1186,7 @@
 				},
 				"info": {
 					"warmup": "Easy playing that wakes the hands up before any real work — it matters most in a short session, not least.",
-					"sightReading": "New material played at first sight: two or three short items, keeping going rather than correcting.",
+					"sightReading": "New material played at first sight: two or three short passages, keeping going rather than correcting.",
 					"technique": "Scales, arpeggios and drills worked one at a time — slow, correct, repeated.",
 					"repertoireLearning": "Pieces you cannot play yet: slow, hands separate, one small section at a time.",
 					"repertoireStabilizing": "Pieces you can play but not reliably — joining sections up and stepping the tempo.",
@@ -1237,7 +1237,7 @@
 				"barsHint": "Add both bars to practise this section combined with its neighbours.",
 				"startBarLabel": "Start",
 				"endBarLabel": "End",
-				"notesLabel": "Notes / Problem (optional)",
+				"notesLabel": "Notes / problem (optional)",
 				"save": "Save",
 				"error": {
 					"labelRequired": "Label is required.",

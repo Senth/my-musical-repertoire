@@ -46,13 +46,13 @@ stop = "scripts/dev-stack.sh down"
 url = "http://localhost:$(scripts/dev-stack.sh ports)"
 # Sign-in is an **email and password form** against the Auth emulator, not a
 # redirect: type the email from `scripts/dev-stack.sh fixture` / practice123,
-# then "Sign in with Email". `up` prints it as `SEED_EMAIL=`.
+# then "Sign in with email". `up` prints it as `SEED_EMAIL=`.
 # The account and the readiness marker are a contract with the e2e seed, and
 # they live in `e2e/support/app.ts`. `.tmp/e2e/auth.json` does not shortcut
 # this: it is a Playwright storage state including IndexedDB, and `state-load`
 # restores cookies and `localStorage` only.
-auth = "type the email from scripts/dev-stack.sh fixture / practice123 -> click 'Sign in with Email'"
-ready = "Suggested Practices"
+auth = "type the email from scripts/dev-stack.sh fixture / practice123 -> click 'Sign in with email'"
+ready = "Suggested practices"
 
 # What the e2e seed writes, so an empty screen is judged and not reported.
 # There is no committed fixture export: `e2e/seed.setup.ts` runs as the first
