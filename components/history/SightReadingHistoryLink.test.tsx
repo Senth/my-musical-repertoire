@@ -86,7 +86,7 @@ it("refreshes last read after returning from a session without a reload", async 
 		mockBlur();
 		mockBlur = mockFocus() ?? (() => {});
 	});
-	await waitFor(() => expect(screen.getByText("Last read Today")).toBeTruthy());
+	await waitFor(() => expect(screen.getByText("Last read today")).toBeTruthy());
 	expect(fetchLastSightReading).toHaveBeenCalledTimes(2);
 });
 

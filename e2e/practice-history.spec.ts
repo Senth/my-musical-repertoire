@@ -10,7 +10,7 @@ import {
 } from "@/e2e/support/app";
 import { expect, test } from "@/e2e/support/test";
 import en from "@/i18n/locales/en-US.json";
-import { formatDaysAgo } from "@/utils/date";
+import { formatDaysAgoForSentence } from "@/utils/date";
 
 test("seeded history shows sight-reading last read and newest entries first", async ({
 	page,
@@ -35,7 +35,7 @@ test("seeded history shows sight-reading last read and newest entries first", as
 		page.getByText(
 			t("screen.sightReadingHistory.lastRead").replace(
 				"{{when}}",
-				formatDaysAgo(
+				formatDaysAgoForSentence(
 					seededDate,
 					copy.t,
 					new Date(await page.evaluate(() => Date.now())),

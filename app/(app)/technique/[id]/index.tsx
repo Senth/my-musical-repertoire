@@ -19,7 +19,7 @@ import {
 } from "@/hooks/use-techniques";
 import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { contentWidth, scrollTail, space } from "@/theme/tokens";
-import { formatDaysAgo } from "@/utils/date";
+import { formatDaysAgoForSentence } from "@/utils/date";
 import {
 	CURRICULUM_LOG_LIMIT,
 	techniqueNudge,
@@ -146,7 +146,7 @@ export default function TechniqueDetailScreen() {
 							style={{ color: theme.colors.onSurfaceVariant }}
 						>
 							{t("screen.techniqueDetail.lastPracticed", {
-								when: formatDaysAgo(item.lastPracticedAt, t),
+								when: formatDaysAgoForSentence(item.lastPracticedAt, t),
 							})}
 						</Text>
 						{item.targetTempoBpm != null && (

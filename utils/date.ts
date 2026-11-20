@@ -19,3 +19,15 @@ export function formatDaysAgo(
 	if (diffDays === 1) return t("common.yesterday");
 	return t("common.daysAgo", { count: diffDays });
 }
+
+export function formatDaysAgoForSentence(
+	date: Date | null | undefined,
+	t: TFunction,
+	now = new Date(),
+): string {
+	const when = formatDaysAgo(date, t, now);
+	if (when !== t("common.today") && when !== t("common.yesterday")) {
+		return when;
+	}
+	return when.replace(/^./u, (character) => character.toLocaleLowerCase());
+}

@@ -154,7 +154,7 @@ it.each([
 		await fireEvent.press(screen.getByLabelText("Add C major scale"));
 		expect(screen.getByText("Shows up in your plans from today")).toBeTruthy();
 		expect(
-			screen.getByText("Waits as Not started, in curriculum order"),
+			screen.getByText("Waits as not started, in curriculum order"),
 		).toBeTruthy();
 		await fireEvent.press(screen.getByText(label));
 		await waitFor(() =>
@@ -293,7 +293,7 @@ it("collects Add all answers in curriculum order before one batch", async () => 
 	).toBeTruthy();
 	expect(
 		screen.getByText(
-			"1 of 2 possible matches. Adding all 0 others as Not started.",
+			"1 of 2 possible matches. Adding all 0 others as not started.",
 		),
 	).toBeTruthy();
 	await fireEvent.press(screen.getByText("Yes, keep the name “A minor”"));
@@ -301,7 +301,7 @@ it("collects Add all answers in curriculum order before one batch", async () => 
 	expect(mockAddAll).not.toHaveBeenCalled();
 	expect(
 		screen.getByText(
-			"2 of 2 possible matches. Adding all 0 others as Not started.",
+			"2 of 2 possible matches. Adding all 0 others as not started.",
 		),
 	).toBeTruthy();
 	await fireEvent.press(screen.getByText("No, add G harmonic minor scale too"));

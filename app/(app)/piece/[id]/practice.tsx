@@ -61,7 +61,7 @@ import {
 	PracticeMistakes,
 	type PracticeTrigger,
 } from "@/models/practice";
-import { formatDaysAgo } from "@/utils/date";
+import { formatDaysAgoForSentence } from "@/utils/date";
 import {
 	effortOptions,
 	mistakeOptions,
@@ -384,7 +384,7 @@ export function PiecePracticeContent({
 	const spanStats = spanModeStats(spanCandidates, spanHands);
 	const spanLastLine = spanStats.lastPracticed
 		? t("screen.practice.meta.lastPractised", {
-				when: formatDaysAgo(spanStats.lastPracticed, t),
+				when: formatDaysAgoForSentence(spanStats.lastPracticed, t),
 			})
 		: t("screen.practice.meta.firstPractice");
 	const spanTally = practiceTally({
@@ -727,7 +727,7 @@ export function PiecePracticeContent({
 		? null
 		: scopedLog
 			? t("screen.practice.meta.lastPractised", {
-					when: formatDaysAgo(scopedLog.date, t),
+					when: formatDaysAgoForSentence(scopedLog.date, t),
 				})
 			: t("screen.practice.meta.firstPractice");
 
