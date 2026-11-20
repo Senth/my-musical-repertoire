@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Checkbox, Text, useTheme } from "react-native-paper";
 import { space } from "@/theme/tokens";
-import { formatDaysAgo } from "@/utils/date";
+import { formatDaysAgoForSentence } from "@/utils/date";
 import type { DemoteReason } from "@/utils/section-progression";
 import type { StateOffer } from "@/utils/state-offer";
 
@@ -110,7 +110,7 @@ export function StateOfferBody({
 					style={{ color: theme.colors.onSurfaceVariant }}
 				>
 					{t("screen.practice.stateOffer.seamHeld", {
-						when: formatDaysAgo(offer.seamHeldAt, t).toLowerCase(),
+						when: formatDaysAgoForSentence(offer.seamHeldAt, t),
 					})}
 				</Text>
 			)}

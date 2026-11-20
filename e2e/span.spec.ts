@@ -192,10 +192,7 @@ test("joined-sections span: chips, seams, credit, and no offer", async ({
 	await page.goto(pieceUrl);
 	await expect(
 		page.getByText(
-			t("screen.pieceDetail.lastPracticed").replace(
-				"{{when}}",
-				t("common.today"),
-			),
+			t("screen.pieceDetail.lastPracticed").replace("{{when}}", "today"),
 			{ exact: false },
 		),
 	).toBeVisible({ timeout: 10_000 });

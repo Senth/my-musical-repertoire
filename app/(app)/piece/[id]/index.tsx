@@ -35,7 +35,7 @@ import { useUpNavigation } from "@/hooks/use-up-navigation";
 import type { Section } from "@/models/section";
 import { contentWidth, scrollTail, space } from "@/theme/tokens";
 import { sectionNudge } from "@/utils/add-section-nudge";
-import { formatDaysAgo } from "@/utils/date";
+import { formatDaysAgoForSentence } from "@/utils/date";
 import { formatBarRange, formatComposerLine } from "@/utils/piece-display";
 
 export default function PieceDetailScreen() {
@@ -199,7 +199,7 @@ export default function PieceDetailScreen() {
 	}
 
 	const lastPracticedLine = t("screen.pieceDetail.lastPracticed", {
-		when: formatDaysAgo(piece.lastPracticed, t),
+		when: formatDaysAgoForSentence(piece.lastPracticed, t),
 	});
 	const metaLine =
 		piece.targetTempoBpm != null

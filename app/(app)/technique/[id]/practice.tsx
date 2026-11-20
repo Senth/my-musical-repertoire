@@ -37,7 +37,7 @@ import { useUpNavigation } from "@/hooks/use-up-navigation";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import type { ModeKey, PracticeDrill } from "@/models/practice";
 import { type } from "@/theme/tokens";
-import { formatDaysAgo } from "@/utils/date";
+import { formatDaysAgoForSentence } from "@/utils/date";
 import { effortOptions, qualityOptions } from "@/utils/estimation-options";
 import {
 	availableHandsModes,
@@ -354,7 +354,7 @@ export function TechniquePracticeContent({
 									? null
 									: logsByMode[modes.currentKey]
 										? t("screen.practice.meta.lastPractised", {
-												when: formatDaysAgo(
+												when: formatDaysAgoForSentence(
 													logsByMode[modes.currentKey].date,
 													t,
 												),

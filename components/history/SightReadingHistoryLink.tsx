@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { HistoryLink } from "@/components/history/HistoryLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchLastSightReading } from "@/hooks/use-sight-reading-logs";
-import { formatDaysAgo } from "@/utils/date";
+import { formatDaysAgoForSentence } from "@/utils/date";
 
 export function SightReadingHistoryLink() {
 	const { t } = useTranslation();
@@ -41,7 +41,7 @@ export function SightReadingHistoryLink() {
 					: date === null
 						? t("screen.sightReadingHistory.notReadYet")
 						: t("screen.sightReadingHistory.lastRead", {
-								when: formatDaysAgo(date, t),
+								when: formatDaysAgoForSentence(date, t),
 							})
 			}
 			onPress={() => router.push("/sight-reading/history")}
