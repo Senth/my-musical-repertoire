@@ -1,7 +1,8 @@
 import { ScrollView, View } from "react-native";
 import { Button, Chip } from "react-native-paper";
+import { PAGE_BAND } from "@/components/ui/ScreenContent";
 import { usePageInset } from "@/hooks/use-page-inset";
-import { space } from "@/theme/tokens";
+import { contentWidth, space } from "@/theme/tokens";
 
 export interface FilterPillItem {
 	id: string;
@@ -36,7 +37,12 @@ export function FilterPillRow({
 			showsHorizontalScrollIndicator={false}
 			// A ScrollView grows by default; left unchecked this horizontal row
 			// would claim half the screen's height and push the list off-screen.
-			style={{ flexGrow: 0, flexShrink: 0 }}
+			style={{
+				...PAGE_BAND,
+				maxWidth: contentWidth.page + 2 * pageInset,
+				flexGrow: 0,
+				flexShrink: 0,
+			}}
 			contentContainerStyle={{
 				paddingHorizontal: pageInset,
 				paddingBottom: space.sm,

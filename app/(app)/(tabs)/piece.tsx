@@ -30,7 +30,7 @@ import {
 import { ListHeaderActions } from "@/components/ui/ListHeaderActions";
 import { PieceProgressBar } from "@/components/ui/PieceProgressBar";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
-import { ScreenContent } from "@/components/ui/ScreenContent";
+import { PAGE_BAND, ScreenContent } from "@/components/ui/ScreenContent";
 import { SortMenu } from "@/components/ui/SortMenu";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
 import { useFabVisible } from "@/hooks/use-fab-visible";
@@ -476,6 +476,7 @@ export default function PiecesScreen() {
 				}}
 			>
 				<Searchbar
+					style={PAGE_BAND}
 					placeholder={t("screen.pieces.searchPlaceholder")}
 					value={searchQuery}
 					onChangeText={setSearchQuery}

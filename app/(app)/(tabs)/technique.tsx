@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/FilterSheet";
 import { ListHeaderActions } from "@/components/ui/ListHeaderActions";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
-import { ScreenContent } from "@/components/ui/ScreenContent";
+import { PAGE_BAND, ScreenContent } from "@/components/ui/ScreenContent";
 import { SortMenu } from "@/components/ui/SortMenu";
 import { MetaChip } from "@/components/ui/StateChip";
 import { useFabStyleTabs } from "@/hooks/use-fab-style";
@@ -473,6 +473,7 @@ export default function TechniquesScreen() {
 				}}
 			>
 				<Searchbar
+					style={PAGE_BAND}
 					placeholder={t("screen.techniques.searchPlaceholder")}
 					value={searchQuery}
 					onChangeText={setSearchQuery}

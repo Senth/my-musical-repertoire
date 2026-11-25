@@ -4,6 +4,12 @@ import { ScrollView, View } from "react-native";
 import { usePageInset } from "@/hooks/use-page-inset";
 import { contentWidth, space } from "@/theme/tokens";
 
+export const PAGE_BAND: ViewStyle = {
+	width: "100%",
+	maxWidth: contentWidth.page,
+	alignSelf: "center",
+};
+
 const GAP = {
 	0: undefined,
 	1: space.xs,
@@ -50,16 +56,7 @@ export function ScreenContent({
 				paddingBottom,
 			}}
 		>
-			<View
-				style={{
-					width: "100%",
-					maxWidth: contentWidth.page,
-					alignSelf: "center",
-					gap: GAP[gap],
-				}}
-			>
-				{children}
-			</View>
+			<View style={{ ...PAGE_BAND, gap: GAP[gap] }}>{children}</View>
 		</View>
 	);
 	return scroll ? <ScrollView style={style}>{body}</ScrollView> : body;
