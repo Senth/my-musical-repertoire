@@ -17,7 +17,7 @@ for (const { path, placeholder, title } of [
 		title: "C major scale, two octaves",
 	},
 ]) {
-	test(`${path} search and seeded card share the page band`, async ({
+	test(`${path} search and first card share the page band`, async ({
 		page,
 	}) => {
 		await page.goto(path);
@@ -26,13 +26,14 @@ for (const { path, placeholder, title } of [
 			"xpath=ancestor::*[@data-testid='search-bar-container']",
 		);
 		const titleText = page.getByText(title, { exact: true });
-		const card = page.getByTestId("card-container").filter({ has: titleText });
+		const firstCard = page.getByTestId("card-container").first();
 		await expect(searchInput).toBeVisible();
 		await expect(search).toBeVisible();
 		await expect(titleText).toBeVisible();
+		await expect(firstCard).toBeVisible();
 
 		const searchBox = await search.boundingBox();
-		const cardBox = await card.boundingBox();
+		const cardBox = await firstCard.boundingBox();
 		if (!searchBox || !cardBox)
 			throw new Error(`List band not measurable on ${path}`);
 		expect(Math.abs(searchBox.x - bandLeft)).toBeLessThanOrEqual(1);
